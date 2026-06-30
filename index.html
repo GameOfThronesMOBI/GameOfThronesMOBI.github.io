@@ -237,8 +237,7 @@ const HOUSES_DATA = {
             { id: 'reed', name: 'Риды', sigil: '🐊', castle: 'Серый Водопад', liege: 'Старки', status: 'Вассал', acres: 100000 },
             { id: 'mormont', name: 'Мормонты', sigil: '🐻', castle: 'Медвежий остров', liege: 'Старки', status: 'Вассал', acres: 80000 },
             { id: 'tallhart', name: 'Толхарты', sigil: '🌲', castle: 'Торрхен-Сквер', liege: 'Старки', status: 'Вассал', acres: 70000 },
-            { id: 'cerwyn', name: 'Кеды', sigil: '🐺', castle: 'Кедовы земли', liege: 'Старки', status: 'Вассал', acres: 50000 },
-            { id: 'flint', name: 'Флинты', sigil: '🪓', castle: 'Флинтовы земли', liege: 'Старки', status: 'Вассал', acres: 40000 }
+            { id: 'cerwyn', name: 'Кеды', sigil: '🐺', castle: 'Кедовы земли', liege: 'Старки', status: 'Вассал', acres: 50000 }
         ]
     },
     'Западные земли': {
@@ -531,7 +530,7 @@ function updateActions() {
     const place = user.game.location.place;
     const container = document.getElementById('actions-container');
     
-    // ГАРАНТИРОВАННО ОЧИЩАЕМ
+    // ОЧИЩАЕМ КОНТЕЙНЕР
     container.innerHTML = '';
     
     const isInside = BUILDINGS.some(b => b.id === place) && place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом';
