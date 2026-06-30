@@ -249,7 +249,6 @@ const BUILDINGS = [
     { id: 'Ворота', label: '🚪 Ворота' }
 ];
 
-// ДАННЫЕ ПО ДОМАМ
 const HOUSES_DATA = {
     'Север': {
         region: 'Север',
@@ -352,6 +351,7 @@ let isBusy = false;
 let busyTimer = null;
 let searchCooldown = false;
 let battleState = null;
+let marketListings = [];
 
 // ============================================================
 // 2. ОСНОВНЫЕ ФУНКЦИИ
@@ -383,7 +383,7 @@ function setMessage(msg) {
     el.textContent = msg || '';
     clearTimeout(el._timer);
     if (msg && msg.length > 0) {
-        el._timer = setTimeout(() => { el.textContent = ''; }, 15000);
+        el._timer = setTimeout(() => { el.textContent = ''; }, 5000);
     }
 }
 
@@ -1184,6 +1184,7 @@ function goToBuilding(building, mode) {
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
         triggerRandomEvent();
+        setMessage('');
         updateMenuBar(); updateStory(); updateActions(); saveData();
         checkStatusEffects(g);
     }, time * 1000);
@@ -1456,8 +1457,6 @@ function closeOnline() { document.getElementById('modal-online').classList.add('
 // ============================================================
 // 15. ТОРГОВАЯ ПЛОЩАДКА
 // ============================================================
-
-let marketListings = [];
 
 function openTrade() {
     const modal = document.getElementById('modal-trade');
