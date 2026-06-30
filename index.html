@@ -2,306 +2,364 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Игра Престолов: MOBI</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background: #1a1a1a;
-            font-family: 'Georgia', serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background: #0d0a08;
+            font-family: 'Georgia', 'Times New Roman', serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 15px;
-            background-image: radial-gradient(ellipse at center, #2c241a 0%, #0a0a0a 100%);
+            padding: 12px;
         }
-        .box {
-            background: #2c241a;
-            border: 2px solid #5a4a3a;
-            border-radius: 16px;
-            padding: 30px 25px;
-            max-width: 450px;
+        #app {
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            max-width: 420px;
+            background: #1f1712;
+            border: 1px solid #3d3026;
+            border-radius: 20px;
+            padding: 24px 20px 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
         }
-        h1 {
-            color: #d4c5a0;
+        .header {
             text-align: center;
-            font-weight: normal;
-            font-size: 22px;
-            letter-spacing: 3px;
-        }
-        h2 {
-            color: #8a7a5a;
-            text-align: center;
-            font-weight: normal;
-            font-size: 14px;
-            letter-spacing: 5px;
+            border-bottom: 1px solid #3d3026;
+            padding-bottom: 12px;
             margin-bottom: 20px;
         }
-        h3 {
-            color: #d4c5a0;
+        .header h1 {
+            color: #c9b694;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 4px;
+        }
+        .header h2 {
+            color: #6a5a48;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 6px;
+            margin-top: 2px;
+        }
+        .page-title {
+            color: #c9b694;
             text-align: center;
-            font-weight: normal;
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 17px;
+            font-weight: 400;
             letter-spacing: 2px;
+            margin-bottom: 18px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
         label {
             display: block;
-            color: #b8a58e;
-            font-size: 14px;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
+            color: #a08d78;
+            font-size: 13px;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
         input, select {
             width: 100%;
-            padding: 12px 15px;
-            background: #1f1812;
-            border: 1px solid #5a4a3a;
-            border-radius: 8px;
-            color: #e0d5c1;
+            padding: 14px 14px;
+            background: #120e0b;
+            border: 1px solid #3d3026;
+            border-radius: 10px;
+            color: #d4c5b0;
             font-size: 16px;
             font-family: 'Georgia', serif;
+            -webkit-appearance: none;
+            appearance: none;
         }
         input:focus, select:focus {
             outline: none;
             border-color: #8a7a5a;
         }
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a5a48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 18px;
+        }
+        select option {
+            background: #1f1712;
+            color: #d4c5b0;
+        }
         small {
             display: block;
-            color: #6a5a4a;
-            font-size: 12px;
+            color: #5a4a3a;
+            font-size: 11px;
             margin-top: 4px;
         }
         .btn {
             width: 100%;
-            padding: 14px;
-            border: 1px solid #5a4a3a;
-            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #3d3026;
+            border-radius: 10px;
             font-family: 'Georgia', serif;
             font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             text-align: center;
-            text-decoration: none;
-            display: block;
-            margin-top: 10px;
+            margin-top: 8px;
+            letter-spacing: 1px;
         }
-        .btn-login {
-            background: #3d3226;
-            color: #d4c5a0;
+        .btn-primary {
+            background: #3d2e20;
+            color: #c9b694;
         }
-        .btn-login:hover { background: #5a4a3a; }
-        .btn-reg {
-            background: #4a2f22;
-            color: #d4c5a0;
+        .btn-primary:active {
+            background: #5a4430;
+            transform: scale(0.98);
         }
-        .btn-reg:hover { background: #5f3c2b; }
-        .btn-back {
+        .btn-secondary {
             background: transparent;
-            color: #8a7a5a;
-            border-color: #3d3226;
+            color: #6a5a48;
+            border-color: #2a201a;
         }
-        .btn-back:hover { border-color: #5a4a3a; color: #d4c5a0; }
-        .btn-action {
-            background: #2c241a;
-            border: 1px solid #3d3226;
-            color: #d4c5a0;
-            padding: 10px 15px;
-            border-radius: 6px;
+        .btn-secondary:active {
+            border-color: #5a4a3a;
+            color: #c9b694;
+        }
+        .btn-danger {
+            background: #2a1a12;
+            color: #6a5a48;
+            border-color: #2a201a;
+        }
+        .btn-danger:active {
+            border-color: #5a3a2a;
+            color: #c9b694;
+        }
+        .btn-game {
+            background: #2a201a;
+            border: 1px solid #3d3026;
+            color: #c9b694;
+            padding: 12px 14px;
+            border-radius: 10px;
             font-family: 'Georgia', serif;
-            font-size: 14px;
+            font-size: 15px;
             cursor: pointer;
-            margin: 4px 0;
             width: 100%;
             text-align: left;
-            transition: all 0.2s;
+            transition: all 0.15s;
+            margin-top: 6px;
         }
-        .btn-action:hover { background: #3d3226; border-color: #5a4a3a; }
-        .btn-logout {
-            background: #3d2a1a;
-            color: #8a7a5a;
-            border: 1px solid #3d3226;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            display: inline-block;
-            margin-top: 15px;
-        }
-        .btn-logout:hover { border-color: #5a4a3a; color: #d4c5a0; }
-        .error {
-            background: #3d1a1a;
-            border: 1px solid #5a2a2a;
-            color: #d47a7a;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
-        }
-        .success {
-            background: #1a3d1a;
-            border: 1px solid #2a5a2a;
-            color: #7ad47a;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
+        .btn-game:active {
+            background: #3d3026;
+            transform: scale(0.98);
         }
         .divider {
             text-align: center;
-            color: #5a4a3a;
-            padding: 15px 0;
+            color: #3d3026;
+            padding: 14px 0 10px;
+            font-size: 13px;
+            letter-spacing: 3px;
+        }
+        .msg-error {
+            background: #2a1210;
+            border: 1px solid #4a2a20;
+            color: #c96a5a;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            text-align: center;
             font-size: 14px;
-            letter-spacing: 2px;
         }
-        .info {
-            background: #1f1812;
-            border: 1px solid #3d3226;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        .info p {
-            color: #b8a58e;
+        .msg-success {
+            background: #122a1a;
+            border: 1px solid #2a4a2a;
+            color: #7ac98a;
+            padding: 16px 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            text-align: center;
             font-size: 14px;
-            padding: 3px 0;
+            line-height: 1.6;
         }
-        .info strong { color: #d4c5a0; }
-        .story {
-            background: #1f1812;
-            border: 1px solid #3d3226;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-            min-height: 150px;
+        .hide {
+            display: none !important;
         }
-        .story h4 {
-            color: #8a7a5a;
-            font-size: 16px;
-            margin-bottom: 10px;
+        /* ===== ИГРОВОЙ ИНТЕРФЕЙС ===== */
+        .stats-grid {
+            background: #120e0b;
+            border: 1px solid #2a201a;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px 16px;
         }
-        .story p {
-            color: #c4b5a0;
-            line-height: 1.8;
+        .stats-grid p {
+            color: #a08d78;
+            font-size: 13px;
+            padding: 2px 0;
+        }
+        .stats-grid strong {
+            color: #c9b694;
+        }
+        .story-box {
+            background: #120e0b;
+            border: 1px solid #2a201a;
+            border-radius: 12px;
+            padding: 18px 16px;
+            margin-bottom: 14px;
+            min-height: 120px;
+        }
+        .story-box h4 {
+            color: #6a5a48;
             font-size: 15px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .story-box p {
+            color: #b8a890;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .story-box .game-msg {
+            color: #6a5a48;
+            font-style: italic;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #1f1712;
+            font-size: 14px;
+        }
+        .action-group {
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 1px solid #1f1712;
+        }
+        .action-group p {
+            color: #6a5a48;
+            font-size: 13px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
         .footer {
             text-align: center;
-            color: #3d3226;
-            font-size: 12px;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #2c241a;
-            letter-spacing: 2px;
+            color: #2a201a;
+            font-size: 11px;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #1f1712;
+            letter-spacing: 3px;
         }
-        .hide { display: none; }
         .mt-10 { margin-top: 10px; }
+        .mt-5 { margin-top: 5px; }
+        .flex-center { display: flex; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div class="box" id="app">
-    <!-- ЗАГОЛОВОК -->
+<div id="app">
     <div class="header">
         <h1>🐺 ИГРА ПРЕСТОЛОВ</h1>
         <h2>MOBI</h2>
     </div>
 
-    <!-- ============ СТРАНИЦА ВХОДА ============ -->
+    <!-- ===== СТРАНИЦА ВХОДА ===== -->
     <div id="page-login">
-        <h3>ВХОД</h3>
-        <div id="login-error" class="error hide"></div>
+        <div class="page-title">ВХОД</div>
+        <div id="login-error" class="msg-error hide"></div>
         <div class="form-group">
-            <label>Имя персонажа:</label>
+            <label>Имя персонажа</label>
             <input type="text" id="login-name" placeholder="Введите имя">
         </div>
         <div class="form-group">
-            <label>Пароль:</label>
+            <label>Пароль</label>
             <input type="password" id="login-password" placeholder="Введите пароль">
         </div>
-        <button class="btn btn-login" onclick="handleLogin()">⚔️ ВОЙТИ</button>
+        <button class="btn btn-primary" onclick="handleLogin()">⚔️ ВОЙТИ</button>
         <div class="divider">— ИЛИ —</div>
-        <button class="btn btn-back" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
+        <button class="btn btn-secondary" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
     </div>
 
-    <!-- ============ СТРАНИЦА РЕГИСТРАЦИИ ============ -->
+    <!-- ===== СТРАНИЦА РЕГИСТРАЦИИ ===== -->
     <div id="page-register" class="hide">
-        <h3>СОЗДАНИЕ ПЕРСОНАЖА</h3>
-        <div id="register-error" class="error hide"></div>
-        <div id="register-success" class="success hide"></div>
+        <div class="page-title">СОЗДАНИЕ ПЕРСОНАЖА</div>
+        <div id="register-error" class="msg-error hide"></div>
+        <div id="register-success" class="msg-success hide"></div>
         <div id="register-form">
             <div class="form-group">
-                <label>Имя персонажа:</label>
+                <label>Имя персонажа</label>
                 <input type="text" id="reg-name" placeholder="например: Эддард">
                 <small>Минимум 2 символа</small>
             </div>
             <div class="form-group">
-                <label>Пароль:</label>
+                <label>Пароль</label>
                 <input type="password" id="reg-password" placeholder="Придумайте пароль">
                 <small>Минимум 4 символа</small>
             </div>
             <div class="form-group">
-                <label>Национальность:</label>
+                <label>Национальность</label>
                 <select id="reg-nationality">
                     <option value="">▼ Выберите</option>
-                    <option value="Северные земли">Северные земли</option>
-                    <option value="Речные земли">Речные земли</option>
-                    <option value="Долина">Долина</option>
-                    <option value="Западные земли">Западные земли</option>
-                    <option value="Простор">Простор</option>
-                    <option value="Штормовые земли">Штормовые земли</option>
-                    <option value="Дорн">Дорн</option>
+                    <option value="Северные земли">❄️ Северные земли</option>
+                    <option value="Речные земли">🌊 Речные земли</option>
+                    <option value="Долина">🏔️ Долина</option>
+                    <option value="Западные земли">💰 Западные земли</option>
+                    <option value="Простор">🌾 Простор</option>
+                    <option value="Штормовые земли">⛈️ Штормовые земли</option>
+                    <option value="Дорн">☀️ Дорн</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Секретное слово:</label>
+                <label>Секретное слово</label>
                 <input type="text" id="reg-secret" placeholder="Для восстановления пароля">
             </div>
-            <button class="btn btn-reg" onclick="handleRegister()">🔥 ЗАРЕГИСТРИРОВАТЬСЯ</button>
+            <button class="btn btn-primary" onclick="handleRegister()">🔥 ЗАРЕГИСТРИРОВАТЬСЯ</button>
             <div class="divider">—</div>
-            <button class="btn btn-back" onclick="showPage('login')">Уже есть персонаж? Войти →</button>
+            <button class="btn btn-secondary" onclick="showPage('login')">Уже есть персонаж? Войти →</button>
         </div>
     </div>
 
-    <!-- ============ СТРАНИЦА ИГРЫ ============ -->
+    <!-- ===== СТРАНИЦА ИГРЫ ===== -->
     <div id="page-game" class="hide">
-        <div class="info" id="game-info">
+        <div class="stats-grid" id="game-stats">
             <p><strong>Имя:</strong> <span id="g-name"></span></p>
-            <p><strong>Национальность:</strong> <span id="g-nationality"></span></p>
-            <p><strong>Золото:</strong> <span id="g-gold">0</span> ЗД | <span id="g-silver">0</span> СО | <span id="g-copper">0</span> МП</p>
-            <p><strong>Сила:</strong> <span id="g-strength">10</span> | <strong>Хитрость:</strong> <span id="g-cunning">10</span> | <strong>Защита:</strong> <span id="g-defense">10</span> | <strong>Дипломатия:</strong> <span id="g-diplomacy">10</span></p>
+            <p><strong>Народ:</strong> <span id="g-nationality"></span></p>
+            <p><strong>Золото:</strong> <span id="g-gold">0</span> ЗД</p>
+            <p><strong>Серебро:</strong> <span id="g-silver">0</span> СО</p>
+            <p><strong>Медь:</strong> <span id="g-copper">0</span> МП</p>
+            <p><strong>Сила:</strong> <span id="g-strength">10</span></p>
+            <p><strong>Хитрость:</strong> <span id="g-cunning">10</span></p>
+            <p><strong>Защита:</strong> <span id="g-defense">10</span></p>
+            <p><strong>Дипломатия:</strong> <span id="g-diplomacy">10</span></p>
         </div>
-        <div class="story">
+        <div class="story-box">
             <h4>🏠 ТАВЕРНА "ПЬЯНЫЙ КАБАН"</h4>
             <p>Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого.</p>
             <p>Трактирщик смотрит на вас с подозрением.</p>
-            <div style="margin-top:15px;padding-top:15px;border-top:1px solid #3d3226;">
-                <p><strong>Что делаете?</strong></p>
-                <button class="btn-action" onclick="gameAction('eat')">🍞 Попросить еды</button>
-                <button class="btn-action" onclick="gameAction('work')">🧹 Предложить работу</button>
-                <button class="btn-action" onclick="gameAction('exit')">🚪 Выйти на улицу</button>
-                <button class="btn-action" onclick="gameAction('look')">🔍 Осмотреться</button>
-                <div id="game-message" style="margin-top:10px;color:#8a7a5a;font-style:italic;"></div>
+            <div class="action-group">
+                <p>⚡ Что делаете?</p>
+                <button class="btn-game" onclick="gameAction('eat')">🍞 Попросить еды</button>
+                <button class="btn-game" onclick="gameAction('work')">🧹 Предложить работу</button>
+                <button class="btn-game" onclick="gameAction('exit')">🚪 Выйти на улицу</button>
+                <button class="btn-game" onclick="gameAction('look')">🔍 Осмотреться</button>
+                <div id="game-message" class="game-msg"></div>
             </div>
         </div>
-        <button class="btn btn-back" onclick="handleLogout()" style="margin-top:10px;">🚪 Выйти из игры</button>
+        <button class="btn btn-danger" onclick="handleLogout()">🚪 Выйти из игры</button>
     </div>
 
-    <div class="footer">Зима близко ❄️</div>
+    <div class="footer">❄️ ЗИМА БЛИЗКО</div>
 </div>
 
 <script>
 // ============================================================
-// 1. ДАННЫЕ (всё в памяти телефона)
+// 1. ДАННЫЕ
 // ============================================================
 
-// Национальности и их бонусы
 const NATIONALITIES = {
     'Северные земли': { strength: 10, cunning: 0, defense: 5, diplomacy: 0 },
     'Речные земли': { strength: 0, cunning: 10, defense: 0, diplomacy: 5 },
@@ -312,21 +370,18 @@ const NATIONALITIES = {
     'Дорн': { strength: 0, cunning: 10, defense: 5, diplomacy: 0 }
 };
 
-// Хранилище пользователей
 let users = {};
-
-// Текущий игрок
 let currentUser = null;
 
 // ============================================================
-// 2. ЗАГРУЗКА / СОХРАНЕНИЕ (localStorage)
+// 2. ХРАНЕНИЕ
 // ============================================================
 
 function loadData() {
     try {
-        const saved = localStorage.getItem('got_users');
-        if (saved) users = JSON.parse(saved);
-    } catch(e) { users = {}; }
+        const raw = localStorage.getItem('got_users');
+        if (raw) users = JSON.parse(raw);
+    } catch (e) { users = {}; }
 }
 
 function saveData() {
@@ -338,22 +393,20 @@ function saveData() {
 // ============================================================
 
 function hash(str) {
-    let hash = 0;
+    let h = 0;
     for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
+        h = ((h << 5) - h) + str.charCodeAt(i);
+        h = h & h;
     }
-    return hash.toString(36);
+    return h.toString(36);
 }
 
 function showPage(page) {
-    document.getElementById('page-login').classList.add('hide');
-    document.getElementById('page-register').classList.add('hide');
-    document.getElementById('page-game').classList.add('hide');
-    document.getElementById(page === 'login' ? 'page-login' : page === 'register' ? 'page-register' : 'page-game').classList.remove('hide');
+    ['login', 'register', 'game'].forEach(id => {
+        document.getElementById('page-' + id).classList.add('hide');
+    });
+    document.getElementById('page-' + page).classList.remove('hide');
     
-    // Прячем сообщения
     document.getElementById('login-error').classList.add('hide');
     document.getElementById('register-error').classList.add('hide');
     document.getElementById('register-success').classList.add('hide');
@@ -370,50 +423,45 @@ function handleRegister() {
     const nationality = document.getElementById('reg-nationality').value;
     const secret = document.getElementById('reg-secret').value.trim();
     
-    const errorEl = document.getElementById('register-error');
-    const successEl = document.getElementById('register-success');
+    const errEl = document.getElementById('register-error');
+    const okEl = document.getElementById('register-success');
     const formEl = document.getElementById('register-form');
     
-    errorEl.classList.add('hide');
-    successEl.classList.add('hide');
+    errEl.classList.add('hide');
+    okEl.classList.add('hide');
     formEl.classList.remove('hide');
     
-    // Проверки
     if (!name || !password || !nationality || !secret) {
-        errorEl.textContent = '❌ Заполните все поля';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Заполните все поля';
+        errEl.classList.remove('hide');
         return;
     }
     if (name.length < 2) {
-        errorEl.textContent = '❌ Имя слишком короткое (минимум 2 символа)';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Имя слишком короткое (минимум 2)';
+        errEl.classList.remove('hide');
         return;
     }
     if (password.length < 4) {
-        errorEl.textContent = '❌ Пароль слишком короткий (минимум 4 символа)';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Пароль слишком короткий (минимум 4)';
+        errEl.classList.remove('hide');
         return;
     }
     if (!NATIONALITIES[nationality]) {
-        errorEl.textContent = '❌ Выберите национальность';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Выберите национальность';
+        errEl.classList.remove('hide');
         return;
     }
-    
-    // Проверяем имя
     if (users[name]) {
-        errorEl.textContent = '❌ Это имя уже занято. Выберите другое';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Это имя уже занято';
+        errEl.classList.remove('hide');
         return;
     }
     
-    // Создаём персонажа
     const bonus = NATIONALITIES[nationality];
     users[name] = {
         password: hash(password),
         nationality: nationality,
         secret: hash(secret),
-        created: new Date().toISOString(),
         game: {
             gold: 0,
             silver: 0,
@@ -421,22 +469,17 @@ function handleRegister() {
             strength: 10 + (bonus.strength || 0),
             cunning: 10 + (bonus.cunning || 0),
             defense: 10 + (bonus.defense || 0),
-            diplomacy: 10 + (bonus.diplomacy || 0),
-            location: 'Таверна Пьяный кабан'
+            diplomacy: 10 + (bonus.diplomacy || 0)
         }
     };
     saveData();
     
-    // Показываем успех
     formEl.classList.add('hide');
-    successEl.textContent = `✅ Поздравляем, ${name}! Вы — ${nationality}`;
-    successEl.classList.remove('hide');
+    okEl.innerHTML = '✅ Поздравляем, <strong>' + name + '</strong>!<br>Вы — ' + nationality;
+    okEl.classList.remove('hide');
     
-    // Автоматически входим
     currentUser = name;
-    setTimeout(() => {
-        enterGame(name);
-    }, 1500);
+    setTimeout(function() { enterGame(name); }, 1200);
 }
 
 // ============================================================
@@ -446,20 +489,20 @@ function handleRegister() {
 function handleLogin() {
     const name = document.getElementById('login-name').value.trim();
     const password = document.getElementById('login-password').value;
-    const errorEl = document.getElementById('login-error');
+    const errEl = document.getElementById('login-error');
     
-    errorEl.classList.add('hide');
+    errEl.classList.add('hide');
     
     if (!name || !password) {
-        errorEl.textContent = '❌ Заполните все поля';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Заполните все поля';
+        errEl.classList.remove('hide');
         return;
     }
     
     const user = users[name];
     if (!user || user.password !== hash(password)) {
-        errorEl.textContent = '❌ Неверное имя или пароль';
-        errorEl.classList.remove('hide');
+        errEl.textContent = '❌ Неверное имя или пароль';
+        errEl.classList.remove('hide');
         return;
     }
     
@@ -476,21 +519,13 @@ function enterGame(name) {
     if (!user) return;
     
     showPage('game');
-    
     document.getElementById('g-name').textContent = name;
     document.getElementById('g-nationality').textContent = user.nationality;
-    document.getElementById('g-gold').textContent = user.game.gold;
-    document.getElementById('g-silver').textContent = user.game.silver;
-    document.getElementById('g-copper').textContent = user.game.copper;
-    document.getElementById('g-strength').textContent = user.game.strength;
-    document.getElementById('g-cunning').textContent = user.game.cunning;
-    document.getElementById('g-defense').textContent = user.game.defense;
-    document.getElementById('g-diplomacy').textContent = user.game.diplomacy;
-    
+    updateStats();
     document.getElementById('game-message').textContent = '';
 }
 
-function updateGameUI() {
+function updateStats() {
     const user = users[currentUser];
     if (!user) return;
     document.getElementById('g-gold').textContent = user.game.gold;
@@ -510,26 +545,26 @@ function gameAction(action) {
     
     switch(action) {
         case 'eat':
-            msg.textContent = '🍞 Трактирщик дал вам хлеба. Вы чуть насытились.';
+            msg.textContent = '🍞 Трактирщик дал хлеба. Вы чуть сыты.';
             break;
         case 'work':
-            const earned = 3 + Math.floor(Math.random() * 5);
+            var earned = 3 + Math.floor(Math.random() * 6);
             user.game.copper += earned;
-            msg.textContent = `🧹 Вы помыли посуду. Заработали ${earned} МП.`;
-            updateGameUI();
+            msg.textContent = '🧹 Вы помыли посуду. Заработали ' + earned + ' МП.';
+            updateStats();
             break;
         case 'exit':
-            msg.textContent = '🚪 Вы вышли на улицу. Ветер холодный. Ничего интересного.';
+            msg.textContent = '🚪 На улице холодно. Ничего интересного.';
             break;
         case 'look':
-            const finds = ['старый нож', 'пустую бутылку', 'медную монету', 'перо ворона'];
-            const find = finds[Math.floor(Math.random() * finds.length)];
+            var items = ['старый нож', 'пустую бутылку', 'медную монету', 'перо', 'гнилую верёвку'];
+            var find = items[Math.floor(Math.random() * items.length)];
             if (find === 'медную монету') {
                 user.game.copper += 1;
-                msg.textContent = `🔍 Вы нашли ${find}! +1 МП`;
-                updateGameUI();
+                msg.textContent = '🔍 Вы нашли медную монету! +1 МП';
+                updateStats();
             } else {
-                msg.textContent = `🔍 Вы нашли ${find}. Бесполезно.`;
+                msg.textContent = '🔍 Вы нашли ' + find + '. Бесполезно.';
             }
             break;
     }
@@ -548,9 +583,6 @@ function handleLogout() {
 
 loadData();
 showPage('login');
-
-// Если есть сохранённая сессия — можно авто-вход
-// Но пока оставим как есть
 </script>
 
 </body>
