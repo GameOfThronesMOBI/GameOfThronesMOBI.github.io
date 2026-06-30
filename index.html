@@ -19,32 +19,32 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 12px;
+            padding: 10px;
         }
         #app {
             width: 100%;
-            max-width: 420px;
+            max-width: 450px;
             background: #1f1712;
             border: 1px solid #3d3026;
             border-radius: 20px;
-            padding: 24px 20px 20px;
+            padding: 16px 14px 14px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.9);
         }
         .header {
             text-align: center;
             border-bottom: 1px solid #3d3026;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
         }
         .header h1 {
             color: #c9b694;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 400;
             letter-spacing: 4px;
         }
         .header h2 {
             color: #6a5a48;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 400;
             letter-spacing: 6px;
             margin-top: 2px;
@@ -55,10 +55,10 @@
             font-size: 17px;
             font-weight: 400;
             letter-spacing: 2px;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
         }
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         label {
             display: block;
@@ -69,12 +69,12 @@
         }
         input, select {
             width: 100%;
-            padding: 14px 14px;
+            padding: 12px 14px;
             background: #120e0b;
             border: 1px solid #3d3026;
             border-radius: 10px;
             color: #d4c5b0;
-            font-size: 16px;
+            font-size: 15px;
             font-family: 'Georgia', serif;
             -webkit-appearance: none;
             appearance: none;
@@ -97,15 +97,15 @@
             display: block;
             color: #5a4a3a;
             font-size: 11px;
-            margin-top: 4px;
+            margin-top: 3px;
         }
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             border: 1px solid #3d3026;
             border-radius: 10px;
             font-family: 'Georgia', serif;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
@@ -142,24 +142,28 @@
             background: #2a201a;
             border: 1px solid #3d3026;
             color: #c9b694;
-            padding: 12px 14px;
+            padding: 11px 14px;
             border-radius: 10px;
             font-family: 'Georgia', serif;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
             width: 100%;
             text-align: left;
             transition: all 0.15s;
-            margin-top: 6px;
+            margin-top: 5px;
         }
         .btn-game:active {
             background: #3d3026;
             transform: scale(0.98);
         }
+        .btn-game:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
         .divider {
             text-align: center;
             color: #3d3026;
-            padding: 14px 0 10px;
+            padding: 12px 0 10px;
             font-size: 13px;
             letter-spacing: 3px;
         }
@@ -167,9 +171,9 @@
             background: #2a1210;
             border: 1px solid #4a2a20;
             color: #c96a5a;
-            padding: 12px 14px;
+            padding: 10px 14px;
             border-radius: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             text-align: center;
             font-size: 14px;
         }
@@ -177,9 +181,9 @@
             background: #122a1a;
             border: 1px solid #2a4a2a;
             color: #7ac98a;
-            padding: 16px 14px;
+            padding: 14px 14px;
             border-radius: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             text-align: center;
             font-size: 14px;
             line-height: 1.6;
@@ -187,76 +191,240 @@
         .hide {
             display: none !important;
         }
-        /* ===== ИГРОВОЙ ИНТЕРФЕЙС ===== */
-        .stats-grid {
+
+        /* ===== МЕНЮ ИГРОКА ===== */
+        .menu-grid {
             background: #120e0b;
             border: 1px solid #2a201a;
             border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 14px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3px 16px;
-        }
-        .stats-grid p {
-            color: #a08d78;
+            padding: 10px 12px;
+            margin-bottom: 12px;
             font-size: 13px;
+            line-height: 1.7;
+        }
+        .menu-grid .row {
+            display: flex;
+            justify-content: space-between;
             padding: 2px 0;
+            border-bottom: 1px solid #1a1410;
         }
-        .stats-grid strong {
+        .menu-grid .row:last-child {
+            border-bottom: none;
+        }
+        .menu-grid .label {
+            color: #7a6a58;
+        }
+        .menu-grid .value {
             color: #c9b694;
+            font-weight: bold;
         }
+        .menu-grid .value.gold {
+            color: #f0d080;
+        }
+        .menu-grid .value.silver {
+            color: #c0c0c0;
+        }
+        .menu-grid .value.copper {
+            color: #b87333;
+        }
+
+        /* ===== ИГРОВОЕ ПОЛЕ ===== */
         .story-box {
             background: #120e0b;
             border: 1px solid #2a201a;
             border-radius: 12px;
-            padding: 18px 16px;
-            margin-bottom: 14px;
-            min-height: 120px;
+            padding: 14px 14px;
+            margin-bottom: 12px;
+            min-height: 100px;
         }
         .story-box h4 {
             color: #6a5a48;
             font-size: 15px;
             font-weight: 400;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 1px;
         }
         .story-box p {
             color: #b8a890;
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.7;
         }
         .story-box .game-msg {
             color: #6a5a48;
             font-style: italic;
-            margin-top: 12px;
-            padding-top: 10px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid #1f1712;
-            font-size: 14px;
+            font-size: 13px;
         }
         .action-group {
             margin-top: 10px;
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid #1f1712;
         }
         .action-group p {
             color: #6a5a48;
             font-size: 13px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 1px;
+        }
+
+        /* ===== МОДАЛЬНОЕ ОКНО ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        .modal-overlay.hide {
+            display: none;
+        }
+        .modal-box {
+            background: #1f1712;
+            border: 1px solid #3d3026;
+            border-radius: 16px;
+            padding: 20px 18px;
+            max-width: 450px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-box .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3d3026;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+        }
+        .modal-box .modal-header h3 {
+            color: #c9b694;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+        .modal-box .modal-header .close-btn {
+            background: none;
+            border: none;
+            color: #6a5a48;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        .modal-box .modal-header .close-btn:active {
+            color: #c9b694;
+        }
+        .modal-section {
+            margin-bottom: 14px;
+        }
+        .modal-section h4 {
+            color: #6a5a48;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #2a201a;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .modal-section .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 14px;
+            color: #b8a890;
+        }
+        .modal-section .row .label {
+            color: #7a6a58;
+        }
+        .modal-section .row .value {
+            color: #c9b694;
+        }
+        .modal-section .skill-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-size: 13px;
+            color: #b8a890;
+            border-bottom: 1px solid #1a1410;
+        }
+        .modal-section .skill-row .sname {
+            color: #7a6a58;
+        }
+        .modal-section .skill-row .sval {
+            color: #c9b694;
+        }
+        .modal-section .skill-row .sactive {
+            color: #7ac98a;
+            font-size: 11px;
+        }
+        .btn-attr {
+            background: #2a201a;
+            border: 1px solid #3d3026;
+            color: #c9b694;
+            padding: 2px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Georgia', serif;
+        }
+        .btn-attr:active {
+            background: #3d3026;
+        }
+        .btn-attr:disabled {
+            opacity: 0.3;
+            pointer-events: none;
         }
         .footer {
             text-align: center;
             color: #2a201a;
-            font-size: 11px;
-            margin-top: 18px;
-            padding-top: 12px;
+            font-size: 10px;
+            margin-top: 14px;
+            padding-top: 10px;
             border-top: 1px solid #1f1712;
             letter-spacing: 3px;
         }
-        .mt-10 { margin-top: 10px; }
-        .mt-5 { margin-top: 5px; }
-        .flex-center { display: flex; justify-content: center; }
+        .status-busy {
+            color: #c96a5a;
+            font-size: 13px;
+            text-align: center;
+            padding: 6px;
+            background: #1a0e0a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .status-busy.hide {
+            display: none;
+        }
+        .cooldown-box {
+            background: #1a0e0a;
+            border: 1px solid #3d2a20;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .cooldown-box h4 {
+            color: #c96a5a;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .cooldown-box p {
+            color: #b8a890;
+            font-size: 14px;
+        }
+        .cooldown-box .timer {
+            color: #f0d080;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
     </style>
 </head>
 <body>
@@ -325,34 +493,67 @@
 
     <!-- ===== СТРАНИЦА ИГРЫ ===== -->
     <div id="page-game" class="hide">
-        <div class="stats-grid" id="game-stats">
-            <p><strong>Имя:</strong> <span id="g-name"></span></p>
-            <p><strong>Народ:</strong> <span id="g-nationality"></span></p>
-            <p><strong>Золото:</strong> <span id="g-gold">0</span> ЗД</p>
-            <p><strong>Серебро:</strong> <span id="g-silver">0</span> СО</p>
-            <p><strong>Медь:</strong> <span id="g-copper">0</span> МП</p>
-            <p><strong>Сила:</strong> <span id="g-strength">10</span></p>
-            <p><strong>Хитрость:</strong> <span id="g-cunning">10</span></p>
-            <p><strong>Защита:</strong> <span id="g-defense">10</span></p>
-            <p><strong>Дипломатия:</strong> <span id="g-diplomacy">10</span></p>
+        <!-- Статус занятости -->
+        <div id="busy-status" class="status-busy hide">⏳ Вы заняты...</div>
+
+        <!-- Меню игрока -->
+        <div class="menu-grid" id="menu-grid">
+            <div class="row"><span class="label">Имя</span><span class="value" id="g-name">—</span></div>
+            <div class="row"><span class="label">Национальность</span><span class="value" id="g-nationality">—</span></div>
+            <div class="row"><span class="label">Дом</span><span class="value" id="g-house">Нет</span></div>
+            <div class="row"><span class="label">🍖 Еда</span><span class="value" id="g-food">100/100</span></div>
+            <div class="row"><span class="label">💧 Жажда</span><span class="value" id="g-thirst">100/100</span></div>
+            <div class="row"><span class="label">😴 Усталость</span><span class="value" id="g-fatigue">100/100</span></div>
+            <div class="row"><span class="label">🪙 Деньги</span><span class="value gold" id="g-gold">0</span></div>
+            <div class="row"><span class="label">⚪ Серебро</span><span class="value silver" id="g-silver">0</span></div>
+            <div class="row"><span class="label">🟤 Медь</span><span class="value copper" id="g-copper">0</span></div>
+            <div class="row"><span class="label">📈 Уровень</span><span class="value" id="g-level">1</span></div>
+            <div class="row"><span class="label">📍 Земли</span><span class="value" id="g-region">Речные земли</span></div>
+            <div class="row"><span class="label">🏰 Локация</span><span class="value" id="g-location">Королевская Гавань</span></div>
+            <div class="row"><span class="label">📌 Место</span><span class="value" id="g-place">Таверна "Пьяный кабан"</span></div>
+            <div class="row"><span class="label">⚔️ Урон</span><span class="value" id="g-damage">1</span></div>
+            <div class="row"><span class="label">🛡️ Защита</span><span class="value" id="g-defense">1</span></div>
+            <div class="row"><span class="label">🧠 Интеллект</span><span class="value" id="g-intelligence">1</span></div>
+            <div class="row"><span class="label">💨 Ловкость</span><span class="value" id="g-agility">1</span></div>
+            <div class="row"><span class="label">🏃 Скорость</span><span class="value" id="g-speed">1</span></div>
+            <div class="row"><span class="label">🛡️ Защита новичка</span><span class="value" id="g-protection">Активна</span></div>
         </div>
-        <div class="story-box">
-            <h4>🏠 ТАВЕРНА "ПЬЯНЫЙ КАБАН"</h4>
-            <p>Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого.</p>
-            <p>Трактирщик смотрит на вас с подозрением.</p>
+
+        <!-- Игровое поле -->
+        <div class="story-box" id="story-box">
+            <h4 id="story-title">🏠 ТАВЕРНА "ПЬЯНЫЙ КАБАН"</h4>
+            <p id="story-text">Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого. Трактирщик смотрит на вас с подозрением.</p>
             <div class="action-group">
                 <p>⚡ Что делаете?</p>
-                <button class="btn-game" onclick="gameAction('eat')">🍞 Попросить еды</button>
-                <button class="btn-game" onclick="gameAction('work')">🧹 Предложить работу</button>
-                <button class="btn-game" onclick="gameAction('exit')">🚪 Выйти на улицу</button>
-                <button class="btn-game" onclick="gameAction('look')">🔍 Осмотреться</button>
+                <div id="actions-container">
+                    <button class="btn-game" onclick="gameAction('eat')">🍞 Попросить еды</button>
+                    <button class="btn-game" onclick="gameAction('wash')">🧹 Помыть посуду (1 мин → +1 МП)</button>
+                    <button class="btn-game" onclick="gameAction('sweep')">🧹 Подмести пол (5 мин → +5 МП)</button>
+                    <button class="btn-game" onclick="gameAction('exit')">🚪 Выйти на улицу</button>
+                    <button class="btn-game" onclick="gameAction('look')">🔍 Осмотреться</button>
+                    <button class="btn-game" onclick="openCharacter()">👤 Персонаж</button>
+                </div>
                 <div id="game-message" class="game-msg"></div>
             </div>
         </div>
+
         <button class="btn btn-danger" onclick="handleLogout()">🚪 Выйти из игры</button>
     </div>
 
     <div class="footer">❄️ ЗИМА БЛИЗКО</div>
+</div>
+
+<!-- ===== МОДАЛЬНОЕ ОКНО ПЕРСОНАЖА ===== -->
+<div id="modal-character" class="modal-overlay hide" onclick="if(event.target===this) closeCharacter()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>👤 ПЕРСОНАЖ</h3>
+            <button class="close-btn" onclick="closeCharacter()">✕</button>
+        </div>
+        <div id="modal-content">
+            <!-- заполняется JS -->
+        </div>
+    </div>
 </div>
 
 <script>
@@ -361,17 +562,30 @@
 // ============================================================
 
 const NATIONALITIES = {
-    'Северные земли': { strength: 10, cunning: 0, defense: 5, diplomacy: 0 },
-    'Речные земли': { strength: 0, cunning: 10, defense: 0, diplomacy: 5 },
-    'Долина': { strength: 0, cunning: 0, defense: 10, diplomacy: 5 },
-    'Западные земли': { strength: 0, cunning: 5, defense: 0, diplomacy: 10 },
-    'Простор': { strength: 0, cunning: 0, defense: 0, diplomacy: 10 },
-    'Штормовые земли': { strength: 10, cunning: 5, defense: 0, diplomacy: 0 },
-    'Дорн': { strength: 0, cunning: 10, defense: 5, diplomacy: 0 }
+    'Северные земли': { strength: 10, cunning: 0, defense: 5, diplomacy: 0, icon: '❄️' },
+    'Речные земли': { strength: 0, cunning: 10, defense: 0, diplomacy: 5, icon: '🌊' },
+    'Долина': { strength: 0, cunning: 0, defense: 10, diplomacy: 5, icon: '🏔️' },
+    'Западные земли': { strength: 0, cunning: 5, defense: 0, diplomacy: 10, icon: '💰' },
+    'Простор': { strength: 0, cunning: 0, defense: 0, diplomacy: 10, icon: '🌾' },
+    'Штормовые земли': { strength: 10, cunning: 5, defense: 0, diplomacy: 0, icon: '⛈️' },
+    'Дорн': { strength: 0, cunning: 10, defense: 5, diplomacy: 0, icon: '☀️' }
 };
+
+const SKILLS_LIST = [
+    { id: 'sword', name: '🗡️ Меч', base: 1 },
+    { id: 'spear', name: '🔱 Копьё', base: 1 },
+    { id: 'mace', name: '🔨 Булава', base: 1 },
+    { id: 'axe', name: '🪓 Топор', base: 1 },
+    { id: 'bow', name: '🏹 Лук', base: 1 },
+    { id: 'crossbow', name: '🎯 Арбалет', base: 1 },
+    { id: 'shield', name: '🛡️ Щит', base: 1 },
+    { id: 'dagger', name: '🔪 Кинжал', base: 1 }
+];
 
 let users = {};
 let currentUser = null;
+let isBusy = false;
+let busyTimer = null;
 
 // ============================================================
 // 2. ХРАНЕНИЕ
@@ -406,11 +620,18 @@ function showPage(page) {
         document.getElementById('page-' + id).classList.add('hide');
     });
     document.getElementById('page-' + page).classList.remove('hide');
-    
     document.getElementById('login-error').classList.add('hide');
     document.getElementById('register-error').classList.add('hide');
     document.getElementById('register-success').classList.add('hide');
     document.getElementById('register-form').classList.remove('hide');
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
 // ============================================================
@@ -458,18 +679,48 @@ function handleRegister() {
     }
     
     const bonus = NATIONALITIES[nationality];
+    const now = Date.now();
+    const skills = {};
+    SKILLS_LIST.forEach(s => { skills[s.id] = { level: 1, xp: 0 }; });
+    
     users[name] = {
         password: hash(password),
         nationality: nationality,
         secret: hash(secret),
+        created: now,
+        protectionExpires: now + 86400000, // 24 часа
         game: {
             gold: 0,
             silver: 0,
             copper: 0,
-            strength: 10 + (bonus.strength || 0),
-            cunning: 10 + (bonus.cunning || 0),
-            defense: 10 + (bonus.defense || 0),
-            diplomacy: 10 + (bonus.diplomacy || 0)
+            food: 100,
+            thirst: 100,
+            fatigue: 100,
+            level: 1,
+            xp: 0,
+            nextLevelXp: 100,
+            attributePoints: 0,
+            stats: {
+                damage: 1 + (bonus.strength || 0),
+                defense: 1 + (bonus.defense || 0),
+                intelligence: 1 + (bonus.cunning || 0),
+                agility: 1 + (bonus.cunning || 0),
+                speed: 1
+            },
+            equipment: {
+                rightHand: 'sword',
+                leftHand: null,
+                armor: null,
+                hasDagger: false
+            },
+            skills: skills,
+            location: {
+                region: 'Речные земли',
+                location: 'Королевская Гавань',
+                place: 'Таверна "Пьяный кабан"'
+            },
+            death: null, // { killedBy, deathTime, cooldown, isDead }
+            lastEat: 0 // для кулдауна еды
         }
     };
     saveData();
@@ -506,6 +757,31 @@ function handleLogin() {
         return;
     }
     
+    // Проверка на смерть
+    if (user.game.death && user.game.death.isDead) {
+        const now = Date.now();
+        const elapsed = (now - user.game.death.deathTime) / 1000;
+        if (elapsed < user.game.death.cooldown) {
+            errEl.textContent = '💀 Вы мертвы. Осталось ждать: ' + formatTime(user.game.death.cooldown - elapsed);
+            errEl.classList.remove('hide');
+            return;
+        } else {
+            // Воскрешение
+            user.game.death.isDead = false;
+            user.game.death = null;
+            // Восстановление в таверне
+            user.game.location = {
+                region: 'Речные земли',
+                location: 'Королевская Гавань',
+                place: 'Таверна "Пьяный кабан"'
+            };
+            user.game.food = 100;
+            user.game.thirst = 100;
+            user.game.fatigue = 100;
+            saveData();
+        }
+    }
+    
     currentUser = name;
     enterGame(name);
 }
@@ -517,68 +793,345 @@ function handleLogin() {
 function enterGame(name) {
     const user = users[name];
     if (!user) return;
-    
     showPage('game');
-    document.getElementById('g-name').textContent = name;
-    document.getElementById('g-nationality').textContent = user.nationality;
-    updateStats();
+    updateMenu();
+    updateStory();
     document.getElementById('game-message').textContent = '';
+    document.getElementById('busy-status').classList.add('hide');
+    isBusy = false;
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    updateActions();
 }
 
-function updateStats() {
+function updateMenu() {
     const user = users[currentUser];
     if (!user) return;
-    document.getElementById('g-gold').textContent = user.game.gold;
-    document.getElementById('g-silver').textContent = user.game.silver;
-    document.getElementById('g-copper').textContent = user.game.copper;
-    document.getElementById('g-strength').textContent = user.game.strength;
-    document.getElementById('g-cunning').textContent = user.game.cunning;
-    document.getElementById('g-defense').textContent = user.game.defense;
-    document.getElementById('g-diplomacy').textContent = user.game.diplomacy;
+    const g = user.game;
+    document.getElementById('g-name').textContent = currentUser;
+    document.getElementById('g-nationality').textContent = user.nationality;
+    document.getElementById('g-house').textContent = 'Нет';
+    document.getElementById('g-food').textContent = g.food + '/100';
+    document.getElementById('g-thirst').textContent = g.thirst + '/100';
+    document.getElementById('g-fatigue').textContent = g.fatigue + '/100';
+    document.getElementById('g-gold').textContent = g.gold;
+    document.getElementById('g-silver').textContent = g.silver;
+    document.getElementById('g-copper').textContent = g.copper;
+    document.getElementById('g-level').textContent = g.level;
+    document.getElementById('g-region').textContent = g.location.region;
+    document.getElementById('g-location').textContent = g.location.location;
+    document.getElementById('g-place').textContent = g.location.place;
+    document.getElementById('g-damage').textContent = g.stats.damage;
+    document.getElementById('g-defense').textContent = g.stats.defense;
+    document.getElementById('g-intelligence').textContent = g.stats.intelligence;
+    document.getElementById('g-agility').textContent = g.stats.agility;
+    document.getElementById('g-speed').textContent = g.stats.speed;
+    
+    // Защита новичка
+    const now = Date.now();
+    if (now < user.protectionExpires) {
+        const left = Math.ceil((user.protectionExpires - now) / 3600000);
+        document.getElementById('g-protection').textContent = 'Активна (' + left + ' ч)';
+    } else {
+        document.getElementById('g-protection').textContent = 'Завершена';
+    }
+}
+
+function updateStory() {
+    const user = users[currentUser];
+    if (!user) return;
+    const place = user.game.location.place;
+    document.getElementById('story-title').textContent = '🏠 ' + place;
+    // Текст меняется в зависимости от места
+    const texts = {
+        'Таверна "Пьяный кабан"': 'Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого. Трактирщик смотрит на вас с подозрением.',
+        'Улица': 'Вы вышли на улицу Королевской Гавани. Здесь шумно и многолюдно. Мимо проходят солдаты, купцы и простолюдины.',
+        'Поле': 'Вы вышли за городские стены. Вокруг пустынные поля и дорога, уходящая вдаль.'
+    };
+    document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в ' + place + '.';
+}
+
+function updateActions() {
+    const user = users[currentUser];
+    if (!user) return;
+    const place = user.game.location.place;
+    const container = document.getElementById('actions-container');
+    container.innerHTML = '';
+    
+    // Общие действия
+    const actions = [
+        { id: 'eat', label: '🍞 Попросить еды', action: 'eat' },
+        { id: 'wash', label: '🧹 Помыть посуду (1 мин → +1 МП)', action: 'wash' },
+        { id: 'sweep', label: '🧹 Подмести пол (5 мин → +5 МП)', action: 'sweep' },
+        { id: 'look', label: '🔍 Осмотреться', action: 'look' },
+        { id: 'exit', label: '🚪 Выйти на улицу', action: 'exit' },
+        { id: 'character', label: '👤 Персонаж', action: 'character' }
+    ];
+    
+    actions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        if (isBusy && a.action !== 'character') {
+            btn.disabled = true;
+        }
+        btn.onclick = function() { gameAction(a.action); };
+        container.appendChild(btn);
+    });
+}
+
+function updateGameUI() {
+    updateMenu();
+    updateStory();
+    updateActions();
     saveData();
 }
 
+// ============================================================
+// 7. ДЕЙСТВИЯ
+// ============================================================
+
 function gameAction(action) {
+    if (isBusy && action !== 'character') {
+        setMessage('⏳ Вы заняты. Завершите текущее действие.');
+        return;
+    }
+    
     const user = users[currentUser];
     if (!user) return;
-    const msg = document.getElementById('game-message');
+    const g = user.game;
     
     switch(action) {
         case 'eat':
-            msg.textContent = '🍞 Трактирщик дал хлеба. Вы чуть сыты.';
-            break;
-        case 'work':
-            var earned = 3 + Math.floor(Math.random() * 6);
-            user.game.copper += earned;
-            msg.textContent = '🧹 Вы помыли посуду. Заработали ' + earned + ' МП.';
-            updateStats();
-            break;
-        case 'exit':
-            msg.textContent = '🚪 На улице холодно. Ничего интересного.';
-            break;
-        case 'look':
-            var items = ['старый нож', 'пустую бутылку', 'медную монету', 'перо', 'гнилую верёвку'];
-            var find = items[Math.floor(Math.random() * items.length)];
-            if (find === 'медную монету') {
-                user.game.copper += 1;
-                msg.textContent = '🔍 Вы нашли медную монету! +1 МП';
-                updateStats();
-            } else {
-                msg.textContent = '🔍 Вы нашли ' + find + '. Бесполезно.';
+            const now = Date.now();
+            if (now - g.lastEat < 10800000) { // 3 часа
+                const left = Math.ceil((10800000 - (now - g.lastEat)) / 60000);
+                setMessage('🍞 Вы уже ели. Подождите ' + left + ' минут.');
+                return;
             }
+            g.food = clamp(g.food + 20, 0, 100);
+            g.lastEat = now;
+            setMessage('🍞 Вы поели. Еда +20.');
+            updateGameUI();
+            break;
+            
+        case 'wash':
+            startBusy('Моете посуду', 1, function() {
+                g.copper += 1;
+                setMessage('🧹 Вы помыли посуду. +1 МП.');
+                updateGameUI();
+            });
+            break;
+            
+        case 'sweep':
+            startBusy('Подметаете пол', 5, function() {
+                g.copper += 5;
+                setMessage('🧹 Вы подмели пол. +5 МП.');
+                updateGameUI();
+            });
+            break;
+            
+        case 'look':
+            const finds = ['старый нож', 'пустую бутылку', 'медную монету', 'перо', 'гнилую верёвку'];
+            const find = finds[Math.floor(Math.random() * finds.length)];
+            if (find === 'медную монету') {
+                g.copper += 1;
+                setMessage('🔍 Вы нашли медную монету! +1 МП.');
+                updateGameUI();
+            } else {
+                setMessage('🔍 Вы нашли ' + find + '. Бесполезно.');
+            }
+            break;
+            
+        case 'exit':
+            if (g.location.place === 'Таверна "Пьяный кабан"') {
+                g.location.place = 'Улица';
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вышли на улицу.');
+            } else if (g.location.place === 'Улица') {
+                g.location.place = 'Поле';
+                g.location.location = 'За городом';
+                setMessage('🚪 Вы вышли за городские стены.');
+            } else {
+                g.location.place = 'Таверна "Пьяный кабан"';
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вернулись в таверну.');
+            }
+            updateGameUI();
+            break;
+            
+        case 'character':
+            openCharacter();
             break;
     }
 }
 
+function startBusy(actionName, minutes, callback) {
+    if (isBusy) return;
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '⏳ ' + actionName + '... (' + minutes + ' мин)';
+    updateActions();
+    setMessage('⏳ Начали ' + actionName + '...');
+    
+    if (busyTimer) { clearTimeout(busyTimer); }
+    busyTimer = setTimeout(function() {
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        if (callback) callback();
+        updateActions();
+    }, minutes * 60 * 1000);
+}
+
+function setMessage(msg) {
+    document.getElementById('game-message').textContent = msg;
+}
+
+// ============================================================
+// 8. ПЕРСОНАЖ (модальное окно)
+// ============================================================
+
+function openCharacter() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-character');
+    const content = document.getElementById('modal-content');
+    
+    let html = '';
+    
+    // Основная информация
+    html += '<div class="modal-section">';
+    html += '<h4>📋 ОСНОВНОЕ</h4>';
+    html += '<div class="row"><span class="label">Имя</span><span class="value">' + currentUser + '</span></div>';
+    html += '<div class="row"><span class="label">Национальность</span><span class="value">' + user.nationality + '</span></div>';
+    html += '<div class="row"><span class="label">Дом</span><span class="value">Нет</span></div>';
+    html += '<div class="row"><span class="label">🍖 Еда</span><span class="value">' + g.food + '/100</span></div>';
+    html += '<div class="row"><span class="label">💧 Жажда</span><span class="value">' + g.thirst + '/100</span></div>';
+    html += '<div class="row"><span class="label">😴 Усталость</span><span class="value">' + g.fatigue + '/100</span></div>';
+    html += '</div>';
+    
+    // Деньги
+    html += '<div class="modal-section">';
+    html += '<h4>💰 ДЕНЬГИ</h4>';
+    html += '<div class="row"><span class="label">🪙 Золотые</span><span class="value gold">' + g.gold + '</span></div>';
+    html += '<div class="row"><span class="label">⚪ Серебряные</span><span class="value silver">' + g.silver + '</span></div>';
+    html += '<div class="row"><span class="label">🟤 Медные</span><span class="value copper">' + g.copper + '</span></div>';
+    html += '</div>';
+    
+    // Уровень и очки
+    html += '<div class="modal-section">';
+    html += '<h4>📈 УРОВЕНЬ</h4>';
+    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + '</span></div>';
+    html += '<div class="row"><span class="label">Опыт</span><span class="value">' + g.xp + '/' + g.nextLevelXp + '</span></div>';
+    html += '<div class="row"><span class="label">Свободных очков</span><span class="value">' + g.attributePoints + '</span></div>';
+    html += '</div>';
+    
+    // Характеристики
+    html += '<div class="modal-section">';
+    html += '<h4>⚔️ ХАРАКТЕРИСТИКИ</h4>';
+    const statKeys = [
+        { id: 'damage', label: '⚔️ Урон' },
+        { id: 'defense', label: '🛡️ Защита' },
+        { id: 'intelligence', label: '🧠 Интеллект' },
+        { id: 'agility', label: '💨 Ловкость' },
+        { id: 'speed', label: '🏃 Скорость' }
+    ];
+    statKeys.forEach(s => {
+        const val = g.stats[s.id] || 1;
+        const canAdd = g.attributePoints > 0;
+        html += '<div class="row">';
+        html += '<span class="label">' + s.label + '</span>';
+        html += '<span class="value">' + val + ' ';
+        if (canAdd) {
+            html += '<button class="btn-attr" onclick="addAttribute(\'' + s.id + '\')">+1</button>';
+        }
+        html += '</span></div>';
+    });
+    html += '</div>';
+    
+    // Экипировка
+    html += '<div class="modal-section">';
+    html += '<h4>🛡️ ЭКИПИРОВКА</h4>';
+    const eq = g.equipment;
+    html += '<div class="row"><span class="label">Правая рука</span><span class="value">' + (eq.rightHand || 'пусто') + '</span></div>';
+    html += '<div class="row"><span class="label">Левая рука</span><span class="value">' + (eq.leftHand || 'пусто') + '</span></div>';
+    html += '<div class="row"><span class="label">Броня</span><span class="value">' + (eq.armor || 'нет') + '</span></div>';
+    html += '<div class="row"><span class="label">Кинжал</span><span class="value">' + (eq.hasDagger ? '✅ есть' : '❌ нет') + '</span></div>';
+    html += '</div>';
+    
+    // Навыки
+    html += '<div class="modal-section">';
+    html += '<h4>⚔️ НАВЫКИ ВЛАДЕНИЯ ОРУЖИЕМ</h4>';
+    SKILLS_LIST.forEach(s => {
+        const skill = g.skills[s.id] || { level: 1, xp: 0 };
+        const active = (s.id === eq.rightHand || s.id === eq.leftHand) ? ' ✅' : '';
+        const bonus = (s.id === 'shield') ? 'защита' : 'урон/ловкость';
+        html += '<div class="skill-row">';
+        html += '<span class="sname">' + s.name + active + '</span>';
+        html += '<span class="sval">' + skill.level + '/1000</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    // Локация
+    html += '<div class="modal-section">';
+    html += '<h4>📍 МЕСТОПОЛОЖЕНИЕ</h4>';
+    html += '<div class="row"><span class="label">Земли</span><span class="value">' + g.location.region + '</span></div>';
+    html += '<div class="row"><span class="label">Локация</span><span class="value">' + g.location.location + '</span></div>';
+    html += '<div class="row"><span class="label">Место</span><span class="value">' + g.location.place + '</span></div>';
+    html += '</div>';
+    
+    // Защита новичка
+    const now = Date.now();
+    if (now < user.protectionExpires) {
+        const left = Math.ceil((user.protectionExpires - now) / 3600000);
+        html += '<div class="modal-section">';
+        html += '<h4>🛡️ ЗАЩИТА НОВИЧКА</h4>';
+        html += '<div class="row"><span class="label">Статус</span><span class="value" style="color:#7ac98a;">Активна (' + left + ' ч)</span></div>';
+        html += '</div>';
+    }
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeCharacter() {
+    document.getElementById('modal-character').classList.add('hide');
+}
+
+function addAttribute(statId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (g.attributePoints <= 0) return;
+    g.attributePoints--;
+    g.stats[statId] = (g.stats[statId] || 1) + 1;
+    saveData();
+    openCharacter(); // обновляем окно
+    updateMenu();
+}
+
+// ============================================================
+// 9. ВЫХОД
+// ============================================================
+
 function handleLogout() {
+    if (isBusy) {
+        setMessage('⏳ Вы заняты. Завершите действие перед выходом.');
+        return;
+    }
     currentUser = null;
     showPage('login');
     document.getElementById('login-name').value = '';
     document.getElementById('login-password').value = '';
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    document.getElementById('busy-status').classList.add('hide');
+    isBusy = false;
 }
 
 // ============================================================
-// 7. ЗАПУСК
+// 10. ЗАПУСК
 // ============================================================
 
 loadData();
