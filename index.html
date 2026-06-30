@@ -533,10 +533,10 @@ function updateActions() {
     // ОЧИЩАЕМ КОНТЕЙНЕР
     container.innerHTML = '';
     
-    const isInside = BUILDINGS.some(b => b.id === place) && place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом';
-    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
+    const isGate = place === 'Ворота';
+    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
     
     let actions = [
         { id: 'inventory', label: '🎒 Инвентарь' },
@@ -561,16 +561,18 @@ function updateActions() {
         ];
     }
     
-    if (isOutside || isTavern) {
+    // Карта — только в таверне или на улице
+    if (isTavern || isOutside) {
         actions.push({ id: 'map', label: '🗺️ Карта' });
     }
     
-    if (isInside && !isTavern && !isGuild) {
-        actions.push({ id: 'exit_building', label: '🚪 Выйти на улицу' });
-    }
-    
+    // Поиск — только на улице
     if (isOutside) {
         actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
+    }
+    
+    // Выход из города — только на воротах
+    if (isGate) {
         actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
     }
     
@@ -662,12 +664,6 @@ function gameAction(action) {
             break;
         case 'refresh':
             location.reload();
-            break;
-        case 'exit_building':
-            g.location.place = 'Ворота';
-            g.location.location = 'Королевская Гавань';
-            setMessage('🚪 Вы вышли на улицу.');
-            updateMenu(); updateStory(); updateActions(); saveData();
             break;
         case 'exit_city':
             g.location.place = 'Дорога';
