@@ -53,7 +53,8 @@
         .modal-box .modal-header .close-btn { background: none; border: none; color: #6a5a48; font-size: 24px; cursor: pointer; padding: 0 8px; }
         .modal-section { margin-bottom: 14px; }
         .modal-section h4 { color: #6a5a48; font-size: 14px; font-weight: 400; letter-spacing: 1px; border-bottom: 1px solid #2a201a; padding-bottom: 4px; margin-bottom: 8px; }
-        .modal-section .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; color: #b8a890; }
+        .modal-section .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #b8a890; border-bottom: 1px solid #1a1410; }
+        .modal-section .row:last-child { border-bottom: none; }
         .modal-section .row .label { color: #7a6a58; }
         .modal-section .row .value { color: #c9b694; }
         .status-busy { color: #c96a5a; font-size: 13px; text-align: center; padding: 6px; background: #1a0e0a; border-radius: 8px; margin-bottom: 8px; }
@@ -135,7 +136,6 @@
 
     <!-- СТРАНИЦА ИГРЫ -->
     <div id="page-game" class="hide">
-        <!-- Онлайн бар -->
         <div class="online-bar" onclick="showOnlineList()">
             <span>👥 <span id="online-global">0</span> игроков</span>
             <span>📍 <span id="online-region">0</span></span>
@@ -145,7 +145,6 @@
 
         <div id="busy-status" class="status-busy hide">⏳ Вы заняты...</div>
 
-        <!-- Меню игрока -->
         <div class="menu-grid" id="menu-grid">
             <div class="row"><span class="label">Имя</span><span class="value" id="g-name">—</span></div>
             <div class="row"><span class="label">Национальность</span><span class="value" id="g-nationality">—</span></div>
@@ -168,7 +167,6 @@
             <div class="row"><span class="label">🛡️ Защита нов.</span><span class="value" id="g-protection">Активна</span></div>
         </div>
 
-        <!-- Игровое поле -->
         <div class="story-box" id="story-box">
             <h4 id="story-title">🏠 ТАВЕРНА</h4>
             <p id="story-text">Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.</p>
@@ -193,6 +191,39 @@
             <button class="close-btn" onclick="closeCharacter()">✕</button>
         </div>
         <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ИНВЕНТАРЯ -->
+<div id="modal-inventory" class="modal-overlay hide" onclick="if(event.target===this) closeInventory()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>🎒 ИНВЕНТАРЬ</h3>
+            <button class="close-btn" onclick="closeInventory()">✕</button>
+        </div>
+        <div id="modal-inventory-content"></div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ТОРГОВЛИ -->
+<div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>🛒 ТОРГОВЛЯ</h3>
+            <button class="close-btn" onclick="closeTrade()">✕</button>
+        </div>
+        <div id="modal-trade-content"></div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО КАРТЫ -->
+<div id="modal-map" class="modal-overlay hide" onclick="if(event.target===this) closeMap()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>🗺️ КОРОЛЕВСКАЯ ГАВАНЬ</h3>
+            <button class="close-btn" onclick="closeMap()">✕</button>
+        </div>
+        <div id="modal-map-content"></div>
     </div>
 </div>
 
@@ -264,9 +295,25 @@ const WEAPON_TYPES = [
 
 const PROFESSIONS = ['Шахтёр', 'Лесоруб', 'Охотник', 'Кузнец'];
 
-// ============================================================
-// СОСТОЯНИЕ
-// ============================================================
+const BUILDINGS = [
+    { id: 'Таверна', label: '🍺 Таверна' },
+    { id: 'Рынок', label: '🛒 Рынок' },
+    { id: 'Кузница', label: '⚒️ Кузница' },
+    { id: 'Оружейная лавка', label: '🗡️ Оружейная лавка' },
+    { id: 'Броневая мастерская', label: '🛡️ Броневая мастерская' },
+    { id: 'Сапожная мастерская', label: '👢 Сапожная мастерская' },
+    { id: 'Конюшня', label: '🐴 Конюшня' },
+    { id: 'Гильдия наёмников', label: '⚔️ Гильдия наёмников' },
+    { id: 'Магистрат', label: '📜 Магистрат' },
+    { id: 'Храм', label: '⛪ Храм' },
+    { id: 'Порт', label: '⛵ Порт' },
+    { id: 'Тюрьма', label: '⛓️ Тюрьма' },
+    { id: 'Арена', label: '🎭 Арена' },
+    { id: 'Орден мейстеров', label: '📚 Орден мейстеров' },
+    { id: 'Квартал бедноты', label: '🏘️ Квартал бедноты' },
+    { id: 'Красный замок', label: '🏰 Красный замок' },
+    { id: 'Ворота', label: '🚪 Ворота' }
+];
 
 let users = {};
 let currentUser = null;
@@ -297,12 +344,10 @@ function hash(str) {
 // ============================================================
 
 function convertCurrency(game) {
-    // МП → СО (56 МП = 1 СО)
     if (game.copper >= 56) {
         game.silver += Math.floor(game.copper / 56);
         game.copper = game.copper % 56;
     }
-    // СО → ЗД (210 СО = 1 ЗД)
     if (game.silver >= 210) {
         game.gold += Math.floor(game.silver / 210);
         game.silver = game.silver % 210;
@@ -330,19 +375,14 @@ function rollQuality(professionLevel = 0) {
     const legendaryBonus = Math.floor(professionLevel / 10) * 0.1;
     const roll = Math.random() * 100;
     let current = 0;
-    // Рваное
     current += Math.max(50 - bonus, 0);
     if (roll < current) return 'Рваное';
-    // Обычное
     current += Math.max(40 - bonus, 0);
     if (roll < current) return 'Обычное';
-    // Качественное
     current += 8 + bonus;
     if (roll < current) return 'Качественное';
-    // Мастерское
     current += 1.9 + bonus;
     if (roll < current) return 'Мастерское';
-    // Легендарное (с бонусом от профессии)
     if (roll < current + 0.1 + legendaryBonus) return 'Легендарное';
     return 'Рваное';
 }
@@ -363,36 +403,10 @@ function showPage(page) {
 
 function setMessage(msg) { document.getElementById('game-message').textContent = msg; }
 
-function updateActions() {
-    const user = users[currentUser];
-    if (!user) return;
-    const place = user.game.location.place;
-    const container = document.getElementById('actions-container');
-    container.innerHTML = '';
-    
-    const actions = [
-        { id: 'eat', label: '🍞 Попросить еды' },
-        { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
-        { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
-        { id: 'search', label: '🔍 Поиск' },
-        { id: 'talk', label: '🗣️ Поговорить с трактирщиком' },
-        { id: 'trade', label: '🛒 Торговля' },
-        { id: 'inventory', label: '🎒 Инвентарь' },
-        { id: 'character', label: '👤 Персонаж' },
-        { id: 'refresh', label: '🔄 Обновить' },
-        { id: 'exit_city', label: '🚪 Выйти из города' }
-    ];
-    
-    actions.forEach(a => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-game';
-        btn.textContent = a.label;
-        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh') {
-            btn.disabled = true;
-        }
-        btn.onclick = function() { gameAction(a.id); };
-        container.appendChild(btn);
-    });
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
 // ============================================================
@@ -466,12 +480,13 @@ function handleLogin() {
     const remember = document.getElementById('remember-me').checked;
     const errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
-    if (!name || !password) { errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
+    if (!name || !password) {
+        errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return;
+    }
     const user = users[name];
     if (!user || user.password !== hash(password)) {
         errEl.textContent = '❌ Неверное имя или пароль'; errEl.classList.remove('hide'); return;
     }
-    // Проверка смерти
     if (user.game.death && user.game.death.isDead) {
         const now = Date.now();
         const elapsed = (now - user.game.death.deathTime) / 1000;
@@ -486,8 +501,10 @@ function handleLogin() {
             saveData();
         }
     }
-    if (remember) localStorage.setItem('got_remember', name);
-    else localStorage.removeItem('got_remember');
+    try {
+        if (remember) localStorage.setItem('got_remember', name);
+        else localStorage.removeItem('got_remember');
+    } catch(e) {}
     currentUser = name;
     enterGame(name);
 }
@@ -559,9 +576,57 @@ function updateStory() {
         'Орден мейстеров': 'Вы в ордене мейстеров. Здесь можно получить знания.',
         'Квартал бедноты': 'Вы в квартале бедноты. Здесь можно найти работу.',
         'Ворота': 'Вы у городских ворот. Здесь можно выйти из города.',
-        'Красный замок': 'Вы у Красного замка. Вход только для дома-владельца.'
+        'Красный замок': 'Вы у Красного замка. Вход только для дома-владельца.',
+        'Дорога': 'Вы за городом. Здесь можно найти дичь и разбойников.'
     };
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в ' + place + '.';
+}
+
+function updateActions() {
+    const user = users[currentUser];
+    if (!user) return;
+    const place = user.game.location.place;
+    const container = document.getElementById('actions-container');
+    container.innerHTML = '';
+    
+    const commonActions = [
+        { id: 'inventory', label: '🎒 Инвентарь' },
+        { id: 'character', label: '👤 Персонаж' },
+        { id: 'map', label: '🗺️ Карта города' },
+        { id: 'refresh', label: '🔄 Обновить' }
+    ];
+    
+    const tavernActions = [
+        { id: 'eat', label: '🍞 Попросить еды' },
+        { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
+        { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
+        { id: 'talk', label: '🗣️ Поговорить с трактирщиком' },
+        { id: 'trade', label: '🛒 Торговля' }
+    ];
+    
+    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
+    const searchAction = isOutside ? [{ id: 'search', label: '🔍 Поиск' }] : [];
+    
+    let actions = [];
+    if (place === 'Таверна') {
+        actions = [...tavernActions, ...commonActions];
+    } else {
+        actions = [...commonActions];
+    }
+    if (isOutside) {
+        actions = [...searchAction, ...actions];
+    }
+    
+    actions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map') {
+            btn.disabled = true;
+        }
+        btn.onclick = function() { gameAction(a.id); };
+        container.appendChild(btn);
+    });
 }
 
 // ============================================================
@@ -569,7 +634,7 @@ function updateStory() {
 // ============================================================
 
 function gameAction(action) {
-    if (isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'search') {
+    if (isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'search') {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
@@ -588,8 +653,7 @@ function gameAction(action) {
             g.food = Math.min(g.food + 20, 100);
             g.lastEat = now;
             setMessage('🍞 Вы поели. Еда +20.');
-            updateMenu();
-            saveData();
+            updateMenu(); saveData();
             break;
         case 'wash':
             startBusy('Моете посуду', 1, function() {
@@ -617,6 +681,10 @@ function gameAction(action) {
             talkToInnkeeper();
             break;
         case 'trade':
+            if (g.location.place !== 'Таверна') {
+                setMessage('❌ Торговля доступна только в таверне.');
+                return;
+            }
             openTrade();
             break;
         case 'inventory':
@@ -628,21 +696,8 @@ function gameAction(action) {
         case 'refresh':
             location.reload();
             break;
-        case 'exit_city':
-            if (g.location.place === 'Ворота') {
-                g.location.place = 'Дорога';
-                g.location.location = 'За городом';
-                setMessage('🚪 Вы вышли из города.');
-                updateMenu(); updateStory(); updateActions(); saveData();
-                startBusy('Выход из города', 20, function() {
-                    setMessage('✅ Вы вышли из города. Теперь вы в полях.');
-                });
-            } else {
-                g.location.place = 'Ворота';
-                g.location.location = 'Королевская Гавань';
-                setMessage('🚪 Вы подошли к городским воротам.');
-                updateMenu(); updateStory(); updateActions(); saveData();
-            }
+        case 'map':
+            openMap();
             break;
     }
 }
@@ -674,13 +729,7 @@ function doSearch() {
     const g = user.game;
     const place = g.location.place;
     
-    // Шанс найти противника зависит от места
-    let chance = 30;
-    if (place === 'Таверна' || place === 'Рынок' || place === 'Квартал бедноты' || place === 'Тюрьма') chance = 30;
-    else if (place === 'Ворота' || place === 'Дорога') chance = 50;
-    else chance = 40;
-    
-    // Бонус от уровня
+    let chance = 50;
     chance += Math.min(g.level * 0.5, 20);
     
     const roll = Math.random() * 100;
@@ -689,42 +738,30 @@ function doSearch() {
         return;
     }
     
-    // Выбор противника
-    let mob = null;
     const mobs = getMobsForLocation(place, g.level);
     if (mobs.length === 0) { setMessage('🔍 Здесь никого нет.'); return; }
-    mob = mobs[Math.floor(Math.random() * mobs.length)];
+    const mob = mobs[Math.floor(Math.random() * mobs.length)];
     startBattle(mob);
 }
 
 function getMobsForLocation(place, playerLevel) {
     const allMobs = [
         { name: 'Крыса', level: 2, hp: 8, damage: 1, defense: 0, xp: 3, type: 'animal' },
-        { name: 'Лиса', level: 4, hp: 15, damage: 3, defense: 0, xp: 5, type: 'animal' },
         { name: 'Бродячая собака', level: 5, hp: 18, damage: 4, defense: 0, xp: 6, type: 'animal' },
+        { name: 'Лиса', level: 4, hp: 15, damage: 3, defense: 0, xp: 5, type: 'animal' },
         { name: 'Нищий бандит', level: 6, hp: 20, damage: 5, defense: 1, xp: 8, type: 'human' },
         { name: 'Ополченец', level: 8, hp: 25, damage: 6, defense: 2, xp: 10, type: 'human' },
-        { name: 'Лесной бандит', level: 12, hp: 35, damage: 8, defense: 3, xp: 15, type: 'human' },
-        { name: 'Наёмник', level: 16, hp: 45, damage: 10, defense: 4, xp: 20, type: 'human' },
-        { name: 'Разбойник', level: 20, hp: 55, damage: 12, defense: 5, xp: 25, type: 'human' },
-        { name: 'Опытный наёмник', level: 25, hp: 70, damage: 15, defense: 7, xp: 30, type: 'human' },
-        { name: 'Гвардеец', level: 30, hp: 85, damage: 18, defense: 9, xp: 35, type: 'human' },
-        { name: 'Ветеран-наёмник', level: 38, hp: 110, damage: 22, defense: 12, xp: 45, type: 'human' }
+        { name: 'Лесной бандит', level: 12, hp: 35, damage: 8, defense: 3, xp: 15, type: 'human' }
     ];
     
-    // Фильтруем по локации
     let filtered = [];
     if (place === 'Таверна' || place === 'Квартал бедноты' || place === 'Тюрьма') {
-        filtered = allMobs.filter(m => m.name === 'Крыса' || m.name === 'Бродячая собака' || m.name === 'Нищий бандит');
-    } else if (place === 'Рынок' || place === 'Кузница') {
         filtered = allMobs.filter(m => m.name === 'Крыса' || m.name === 'Бродячая собака');
-    } else if (place === 'Ворота' || place === 'Дорога') {
-        filtered = allMobs.filter(m => m.type === 'human' || m.name === 'Лиса');
+    } else if (place === 'Ворота' || place === 'Дорога' || place === 'За городом') {
+        filtered = allMobs;
     } else {
-        filtered = allMobs.filter(m => m.type === 'animal' || m.type === 'human');
+        filtered = [];
     }
-    
-    // Фильтруем по уровню (не выше игрока + 10)
     filtered = filtered.filter(m => m.level <= playerLevel + 10);
     return filtered;
 }
@@ -734,24 +771,18 @@ function startBattle(mob) {
     if (!user) return;
     const g = user.game;
     
-    // Блокируем действия
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⚔️ Бой с ' + mob.name + '!';
     updateActions();
     
     let mobHp = mob.hp;
-    const mobMaxHp = mob.hp;
-    let playerHp = 50 + g.level * 2; // Базовое HP
-    const playerMaxHp = playerHp;
-    let turn = g.stats.agility > 5 ? 'player' : 'mob';
+    let playerHp = 50 + g.level * 2;
     
     function battleLoop() {
         if (mobHp <= 0) {
-            // Победа
             const xpGain = mob.xp + Math.floor(Math.random() * 5);
             g.xp += xpGain;
-            // Проверка уровня
             while (g.xp >= g.nextLevelXp) {
                 g.xp -= g.nextLevelXp;
                 g.level++;
@@ -759,7 +790,6 @@ function startBattle(mob) {
                 g.attributePoints++;
                 setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
             }
-            // Лут
             const qualityRoll = rollQuality(g.professions['Охотник']);
             const itemDrop = Math.random() < 0.3;
             setMessage('🏆 Вы победили ' + mob.name + '! +' + xpGain + ' опыта.' + (itemDrop ? ' Выпал предмет!' : ''));
@@ -775,9 +805,7 @@ function startBattle(mob) {
             updateMenu(); updateActions(); saveData();
             return;
         }
-        
         if (playerHp <= 0) {
-            // Смерть
             g.death = { isDead: true, deathTime: Date.now(), cooldown: 600, killedBy: mob.name };
             isBusy = false;
             document.getElementById('busy-status').classList.add('hide');
@@ -785,23 +813,262 @@ function startBattle(mob) {
             updateMenu(); updateActions(); saveData();
             return;
         }
-        
-        // Ход игрока (автоматический для простоты)
         const playerDamage = Math.max(1, g.stats.damage + Math.floor(Math.random() * 3) - mob.defense);
         mobHp -= playerDamage;
         setMessage('⚔️ Вы нанесли ' + playerDamage + ' урона. У ' + mob.name + ' осталось ' + Math.max(0, mobHp) + ' HP.');
-        
-        // Ход моба
         if (mobHp > 0) {
             const mobDamage = Math.max(1, mob.damage + Math.floor(Math.random() * 2) - g.stats.defense);
             playerHp -= mobDamage;
             setMessage('🐺 ' + mob.name + ' нанёс вам ' + mobDamage + ' урона. У вас осталось ' + Math.max(0, playerHp) + ' HP.');
         }
-        
         setTimeout(battleLoop, 1500);
     }
-    
     battleLoop();
+}
+
+// ============================================================
+// КАРТА ГОРОДА
+// ============================================================
+
+function openMap() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-map');
+    const content = document.getElementById('modal-map-content');
+    
+    let html = '<div class="modal-section"><h4>📍 Вы здесь: ' + g.location.place + '</h4></div>';
+    html += '<div class="modal-section">';
+    BUILDINGS.forEach(b => {
+        const isCurrent = b.id === g.location.place;
+        html += '<div class="row" style="padding:6px 0;">';
+        html += '<span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
+            html += '<button class="btn" style="display:inline-block;width:auto;padding:4px 12px;margin:0;font-size:12px;" onclick="goToBuilding(\'' + b.id + '\')">🚶 1 мин</button>';
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '<button class="btn" onclick="closeMap()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeMap() { document.getElementById('modal-map').classList.add('hide'); }
+
+function goToBuilding(building) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (isBusy) { setMessage('⏳ Вы заняты. Подождите.'); return; }
+    setMessage('🚶 Вы идёте в ' + building + '... (1 минута)');
+    closeMap();
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '🚶 Идём в ' + building + '...';
+    updateActions();
+    if (busyTimer) clearTimeout(busyTimer);
+    busyTimer = setTimeout(function() {
+        g.location.place = building;
+        if (building === 'Ворота') {
+            g.location.location = 'За городом';
+            setMessage('🚪 Вы вышли из города.');
+        } else {
+            g.location.location = 'Королевская Гавань';
+            setMessage('✅ Вы прибыли в ' + building + '.');
+        }
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        updateMenu(); updateStory(); updateActions(); saveData();
+    }, 1000);
+}
+
+// ============================================================
+// ТОРГОВЛЯ
+// ============================================================
+
+function openTrade() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    
+    const goods = [
+        { name: '🍞 Хлеб', price: 5, food: 15 },
+        { name: '🥩 Мясо', price: 10, food: 25 },
+        { name: '🍺 Эль', price: 3, thirst: 10 },
+        { name: '🍷 Вино', price: 8, thirst: 20 }
+    ];
+    
+    let html = '';
+    html += '<div class="modal-section"><h4>💰 ДЕНЬГИ</h4>';
+    html += '<div class="row"><span class="label">🪙 Золотые</span><span class="value gold">' + g.gold + '</span></div>';
+    html += '<div class="row"><span class="label">⚪ Серебряные</span><span class="value silver">' + g.silver + '</span></div>';
+    html += '<div class="row"><span class="label">🟤 Медные</span><span class="value copper">' + g.copper + '</span></div></div>';
+    
+    html += '<div class="modal-section"><h4>🛒 КУПИТЬ</h4>';
+    goods.forEach(item => {
+        html += '<div class="row">';
+        html += '<span class="label">' + item.name + '</span>';
+        html += '<span class="value">' + item.price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItem(\'' + item.name + '\',' + item.price + ',\'' + (item.food ? 'food' : 'thirst') + '\',' + (item.food || item.thirst) + ')">Купить</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
+    if (g.inventory.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
+    } else {
+        g.inventory.forEach((item, index) => {
+            const q = QUALITIES[item.quality] || QUALITIES['Обычное'];
+            const price = Math.floor((item.baseDamage || 5) * q.multiplier * 0.5);
+            html += '<div class="row">';
+            html += '<span class="label">' + q.emoji + ' ' + item.name + ' (' + item.quality + ')</span>';
+            html += '<span class="value">' + price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellItem(' + index + ')">Продать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
+
+function buyItem(name, price, type, value) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег для покупки ' + name);
+        return;
+    }
+    if (type === 'food') {
+        g.food = Math.min(g.food + value, 100);
+        setMessage('✅ Вы купили ' + name + '. Еда +' + value);
+    } else if (type === 'thirst') {
+        g.thirst = Math.min(g.thirst + value, 100);
+        setMessage('✅ Вы купили ' + name + '. Жажда +' + value);
+    }
+    convertCurrency(g);
+    saveData(); updateMenu(); openTrade();
+}
+
+function sellItem(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    const q = QUALITIES[item.quality] || QUALITIES['Обычное'];
+    const price = Math.floor((item.baseDamage || 5) * q.multiplier * 0.5);
+    g.inventory.splice(index, 1);
+    g.copper += price;
+    convertCurrency(g);
+    setMessage('💰 Вы продали ' + item.name + ' за ' + price + ' МП.');
+    saveData(); updateMenu(); openTrade();
+}
+
+// ============================================================
+// ИНВЕНТАРЬ
+// ============================================================
+
+function openInventory() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-inventory');
+    const content = document.getElementById('modal-inventory-content');
+    let html = '';
+    if (g.inventory.length === 0) {
+        html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">🎒 Пусто</p>';
+    } else {
+        g.inventory.forEach((item, i) => {
+            const q = QUALITIES[item.quality] || QUALITIES['Обычное'];
+            html += '<div class="row">';
+            html += '<span class="label">' + q.emoji + ' ' + item.name + ' <span style="color:' + q.color + ';">(' + item.quality + ')</span></span>';
+            html += '<span class="value">⚔️ ' + (item.baseDamage * q.multiplier).toFixed(0) + '</span>';
+            html += '</div>';
+        });
+    }
+    const maxSlots = 20 + Math.floor(g.level / 5);
+    html += '<div class="modal-section"><h4>📦 ВСЕГО</h4>';
+    html += '<div class="row"><span class="label">Предметов</span><span class="value">' + g.inventory.length + ' / ' + maxSlots + '</span></div></div>';
+    html += '<button class="btn" onclick="closeInventory()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
+
+// ============================================================
+// ПЕРСОНАЖ
+// ============================================================
+
+function openCharacter() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-character');
+    const content = document.getElementById('modal-content');
+    let html = '';
+    html += '<div class="modal-section"><h4>📋 ОСНОВНОЕ</h4>';
+    html += '<div class="row"><span class="label">Имя</span><span class="value">' + currentUser + '</span></div>';
+    html += '<div class="row"><span class="label">Национальность</span><span class="value">' + user.nationality + '</span></div>';
+    html += '<div class="row"><span class="label">Дом</span><span class="value">' + (g.house || 'Нет') + '</span></div>';
+    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + '</span></div>';
+    html += '<div class="row"><span class="label">Опыт</span><span class="value">' + g.xp + '/' + g.nextLevelXp + '</span></div>';
+    html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div></div>';
+    
+    html += '<div class="modal-section"><h4>⚔️ АТРИБУТЫ</h4>';
+    const statKeys = [
+        { id: 'damage', label: '⚔️ Урон' },
+        { id: 'defense', label: '🛡️ Защита' },
+        { id: 'intelligence', label: '🧠 Интеллект' },
+        { id: 'agility', label: '💨 Ловкость' },
+        { id: 'speed', label: '🏃 Скорость' }
+    ];
+    statKeys.forEach(s => {
+        const val = g.stats[s.id] || 1;
+        html += '<div class="row"><span class="label">' + s.label + '</span><span class="value">' + val;
+        if (g.attributePoints > 0) {
+            html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="addAttribute(\'' + s.id + '\')">+1</button>';
+        }
+        html += '</span></div>';
+    });
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>👷 ПРОФЕССИИ</h4>';
+    PROFESSIONS.forEach(p => {
+        const level = g.professions[p] || 1;
+        const xp = g.professionXp[p] || 0;
+        const nextXp = level * 10;
+        html += '<div class="row"><span class="label">' + p + '</span><span class="value">ур. ' + level + ' (' + xp + '/' + nextXp + ')</span></div>';
+    });
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeCharacter()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeCharacter() { document.getElementById('modal-character').classList.add('hide'); }
+
+function addAttribute(statId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (g.attributePoints <= 0) return;
+    g.attributePoints--;
+    g.stats[statId] = (g.stats[statId] || 1) + 1;
+    saveData();
+    openCharacter();
+    updateMenu();
 }
 
 // ============================================================
@@ -859,138 +1126,6 @@ function talkToInnkeeper() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ
-// ============================================================
-
-function openTrade() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    let msg = '🛒 ТОРГОВЛЯ\n\n';
-    msg += 'КУПИТЬ:\n';
-    msg += '🍞 Хлеб — 5 МП\n';
-    msg += '🥩 Мясо — 10 МП\n';
-    msg += '🍺 Эль — 3 МП\n';
-    msg += '🍷 Вино — 8 МП\n\n';
-    msg += 'ПРОДАТЬ (еда = x1, остальное = x0.5):\n';
-    msg += 'Ваши деньги: 🪙' + g.gold + ' ⚪' + g.silver + ' 🟤' + g.copper;
-    setMessage(msg);
-    
-    // Простая покупка
-    if (confirm('Купить хлеб за 5 МП?')) {
-        if (spendMoney(g, 5)) {
-            g.food = Math.min(g.food + 15, 100);
-            convertCurrency(g);
-            setMessage('✅ Вы купили хлеб. Еда +15.');
-            updateMenu(); saveData();
-        } else {
-            setMessage('❌ Недостаточно денег.');
-        }
-    }
-}
-
-// ============================================================
-// ИНВЕНТАРЬ
-// ============================================================
-
-function openInventory() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    let msg = '🎒 ИНВЕНТАРЬ\n\n';
-    if (g.inventory.length === 0) {
-        msg += 'Пусто.';
-    } else {
-        g.inventory.forEach((item, i) => {
-            const q = QUALITIES[item.quality] || QUALITIES['Обычное'];
-            msg += (i+1) + '. ' + q.emoji + ' ' + item.name + ' (' + item.quality + ')\n';
-            msg += '   Урон: ' + (item.baseDamage * q.multiplier).toFixed(0) + '\n';
-        });
-    }
-    msg += '\nЭкипировка:\n';
-    msg += 'Правая: ' + (g.equipment.rightHand || 'пусто') + '\n';
-    msg += 'Левая: ' + (g.equipment.leftHand || 'пусто') + '\n';
-    msg += 'Броня: ' + (g.equipment.armor || 'нет') + '\n';
-    msg += 'Ботинки: ' + (g.equipment.boots || 'нет') + '\n';
-    msg += 'Лошадь: ' + (g.equipment.horse || 'нет') + '\n';
-    msg += 'Кинжал: ' + (g.equipment.hasDagger ? 'есть' : 'нет');
-    setMessage(msg);
-}
-
-// ============================================================
-// ПЕРСОНАЖ
-// ============================================================
-
-function openCharacter() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    const modal = document.getElementById('modal-character');
-    const content = document.getElementById('modal-content');
-    let html = '';
-    
-    html += '<div class="modal-section"><h4>📋 ОСНОВНОЕ</h4>';
-    html += '<div class="row"><span class="label">Имя</span><span class="value">' + currentUser + '</span></div>';
-    html += '<div class="row"><span class="label">Национальность</span><span class="value">' + user.nationality + '</span></div>';
-    html += '<div class="row"><span class="label">Дом</span><span class="value">' + (g.house || 'Нет') + '</span></div>';
-    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + '</span></div>';
-    html += '<div class="row"><span class="label">Опыт</span><span class="value">' + g.xp + '/' + g.nextLevelXp + '</span></div>';
-    html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div>';
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>⚔️ АТРИБУТЫ</h4>';
-    const statKeys = [
-        { id: 'damage', label: '⚔️ Урон' },
-        { id: 'defense', label: '🛡️ Защита' },
-        { id: 'intelligence', label: '🧠 Интеллект' },
-        { id: 'agility', label: '💨 Ловкость' },
-        { id: 'speed', label: '🏃 Скорость' }
-    ];
-    statKeys.forEach(s => {
-        const val = g.stats[s.id] || 1;
-        html += '<div class="row"><span class="label">' + s.label + '</span><span class="value">' + val;
-        if (g.attributePoints > 0) {
-            html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="addAttribute(\'' + s.id + '\')">+1</button>';
-        }
-        html += '</span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>👷 ПРОФЕССИИ</h4>';
-    PROFESSIONS.forEach(p => {
-        const level = g.professions[p] || 1;
-        const xp = g.professionXp[p] || 0;
-        const nextXp = level * 10;
-        html += '<div class="row"><span class="label">' + p + '</span><span class="value">ур. ' + level + ' (' + xp + '/' + nextXp + ')</span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>📍 МЕСТО</h4>';
-    html += '<div class="row"><span class="label">Регион</span><span class="value">' + g.location.region + '</span></div>';
-    html += '<div class="row"><span class="label">Локация</span><span class="value">' + g.location.location + '</span></div>';
-    html += '<div class="row"><span class="label">Место</span><span class="value">' + g.location.place + '</span></div>';
-    html += '</div>';
-    
-    html += '<div style="margin-top:10px;"><button class="btn" onclick="closeCharacter()">Закрыть</button></div>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeCharacter() { document.getElementById('modal-character').classList.add('hide'); }
-
-function addAttribute(statId) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (g.attributePoints <= 0) return;
-    g.attributePoints--;
-    g.stats[statId] = (g.stats[statId] || 1) + 1;
-    saveData();
-    openCharacter();
-    updateMenu();
-}
-
-// ============================================================
 // ВЫХОД
 // ============================================================
 
@@ -1013,18 +1148,16 @@ function handleLogout() {
 // ЗАПУСК
 // ============================================================
 
-function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
-}
-
 loadData();
-const remembered = localStorage.getItem('got_remember');
-if (remembered && users[remembered]) {
-    currentUser = remembered;
-    enterGame(remembered);
-} else {
+try {
+    const remembered = localStorage.getItem('got_remember');
+    if (remembered && users[remembered]) {
+        currentUser = remembered;
+        enterGame(remembered);
+    } else {
+        showPage('login');
+    }
+} catch(e) {
     showPage('login');
 }
 </script>
