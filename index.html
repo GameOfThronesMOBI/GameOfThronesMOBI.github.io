@@ -401,6 +401,7 @@ function handleRegister() {
         game: {
             gold:0, silver:0, copper:0,
             food:100, thirst:100, fatigue:100,
+            hp:60, maxHp:60,
             level:1, xp:0, nextLevelXp:100,
             attributePoints:0,
             stats: {
@@ -471,6 +472,8 @@ function fixOldAccount(user) {
     if (g.equipment === undefined) {
         g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null };
     }
+    if (g.hp === undefined) g.hp = 60;
+    if (g.maxHp === undefined) g.maxHp = 60;
     return user;
 }
 
@@ -495,6 +498,13 @@ function enterGame(name) {
     }
     user.game.lastActive = now;
     user.game.lastResourceUpdate = now;
+    
+    // Пересчёт HP
+    const g = user.game;
+    const maxHp = 60 + g.level * 10 + (g.stamina.level || 1) * 2;
+    g.maxHp = maxHp;
+    if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
+    
     updateMenu();
     updateStory();
     updateActions();
@@ -515,9 +525,8 @@ function updateMenu() {
     document.getElementById('menu-time').textContent = time.timeStr;
     document.getElementById('menu-period').textContent = time.emoji+' '+time.period;
     document.getElementById('menu-location').textContent = g.location.place;
-    const maxHp = 60 + g.level*10 + (g.stamina.level||1)*2;
-    document.getElementById('menu-hp').textContent = maxHp;
-    document.getElementById('menu-hp-max').textContent = maxHp;
+    document.getElementById('menu-hp').textContent = Math.round(g.hp);
+    document.getElementById('menu-hp-max').textContent = Math.round(g.maxHp);
     document.getElementById('menu-level').textContent = g.level;
     document.getElementById('menu-gold').textContent = g.gold;
     document.getElementById('menu-silver').textContent = g.silver;
@@ -536,13 +545,14 @@ function updateStory() {
         'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
         'Кузница':'Вы в кузнице. Здесь можно создать и улучшить оружие.',
-        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.'
+        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.',
+        'Ворота':'Вы у городских ворот.'
     };
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в '+place+'.';
 }
 
 // ============================================================
-// 5. СИСТЕМА РЕСУРСОВ (ГОЛОД, ЖАЖДА, УСТАЛОСТЬ)
+// 5. СИСТЕМА РЕСУРСОВ
 // ============================================================
 
 let resourceInterval = null;
@@ -588,13 +598,14 @@ function updateActions() {
     const place = user.game.location.place;
     const container = document.getElementById('actions-container');
     container.innerHTML = '';
-    
+
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
+    const isOutsideCity = (place === 'Ворота' || place === 'Дорога' || place === 'За городом' || place === 'Лес' || place === 'Горы');
     const inBattle = battleState && battleState.inProgress;
-    
+
     let actions = [];
-    
+
     if (inBattle) {
         actions = [
             { id: 'battle_attack', label: '⚔️ Атака' },
@@ -609,10 +620,11 @@ function updateActions() {
             { id: 'menu', label: '📋 Меню' },
             { id: 'map', label: '🗺️ Карта' }
         ];
-        
+
         if (isTavern) {
             actions = [
                 { id: 'eat', label: '🍞 Попросить еды' },
+                { id: 'heal', label: '❤️ Лечиться (5 МП → +10 HP)' },
                 { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
                 { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
                 { id: 'rest', label: '🛏️ Отдохнуть' },
@@ -620,18 +632,22 @@ function updateActions() {
                 ...actions
             ];
         }
-        
+
         if (isGuild) {
             actions = [
                 { id: 'guild', label: '🏛️ Гильдия' },
                 ...actions
             ];
         }
-        
-        actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
+
+        // ПОИСК ТОЛЬКО ЗА ГОРОДОМ
+        if (isOutsideCity) {
+            actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
+        }
+
         actions.push({ id: 'refresh', label: '🔄 Обновить' });
     }
-    
+
     actions.forEach(a => {
         const btn = document.createElement('button');
         btn.className = 'btn-game';
@@ -669,6 +685,19 @@ function gameAction(action) {
             if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
             g.food = Math.min(g.food+25, 100);
             setMessage('🍞 Вы поели. Еда +25.');
+            updateMenu(); saveData();
+            break;
+        case 'heal':
+            if (g.hp >= g.maxHp) {
+                setMessage('❤️ Вы здоровы.');
+                return;
+            }
+            if (!spendMoney(g, 5)) {
+                setMessage('❌ Недостаточно денег для лечения (5 МП).');
+                return;
+            }
+            g.hp = Math.min(g.hp + 10, g.maxHp);
+            setMessage('❤️ Вы восстановили 10 HP. Текущее HP: ' + g.hp + '/' + g.maxHp);
             updateMenu(); saveData();
             break;
         case 'wash':
@@ -754,27 +783,31 @@ function startBusy(actionName, minutes, callback) {
 function doSearch() {
     const user = users[currentUser];
     if(!user) return;
-    const place = user.game.location.place;
-    
+    const g = user.game;
+    const place = g.location.place;
+
     let mobs = [
-        { name:'Крыса', hp:8, damage:2, defense:0, xp:3 },
-        { name:'Собака', hp:18, damage:4, defense:1, xp:6 },
-        { name:'Бандит', hp:25, damage:6, defense:2, xp:10 }
+        { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal' },
+        { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal' },
+        { name: 'Лиса', hp: 15, damage: 3, defense: 0, xp: 5, level: 4, type: 'animal' },
+        { name: 'Волк', hp: 25, damage: 6, defense: 2, xp: 10, level: 8, type: 'animal' },
+        { name: 'Бандит', hp: 30, damage: 7, defense: 2, xp: 12, level: 6, type: 'human' },
+        { name: 'Разбойник', hp: 40, damage: 9, defense: 3, xp: 18, level: 10, type: 'human' },
+        { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human' }
     ];
-    
-    if (place === 'Таверна' || place === 'Гильдия торговцев') {
-        mobs = [
-            { name:'Крыса', hp:8, damage:2, defense:0, xp:3 },
-            { name:'Собака', hp:18, damage:4, defense:1, xp:6 }
-        ];
+
+    // Фильтр по локации (в городе только крысы и собаки)
+    if (place === 'Таверна' || place === 'Гильдия торговцев' || place === 'Рынок' || place === 'Кузница') {
+        mobs = mobs.filter(m => m.name === 'Крыса' || m.name === 'Собака');
     }
-    
-    if(Math.random()*100 > 45) {
+
+    if (Math.random() * 100 > 45) {
         setMessage('🔍 Вы никого не нашли. Тишина...');
         return;
     }
-    
-    const mob = mobs[Math.floor(Math.random()*mobs.length)];
+
+    const mob = mobs[Math.floor(Math.random() * mobs.length)];
+    setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
     startBattle(mob);
 }
 
@@ -782,11 +815,13 @@ function startBattle(mob) {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    const maxHp = 60 + g.level*10 + (g.stamina.level||1)*2;
-    
+    const maxHp = 60 + g.level * 10 + (g.stamina.level || 1) * 2;
+    g.maxHp = maxHp;
+    if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
+
     battleState = {
         mob: mob,
-        playerHp: maxHp,
+        playerHp: g.hp,
         mobHp: mob.hp,
         maxPlayerHp: maxHp,
         turn: 'player',
@@ -794,7 +829,7 @@ function startBattle(mob) {
         defending: false,
         log: []
     };
-    
+
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⚔️ Бой с ' + mob.name + '!';
@@ -805,19 +840,19 @@ function startBattle(mob) {
 function renderBattle() {
     if (!battleState || !battleState.inProgress) return;
     const { mob, playerHp, mobHp, maxPlayerHp, turn, log } = battleState;
-    
+
     let msg = '⚔️ БОЙ С ' + mob.name.toUpperCase() + '\n\n';
     msg += '🐺 ' + mob.name + ': HP ' + Math.max(0, mobHp) + '/' + mob.hp + '\n';
     msg += '❤️ Вы: HP ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n\n';
     msg += '🔄 Ход: ' + (turn === 'player' ? 'ВАШ' : mob.name.toUpperCase());
-    
+
     if (log.length > 0) {
         msg += '\n\n📋 Лог боя:\n';
         log.slice(-5).forEach(entry => {
             msg += '• ' + entry + '\n';
         });
     }
-    
+
     setMessage(msg);
     updateActions();
 }
@@ -828,18 +863,18 @@ function battleAction(action) {
         setMessage('⏳ Сейчас ход противника. Подождите.');
         return;
     }
-    
+
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
     const { mob, playerHp, mobHp } = battleState;
-    
+
     let result = '';
     let newMobHp = mobHp;
     let newPlayerHp = playerHp;
     let nextTurn = 'mob';
     let battleOver = false;
-    
+
     switch(action) {
         case 'battle_attack':
             const damage = Math.max(1, g.stats.damage + Math.floor(Math.random() * 4) - mob.defense);
@@ -877,17 +912,17 @@ function battleAction(action) {
             }
             break;
     }
-    
+
     if (!battleOver && action !== 'battle_dodge' && action !== 'battle_flee') {
         battleState.mobHp = newMobHp;
         battleState.playerHp = newPlayerHp;
-        
+
         if (newMobHp <= 0) {
             battleOver = true;
             endBattle(true, 'Победа');
             return;
         }
-        
+
         if (nextTurn === 'mob') {
             battleState.turn = 'mob';
             renderBattle();
@@ -898,7 +933,7 @@ function battleAction(action) {
             return;
         }
     }
-    
+
     if (!battleOver) {
         battleState.turn = nextTurn;
         battleState.mobHp = newMobHp;
@@ -913,7 +948,7 @@ function mobTurn() {
     if(!user) return;
     const g = user.game;
     const { mob, playerHp } = battleState;
-    
+
     let damage = Math.max(1, mob.damage + Math.floor(Math.random() * 3) - g.stats.defense);
     if (battleState.defending) {
         damage = Math.floor(damage / 2);
@@ -922,13 +957,13 @@ function mobTurn() {
     const newPlayerHp = Math.max(0, playerHp - damage);
     battleState.log.push(mob.name + ' нанёс ' + damage + ' урона');
     battleState.playerHp = newPlayerHp;
-    
+
     if (newPlayerHp <= 0) {
         battleState.inProgress = false;
         endBattle(false, 'Смерть');
         return;
     }
-    
+
     battleState.turn = 'player';
     renderBattle();
 }
@@ -939,7 +974,11 @@ function endBattle(won, reason) {
     if(!user) return;
     const g = user.game;
     const { mob } = battleState;
-    
+
+    // Сохраняем HP
+    g.hp = battleState.playerHp;
+    if (g.hp > g.maxHp) g.hp = g.maxHp;
+
     if (won) {
         const xpGain = mob.xp + Math.floor(Math.random() * 5);
         g.xp += xpGain;
@@ -956,10 +995,71 @@ function endBattle(won, reason) {
             g.stamina.level++;
             setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня!');
         }
-        setMessage('🏆 Вы победили ' + mob.name + '! +' + xpGain + ' опыта.');
+
+        // ===== ЛУТ =====
+        // 30% шанс выпадения оружия
+        if (Math.random() < 0.3) {
+            const quality = rollQuality(g.professions['Охотник'], false);
+            const available = WEAPON_TYPES.filter(w => w.level <= g.level + 5);
+            if (available.length > 0) {
+                const w = available[Math.floor(Math.random() * available.length)];
+                g.inventory.push({
+                    name: w.name,
+                    level: w.level,
+                    quality: quality,
+                    baseDamage: w.baseDamage,
+                    type: w.type
+                });
+                setMessage('🏆 Выпал: ' + w.name + ' (' + quality + ')');
+            }
+        }
+
+        // ===== ЛУТ С ЖИВОТНЫХ (ШКУРЫ) =====
+        if (mob.type === 'animal') {
+            const hunterLevel = g.professions['Охотник'] || 1;
+            const bonus = Math.min(hunterLevel * 0.5, 50);
+            const totalChance = Math.min(50 + bonus, 100);
+
+            if (Math.random() * 100 < totalChance) {
+                let quality = 'Рваное';
+                if (mob.level >= 10) quality = 'Обычное';
+                if (mob.level >= 20) quality = 'Хорошее';
+                if (mob.level >= 35) quality = 'Качественное';
+                if (mob.level >= 50) quality = 'Мастерское';
+                if (mob.level >= 75) quality = 'Легендарное';
+
+                g.inventory.push({
+                    name: 'Шкура ' + mob.name,
+                    quality: quality,
+                    type: 'leather',
+                    level: mob.level
+                });
+                setMessage('🧵 Выпала шкура ' + mob.name + ' (' + quality + ')');
+            }
+        }
+
+        // ===== ЛУТ С БАНДИТОВ (ГАРАНТИРОВАННО МП) =====
+        if (mob.type === 'human') {
+            const coins = (mob.level * 2) + Math.floor(Math.random() * (mob.level * 2));
+            g.copper += coins;
+            convertCurrency(g);
+            setMessage('💰 Вы нашли ' + coins + ' МП у ' + mob.name + ' (ур. ' + mob.level + ')');
+        }
+
+        // Прокачка охотника
+        if (mob.type === 'animal') {
+            g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + 2;
+            while (g.professionXp['Охотник'] >= g.professions['Охотник'] * 10) {
+                g.professionXp['Охотник'] -= g.professions['Охотник'] * 10;
+                g.professions['Охотник']++;
+                setMessage('👷 Охотник повышен до ' + g.professions['Охотник'] + ' уровня!');
+            }
+        }
+
     } else {
         if (reason === 'Смерть') {
             setMessage('💀 Вас убил ' + mob.name + '. Вы возродились в таверне.');
+            g.hp = g.maxHp;
             g.location.place = 'Таверна';
             g.location.location = 'Королевская Гавань';
             g.food = 100; g.thirst = 100; g.fatigue = 100;
@@ -967,7 +1067,7 @@ function endBattle(won, reason) {
             setMessage('❌ Бой закончился: ' + reason);
         }
     }
-    
+
     battleState.inProgress = false;
     battleState = null;
     isBusy = false;
@@ -976,7 +1076,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// 9. КАРТА (ДОСТУПНА ВСЕГДА)
+// 9. КАРТА
 // ============================================================
 
 function openMap() {
@@ -984,7 +1084,7 @@ function openMap() {
     if(!user) return;
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    
+
     let html = '<div class="modal-section"><h4>📍 Вы здесь: '+user.game.location.place+'</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
