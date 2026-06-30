@@ -62,8 +62,6 @@
         .online-bar { background:#120e0b; border:1px solid #2a201a; border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; color:#7a6a58; display:flex; justify-content:space-between; flex-wrap:wrap; }
         .online-bar span { color:#c9b694; }
         .online-bar .online-click { cursor:pointer; color:#8a7a5a; }
-        .battle-log { background:#0d0a08; padding:10px; border-radius:8px; margin-top:10px; font-size:13px; color:#b8a890; max-height:150px; overflow-y:auto; }
-        .battle-log .log-entry { padding:2px 0; border-bottom:1px solid #1a1410; }
     </style>
 </head>
 <body>
@@ -300,22 +298,15 @@ let isBusy = false;
 let busyTimer = null;
 let searchCooldown = false;
 let battleState = null;
-
-// Глобальный рынок (аукцион)
 let marketListings = [];
-    // ============================================================
+
+// ============================================================
 // 2. ОСНОВНЫЕ ФУНКЦИИ
 // ============================================================
 
 function loadData() {
-    try {
-        const raw = localStorage.getItem('got_users');
-        if (raw) users = JSON.parse(raw);
-    } catch(e) { users = {}; }
-    try {
-        const rawMarket = localStorage.getItem('got_market');
-        if (rawMarket) marketListings = JSON.parse(rawMarket);
-    } catch(e) { marketListings = []; }
+    try { const raw = localStorage.getItem('got_users'); if (raw) users = JSON.parse(raw); } catch(e) { users = {}; }
+    try { const rawMarket = localStorage.getItem('got_market'); if (rawMarket) marketListings = JSON.parse(rawMarket); } catch(e) { marketListings = []; }
 }
 function saveData() { 
     localStorage.setItem('got_users', JSON.stringify(users));
@@ -455,10 +446,7 @@ function handleLogin() {
         errEl.classList.remove('hide');
         return;
     }
-    
-    // СОХРАНЯЕМ ВХОД
     localStorage.setItem('got_user', name);
-    
     currentUser = name;
     enterGame(name);
 }
@@ -548,8 +536,7 @@ function updateStory() {
         'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
         'Кузница':'Вы в кузнице. Здесь можно создать и улучшить оружие.',
-        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.',
-        'Ворота':'Вы у городских ворот.'
+        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.'
     };
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в '+place+'.';
 }
@@ -604,8 +591,6 @@ function updateActions() {
     
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
-    const isGate = place === 'Ворота';
-    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
     const inBattle = battleState && battleState.inProgress;
     
     let actions = [];
@@ -621,7 +606,8 @@ function updateActions() {
         actions = [
             { id: 'inventory', label: '🎒 Инвентарь' },
             { id: 'character', label: '👤 Персонаж' },
-            { id: 'menu', label: '📋 Меню' }
+            { id: 'menu', label: '📋 Меню' },
+            { id: 'map', label: '🗺️ Карта' }
         ];
         
         if (isTavern) {
@@ -642,18 +628,7 @@ function updateActions() {
             ];
         }
         
-        if (isTavern || isOutside) {
-            actions.push({ id: 'map', label: '🗺️ Карта' });
-        }
-        
-        if (isOutside) {
-            actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
-        }
-        
-        if (isGate) {
-            actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
-        }
-        
+        actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
         actions.push({ id: 'refresh', label: '🔄 Обновить' });
     }
     
@@ -661,7 +636,7 @@ function updateActions() {
         const btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map' && a.id !== 'menu') {
+        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map' && a.id !== 'menu' && !a.id.startsWith('battle_')) {
             btn.disabled = true;
         }
         btn.onclick = function() { gameAction(a.id); };
@@ -747,12 +722,6 @@ function gameAction(action) {
         case 'refresh':
             location.reload();
             break;
-        case 'exit_city':
-            g.location.place = 'Дорога';
-            g.location.location = 'За городом';
-            setMessage('🚪 Вы вышли из города.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-            break;
         case 'battle_attack':
         case 'battle_defend':
         case 'battle_dodge':
@@ -786,19 +755,25 @@ function doSearch() {
     const user = users[currentUser];
     if(!user) return;
     const place = user.game.location.place;
-    if(place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом') {
-        setMessage('🔍 Здесь негде искать.');
-        return;
-    }
-    const mobs = [
+    
+    let mobs = [
         { name:'Крыса', hp:8, damage:2, defense:0, xp:3 },
         { name:'Собака', hp:18, damage:4, defense:1, xp:6 },
         { name:'Бандит', hp:25, damage:6, defense:2, xp:10 }
     ];
+    
+    if (place === 'Таверна' || place === 'Гильдия торговцев') {
+        mobs = [
+            { name:'Крыса', hp:8, damage:2, defense:0, xp:3 },
+            { name:'Собака', hp:18, damage:4, defense:1, xp:6 }
+        ];
+    }
+    
     if(Math.random()*100 > 45) {
         setMessage('🔍 Вы никого не нашли. Тишина...');
         return;
     }
+    
     const mob = mobs[Math.floor(Math.random()*mobs.length)];
     startBattle(mob);
 }
@@ -808,6 +783,7 @@ function startBattle(mob) {
     if(!user) return;
     const g = user.game;
     const maxHp = 60 + g.level*10 + (g.stamina.level||1)*2;
+    
     battleState = {
         mob: mob,
         playerHp: maxHp,
@@ -818,6 +794,7 @@ function startBattle(mob) {
         defending: false,
         log: []
     };
+    
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⚔️ Бой с ' + mob.name + '!';
@@ -828,6 +805,7 @@ function startBattle(mob) {
 function renderBattle() {
     if (!battleState || !battleState.inProgress) return;
     const { mob, playerHp, mobHp, maxPlayerHp, turn, log } = battleState;
+    
     let msg = '⚔️ БОЙ С ' + mob.name.toUpperCase() + '\n\n';
     msg += '🐺 ' + mob.name + ': HP ' + Math.max(0, mobHp) + '/' + mob.hp + '\n';
     msg += '❤️ Вы: HP ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n\n';
@@ -850,10 +828,12 @@ function battleAction(action) {
         setMessage('⏳ Сейчас ход противника. Подождите.');
         return;
     }
+    
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
     const { mob, playerHp, mobHp } = battleState;
+    
     let result = '';
     let newMobHp = mobHp;
     let newPlayerHp = playerHp;
@@ -901,11 +881,13 @@ function battleAction(action) {
     if (!battleOver && action !== 'battle_dodge' && action !== 'battle_flee') {
         battleState.mobHp = newMobHp;
         battleState.playerHp = newPlayerHp;
+        
         if (newMobHp <= 0) {
             battleOver = true;
             endBattle(true, 'Победа');
             return;
         }
+        
         if (nextTurn === 'mob') {
             battleState.turn = 'mob';
             renderBattle();
@@ -994,25 +976,19 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// 9. КАРТА
+// 9. КАРТА (ДОСТУПНА ВСЕГДА)
 // ============================================================
 
 function openMap() {
     const user = users[currentUser];
     if(!user) return;
-    const place = user.game.location.place;
-    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
-    const isTavern = place === 'Таверна';
-    if(!isOutside && !isTavern) {
-        setMessage('❌ Карта доступна только на улице или в таверне.');
-        return;
-    }
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    let html = '<div class="modal-section"><h4>📍 Вы здесь: '+place+'</h4></div>';
+    
+    let html = '<div class="modal-section"><h4>📍 Вы здесь: '+user.game.location.place+'</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
-        const isCurrent = b.id === place;
+        const isCurrent = b.id === user.game.location.place;
         html += '<div class="row" style="padding:6px 0;">';
         html += '<span class="label">'+b.label+(isCurrent?' ⭐':'')+'</span>';
         if(!isCurrent) {
@@ -1040,26 +1016,10 @@ function goToBuilding(building) {
     }
     setMessage('🚶 Вы идёте в '+building+'...');
     closeMap();
-    isBusy = true;
-    document.getElementById('busy-status').classList.remove('hide');
-    document.getElementById('busy-status').textContent = '🚶 Идём в '+building+'...';
-    updateActions();
-    if(busyTimer) clearTimeout(busyTimer);
-    busyTimer = setTimeout(function() {
-        g.location.place = building;
-        if(building === 'Ворота') {
-            g.location.location = 'За городом';
-            setMessage('🚪 Вы вышли из города.');
-        } else {
-            g.location.location = 'Королевская Гавань';
-            setMessage('✅ Вы прибыли в '+building+'.');
-        }
-        isBusy = false;
-        document.getElementById('busy-status').classList.add('hide');
-        busyTimer = null;
-        setMessage('');
-        updateMenu(); updateStory(); updateActions(); saveData();
-    }, 1000);
+    g.location.place = building;
+    g.location.location = 'Королевская Гавань';
+    setMessage('✅ Вы прибыли в '+building+'.');
+    updateMenu(); updateStory(); updateActions(); saveData();
 }
 
 // ============================================================
@@ -1271,29 +1231,20 @@ function closeHouses() { document.getElementById('modal-houses').classList.add('
 function openGuild() {
     const modal = document.getElementById('modal-guild');
     const content = document.getElementById('modal-guild-content');
-    
-    // Проверяем истёкшие лоты
     checkExpiredListings();
-    
     let html = '<div class="modal-section"><h4>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h4>';
-    html += '<p style="color:#6a5a48;">Здесь можно выставить предметы на аукцион.</p>';
     html += '<p style="color:#6a5a48;">Комиссия: 1% от цены. Срок: 7 дней.</p>';
     html += '</div>';
-    
-    // Вкладки
     html += '<div class="modal-section" style="display:flex; gap:6px; flex-wrap:wrap;">';
     html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildListings()">🛒 Все лоты</button>';
     html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildMyListings()">📦 Мои лоты</button>';
     html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildExpired()">⏳ Истёкшие</button>';
     html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildSell()">💰 Выставить</button>';
     html += '</div>';
-    
     html += '<div id="guild-content" class="modal-section"></div>';
     html += '<button class="btn" onclick="closeGuild()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
-    
-    // Показываем все лоты по умолчанию
     showGuildListings();
 }
 
@@ -1304,7 +1255,6 @@ function checkExpiredListings() {
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     marketListings = marketListings.filter(l => {
         if (l.seller === currentUser && (now - l.listedAt) >= sevenDays) {
-            // Возвращаем предмет продавцу
             const user = users[currentUser];
             if (user) {
                 user.game.inventory.push(l.item);
@@ -1434,9 +1384,7 @@ function buyListing(index) {
         setMessage('❌ Недостаточно денег для покупки.');
         return;
     }
-    // Передаём предмет покупателю
     g.inventory.push(listing.item);
-    // Передаём деньги продавцу
     const seller = users[listing.seller];
     if (seller) {
         seller.game.copper += listing.price;
