@@ -1,299 +1,557 @@
-from flask import Flask, request, render_template_string, redirect, session, jsonify
-import json
-import os
-import hashlib
-import secrets
-from datetime import datetime
-
-app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
-
-USERS_FILE = "users.json"
-
-# Загружаем пользователей
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {}
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def save_users(users):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=4, ensure_ascii=False)
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-# Национальности
-NATIONALITIES = [
-    "Северные земли",
-    "Речные земли",
-    "Долина",
-    "Западные земли",
-    "Простор",
-    "Штормовые земли",
-    "Дорн"
-]
-
-# HTML шаблоны (всё в одном файле)
-LOGIN_HTML = """
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Игра Престолов - Вход</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#1a1a1a; font-family:Georgia,serif; display:flex; justify-content:center; align-items:center; height:100vh; }
-.box { background:#2c241a; border:1px solid #5a4a3a; border-radius:16px; padding:40px; width:400px; }
-h1 { color:#d4c5a0; text-align:center; font-weight:normal; }
-h2 { color:#8a7a5a; text-align:center; font-weight:normal; font-size:14px; margin-bottom:20px; }
-label { color:#b8a58e; display:block; margin:15px 0 5px; }
-input { width:100%; padding:12px; background:#1f1812; border:1px solid #5a4a3a; border-radius:8px; color:#e0d5c1; font-size:16px; }
-input:focus { outline:none; border-color:#8a7a5a; }
-.btn { width:100%; padding:14px; border:1px solid #5a4a3a; border-radius:8px; font-size:16px; cursor:pointer; font-family:Georgia,serif; margin-top:15px; }
-.btn-login { background:#3d3226; color:#d4c5a0; }
-.btn-login:hover { background:#5a4a3a; }
-.btn-reg { background:transparent; color:#8a7a5a; border-color:#3d3226; }
-.btn-reg:hover { border-color:#5a4a3a; color:#d4c5a0; }
-.error { background:#3d1a1a; border:1px solid #5a2a2a; color:#d47a7a; padding:12px; border-radius:8px; margin:15px 0; text-align:center; }
-.line { text-align:center; color:#5a4a3a; padding:15px 0; }
-</style>
-</head>
-<body>
-<div class="box">
-<h1>🐺 ИГРА ПРЕСТОЛОВ</h1>
-<h2>MOBI</h2>
-{% if error %}
-<div class="error">{{ error }}</div>
-{% endif %}
-<form method="post" action="/login">
-<label>Имя персонажа:</label>
-<input type="text" name="character_name" required>
-<label>Пароль:</label>
-<input type="password" name="password" required>
-<button type="submit" class="btn btn-login">⚔️ ВОЙТИ</button>
-</form>
-<div class="line">— ИЛИ —</div>
-<a href="/register" class="btn btn-reg" style="text-decoration:none;text-align:center;display:block;">📜 СОЗДАТЬ ПЕРСОНАЖА</a>
-</div>
-</body>
-</html>
-"""
-
-REGISTER_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Игра Престолов - Регистрация</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#1a1a1a; font-family:Georgia,serif; display:flex; justify-content:center; align-items:center; height:100vh; }
-.box { background:#2c241a; border:1px solid #5a4a3a; border-radius:16px; padding:40px; width:400px; }
-h1 { color:#d4c5a0; text-align:center; font-weight:normal; }
-h2 { color:#8a7a5a; text-align:center; font-weight:normal; font-size:14px; margin-bottom:20px; }
-label { color:#b8a58e; display:block; margin:15px 0 5px; }
-input, select { width:100%; padding:12px; background:#1f1812; border:1px solid #5a4a3a; border-radius:8px; color:#e0d5c1; font-size:16px; }
-input:focus, select:focus { outline:none; border-color:#8a7a5a; }
-select option { background:#2c241a; }
-.btn { width:100%; padding:14px; border:1px solid #5a4a3a; border-radius:8px; font-size:16px; cursor:pointer; font-family:Georgia,serif; margin-top:15px; }
-.btn-reg { background:#4a2f22; color:#d4c5a0; }
-.btn-reg:hover { background:#5f3c2b; }
-.btn-back { background:transparent; color:#8a7a5a; border-color:#3d3226; text-decoration:none; text-align:center; display:block; }
-.btn-back:hover { border-color:#5a4a3a; color:#d4c5a0; }
-.error { background:#3d1a1a; border:1px solid #5a2a2a; color:#d47a7a; padding:12px; border-radius:8px; margin:15px 0; text-align:center; }
-.success { background:#1a3d1a; border:1px solid #2a5a2a; color:#7ad47a; padding:20px; border-radius:8px; margin:15px 0; text-align:center; }
-small { color:#6a5a4a; display:block; margin-top:4px; }
-.line { text-align:center; color:#5a4a3a; padding:15px 0; }
-</style>
-</head>
-<body>
-<div class="box">
-<h1>🐺 ИГРА ПРЕСТОЛОВ</h1>
-<h2>MOBI</h2>
-{% if error %}
-<div class="error">{{ error }}</div>
-{% endif %}
-{% if success %}
-<div class="success">
-{{ success }}
-<br><br>
-<a href="/" class="btn btn-reg" style="text-decoration:none;display:inline-block;padding:10px 30px;">🗡️ В ИГРУ</a>
-</div>
-{% else %}
-<form method="post" action="/register">
-<label>Имя персонажа:</label>
-<input type="text" name="character_name" required>
-<small>Минимум 2 символа</small>
-
-<label>Пароль:</label>
-<input type="password" name="password" required>
-<small>Минимум 4 символа</small>
-
-<label>Национальность:</label>
-<select name="nationality" required>
-<option value="">▼ Выберите</option>
-{% for nat in nationalities %}
-<option value="{{ nat }}">{{ nat }}</option>
-{% endfor %}
-</select>
-
-<label>Секретное слово:</label>
-<input type="text" name="secret_word" required>
-
-<button type="submit" class="btn btn-reg">🔥 ЗАРЕГИСТРИРОВАТЬСЯ</button>
-</form>
-<div class="line">—</div>
-<a href="/" class="btn-back">Уже есть персонаж? Войти →</a>
-{% endif %}
-</div>
-</body>
-</html>
-"""
-
-GAME_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Игра Престолов - Игра</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#1a1a1a; font-family:Georgia,serif; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
-.box { background:#2c241a; border:1px solid #5a4a3a; border-radius:16px; padding:40px; width:600px; }
-h1 { color:#d4c5a0; text-align:center; font-weight:normal; }
-h2 { color:#8a7a5a; text-align:center; font-weight:normal; font-size:14px; margin-bottom:20px; }
-.info { background:#1f1812; border:1px solid #3d3226; border-radius:8px; padding:15px; margin:15px 0; }
-.info p { color:#b8a58e; font-size:14px; padding:3px 0; }
-.info strong { color:#d4c5a0; }
-.story { background:#1f1812; border:1px solid #3d3226; border-radius:8px; padding:20px; margin:15px 0; min-height:150px; }
-.story h3 { color:#8a7a5a; font-size:16px; margin-bottom:10px; }
-.story p { color:#c4b5a0; line-height:1.8; font-size:15px; }
-.btn { padding:10px 20px; background:#2c241a; border:1px solid #3d3226; color:#d4c5a0; border-radius:6px; font-family:Georgia,serif; cursor:pointer; margin:5px 5px 5px 0; font-size:14px; }
-.btn:hover { background:#3d3226; border-color:#5a4a3a; }
-.logout { background:#3d2a1a; color:#8a7a5a; border:1px solid #3d3226; text-decoration:none; padding:10px 20px; border-radius:6px; font-size:14px; display:inline-block; margin-top:15px; }
-.logout:hover { border-color:#5a4a3a; color:#d4c5a0; }
-</style>
-</head>
-<body>
-<div class="box">
-<h1>🐺 ИГРА ПРЕСТОЛОВ</h1>
-<h2>MOBI</h2>
-
-<div class="info">
-<p><strong>Имя:</strong> {{ character_name }}</p>
-<p><strong>Национальность:</strong> {{ nationality }}</p>
-<p><strong>Золото:</strong> {{ game_data.gold }} ЗД | {{ game_data.silver }} СО | {{ game_data.copper }} МП</p>
-<p><strong>Сила:</strong> {{ game_data.strength }} | <strong>Хитрость:</strong> {{ game_data.cunning }} | <strong>Защита:</strong> {{ game_data.defense }} | <strong>Дипломатия:</strong> {{ game_data.diplomacy }}</p>
-</div>
-
-<div class="story">
-<h3>🏠 ТАВЕРНА "ПЬЯНЫЙ КАБАН"</h3>
-<p>Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого.</p>
-<p>Трактирщик смотрит на вас с подозрением.</p>
-
-<div style="margin-top:15px;padding-top:15px;border-top:1px solid #3d3226;">
-<p><strong>Что делаете?</strong></p>
-<button class="btn">🍞 Попросить еды</button>
-<button class="btn">🧹 Предложить работу</button>
-<button class="btn">🚪 Выйти на улицу</button>
-<button class="btn">🔍 Осмотреться</button>
-</div>
-</div>
-
-<a href="/logout" class="logout">🚪 Выйти из игры</a>
-</div>
-</body>
-</html>
-"""
-
-@app.route('/')
-def login_page():
-    return render_template_string(LOGIN_HTML)
-
-@app.route('/register')
-def register_page():
-    return render_template_string(REGISTER_HTML, nationalities=NATIONALITIES)
-
-@app.route('/login', methods=['POST'])
-def login():
-    name = request.form.get('character_name')
-    password = request.form.get('password')
-    
-    users = load_users()
-    user = users.get(name)
-    
-    if not user or user['password'] != hash_password(password):
-        return render_template_string(LOGIN_HTML, error='❌ Неверное имя или пароль')
-    
-    session['user'] = name
-    return redirect('/game')
-
-@app.route('/register', methods=['POST'])
-def register():
-    name = request.form.get('character_name')
-    password = request.form.get('password')
-    nationality = request.form.get('nationality')
-    secret = request.form.get('secret_word')
-    
-    errors = []
-    if not all([name, password, nationality, secret]):
-        errors.append('Заполните все поля')
-    if len(name) < 2:
-        errors.append('Имя слишком короткое')
-    if len(password) < 4:
-        errors.append('Пароль слишком короткий')
-    if nationality not in NATIONALITIES:
-        errors.append('Выберите национальность')
-    
-    if errors:
-        return render_template_string(REGISTER_HTML, nationalities=NATIONALITIES, error='❌ ' + ' | '.join(errors))
-    
-    users = load_users()
-    if name in users:
-        return render_template_string(REGISTER_HTML, nationalities=NATIONALITIES, error='❌ Это имя уже занято')
-    
-    users[name] = {
-        'password': hash_password(password),
-        'nationality': nationality,
-        'secret': hash_password(secret),
-        'created_at': datetime.now().isoformat(),
-        'game_data': {
-            'gold': 0,
-            'silver': 0,
-            'copper': 0,
-            'strength': 10,
-            'cunning': 10,
-            'defense': 10,
-            'diplomacy': 10,
-            'location': 'Таверна Пьяный кабан'
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра Престолов: MOBI</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #1a1a1a;
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            background-image: radial-gradient(ellipse at center, #2c241a 0%, #0a0a0a 100%);
         }
+        .box {
+            background: #2c241a;
+            border: 2px solid #5a4a3a;
+            border-radius: 16px;
+            padding: 30px 25px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        h1 {
+            color: #d4c5a0;
+            text-align: center;
+            font-weight: normal;
+            font-size: 22px;
+            letter-spacing: 3px;
+        }
+        h2 {
+            color: #8a7a5a;
+            text-align: center;
+            font-weight: normal;
+            font-size: 14px;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: #d4c5a0;
+            text-align: center;
+            font-weight: normal;
+            font-size: 18px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            color: #b8a58e;
+            font-size: 14px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            background: #1f1812;
+            border: 1px solid #5a4a3a;
+            border-radius: 8px;
+            color: #e0d5c1;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #8a7a5a;
+        }
+        small {
+            display: block;
+            color: #6a5a4a;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #5a4a3a;
+            border-radius: 8px;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .btn-login {
+            background: #3d3226;
+            color: #d4c5a0;
+        }
+        .btn-login:hover { background: #5a4a3a; }
+        .btn-reg {
+            background: #4a2f22;
+            color: #d4c5a0;
+        }
+        .btn-reg:hover { background: #5f3c2b; }
+        .btn-back {
+            background: transparent;
+            color: #8a7a5a;
+            border-color: #3d3226;
+        }
+        .btn-back:hover { border-color: #5a4a3a; color: #d4c5a0; }
+        .btn-action {
+            background: #2c241a;
+            border: 1px solid #3d3226;
+            color: #d4c5a0;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 4px 0;
+            width: 100%;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { background: #3d3226; border-color: #5a4a3a; }
+        .btn-logout {
+            background: #3d2a1a;
+            color: #8a7a5a;
+            border: 1px solid #3d3226;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .btn-logout:hover { border-color: #5a4a3a; color: #d4c5a0; }
+        .error {
+            background: #3d1a1a;
+            border: 1px solid #5a2a2a;
+            color: #d47a7a;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .success {
+            background: #1a3d1a;
+            border: 1px solid #2a5a2a;
+            color: #7ad47a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .divider {
+            text-align: center;
+            color: #5a4a3a;
+            padding: 15px 0;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+        .info {
+            background: #1f1812;
+            border: 1px solid #3d3226;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .info p {
+            color: #b8a58e;
+            font-size: 14px;
+            padding: 3px 0;
+        }
+        .info strong { color: #d4c5a0; }
+        .story {
+            background: #1f1812;
+            border: 1px solid #3d3226;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 150px;
+        }
+        .story h4 {
+            color: #8a7a5a;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .story p {
+            color: #c4b5a0;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        .footer {
+            text-align: center;
+            color: #3d3226;
+            font-size: 12px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #2c241a;
+            letter-spacing: 2px;
+        }
+        .hide { display: none; }
+        .mt-10 { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="box" id="app">
+    <!-- ЗАГОЛОВОК -->
+    <div class="header">
+        <h1>🐺 ИГРА ПРЕСТОЛОВ</h1>
+        <h2>MOBI</h2>
+    </div>
+
+    <!-- ============ СТРАНИЦА ВХОДА ============ -->
+    <div id="page-login">
+        <h3>ВХОД</h3>
+        <div id="login-error" class="error hide"></div>
+        <div class="form-group">
+            <label>Имя персонажа:</label>
+            <input type="text" id="login-name" placeholder="Введите имя">
+        </div>
+        <div class="form-group">
+            <label>Пароль:</label>
+            <input type="password" id="login-password" placeholder="Введите пароль">
+        </div>
+        <button class="btn btn-login" onclick="handleLogin()">⚔️ ВОЙТИ</button>
+        <div class="divider">— ИЛИ —</div>
+        <button class="btn btn-back" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
+    </div>
+
+    <!-- ============ СТРАНИЦА РЕГИСТРАЦИИ ============ -->
+    <div id="page-register" class="hide">
+        <h3>СОЗДАНИЕ ПЕРСОНАЖА</h3>
+        <div id="register-error" class="error hide"></div>
+        <div id="register-success" class="success hide"></div>
+        <div id="register-form">
+            <div class="form-group">
+                <label>Имя персонажа:</label>
+                <input type="text" id="reg-name" placeholder="например: Эддард">
+                <small>Минимум 2 символа</small>
+            </div>
+            <div class="form-group">
+                <label>Пароль:</label>
+                <input type="password" id="reg-password" placeholder="Придумайте пароль">
+                <small>Минимум 4 символа</small>
+            </div>
+            <div class="form-group">
+                <label>Национальность:</label>
+                <select id="reg-nationality">
+                    <option value="">▼ Выберите</option>
+                    <option value="Северные земли">Северные земли</option>
+                    <option value="Речные земли">Речные земли</option>
+                    <option value="Долина">Долина</option>
+                    <option value="Западные земли">Западные земли</option>
+                    <option value="Простор">Простор</option>
+                    <option value="Штормовые земли">Штормовые земли</option>
+                    <option value="Дорн">Дорн</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Секретное слово:</label>
+                <input type="text" id="reg-secret" placeholder="Для восстановления пароля">
+            </div>
+            <button class="btn btn-reg" onclick="handleRegister()">🔥 ЗАРЕГИСТРИРОВАТЬСЯ</button>
+            <div class="divider">—</div>
+            <button class="btn btn-back" onclick="showPage('login')">Уже есть персонаж? Войти →</button>
+        </div>
+    </div>
+
+    <!-- ============ СТРАНИЦА ИГРЫ ============ -->
+    <div id="page-game" class="hide">
+        <div class="info" id="game-info">
+            <p><strong>Имя:</strong> <span id="g-name"></span></p>
+            <p><strong>Национальность:</strong> <span id="g-nationality"></span></p>
+            <p><strong>Золото:</strong> <span id="g-gold">0</span> ЗД | <span id="g-silver">0</span> СО | <span id="g-copper">0</span> МП</p>
+            <p><strong>Сила:</strong> <span id="g-strength">10</span> | <strong>Хитрость:</strong> <span id="g-cunning">10</span> | <strong>Защита:</strong> <span id="g-defense">10</span> | <strong>Дипломатия:</strong> <span id="g-diplomacy">10</span></p>
+        </div>
+        <div class="story">
+            <h4>🏠 ТАВЕРНА "ПЬЯНЫЙ КАБАН"</h4>
+            <p>Вы просыпаетесь в грязной таверне. У вас нет ни монеты, ни оружия, ни друзей. Вы — странник без прошлого.</p>
+            <p>Трактирщик смотрит на вас с подозрением.</p>
+            <div style="margin-top:15px;padding-top:15px;border-top:1px solid #3d3226;">
+                <p><strong>Что делаете?</strong></p>
+                <button class="btn-action" onclick="gameAction('eat')">🍞 Попросить еды</button>
+                <button class="btn-action" onclick="gameAction('work')">🧹 Предложить работу</button>
+                <button class="btn-action" onclick="gameAction('exit')">🚪 Выйти на улицу</button>
+                <button class="btn-action" onclick="gameAction('look')">🔍 Осмотреться</button>
+                <div id="game-message" style="margin-top:10px;color:#8a7a5a;font-style:italic;"></div>
+            </div>
+        </div>
+        <button class="btn btn-back" onclick="handleLogout()" style="margin-top:10px;">🚪 Выйти из игры</button>
+    </div>
+
+    <div class="footer">Зима близко ❄️</div>
+</div>
+
+<script>
+// ============================================================
+// 1. ДАННЫЕ (всё в памяти телефона)
+// ============================================================
+
+// Национальности и их бонусы
+const NATIONALITIES = {
+    'Северные земли': { strength: 10, cunning: 0, defense: 5, diplomacy: 0 },
+    'Речные земли': { strength: 0, cunning: 10, defense: 0, diplomacy: 5 },
+    'Долина': { strength: 0, cunning: 0, defense: 10, diplomacy: 5 },
+    'Западные земли': { strength: 0, cunning: 5, defense: 0, diplomacy: 10 },
+    'Простор': { strength: 0, cunning: 0, defense: 0, diplomacy: 10 },
+    'Штормовые земли': { strength: 10, cunning: 5, defense: 0, diplomacy: 0 },
+    'Дорн': { strength: 0, cunning: 10, defense: 5, diplomacy: 0 }
+};
+
+// Хранилище пользователей
+let users = {};
+
+// Текущий игрок
+let currentUser = null;
+
+// ============================================================
+// 2. ЗАГРУЗКА / СОХРАНЕНИЕ (localStorage)
+// ============================================================
+
+function loadData() {
+    try {
+        const saved = localStorage.getItem('got_users');
+        if (saved) users = JSON.parse(saved);
+    } catch(e) { users = {}; }
+}
+
+function saveData() {
+    localStorage.setItem('got_users', JSON.stringify(users));
+}
+
+// ============================================================
+// 3. УТИЛИТЫ
+// ============================================================
+
+function hash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
     }
-    save_users(users)
-    
-    return render_template_string(REGISTER_HTML, nationalities=NATIONALITIES, 
-                                  success=f'✅ Поздравляем, {name}! Вы — {nationality}')
+    return hash.toString(36);
+}
 
-@app.route('/game')
-def game():
-    if 'user' not in session:
-        return redirect('/')
+function showPage(page) {
+    document.getElementById('page-login').classList.add('hide');
+    document.getElementById('page-register').classList.add('hide');
+    document.getElementById('page-game').classList.add('hide');
+    document.getElementById(page === 'login' ? 'page-login' : page === 'register' ? 'page-register' : 'page-game').classList.remove('hide');
     
-    users = load_users()
-    user = users.get(session['user'])
-    if not user:
-        return redirect('/')
+    // Прячем сообщения
+    document.getElementById('login-error').classList.add('hide');
+    document.getElementById('register-error').classList.add('hide');
+    document.getElementById('register-success').classList.add('hide');
+    document.getElementById('register-form').classList.remove('hide');
+}
+
+// ============================================================
+// 4. РЕГИСТРАЦИЯ
+// ============================================================
+
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const nationality = document.getElementById('reg-nationality').value;
+    const secret = document.getElementById('reg-secret').value.trim();
     
-    return render_template_string(GAME_HTML, 
-                                  character_name=session['user'],
-                                  nationality=user['nationality'],
-                                  game_data=user['game_data'])
+    const errorEl = document.getElementById('register-error');
+    const successEl = document.getElementById('register-success');
+    const formEl = document.getElementById('register-form');
+    
+    errorEl.classList.add('hide');
+    successEl.classList.add('hide');
+    formEl.classList.remove('hide');
+    
+    // Проверки
+    if (!name || !password || !nationality || !secret) {
+        errorEl.textContent = '❌ Заполните все поля';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    if (name.length < 2) {
+        errorEl.textContent = '❌ Имя слишком короткое (минимум 2 символа)';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    if (password.length < 4) {
+        errorEl.textContent = '❌ Пароль слишком короткий (минимум 4 символа)';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    if (!NATIONALITIES[nationality]) {
+        errorEl.textContent = '❌ Выберите национальность';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    
+    // Проверяем имя
+    if (users[name]) {
+        errorEl.textContent = '❌ Это имя уже занято. Выберите другое';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    
+    // Создаём персонажа
+    const bonus = NATIONALITIES[nationality];
+    users[name] = {
+        password: hash(password),
+        nationality: nationality,
+        secret: hash(secret),
+        created: new Date().toISOString(),
+        game: {
+            gold: 0,
+            silver: 0,
+            copper: 0,
+            strength: 10 + (bonus.strength || 0),
+            cunning: 10 + (bonus.cunning || 0),
+            defense: 10 + (bonus.defense || 0),
+            diplomacy: 10 + (bonus.diplomacy || 0),
+            location: 'Таверна Пьяный кабан'
+        }
+    };
+    saveData();
+    
+    // Показываем успех
+    formEl.classList.add('hide');
+    successEl.textContent = `✅ Поздравляем, ${name}! Вы — ${nationality}`;
+    successEl.classList.remove('hide');
+    
+    // Автоматически входим
+    currentUser = name;
+    setTimeout(() => {
+        enterGame(name);
+    }, 1500);
+}
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
+// ============================================================
+// 5. ВХОД
+// ============================================================
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+function handleLogin() {
+    const name = document.getElementById('login-name').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    
+    errorEl.classList.add('hide');
+    
+    if (!name || !password) {
+        errorEl.textContent = '❌ Заполните все поля';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    
+    const user = users[name];
+    if (!user || user.password !== hash(password)) {
+        errorEl.textContent = '❌ Неверное имя или пароль';
+        errorEl.classList.remove('hide');
+        return;
+    }
+    
+    currentUser = name;
+    enterGame(name);
+}
+
+// ============================================================
+// 6. ИГРА
+// ============================================================
+
+function enterGame(name) {
+    const user = users[name];
+    if (!user) return;
+    
+    showPage('game');
+    
+    document.getElementById('g-name').textContent = name;
+    document.getElementById('g-nationality').textContent = user.nationality;
+    document.getElementById('g-gold').textContent = user.game.gold;
+    document.getElementById('g-silver').textContent = user.game.silver;
+    document.getElementById('g-copper').textContent = user.game.copper;
+    document.getElementById('g-strength').textContent = user.game.strength;
+    document.getElementById('g-cunning').textContent = user.game.cunning;
+    document.getElementById('g-defense').textContent = user.game.defense;
+    document.getElementById('g-diplomacy').textContent = user.game.diplomacy;
+    
+    document.getElementById('game-message').textContent = '';
+}
+
+function updateGameUI() {
+    const user = users[currentUser];
+    if (!user) return;
+    document.getElementById('g-gold').textContent = user.game.gold;
+    document.getElementById('g-silver').textContent = user.game.silver;
+    document.getElementById('g-copper').textContent = user.game.copper;
+    document.getElementById('g-strength').textContent = user.game.strength;
+    document.getElementById('g-cunning').textContent = user.game.cunning;
+    document.getElementById('g-defense').textContent = user.game.defense;
+    document.getElementById('g-diplomacy').textContent = user.game.diplomacy;
+    saveData();
+}
+
+function gameAction(action) {
+    const user = users[currentUser];
+    if (!user) return;
+    const msg = document.getElementById('game-message');
+    
+    switch(action) {
+        case 'eat':
+            msg.textContent = '🍞 Трактирщик дал вам хлеба. Вы чуть насытились.';
+            break;
+        case 'work':
+            const earned = 3 + Math.floor(Math.random() * 5);
+            user.game.copper += earned;
+            msg.textContent = `🧹 Вы помыли посуду. Заработали ${earned} МП.`;
+            updateGameUI();
+            break;
+        case 'exit':
+            msg.textContent = '🚪 Вы вышли на улицу. Ветер холодный. Ничего интересного.';
+            break;
+        case 'look':
+            const finds = ['старый нож', 'пустую бутылку', 'медную монету', 'перо ворона'];
+            const find = finds[Math.floor(Math.random() * finds.length)];
+            if (find === 'медную монету') {
+                user.game.copper += 1;
+                msg.textContent = `🔍 Вы нашли ${find}! +1 МП`;
+                updateGameUI();
+            } else {
+                msg.textContent = `🔍 Вы нашли ${find}. Бесполезно.`;
+            }
+            break;
+    }
+}
+
+function handleLogout() {
+    currentUser = null;
+    showPage('login');
+    document.getElementById('login-name').value = '';
+    document.getElementById('login-password').value = '';
+}
+
+// ============================================================
+// 7. ЗАПУСК
+// ============================================================
+
+loadData();
+showPage('login');
+
+// Если есть сохранённая сессия — можно авто-вход
+// Но пока оставим как есть
+</script>
+
+</body>
+</html>
