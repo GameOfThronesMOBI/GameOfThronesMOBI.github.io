@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дом Виноградного Листа — RPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0e14;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #e0d6c0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .menu-container {
+            max-width: 400px;
+            width: 100%;
+            background: #1a1f26;
+            padding: 32px 24px;
+            border-radius: 12px;
+            border: 1px solid #3d4b5a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: #c9b38b;
+            border-bottom: 1px solid #2e3a46;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #8a9baa;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #b8ad9a;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f141a;
+            border: 1px solid #2e3a46;
+            border-radius: 6px;
+            color: #e0d6c0;
+            font-size: 15px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #7a8a5c;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            background: #2e3a46;
+            border: none;
+            border-radius: 6px;
+            color: #e0d6c0;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #3d4b5a;
+        }
+
+        .btn-primary {
+            background: #7a8a5c;
+            color: #0b0e14;
+        }
+
+        .btn-primary:hover {
+            background: #8f9f70;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #6a7b8a;
+            margin-top: 16px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #b8ad9a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="menu-container" id="app">
+    <h1>🍇 Дом Виноградного Листа</h1>
+    <div class="subtitle">Западные земли — браузерная RPG</div>
+
+    <div id="register-form">
+        <div class="form-group">
+            <label>Имя лорда</label>
+            <input type="text" id="player-name" placeholder="Например: Аэрион" maxlength="20">
+        </div>
+        <div class="form-group">
+            <label>Выбери дом</label>
+            <select id="player-house">
+                <option value="Виноградный Лист">🍇 Виноградный Лист</option>
+                <option value="Белая Пантера">🐆 Белая Пантера</option>
+                <option value="Старый Утёс">🏰 Старый Утёс</option>
+                <option value="Вольный Лорд">⚔️ Вольный Лорд</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" id="register-btn">Начать игру</button>
+        <div class="info-text" id="register-status"></div>
+    </div>
+
+    <div id="welcome-message" class="hidden">
+        <p style="font-size: 18px; margin-bottom: 8px;">Добро пожаловать, <strong id="display-name"></strong>!</p>
+        <p style="font-size: 14px; color: #8a9baa;">Твой дом: <span id="display-house"></span></p>
+        <button class="btn" id="reset-btn">Вернуться в меню</button>
+        <div class="info-text" style="margin-top: 16px;">Игра в разработке. Скоро здесь появится мир.</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const registerForm = document.getElementById('register-form');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const registerBtn = document.getElementById('register-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const playerNameInput = document.getElementById('player-name');
+        const playerHouseSelect = document.getElementById('player-house');
+        const displayName = document.getElementById('display-name');
+        const displayHouse = document.getElementById('display-house');
+        const registerStatus = document.getElementById('register-status');
+
+        function loadSavedPlayer() {
+            const saved = localStorage.getItem('tvoi_rpg_player');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.name && data.house) {
+                        showWelcome(data.name, data.house);
+                        return true;
+                    }
+                } catch (_) {}
+            }
+            return false;
+        }
+
+        function showWelcome(name, house) {
+            registerForm.classList.add('hidden');
+            welcomeMessage.classList.remove('hidden');
+            displayName.textContent = name;
+            displayHouse.textContent = house;
+            registerStatus.textContent = '';
+        }
+
+        function showRegister() {
+            welcomeMessage.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        }
+
+        registerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const name = playerNameInput.value.trim();
+            const house = playerHouseSelect.value;
+
+            if (name.length < 2) {
+                registerStatus.textContent = '⚠️ Имя должно быть не короче 2 символов.';
+                return;
+            }
+
+            if (name.length > 20) {
+                registerStatus.textContent = '⚠️ Имя не должно быть длиннее 20 символов.';
+                return;
+            }
+
+            const playerData = {
+                name: name,
+                house: house,
+                registeredAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('tvoi_rpg_player', JSON.stringify(playerData));
+
+            registerStatus.textContent = '✅ Готово!';
+            setTimeout(() => {
+                showWelcome(name, house);
+            }, 300);
+        });
+
+        resetBtn.addEventListener('click', function() {
+            localStorage.removeItem('tvoi_rpg_player');
+            showRegister();
+            playerNameInput.value = '';
+            playerHouseSelect.value = 'Виноградный Лист';
+            registerStatus.textContent = 'Ты вышел из игры.';
+        });
+
+        if (!loadSavedPlayer()) {
+            showRegister();
+        }
+    })();
+</script>
+
+</body>
+  </html>
