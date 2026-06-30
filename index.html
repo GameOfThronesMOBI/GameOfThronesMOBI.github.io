@@ -303,8 +303,7 @@ let battleState = null;
 
 // Глобальный рынок (аукцион)
 let marketListings = [];
-
-// ============================================================
+    // ============================================================
 // 2. ОСНОВНЫЕ ФУНКЦИИ
 // ============================================================
 
@@ -313,8 +312,6 @@ function loadData() {
         const raw = localStorage.getItem('got_users');
         if (raw) users = JSON.parse(raw);
     } catch(e) { users = {}; }
-    
-    // Загружаем рынок
     try {
         const rawMarket = localStorage.getItem('got_market');
         if (rawMarket) marketListings = JSON.parse(rawMarket);
@@ -459,7 +456,7 @@ function handleLogin() {
         return;
     }
     
-    // Сохраняем сессию
+    // СОХРАНЯЕМ ВХОД
     localStorage.setItem('got_user', name);
     
     currentUser = name;
@@ -558,7 +555,7 @@ function updateStory() {
 }
 
 // ============================================================
-// 5. СИСТЕМА РЕСУРСОВ
+// 5. СИСТЕМА РЕСУРСОВ (ГОЛОД, ЖАЖДА, УСТАЛОСТЬ)
 // ============================================================
 
 let resourceInterval = null;
