@@ -188,6 +188,7 @@
 <div id="modal-online" class="modal-overlay hide" onclick="if(event.target===this) closeOnline()"><div class="modal-box"><div class="modal-header"><h3>👥 ОНЛАЙН</h3><button class="close-btn" onclick="closeOnline()">✕</button></div><div id="modal-online-content"></div></div></div>
 <div id="modal-menu" class="modal-overlay hide" onclick="if(event.target===this) closeMenu()"><div class="modal-box"><div class="modal-header"><h3>📋 МЕНЮ</h3><button class="close-btn" onclick="closeMenu()">✕</button></div><div id="modal-menu-content"></div></div></div>
 <div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВЛЯ</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
+<div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) closeGuild()"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="closeGuild()">✕</button></div><div id="modal-guild-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -233,14 +234,7 @@ const HOUSES_DATA = {
         houses: [
             { id: 'stark', name: 'Старки', sigil: '🐺', castle: 'Винтерфелл', liege: 'Король Севера', status: 'Правящий', acres: 1500000 },
             { id: 'bolton', name: 'Болтоны', sigil: '🩸', castle: 'Дредфорт', liege: 'Старки', status: 'Вассал', acres: 450000 },
-            { id: 'karstark', name: 'Карстарки', sigil: '⭐', castle: 'Кархольд', liege: 'Старки', status: 'Вассал', acres: 250000 },
-            { id: 'umber', name: 'Амберы', sigil: '🐻', castle: 'Последний Очаг', liege: 'Старки', status: 'Вассал', acres: 200000 },
-            { id: 'manderly', name: 'Мандерли', sigil: '🐟', castle: 'Белая Гавань', liege: 'Старки', status: 'Вассал', acres: 180000 },
-            { id: 'glover', name: 'Гловеры', sigil: '🐺', castle: 'Глубоководье', liege: 'Старки', status: 'Вассал', acres: 120000 },
-            { id: 'reed', name: 'Риды', sigil: '🐊', castle: 'Серый Водопад', liege: 'Старки', status: 'Вассал', acres: 100000 },
-            { id: 'mormont', name: 'Мормонты', sigil: '🐻', castle: 'Медвежий остров', liege: 'Старки', status: 'Вассал', acres: 80000 },
-            { id: 'tallhart', name: 'Толхарты', sigil: '🌲', castle: 'Торрхен-Сквер', liege: 'Старки', status: 'Вассал', acres: 70000 },
-            { id: 'cerwyn', name: 'Кеды', sigil: '🐺', castle: 'Кедовы земли', liege: 'Старки', status: 'Вассал', acres: 50000 }
+            { id: 'karstark', name: 'Карстарки', sigil: '⭐', castle: 'Кархольд', liege: 'Старки', status: 'Вассал', acres: 250000 }
         ]
     },
     'Западные земли': {
@@ -250,11 +244,7 @@ const HOUSES_DATA = {
         houses: [
             { id: 'lannister', name: 'Ланнистеры', sigil: '🦁', castle: 'Утёс Кастерли', liege: 'Король Запада', status: 'Правящий', acres: 350000 },
             { id: 'marbrand', name: 'Марбранды', sigil: '🔥', castle: 'Золотой Путь', liege: 'Ланнистеры', status: 'Вассал', acres: 90000 },
-            { id: 'lefford', name: 'Леффорды', sigil: '🪙', castle: 'Золотой Зуб', liege: 'Ланнистеры', status: 'Вассал', acres: 80000 },
-            { id: 'brax', name: 'Бракс', sigil: '🌾', castle: 'Железный Шлем', liege: 'Ланнистеры', status: 'Вассал', acres: 70000 },
-            { id: 'lanny', name: 'Ланни', sigil: '🦁', castle: 'Ланниспорт', liege: 'Ланнистеры', status: 'Вассал', acres: 60000 },
-            { id: 'westerling', name: 'Уэстерлинги', sigil: '🌊', castle: 'Уэстерлинг', liege: 'Ланнистеры', status: 'Вассал', acres: 50000 },
-            { id: 'clegane', name: 'Клиганы', sigil: '🐶', castle: 'Каменный мост', liege: 'Ланнистеры', status: 'Вассал', acres: 35000 }
+            { id: 'lefford', name: 'Леффорды', sigil: '🪙', castle: 'Золотой Зуб', liege: 'Ланнистеры', status: 'Вассал', acres: 80000 }
         ]
     },
     'Речные земли': {
@@ -263,11 +253,7 @@ const HOUSES_DATA = {
         totalAcres: 1000000,
         houses: [
             { id: 'tully', name: 'Талли', sigil: '🐟', castle: 'Риверран', liege: 'Король Речных земель', status: 'Правящий', acres: 250000 },
-            { id: 'frey', name: 'Фреи', sigil: '🌉', castle: 'Близнецы', liege: 'Талли', status: 'Вассал', acres: 200000 },
-            { id: 'mallister', name: 'Маллистеры', sigil: '🦅', castle: 'Скалы Сигар', liege: 'Талли', status: 'Вассал', acres: 100000 },
-            { id: 'blackwood', name: 'Блэквуды', sigil: '🌲', castle: 'Чернодревье', liege: 'Талли', status: 'Вассал', acres: 80000 },
-            { id: 'bracken', name: 'Бракены', sigil: '🌿', castle: 'Камень', liege: 'Талли', status: 'Вассал', acres: 70000 },
-            { id: 'piper', name: 'Пайперы', sigil: '🍷', castle: 'Пинкмастен', liege: 'Талли', status: 'Вассал', acres: 60000 }
+            { id: 'frey', name: 'Фреи', sigil: '🌉', castle: 'Близнецы', liege: 'Талли', status: 'Вассал', acres: 200000 }
         ]
     },
     'Простор': {
@@ -276,11 +262,7 @@ const HOUSES_DATA = {
         totalAcres: 1000000,
         houses: [
             { id: 'tyrell', name: 'Тиррелы', sigil: '🌹', castle: 'Хайгарден', liege: 'Король Простора', status: 'Правящий', acres: 300000 },
-            { id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', castle: 'Старомест', liege: 'Тиррелы', status: 'Вассал', acres: 120000 },
-            { id: 'redwyne', name: 'Редвины', sigil: '🍷', castle: 'Арбор', liege: 'Тиррелы', status: 'Вассал', acres: 100000 },
-            { id: 'florent', name: 'Флоренты', sigil: '🌸', castle: 'Брайтвотер', liege: 'Тиррелы', status: 'Вассал', acres: 80000 },
-            { id: 'tarly', name: 'Тареллы', sigil: '🌾', castle: 'Тарелл', liege: 'Тиррелы', status: 'Вассал', acres: 70000 },
-            { id: 'oakheart', name: 'Окхарты', sigil: '🛡️', castle: 'Окхарт', liege: 'Тиррелы', status: 'Вассал', acres: 60000 }
+            { id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', castle: 'Старомест', liege: 'Тиррелы', status: 'Вассал', acres: 120000 }
         ]
     },
     'Долина': {
@@ -289,10 +271,7 @@ const HOUSES_DATA = {
         totalAcres: 1000000,
         houses: [
             { id: 'arryn', name: 'Аррены', sigil: '🦅', castle: 'Орлиное Гнездо', liege: 'Король Долины', status: 'Правящий', acres: 300000 },
-            { id: 'royce', name: 'Ройсы', sigil: '⚔️', castle: 'Красные Врата', liege: 'Аррены', status: 'Вассал', acres: 120000 },
-            { id: 'baelish', name: 'Бейлиши', sigil: '🤵', castle: 'Камни', liege: 'Аррены', status: 'Вассал', acres: 90000 },
-            { id: 'waynwood', name: 'Уэйвуды', sigil: '🌿', castle: 'Уэйвуд', liege: 'Аррены', status: 'Вассал', acres: 80000 },
-            { id: 'hunter', name: 'Хантеры', sigil: '🏹', castle: 'Долгая Луна', liege: 'Аррены', status: 'Вассал', acres: 60000 }
+            { id: 'royce', name: 'Ройсы', sigil: '⚔️', castle: 'Красные Врата', liege: 'Аррены', status: 'Вассал', acres: 120000 }
         ]
     },
     'Штормовые земли': {
@@ -301,10 +280,7 @@ const HOUSES_DATA = {
         totalAcres: 1000000,
         houses: [
             { id: 'baratheon', name: 'Баратеоны', sigil: '🦌', castle: 'Штормовой Предел', liege: 'Король Штормовых земель', status: 'Правящий', acres: 280000 },
-            { id: 'connington', name: 'Коннингтоны', sigil: '🦅', castle: 'Грифонья скала', liege: 'Баратеоны', status: 'Вассал', acres: 100000 },
-            { id: 'dondarrion', name: 'Дондаррионы', sigil: '⚡', castle: 'Тихий лес', liege: 'Баратеоны', status: 'Вассал', acres: 80000 },
-            { id: 'selmy', name: 'Селми', sigil: '🛡️', castle: 'Селми', liege: 'Баратеоны', status: 'Вассал', acres: 70000 },
-            { id: 'caron', name: 'Кароны', sigil: '🌊', castle: 'Карон', liege: 'Баратеоны', status: 'Вассал', acres: 60000 }
+            { id: 'connington', name: 'Коннингтоны', sigil: '🦅', castle: 'Грифонья скала', liege: 'Баратеоны', status: 'Вассал', acres: 100000 }
         ]
     },
     'Дорн': {
@@ -313,10 +289,7 @@ const HOUSES_DATA = {
         totalAcres: 1000000,
         houses: [
             { id: 'martell', name: 'Мартеллы', sigil: '☀️', castle: 'Солнечное Копьё', liege: 'Король Дорна', status: 'Правящий', acres: 260000 },
-            { id: 'yronwood', name: 'Иронвуды', sigil: '🌵', castle: 'Иронвуд', liege: 'Мартеллы', status: 'Вассал', acres: 120000 },
-            { id: 'dayne', name: 'Дейны', sigil: '⚔️', castle: 'Звёздный предел', liege: 'Мартеллы', status: 'Вассал', acres: 100000 },
-            { id: 'blackmont', name: 'Блэкмонты', sigil: '🌙', castle: 'Блэкмонт', liege: 'Мартеллы', status: 'Вассал', acres: 70000 },
-            { id: 'ullers', name: 'Уллеры', sigil: '☠️', castle: 'Уллер', liege: 'Мартеллы', status: 'Вассал', acres: 60000 }
+            { id: 'yronwood', name: 'Иронвуды', sigil: '🌵', castle: 'Иронвуд', liege: 'Мартеллы', status: 'Вассал', acres: 120000 }
         ]
     }
 };
@@ -327,6 +300,8 @@ let isBusy = false;
 let busyTimer = null;
 let searchCooldown = false;
 let battleState = null;
+
+// Глобальный рынок (аукцион)
 let marketListings = [];
 
 // ============================================================
@@ -334,9 +309,21 @@ let marketListings = [];
 // ============================================================
 
 function loadData() {
-    try { const raw = localStorage.getItem('got_users'); if (raw) users = JSON.parse(raw); } catch(e) { users = {}; }
+    try {
+        const raw = localStorage.getItem('got_users');
+        if (raw) users = JSON.parse(raw);
+    } catch(e) { users = {}; }
+    
+    // Загружаем рынок
+    try {
+        const rawMarket = localStorage.getItem('got_market');
+        if (rawMarket) marketListings = JSON.parse(rawMarket);
+    } catch(e) { marketListings = []; }
 }
-function saveData() { localStorage.setItem('got_users', JSON.stringify(users)); }
+function saveData() { 
+    localStorage.setItem('got_users', JSON.stringify(users));
+    localStorage.setItem('got_market', JSON.stringify(marketListings));
+}
 
 function hash(str) {
     let h=0;
@@ -457,15 +444,35 @@ function handleRegister() {
     currentUser = name;
     localStorage.setItem('got_user', name);
     setTimeout(function(){ enterGame(name); }, 1200);
-}// ============================================================
+}
+
+function handleLogin() {
+    const name = document.getElementById('login-name').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('hide');
+    if(!name||!password){ errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
+    const user = users[name];
+    if(!user || user.password !== hash(password)) {
+        errEl.textContent='❌ Неверное имя или пароль';
+        errEl.classList.remove('hide');
+        return;
+    }
+    
+    // Сохраняем сессию
+    localStorage.setItem('got_user', name);
+    
+    currentUser = name;
+    enterGame(name);
+}
+
+// ============================================================
 // 4. ИГРА
 // ============================================================
 
-// Функция для автоматического обновления старых аккаунтов
 function fixOldAccount(user) {
     if (!user.game) return;
     const g = user.game;
-    // Добавляем недостающие поля
     if (g.lastResourceUpdate === undefined) g.lastResourceUpdate = Date.now();
     if (g.stamina === undefined) g.stamina = { level: 1, xp: 0 };
     if (g.professions === undefined) {
@@ -485,8 +492,6 @@ function fixOldAccount(user) {
 function enterGame(name) {
     const user = users[name];
     if(!user) return;
-    
-    // Фикс старых аккаунтов
     fixOldAccount(user);
     
     showPage('game');
@@ -514,8 +519,6 @@ function enterGame(name) {
     document.getElementById('busy-status').classList.add('hide');
     updateOnline();
     saveData();
-    
-    // Запускаем систему голода/жажды/усталости
     startResourceSystem();
 }
 
@@ -555,7 +558,7 @@ function updateStory() {
 }
 
 // ============================================================
-// 5. СИСТЕМА РЕСУРСОВ (ГОЛОД, ЖАЖДА, УСТАЛОСТЬ)
+// 5. СИСТЕМА РЕСУРСОВ
 // ============================================================
 
 let resourceInterval = null;
@@ -567,16 +570,14 @@ function startResourceSystem() {
         if(!user || !user.game.online) return;
         const g = user.game;
         const now = Date.now();
-        const diff = (now - g.lastResourceUpdate) / 60000; // минуты
+        const diff = (now - g.lastResourceUpdate) / 60000;
         if (diff < 1) return;
         
-        // Еда и жажда тратятся каждые 20 минут
         const foodLoss = Math.floor(diff / 20);
         const thirstLoss = Math.floor(diff / 20);
         if (foodLoss > 0) g.food = Math.max(0, g.food - foodLoss);
         if (thirstLoss > 0) g.thirst = Math.max(0, g.thirst - thirstLoss);
         
-        // Усталость тратится каждые 30 минут (только если игрок активен)
         if (!isBusy) {
             const fatigueLoss = Math.floor(diff / 30);
             if (fatigueLoss > 0) g.fatigue = Math.max(0, g.fatigue - fatigueLoss);
@@ -584,14 +585,13 @@ function startResourceSystem() {
         
         g.lastResourceUpdate = now;
         
-        // Проверка на критические значения
         if (g.food < 20) setMessage('⚠️ Вы голодны! Съешьте что-нибудь.');
         if (g.thirst < 20) setMessage('⚠️ Вы хотите пить!');
         if (g.fatigue < 20) setMessage('⚠️ Вы устали! Отдохните.');
         
         updateMenu();
         saveData();
-    }, 30000); // проверка каждые 30 секунд
+    }, 30000);
 }
 
 // ============================================================
@@ -640,7 +640,7 @@ function updateActions() {
         
         if (isGuild) {
             actions = [
-                { id: 'trade', label: '🛒 Торговля' },
+                { id: 'guild', label: '🏛️ Гильдия' },
                 ...actions
             ];
         }
@@ -690,6 +690,9 @@ function gameAction(action) {
         case 'menu':
             openMainMenu();
             break;
+        case 'guild':
+            openGuild();
+            break;
         case 'eat':
             if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
             g.food = Math.min(g.food+25, 100);
@@ -728,9 +731,6 @@ function gameAction(action) {
                 '🍺 Трактирщик: «Будь осторожен за городом.»'
             ];
             setMessage(msgs[Math.floor(Math.random()*msgs.length)]);
-            break;
-        case 'trade':
-            openTrade();
             break;
         case 'search':
             if(searchCooldown){ setMessage('⏳ Подождите 5 секунд.'); return; }
@@ -782,7 +782,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// 8. БОЕВАЯ СИСТЕМА
+// 8. БОЙ
 // ============================================================
 
 function doSearch() {
@@ -836,7 +836,6 @@ function renderBattle() {
     msg += '❤️ Вы: HP ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n\n';
     msg += '🔄 Ход: ' + (turn === 'player' ? 'ВАШ' : mob.name.toUpperCase());
     
-    // Лог боя
     if (log.length > 0) {
         msg += '\n\n📋 Лог боя:\n';
         log.slice(-5).forEach(entry => {
@@ -857,7 +856,7 @@ function battleAction(action) {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    const { mob, playerHp, mobHp, maxPlayerHp } = battleState;
+    const { mob, playerHp, mobHp } = battleState;
     let result = '';
     let newMobHp = mobHp;
     let newPlayerHp = playerHp;
@@ -934,7 +933,7 @@ function mobTurn() {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    const { mob, playerHp, mobHp } = battleState;
+    const { mob, playerHp } = battleState;
     
     let damage = Math.max(1, mob.damage + Math.floor(Math.random() * 3) - g.stats.defense);
     if (battleState.defending) {
@@ -972,7 +971,6 @@ function endBattle(won, reason) {
             g.attributePoints++;
             setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
         }
-        // Прокачка выносливости
         g.stamina.xp = (g.stamina.xp || 0) + 2;
         while(g.stamina.xp >= g.stamina.level * 10) {
             g.stamina.xp -= g.stamina.level * 10;
@@ -1270,91 +1268,204 @@ function showHouseInfo(region, houseId) {
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
-// 13. ТОРГОВЛЯ
+// 13. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
 // ============================================================
 
-const SHOP_ITEMS = [
-    { name: '🍞 Хлеб', price: 5, type: 'food', value: 20 },
-    { name: '🥩 Мясо', price: 10, type: 'food', value: 30 },
-    { name: '🍺 Эль', price: 3, type: 'drink', value: 15 },
-    { name: '🍷 Вино', price: 8, type: 'drink', value: 25 },
-    { name: '🗡️ Деревянный меч', price: 15, type: 'weapon', damage: 4 },
-    { name: '🛡️ Деревянный щит', price: 10, type: 'shield', defense: 2 }
-];
+function openGuild() {
+    const modal = document.getElementById('modal-guild');
+    const content = document.getElementById('modal-guild-content');
+    
+    // Проверяем истёкшие лоты
+    checkExpiredListings();
+    
+    let html = '<div class="modal-section"><h4>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h4>';
+    html += '<p style="color:#6a5a48;">Здесь можно выставить предметы на аукцион.</p>';
+    html += '<p style="color:#6a5a48;">Комиссия: 1% от цены. Срок: 7 дней.</p>';
+    html += '</div>';
+    
+    // Вкладки
+    html += '<div class="modal-section" style="display:flex; gap:6px; flex-wrap:wrap;">';
+    html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildListings()">🛒 Все лоты</button>';
+    html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildMyListings()">📦 Мои лоты</button>';
+    html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildExpired()">⏳ Истёкшие</button>';
+    html += '<button class="btn" style="flex:1; padding:8px; font-size:13px;" onclick="showGuildSell()">💰 Выставить</button>';
+    html += '</div>';
+    
+    html += '<div id="guild-content" class="modal-section"></div>';
+    html += '<button class="btn" onclick="closeGuild()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+    
+    // Показываем все лоты по умолчанию
+    showGuildListings();
+}
 
-function openTrade() {
-    const modal = document.getElementById('modal-trade');
-    const content = document.getElementById('modal-trade-content');
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    
-    let html = '<div class="modal-section"><h4>🛒 ТОРГОВЛЯ</h4>';
-    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
-    SHOP_ITEMS.forEach(item => {
-        html += '<div class="row" style="padding:4px 0;">';
-        html += '<span class="label">'+item.name+'</span>';
-        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItem(\''+item.name+'\','+item.price+')">Купить</button></span>';
-        html += '</div>';
+function closeGuild() { document.getElementById('modal-guild').classList.add('hide'); }
+
+function checkExpiredListings() {
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    marketListings = marketListings.filter(l => {
+        if (l.seller === currentUser && (now - l.listedAt) >= sevenDays) {
+            // Возвращаем предмет продавцу
+            const user = users[currentUser];
+            if (user) {
+                user.game.inventory.push(l.item);
+                saveData();
+                setMessage('⏳ Предмет ' + l.item.name + ' вернулся в инвентарь (не продался за 7 дней).');
+            }
+            return false;
+        }
+        return true;
     });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ (50% цены)</h4>';
-    if(g.inventory.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
+    saveData();
+}
+
+function showGuildListings() {
+    const container = document.getElementById('guild-content');
+    let html = '<h4>🛒 Все лоты</h4>';
+    if (marketListings.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет активных лотов.</p>';
     } else {
-        g.inventory.forEach((item, index) => {
-            const price = Math.floor((item.baseDamage || 5) * 0.5);
+        marketListings.forEach((listing, index) => {
+            const daysLeft = Math.ceil((listing.listedAt + 7*24*60*60*1000 - Date.now()) / (24*60*60*1000));
             html += '<div class="row" style="padding:4px 0;">';
-            html += '<span class="label">'+item.name+'</span>';
-            html += '<span class="value">'+price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellItem('+index+','+price+')">Продать</button></span>';
+            html += '<span class="label">' + listing.item.name + ' (' + (listing.item.quality || 'Обычное') + ')</span>';
+            html += '<span class="value">' + listing.price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyListing(' + index + ')">Купить</button>';
+            html += ' <span style="font-size:11px;color:#6a5a48;">' + daysLeft + ' дн.</span></span>';
             html += '</div>';
         });
     }
-    html += '</div>';
-    
-    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
+    container.innerHTML = html;
 }
 
-function buyItem(name, price) {
+function showGuildMyListings() {
+    const container = document.getElementById('guild-content');
+    const myListings = marketListings.filter(l => l.seller === currentUser);
+    let html = '<h4>📦 Мои лоты</h4>';
+    if (myListings.length === 0) {
+        html += '<p style="color:#6a5a48;">У вас нет активных лотов.</p>';
+    } else {
+        myListings.forEach((listing, index) => {
+            const realIndex = marketListings.indexOf(listing);
+            const daysLeft = Math.ceil((listing.listedAt + 7*24*60*60*1000 - Date.now()) / (24*60*60*1000));
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">' + listing.item.name + ' (' + (listing.item.quality || 'Обычное') + ')</span>';
+            html += '<span class="value">' + listing.price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;background:#3d2a1a;" onclick="removeListing(' + realIndex + ')">Снять</button>';
+            html += ' <span style="font-size:11px;color:#6a5a48;">' + daysLeft + ' дн.</span></span>';
+            html += '</div>';
+        });
+    }
+    container.innerHTML = html;
+}
+
+function showGuildExpired() {
+    const container = document.getElementById('guild-content');
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    const expired = marketListings.filter(l => l.seller === currentUser && (now - l.listedAt) >= sevenDays);
+    let html = '<h4>⏳ Истёкшие лоты</h4>';
+    if (expired.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет истёкших лотов.</p>';
+    } else {
+        expired.forEach((listing) => {
+            const realIndex = marketListings.indexOf(listing);
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">' + listing.item.name + ' (' + (listing.item.quality || 'Обычное') + ')</span>';
+            html += '<span class="value"><button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="removeListing(' + realIndex + ')">✅ Забрать</button></span>';
+            html += '</div>';
+        });
+    }
+    container.innerHTML = html;
+}
+
+function showGuildSell() {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    if(!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег для покупки ' + name);
+    const container = document.getElementById('guild-content');
+    let html = '<h4>💰 Выставить предмет</h4>';
+    if (g.inventory.length === 0) {
+        html += '<p style="color:#6a5a48;">У вас нет предметов для продажи.</p>';
+    } else {
+        html += '<p style="color:#6a5a48;">Выберите предмет:</p>';
+        g.inventory.forEach((item, index) => {
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">' + item.name + ' (' + (item.quality || 'Обычное') + ')</span>';
+            html += '<span class="value"><button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellItemToMarket(' + index + ')">Выставить</button></span>';
+            html += '</div>';
+        });
+    }
+    container.innerHTML = html;
+}
+
+function sellItemToMarket(itemIndex) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if (itemIndex >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[itemIndex];
+    const price = prompt('Введите цену в МП (мин. 1):');
+    const priceNum = parseInt(price);
+    if (isNaN(priceNum) || priceNum < 1) { setMessage('❌ Цена должна быть не менее 1 МП.'); return; }
+    const commission = Math.ceil(priceNum * 0.01);
+    if (!spendMoney(g, commission)) {
+        setMessage('❌ Недостаточно денег для оплаты комиссии (' + commission + ' МП).');
         return;
     }
-    // Добавляем предмет в инвентарь
-    const item = SHOP_ITEMS.find(i => i.name === name);
-    if (item) {
-        g.inventory.push({ name: name, baseDamage: item.damage || 1, type: 'weapon' });
-        setMessage('✅ Вы купили ' + name);
-        convertCurrency(g);
-        updateMenu(); saveData();
-        openTrade();
-    }
+    g.inventory.splice(itemIndex, 1);
+    marketListings.push({
+        item: item,
+        price: priceNum,
+        seller: currentUser,
+        listedAt: Date.now()
+    });
+    setMessage('✅ Вы выставили ' + item.name + ' на продажу за ' + priceNum + ' МП.');
+    saveData();
+    updateMenu();
+    openGuild();
 }
 
-function sellItem(index, price) {
+function buyListing(index) {
+    if (index >= marketListings.length) { setMessage('❌ Лот не найден.'); return; }
+    const listing = marketListings[index];
+    if (listing.seller === currentUser) { setMessage('❌ Вы не можете купить свой лот.'); return; }
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    if(index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    const item = g.inventory[index];
-    g.inventory.splice(index, 1);
-    g.copper += price;
-    convertCurrency(g);
-    setMessage('💰 Вы продали ' + item.name + ' за ' + price + ' МП');
-    updateMenu(); saveData();
-    openTrade();
+    if (!spendMoney(g, listing.price)) {
+        setMessage('❌ Недостаточно денег для покупки.');
+        return;
+    }
+    // Передаём предмет покупателю
+    g.inventory.push(listing.item);
+    // Передаём деньги продавцу
+    const seller = users[listing.seller];
+    if (seller) {
+        seller.game.copper += listing.price;
+        convertCurrency(seller.game);
+        saveData();
+    }
+    marketListings.splice(index, 1);
+    setMessage('✅ Вы купили ' + listing.item.name + ' за ' + listing.price + ' МП.');
+    saveData();
+    updateMenu();
+    openGuild();
 }
 
-function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
+function removeListing(index) {
+    if (index >= marketListings.length) { setMessage('❌ Лот не найден.'); return; }
+    const listing = marketListings[index];
+    if (listing.seller !== currentUser) { setMessage('❌ Это не ваш лот.'); return; }
+    const user = users[currentUser];
+    if(!user) return;
+    user.game.inventory.push(listing.item);
+    marketListings.splice(index, 1);
+    setMessage('✅ Вы сняли лот.');
+    saveData();
+    updateMenu();
+    openGuild();
+}
 
 // ============================================================
 // 14. ОНЛАЙН
