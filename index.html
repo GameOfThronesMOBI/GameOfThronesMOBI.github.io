@@ -72,7 +72,7 @@
         <h2>MOBI</h2>
     </div>
 
-    <!-- ВХОД -->
+    <!-- СТРАНИЦА ВХОДА -->
     <div id="page-login">
         <div class="page-title">ВХОД</div>
         <div id="login-error" class="msg-error hide"></div>
@@ -89,7 +89,7 @@
         <button class="btn btn-secondary" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
     </div>
 
-    <!-- РЕГИСТРАЦИЯ -->
+    <!-- СТРАНИЦА РЕГИСТРАЦИИ -->
     <div id="page-register" class="hide">
         <div class="page-title">СОЗДАНИЕ ПЕРСОНАЖА</div>
         <div id="register-error" class="msg-error hide"></div>
@@ -128,7 +128,7 @@
         </div>
     </div>
 
-    <!-- ИГРА -->
+    <!-- СТРАНИЦА ИГРЫ -->
     <div id="page-game" class="hide">
         <div class="online-bar" onclick="showOnlineList()">
             <span>👥 <span id="online-global">0</span> игроков</span>
@@ -156,7 +156,7 @@
                 <button class="menu-btn" onclick="openCharacter()">👤 Персонаж</button>
                 <button class="menu-btn" onclick="openInventory()">🎒 Инвентарь</button>
                 <button class="menu-btn" onclick="openMap()">🗺️ Карта</button>
-                <button class="menu-btn" onclick="openHouses()">🏘️ Дома</button>
+                <button class="menu-btn" onclick="openMainMenu()">📋 Меню</button>
             </div>
         </div>
 
@@ -184,6 +184,7 @@
 <div id="modal-map" class="modal-overlay hide" onclick="if(event.target===this) closeMap()"><div class="modal-box"><div class="modal-header"><h3>🗺️ КОРОЛЕВСКАЯ ГАВАНЬ</h3><button class="close-btn" onclick="closeMap()">✕</button></div><div id="modal-map-content"></div></div></div>
 <div id="modal-houses" class="modal-overlay hide" onclick="if(event.target===this) closeHouses()"><div class="modal-box"><div class="modal-header"><h3>🏘️ ДОМА</h3><button class="close-btn" onclick="closeHouses()">✕</button></div><div id="modal-houses-content"></div></div></div>
 <div id="modal-online" class="modal-overlay hide" onclick="if(event.target===this) closeOnline()"><div class="modal-box"><div class="modal-header"><h3>👥 ОНЛАЙН</h3><button class="close-btn" onclick="closeOnline()">✕</button></div><div id="modal-online-content"></div></div></div>
+<div id="modal-menu" class="modal-overlay hide" onclick="if(event.target===this) closeMenu()"><div class="modal-box"><div class="modal-header"><h3>📋 МЕНЮ</h3><button class="close-btn" onclick="closeMenu()">✕</button></div><div id="modal-menu-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -223,21 +224,97 @@ const BUILDINGS = [
 
 const HOUSES_DATA = {
     'Север': {
-        region:'Север',
-        capital:'Винтерфелл',
-        totalAcres:4000000,
-        houses:[
-            { id:'stark', name:'Старки', sigil:'🐺', castle:'Винтерфелл', liege:'Король Севера', status:'Правящий', acres:1500000 },
-            { id:'bolton', name:'Болтоны', sigil:'🩸', castle:'Дредфорт', liege:'Старки', status:'Вассал', acres:450000 }
+        region: 'Север',
+        capital: 'Винтерфелл',
+        totalAcres: 4000000,
+        houses: [
+            { id: 'stark', name: 'Старки', sigil: '🐺', castle: 'Винтерфелл', liege: 'Король Севера', status: 'Правящий', acres: 1500000 },
+            { id: 'bolton', name: 'Болтоны', sigil: '🩸', castle: 'Дредфорт', liege: 'Старки', status: 'Вассал', acres: 450000 },
+            { id: 'karstark', name: 'Карстарки', sigil: '⭐', castle: 'Кархольд', liege: 'Старки', status: 'Вассал', acres: 250000 },
+            { id: 'umber', name: 'Амберы', sigil: '🐻', castle: 'Последний Очаг', liege: 'Старки', status: 'Вассал', acres: 200000 },
+            { id: 'manderly', name: 'Мандерли', sigil: '🐟', castle: 'Белая Гавань', liege: 'Старки', status: 'Вассал', acres: 180000 },
+            { id: 'glover', name: 'Гловеры', sigil: '🐺', castle: 'Глубоководье', liege: 'Старки', status: 'Вассал', acres: 120000 },
+            { id: 'reed', name: 'Риды', sigil: '🐊', castle: 'Серый Водопад', liege: 'Старки', status: 'Вассал', acres: 100000 },
+            { id: 'mormont', name: 'Мормонты', sigil: '🐻', castle: 'Медвежий остров', liege: 'Старки', status: 'Вассал', acres: 80000 },
+            { id: 'tallhart', name: 'Толхарты', sigil: '🌲', castle: 'Торрхен-Сквер', liege: 'Старки', status: 'Вассал', acres: 70000 },
+            { id: 'cerwyn', name: 'Кеды', sigil: '🐺', castle: 'Кедовы земли', liege: 'Старки', status: 'Вассал', acres: 50000 },
+            { id: 'flint', name: 'Флинты', sigil: '🪓', castle: 'Флинтовы земли', liege: 'Старки', status: 'Вассал', acres: 40000 }
         ]
     },
     'Западные земли': {
-        region:'Западные земли',
-        capital:'Утёс Кастерли',
-        totalAcres:1000000,
-        houses:[
-            { id:'lannister', name:'Ланнистеры', sigil:'🦁', castle:'Утёс Кастерли', liege:'Король Запада', status:'Правящий', acres:350000 },
-            { id:'marbrand', name:'Марбранды', sigil:'🔥', castle:'Золотой Путь', liege:'Ланнистеры', status:'Вассал', acres:90000 }
+        region: 'Западные земли',
+        capital: 'Утёс Кастерли',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'lannister', name: 'Ланнистеры', sigil: '🦁', castle: 'Утёс Кастерли', liege: 'Король Запада', status: 'Правящий', acres: 350000 },
+            { id: 'marbrand', name: 'Марбранды', sigil: '🔥', castle: 'Золотой Путь', liege: 'Ланнистеры', status: 'Вассал', acres: 90000 },
+            { id: 'lefford', name: 'Леффорды', sigil: '🪙', castle: 'Золотой Зуб', liege: 'Ланнистеры', status: 'Вассал', acres: 80000 },
+            { id: 'brax', name: 'Бракс', sigil: '🌾', castle: 'Железный Шлем', liege: 'Ланнистеры', status: 'Вассал', acres: 70000 },
+            { id: 'lanny', name: 'Ланни', sigil: '🦁', castle: 'Ланниспорт', liege: 'Ланнистеры', status: 'Вассал', acres: 60000 },
+            { id: 'westerling', name: 'Уэстерлинги', sigil: '🌊', castle: 'Уэстерлинг', liege: 'Ланнистеры', status: 'Вассал', acres: 50000 },
+            { id: 'clegane', name: 'Клиганы', sigil: '🐶', castle: 'Каменный мост', liege: 'Ланнистеры', status: 'Вассал', acres: 35000 }
+        ]
+    },
+    'Речные земли': {
+        region: 'Речные земли',
+        capital: 'Риверран',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'tully', name: 'Талли', sigil: '🐟', castle: 'Риверран', liege: 'Король Речных земель', status: 'Правящий', acres: 250000 },
+            { id: 'frey', name: 'Фреи', sigil: '🌉', castle: 'Близнецы', liege: 'Талли', status: 'Вассал', acres: 200000 },
+            { id: 'mallister', name: 'Маллистеры', sigil: '🦅', castle: 'Скалы Сигар', liege: 'Талли', status: 'Вассал', acres: 100000 },
+            { id: 'blackwood', name: 'Блэквуды', sigil: '🌲', castle: 'Чернодревье', liege: 'Талли', status: 'Вассал', acres: 80000 },
+            { id: 'bracken', name: 'Бракены', sigil: '🌿', castle: 'Камень', liege: 'Талли', status: 'Вассал', acres: 70000 },
+            { id: 'piper', name: 'Пайперы', sigil: '🍷', castle: 'Пинкмастен', liege: 'Талли', status: 'Вассал', acres: 60000 }
+        ]
+    },
+    'Простор': {
+        region: 'Простор',
+        capital: 'Хайгарден',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'tyrell', name: 'Тиррелы', sigil: '🌹', castle: 'Хайгарден', liege: 'Король Простора', status: 'Правящий', acres: 300000 },
+            { id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', castle: 'Старомест', liege: 'Тиррелы', status: 'Вассал', acres: 120000 },
+            { id: 'redwyne', name: 'Редвины', sigil: '🍷', castle: 'Арбор', liege: 'Тиррелы', status: 'Вассал', acres: 100000 },
+            { id: 'florent', name: 'Флоренты', sigil: '🌸', castle: 'Брайтвотер', liege: 'Тиррелы', status: 'Вассал', acres: 80000 },
+            { id: 'tarly', name: 'Тареллы', sigil: '🌾', castle: 'Тарелл', liege: 'Тиррелы', status: 'Вассал', acres: 70000 },
+            { id: 'oakheart', name: 'Окхарты', sigil: '🛡️', castle: 'Окхарт', liege: 'Тиррелы', status: 'Вассал', acres: 60000 }
+        ]
+    },
+    'Долина': {
+        region: 'Долина',
+        capital: 'Орлиное Гнездо',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'arryn', name: 'Аррены', sigil: '🦅', castle: 'Орлиное Гнездо', liege: 'Король Долины', status: 'Правящий', acres: 300000 },
+            { id: 'royce', name: 'Ройсы', sigil: '⚔️', castle: 'Красные Врата', liege: 'Аррены', status: 'Вассал', acres: 120000 },
+            { id: 'baelish', name: 'Бейлиши', sigil: '🤵', castle: 'Камни', liege: 'Аррены', status: 'Вассал', acres: 90000 },
+            { id: 'waynwood', name: 'Уэйвуды', sigil: '🌿', castle: 'Уэйвуд', liege: 'Аррены', status: 'Вассал', acres: 80000 },
+            { id: 'hunter', name: 'Хантеры', sigil: '🏹', castle: 'Долгая Луна', liege: 'Аррены', status: 'Вассал', acres: 60000 }
+        ]
+    },
+    'Штормовые земли': {
+        region: 'Штормовые земли',
+        capital: 'Штормовой Предел',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'baratheon', name: 'Баратеоны', sigil: '🦌', castle: 'Штормовой Предел', liege: 'Король Штормовых земель', status: 'Правящий', acres: 280000 },
+            { id: 'connington', name: 'Коннингтоны', sigil: '🦅', castle: 'Грифонья скала', liege: 'Баратеоны', status: 'Вассал', acres: 100000 },
+            { id: 'dondarrion', name: 'Дондаррионы', sigil: '⚡', castle: 'Тихий лес', liege: 'Баратеоны', status: 'Вассал', acres: 80000 },
+            { id: 'selmy', name: 'Селми', sigil: '🛡️', castle: 'Селми', liege: 'Баратеоны', status: 'Вассал', acres: 70000 },
+            { id: 'caron', name: 'Кароны', sigil: '🌊', castle: 'Карон', liege: 'Баратеоны', status: 'Вассал', acres: 60000 }
+        ]
+    },
+    'Дорн': {
+        region: 'Дорн',
+        capital: 'Солнечное Копьё',
+        totalAcres: 1000000,
+        houses: [
+            { id: 'martell', name: 'Мартеллы', sigil: '☀️', castle: 'Солнечное Копьё', liege: 'Король Дорна', status: 'Правящий', acres: 260000 },
+            { id: 'yronwood', name: 'Иронвуды', sigil: '🌵', castle: 'Иронвуд', liege: 'Мартеллы', status: 'Вассал', acres: 120000 },
+            { id: 'dayne', name: 'Дейны', sigil: '⚔️', castle: 'Звёздный предел', liege: 'Мартеллы', status: 'Вассал', acres: 100000 },
+            { id: 'blackmont', name: 'Блэкмонты', sigil: '🌙', castle: 'Блэкмонт', liege: 'Мартеллы', status: 'Вассал', acres: 70000 },
+            { id: 'ullers', name: 'Уллеры', sigil: '☠️', castle: 'Уллер', liege: 'Мартеллы', status: 'Вассал', acres: 60000 }
         ]
     }
 };
@@ -311,11 +388,8 @@ function handleRegister() {
     const okEl = document.getElementById('register-success');
     const formEl = document.getElementById('register-form');
     errEl.classList.add('hide'); okEl.classList.add('hide'); formEl.classList.remove('hide');
-    
     if(!name||!password||!nationality||!secret) {
-        errEl.textContent='❌ Заполните все поля';
-        errEl.classList.remove('hide');
-        return;
+        errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return;
     }
     if(name.length<2){ errEl.textContent='❌ Имя слишком короткое'; errEl.classList.remove('hide'); return; }
     if(password.length<4){ errEl.textContent='❌ Пароль слишком короткий'; errEl.classList.remove('hide'); return; }
@@ -373,15 +447,11 @@ function handleLogin() {
     const password = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
-    
     if(!name||!password){ errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
     const user = users[name];
     if(!user || user.password !== hash(password)) {
-        errEl.textContent='❌ Неверное имя или пароль';
-        errEl.classList.remove('hide');
-        return;
+        errEl.textContent='❌ Неверное имя или пароль'; errEl.classList.remove('hide'); return;
     }
-    
     localStorage.setItem('got_user', name);
     currentUser = name;
     enterGame(name);
@@ -396,7 +466,6 @@ function enterGame(name) {
     if(!user) return;
     showPage('game');
     user.game.online = true;
-    
     const now = Date.now();
     const lastActive = user.game.lastActive || now;
     const diffMinutes = (now - lastActive) / 60000;
@@ -410,7 +479,6 @@ function enterGame(name) {
         }
     }
     user.game.lastActive = now;
-    
     updateMenu();
     updateStory();
     updateActions();
@@ -427,11 +495,9 @@ function updateMenu() {
     if(!user) return;
     const g = user.game;
     const time = getTimeOfDay();
-    
     document.getElementById('menu-time').textContent = time.timeStr;
     document.getElementById('menu-period').textContent = time.emoji+' '+time.period;
     document.getElementById('menu-location').textContent = g.location.place;
-    
     const maxHp = 60 + g.level*10 + (g.stamina.level||1)*2;
     document.getElementById('menu-hp').textContent = maxHp;
     document.getElementById('menu-hp-max').textContent = maxHp;
@@ -449,7 +515,6 @@ function updateStory() {
     if(!user) return;
     const place = user.game.location.place;
     document.getElementById('story-title').textContent = '📍 '+place;
-    
     const texts = {
         'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
@@ -465,69 +530,61 @@ function updateActions() {
     if(!user) return;
     const place = user.game.location.place;
     const container = document.getElementById('actions-container');
+    
+    // ГАРАНТИРОВАННО ОЧИЩАЕМ
     container.innerHTML = '';
     
-    // Определяем тип локации
-    const isInside = BUILDINGS.some(b => b.id === place) && place!=='Ворота' && place!=='Дорога' && place!=='За городом';
-    const isOutside = (place==='Ворота' || place==='Дорога' || place==='За городом');
-    const isTavern = place==='Таверна';
-    const isGuild = place==='Гильдия торговцев';
+    const isInside = BUILDINGS.some(b => b.id === place) && place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом';
+    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
+    const isTavern = place === 'Таверна';
+    const isGuild = place === 'Гильдия торговцев';
     
-    // Общие кнопки
-    const common = [
-        { id:'inventory', label:'🎒 Инвентарь' },
-        { id:'character', label:'👤 Персонаж' },
-        { id:'houses', label:'🏘️ Дома' }
+    let actions = [
+        { id: 'inventory', label: '🎒 Инвентарь' },
+        { id: 'character', label: '👤 Персонаж' },
+        { id: 'menu', label: '📋 Меню' }
     ];
     
-    let actions = [...common];
-    
-    // Кнопки таверны
-    if(isTavern) {
+    if (isTavern) {
         actions = [
-            { id:'eat', label:'🍞 Попросить еды' },
-            { id:'wash', label:'🧹 Помыть посуду (1 мин → 1 МП)' },
-            { id:'sweep', label:'🧹 Подмести пол (5 мин → 5 МП)' },
-            { id:'talk', label:'🗣️ Поговорить с трактирщиком' },
+            { id: 'eat', label: '🍞 Попросить еды' },
+            { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
+            { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
+            { id: 'talk', label: '🗣️ Поговорить с трактирщиком' },
             ...actions
         ];
     }
     
-    // Кнопки гильдии
-    if(isGuild) {
+    if (isGuild) {
         actions = [
-            { id:'trade', label:'🛒 Торговля' },
+            { id: 'trade', label: '🛒 Торговля' },
             ...actions
         ];
     }
     
-    // Карта только на улице или в таверне
-    if(isOutside || isTavern) {
-        actions.push({ id:'map', label:'🗺️ Карта' });
+    if (isOutside || isTavern) {
+        actions.push({ id: 'map', label: '🗺️ Карта' });
     }
     
-    // Выйти на улицу только внутри зданий (кроме таверны)
-    if(isInside && !isTavern && !isGuild) {
-        actions.push({ id:'exit_building', label:'🚪 Выйти на улицу' });
+    if (isInside && !isTavern && !isGuild) {
+        actions.push({ id: 'exit_building', label: '🚪 Выйти на улицу' });
     }
     
-    // Поиск и выход из города только на улице
-    if(isOutside) {
-        actions = [{ id:'search', label:'🔍 Поиск' }, ...actions];
-        actions.push({ id:'exit_city', label:'🚪 Выйти из города' });
+    if (isOutside) {
+        actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
+        actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
     }
     
-    actions.push({ id:'refresh', label:'🔄 Обновить' });
+    actions.push({ id: 'refresh', label: '🔄 Обновить' });
     
-    // Рендерим кнопки
     actions.forEach(a => {
         const btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        if(isBusy && a.id!=='character' && a.id!=='inventory' && a.id!=='refresh' && a.id!=='map' && a.id!=='houses') {
+        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map' && a.id !== 'menu') {
             btn.disabled = true;
         }
-        btn.onclick = function(){ gameAction(a.id); };
+        btn.onclick = function() { gameAction(a.id); };
         container.appendChild(btn);
     });
 }
@@ -538,19 +595,17 @@ function updateActions() {
 
 function gameAction(action) {
     setMessage('');
-    
-    if(isBusy && action!=='character' && action!=='inventory' && action!=='refresh' && action!=='map' && action!=='houses') {
+    if(isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'menu') {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
-    
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
     
     switch(action) {
-        case 'houses':
-            openHouses();
+        case 'menu':
+            openMainMenu();
             break;
         case 'eat':
             const now = Date.now();
@@ -562,16 +617,14 @@ function gameAction(action) {
             g.food = Math.min(g.food+20, 100);
             g.lastEat = now;
             setMessage('🍞 Вы поели. Еда +20.');
-            updateMenu();
-            saveData();
+            updateMenu(); saveData();
             break;
         case 'wash':
             startBusy('Моете посуду', 1, function() {
                 g.copper += 1;
                 convertCurrency(g);
                 setMessage('🧹 Вы помыли посуду. +1 МП.');
-                updateMenu();
-                saveData();
+                updateMenu(); saveData();
             });
             break;
         case 'sweep':
@@ -579,8 +632,7 @@ function gameAction(action) {
                 g.copper += 5;
                 convertCurrency(g);
                 setMessage('🧹 Вы подмели пол. +5 МП.');
-                updateMenu();
-                saveData();
+                updateMenu(); saveData();
             });
             break;
         case 'search':
@@ -616,19 +668,13 @@ function gameAction(action) {
             g.location.place = 'Ворота';
             g.location.location = 'Королевская Гавань';
             setMessage('🚪 Вы вышли на улицу.');
-            updateMenu();
-            updateStory();
-            updateActions();
-            saveData();
+            updateMenu(); updateStory(); updateActions(); saveData();
             break;
         case 'exit_city':
             g.location.place = 'Дорога';
             g.location.location = 'За городом';
             setMessage('🚪 Вы вышли из города.');
-            updateMenu();
-            updateStory();
-            updateActions();
-            saveData();
+            updateMenu(); updateStory(); updateActions(); saveData();
             break;
     }
 }
@@ -639,7 +685,6 @@ function startBusy(actionName, minutes, callback) {
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⏳ '+actionName+'... ('+minutes+' мин)';
     updateActions();
-    
     if(busyTimer) clearTimeout(busyTimer);
     busyTimer = setTimeout(function() {
         isBusy = false;
@@ -658,32 +703,24 @@ function doSearch() {
     const user = users[currentUser];
     if(!user) return;
     const place = user.game.location.place;
-    
     if(place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом') {
         setMessage('🔍 Здесь негде искать.');
         return;
     }
-    
     const mobs = [
         { name:'Крыса', hp:8, damage:1, defense:0, xp:3 },
         { name:'Собака', hp:18, damage:4, defense:0, xp:6 },
         { name:'Бандит', hp:25, damage:6, defense:2, xp:10 }
     ];
-    
     if(Math.random()*100 > 40) {
         setMessage('🔍 Вы никого не нашли. Тишина...');
         return;
     }
-    
     const mob = mobs[Math.floor(Math.random()*mobs.length)];
     setMessage('⚔️ Вы встретили '+mob.name+'!');
-    
-    // Симуляция боя
     setTimeout(() => {
         const xpGain = mob.xp + Math.floor(Math.random()*3);
         user.game.xp += xpGain;
-        
-        // Проверка уровня
         while(user.game.xp >= user.game.nextLevelXp) {
             user.game.xp -= user.game.nextLevelXp;
             user.game.level++;
@@ -691,10 +728,8 @@ function doSearch() {
             user.game.attributePoints++;
             setMessage('🎉 Вы достигли '+user.game.level+' уровня!');
         }
-        
         setMessage('🏆 Вы победили '+mob.name+'! +'+xpGain+' опыта.');
-        updateMenu();
-        saveData();
+        updateMenu(); saveData();
     }, 2000);
 }
 
@@ -706,20 +741,16 @@ function openMap() {
     const user = users[currentUser];
     if(!user) return;
     const place = user.game.location.place;
-    const isOutside = (place==='Ворота'||place==='Дорога'||place==='За городом');
-    const isTavern = place==='Таверна';
-    
+    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
+    const isTavern = place === 'Таверна';
     if(!isOutside && !isTavern) {
         setMessage('❌ Карта доступна только на улице или в таверне.');
         return;
     }
-    
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    
     let html = '<div class="modal-section"><h4>📍 Вы здесь: '+place+'</h4></div>';
     html += '<div class="modal-section">';
-    
     BUILDINGS.forEach(b => {
         const isCurrent = b.id === place;
         html += '<div class="row" style="padding:6px 0;">';
@@ -731,7 +762,6 @@ function openMap() {
         }
         html += '</div>';
     });
-    
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
@@ -743,40 +773,32 @@ function goToBuilding(building) {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    
     if(isBusy){ setMessage('⏳ Вы заняты.'); return; }
     if(building === g.location.place) {
         setMessage('📍 Вы уже здесь.');
         return;
     }
-    
     setMessage('🚶 Вы идёте в '+building+'...');
     closeMap();
-    
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '🚶 Идём в '+building+'...';
     updateActions();
-    
     if(busyTimer) clearTimeout(busyTimer);
     busyTimer = setTimeout(function() {
         g.location.place = building;
-        if(building==='Ворота') {
+        if(building === 'Ворота') {
             g.location.location = 'За городом';
             setMessage('🚪 Вы вышли из города.');
         } else {
             g.location.location = 'Королевская Гавань';
             setMessage('✅ Вы прибыли в '+building+'.');
         }
-        
         isBusy = false;
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
         setMessage('');
-        updateMenu();
-        updateStory();
-        updateActions();
-        saveData();
+        updateMenu(); updateStory(); updateActions(); saveData();
     }, 1000);
 }
 
@@ -790,7 +812,6 @@ function openCharacter() {
     const g = user.game;
     const modal = document.getElementById('modal-character');
     const content = document.getElementById('modal-content');
-    
     let html = '';
     html += '<div class="modal-section"><h4>📋 ОСНОВНОЕ</h4>';
     html += '<div class="row"><span class="label">Имя</span><span class="value">'+currentUser+'</span></div>';
@@ -892,7 +913,6 @@ function openInventory() {
     const g = user.game;
     const modal = document.getElementById('modal-inventory');
     const content = document.getElementById('modal-inventory-content');
-    
     let html = '';
     if(g.inventory.length===0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">🎒 Пусто</p>';
@@ -904,7 +924,6 @@ function openInventory() {
             html += '</div>';
         });
     }
-    
     html += '<button class="btn" onclick="closeInventory()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
@@ -913,21 +932,37 @@ function openInventory() {
 function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
 
 // ============================================================
-// 10. ДОМА
+// 10. МЕНЮ
+// ============================================================
+
+function openMainMenu() {
+    const modal = document.getElementById('modal-menu');
+    const content = document.getElementById('modal-menu-content');
+    let html = '<div class="modal-section">';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
+    html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeMenu() {
+    document.getElementById('modal-menu').classList.add('hide');
+}
+
+// ============================================================
+// 11. ДОМА
 // ============================================================
 
 function openHouses() {
     const modal = document.getElementById('modal-houses');
     const content = document.getElementById('modal-houses-content');
-    
     let html = '<div class="modal-section"><h4>🏘️ ВЫБЕРИТЕ РЕГИОН</h4>';
     const regions = Object.keys(HOUSES_DATA);
-    
     regions.forEach(region => {
         const data = HOUSES_DATA[region];
         html += '<button class="btn" style="margin:4px 0;padding:10px;" onclick="showRegionHouses(\''+region+'\')">'+region+' ('+data.totalAcres.toLocaleString()+' акров)</button>';
     });
-    
     html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
     html += '</div>';
     content.innerHTML = html;
@@ -937,19 +972,15 @@ function openHouses() {
 function showRegionHouses(region) {
     const data = HOUSES_DATA[region];
     if(!data) return;
-    
     const modal = document.getElementById('modal-houses');
     const content = document.getElementById('modal-houses-content');
-    
     let html = '<div class="modal-section"><h4>🏘️ '+region.toUpperCase()+'</h4>';
     html += '<p style="color:#6a5a48;margin-bottom:10px;">Столица: '+data.capital+' | Всего акров: '+data.totalAcres.toLocaleString()+'</p>';
-    
     data.houses.forEach(house => {
         html += '<button class="btn" style="margin:4px 0;padding:10px;text-align:left;" onclick="showHouseInfo(\''+region+'\',\''+house.id+'\')">';
         html += house.sigil+' '+house.name+' ('+house.status+') — '+house.acres.toLocaleString()+' акров';
         html += '</button>';
     });
-    
     html += '<button class="btn btn-secondary" onclick="openHouses()" style="margin-top:10px;">⬅️ Назад</button>';
     html += '</div>';
     content.innerHTML = html;
@@ -961,10 +992,8 @@ function showHouseInfo(region, houseId) {
     if(!data) return;
     const house = data.houses.find(h => h.id === houseId);
     if(!house) return;
-    
     const modal = document.getElementById('modal-houses');
     const content = document.getElementById('modal-houses-content');
-    
     let html = '<div class="modal-section"><h4>🏘️ ДОМ '+house.name.toUpperCase()+'</h4>';
     html += '<div class="row"><span class="label">🦁 Герб</span><span class="value">'+house.sigil+'</span></div>';
     html += '<div class="row"><span class="label">🏰 Цитадель</span><span class="value">'+house.castle+'</span></div>';
@@ -980,7 +1009,7 @@ function showHouseInfo(region, houseId) {
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
-// 11. ОНЛАЙН
+// 12. ОНЛАЙН
 // ============================================================
 
 function updateOnline() {
@@ -1001,7 +1030,6 @@ function updateOnline() {
 function showOnlineList() {
     const modal = document.getElementById('modal-online');
     const content = document.getElementById('modal-online-content');
-    
     let html = '<div class="modal-section"><h4>👥 Все игроки</h4>';
     let count = 0;
     for(const name in users) {
@@ -1019,7 +1047,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// 12. ВЫХОД
+// 13. ВЫХОД
 // ============================================================
 
 function handleLogout() {
@@ -1040,7 +1068,7 @@ function handleLogout() {
 }
 
 // ============================================================
-// 13. ЗАПУСК
+// 14. ЗАПУСК
 // ============================================================
 
 loadData();
