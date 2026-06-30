@@ -62,6 +62,8 @@
         .online-bar { background:#120e0b; border:1px solid #2a201a; border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; color:#7a6a58; display:flex; justify-content:space-between; flex-wrap:wrap; }
         .online-bar span { color:#c9b694; }
         .online-bar .online-click { cursor:pointer; color:#8a7a5a; }
+        .battle-log { background:#0d0a08; padding:10px; border-radius:8px; margin-top:10px; font-size:13px; color:#b8a890; max-height:150px; overflow-y:auto; }
+        .battle-log .log-entry { padding:2px 0; border-bottom:1px solid #1a1410; }
     </style>
 </head>
 <body>
@@ -185,6 +187,7 @@
 <div id="modal-houses" class="modal-overlay hide" onclick="if(event.target===this) closeHouses()"><div class="modal-box"><div class="modal-header"><h3>🏘️ ДОМА</h3><button class="close-btn" onclick="closeHouses()">✕</button></div><div id="modal-houses-content"></div></div></div>
 <div id="modal-online" class="modal-overlay hide" onclick="if(event.target===this) closeOnline()"><div class="modal-box"><div class="modal-header"><h3>👥 ОНЛАЙН</h3><button class="close-btn" onclick="closeOnline()">✕</button></div><div id="modal-online-content"></div></div></div>
 <div id="modal-menu" class="modal-overlay hide" onclick="if(event.target===this) closeMenu()"><div class="modal-box"><div class="modal-header"><h3>📋 МЕНЮ</h3><button class="close-btn" onclick="closeMenu()">✕</button></div><div id="modal-menu-content"></div></div></div>
+<div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВЛЯ</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -323,6 +326,8 @@ let currentUser = null;
 let isBusy = false;
 let busyTimer = null;
 let searchCooldown = false;
+let battleState = null;
+let marketListings = [];
 
 // ============================================================
 // 2. ОСНОВНЫЕ ФУНКЦИИ
@@ -372,6 +377,18 @@ function convertCurrency(g) {
     if(g.copper>=56){ g.silver+=Math.floor(g.copper/56); g.copper=g.copper%56; }
     if(g.silver>=210){ g.gold+=Math.floor(g.silver/210); g.silver=g.silver%210; }
     return g;
+}
+
+function spendMoney(g, amount) {
+    if (amount <= 0) return true;
+    let total = g.copper + g.silver*56 + g.gold*210*56;
+    if (total < amount) return false;
+    total -= amount;
+    g.gold = Math.floor(total / (210*56));
+    total %= (210*56);
+    g.silver = Math.floor(total / 56);
+    g.copper = total % 56;
+    return true;
 }
 
 // ============================================================
@@ -429,7 +446,8 @@ function handleRegister() {
             lastEat:0,
             lastActive:now,
             online:true,
-            house:null
+            house:null,
+            lastResourceUpdate: now
         }
     };
     saveData();
@@ -439,30 +457,38 @@ function handleRegister() {
     currentUser = name;
     localStorage.setItem('got_user', name);
     setTimeout(function(){ enterGame(name); }, 1200);
-}
-
-function handleLogin() {
-    const name = document.getElementById('login-name').value.trim();
-    const password = document.getElementById('login-password').value;
-    const errEl = document.getElementById('login-error');
-    errEl.classList.add('hide');
-    if(!name||!password){ errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
-    const user = users[name];
-    if(!user || user.password !== hash(password)) {
-        errEl.textContent='❌ Неверное имя или пароль'; errEl.classList.remove('hide'); return;
-    }
-    localStorage.setItem('got_user', name);
-    currentUser = name;
-    enterGame(name);
-}
-
-// ============================================================
+}// ============================================================
 // 4. ИГРА
 // ============================================================
+
+// Функция для автоматического обновления старых аккаунтов
+function fixOldAccount(user) {
+    if (!user.game) return;
+    const g = user.game;
+    // Добавляем недостающие поля
+    if (g.lastResourceUpdate === undefined) g.lastResourceUpdate = Date.now();
+    if (g.stamina === undefined) g.stamina = { level: 1, xp: 0 };
+    if (g.professions === undefined) {
+        g.professions = { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 };
+        g.professionXp = { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 };
+    }
+    if (g.skills === undefined) {
+        g.skills = {};
+        ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { g.skills[s]={level:1,xp:0}; });
+    }
+    if (g.equipment === undefined) {
+        g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null };
+    }
+    return user;
+}
 
 function enterGame(name) {
     const user = users[name];
     if(!user) return;
+    
+    // Фикс старых аккаунтов
+    fixOldAccount(user);
+    
     showPage('game');
     user.game.online = true;
     const now = Date.now();
@@ -478,6 +504,7 @@ function enterGame(name) {
         }
     }
     user.game.lastActive = now;
+    user.game.lastResourceUpdate = now;
     updateMenu();
     updateStory();
     updateActions();
@@ -487,6 +514,9 @@ function enterGame(name) {
     document.getElementById('busy-status').classList.add('hide');
     updateOnline();
     saveData();
+    
+    // Запускаем систему голода/жажды/усталости
+    startResourceSystem();
 }
 
 function updateMenu() {
@@ -518,65 +548,117 @@ function updateStory() {
         'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
         'Кузница':'Вы в кузнице. Здесь можно создать и улучшить оружие.',
-        'Гильдия торговцев':'Вы в гильдии торговцев.',
+        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.',
         'Ворота':'Вы у городских ворот.'
     };
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в '+place+'.';
 }
+
+// ============================================================
+// 5. СИСТЕМА РЕСУРСОВ (ГОЛОД, ЖАЖДА, УСТАЛОСТЬ)
+// ============================================================
+
+let resourceInterval = null;
+
+function startResourceSystem() {
+    if (resourceInterval) clearInterval(resourceInterval);
+    resourceInterval = setInterval(() => {
+        const user = users[currentUser];
+        if(!user || !user.game.online) return;
+        const g = user.game;
+        const now = Date.now();
+        const diff = (now - g.lastResourceUpdate) / 60000; // минуты
+        if (diff < 1) return;
+        
+        // Еда и жажда тратятся каждые 20 минут
+        const foodLoss = Math.floor(diff / 20);
+        const thirstLoss = Math.floor(diff / 20);
+        if (foodLoss > 0) g.food = Math.max(0, g.food - foodLoss);
+        if (thirstLoss > 0) g.thirst = Math.max(0, g.thirst - thirstLoss);
+        
+        // Усталость тратится каждые 30 минут (только если игрок активен)
+        if (!isBusy) {
+            const fatigueLoss = Math.floor(diff / 30);
+            if (fatigueLoss > 0) g.fatigue = Math.max(0, g.fatigue - fatigueLoss);
+        }
+        
+        g.lastResourceUpdate = now;
+        
+        // Проверка на критические значения
+        if (g.food < 20) setMessage('⚠️ Вы голодны! Съешьте что-нибудь.');
+        if (g.thirst < 20) setMessage('⚠️ Вы хотите пить!');
+        if (g.fatigue < 20) setMessage('⚠️ Вы устали! Отдохните.');
+        
+        updateMenu();
+        saveData();
+    }, 30000); // проверка каждые 30 секунд
+}
+
+// ============================================================
+// 6. ОБНОВЛЕНИЕ КНОПОК
+// ============================================================
 
 function updateActions() {
     const user = users[currentUser];
     if(!user) return;
     const place = user.game.location.place;
     const container = document.getElementById('actions-container');
-    
-    // ОЧИЩАЕМ КОНТЕЙНЕР
     container.innerHTML = '';
     
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
     const isGate = place === 'Ворота';
     const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
+    const inBattle = battleState && battleState.inProgress;
     
-    let actions = [
-        { id: 'inventory', label: '🎒 Инвентарь' },
-        { id: 'character', label: '👤 Персонаж' },
-        { id: 'menu', label: '📋 Меню' }
-    ];
+    let actions = [];
     
-    if (isTavern) {
+    if (inBattle) {
         actions = [
-            { id: 'eat', label: '🍞 Попросить еды' },
-            { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
-            { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
-            { id: 'talk', label: '🗣️ Поговорить с трактирщиком' },
-            ...actions
+            { id: 'battle_attack', label: '⚔️ Атака' },
+            { id: 'battle_defend', label: '🛡️ Защита' },
+            { id: 'battle_dodge', label: '💨 Уклонение' },
+            { id: 'battle_flee', label: '🏃 Побег' }
         ];
-    }
-    
-    if (isGuild) {
+    } else {
         actions = [
-            { id: 'trade', label: '🛒 Торговля' },
-            ...actions
+            { id: 'inventory', label: '🎒 Инвентарь' },
+            { id: 'character', label: '👤 Персонаж' },
+            { id: 'menu', label: '📋 Меню' }
         ];
+        
+        if (isTavern) {
+            actions = [
+                { id: 'eat', label: '🍞 Попросить еды' },
+                { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
+                { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
+                { id: 'rest', label: '🛏️ Отдохнуть' },
+                { id: 'talk', label: '🗣️ Поговорить с трактирщиком' },
+                ...actions
+            ];
+        }
+        
+        if (isGuild) {
+            actions = [
+                { id: 'trade', label: '🛒 Торговля' },
+                ...actions
+            ];
+        }
+        
+        if (isTavern || isOutside) {
+            actions.push({ id: 'map', label: '🗺️ Карта' });
+        }
+        
+        if (isOutside) {
+            actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
+        }
+        
+        if (isGate) {
+            actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
+        }
+        
+        actions.push({ id: 'refresh', label: '🔄 Обновить' });
     }
-    
-    // Карта — только в таверне или на улице
-    if (isTavern || isOutside) {
-        actions.push({ id: 'map', label: '🗺️ Карта' });
-    }
-    
-    // Поиск — только на улице
-    if (isOutside) {
-        actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
-    }
-    
-    // Выход из города — только на воротах
-    if (isGate) {
-        actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
-    }
-    
-    actions.push({ id: 'refresh', label: '🔄 Обновить' });
     
     actions.forEach(a => {
         const btn = document.createElement('button');
@@ -591,12 +673,12 @@ function updateActions() {
 }
 
 // ============================================================
-// 5. ДЕЙСТВИЯ
+// 7. ДЕЙСТВИЯ
 // ============================================================
 
 function gameAction(action) {
     setMessage('');
-    if(isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'menu') {
+    if(isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'menu' && !action.startsWith('battle_')) {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
@@ -609,15 +691,9 @@ function gameAction(action) {
             openMainMenu();
             break;
         case 'eat':
-            const now = Date.now();
-            if(now - g.lastEat < 10800000) {
-                const left = Math.ceil((10800000 - (now - g.lastEat)) / 60000);
-                setMessage('🍞 Вы уже ели. Подождите '+left+' мин.');
-                return;
-            }
-            g.food = Math.min(g.food+20, 100);
-            g.lastEat = now;
-            setMessage('🍞 Вы поели. Еда +20.');
+            if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
+            g.food = Math.min(g.food+25, 100);
+            setMessage('🍞 Вы поели. Еда +25.');
             updateMenu(); saveData();
             break;
         case 'wash':
@@ -636,11 +712,14 @@ function gameAction(action) {
                 updateMenu(); saveData();
             });
             break;
-        case 'search':
-            if(searchCooldown){ setMessage('⏳ Подождите 5 секунд.'); return; }
-            searchCooldown = true;
-            setTimeout(()=>{ searchCooldown = false; }, 5000);
-            doSearch();
+        case 'rest':
+            if (g.fatigue >= 100) { setMessage('😴 Вы не устали.'); return; }
+            if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег для отдыха.'); return; }
+            startBusy('Отдыхаете', 3, function() {
+                g.fatigue = Math.min(100, g.fatigue + 40);
+                setMessage('🛏️ Вы отдохнули. Усталость +40.');
+                updateMenu(); saveData();
+            });
             break;
         case 'talk':
             const msgs = [
@@ -651,7 +730,13 @@ function gameAction(action) {
             setMessage(msgs[Math.floor(Math.random()*msgs.length)]);
             break;
         case 'trade':
-            setMessage('🛒 Торговля временно недоступна.');
+            openTrade();
+            break;
+        case 'search':
+            if(searchCooldown){ setMessage('⏳ Подождите 5 секунд.'); return; }
+            searchCooldown = true;
+            setTimeout(()=>{ searchCooldown = false; }, 5000);
+            doSearch();
             break;
         case 'map':
             openMap();
@@ -670,6 +755,12 @@ function gameAction(action) {
             g.location.location = 'За городом';
             setMessage('🚪 Вы вышли из города.');
             updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        case 'battle_attack':
+        case 'battle_defend':
+        case 'battle_dodge':
+        case 'battle_flee':
+            battleAction(action);
             break;
     }
 }
@@ -691,7 +782,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// 6. ПОИСК И БОЙ
+// 8. БОЕВАЯ СИСТЕМА
 // ============================================================
 
 function doSearch() {
@@ -703,33 +794,212 @@ function doSearch() {
         return;
     }
     const mobs = [
-        { name:'Крыса', hp:8, damage:1, defense:0, xp:3 },
-        { name:'Собака', hp:18, damage:4, defense:0, xp:6 },
+        { name:'Крыса', hp:8, damage:2, defense:0, xp:3 },
+        { name:'Собака', hp:18, damage:4, defense:1, xp:6 },
         { name:'Бандит', hp:25, damage:6, defense:2, xp:10 }
     ];
-    if(Math.random()*100 > 40) {
+    if(Math.random()*100 > 45) {
         setMessage('🔍 Вы никого не нашли. Тишина...');
         return;
     }
     const mob = mobs[Math.floor(Math.random()*mobs.length)];
-    setMessage('⚔️ Вы встретили '+mob.name+'!');
-    setTimeout(() => {
-        const xpGain = mob.xp + Math.floor(Math.random()*3);
-        user.game.xp += xpGain;
-        while(user.game.xp >= user.game.nextLevelXp) {
-            user.game.xp -= user.game.nextLevelXp;
-            user.game.level++;
-            user.game.nextLevelXp = 100 + user.game.level * 10;
-            user.game.attributePoints++;
-            setMessage('🎉 Вы достигли '+user.game.level+' уровня!');
+    startBattle(mob);
+}
+
+function startBattle(mob) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    const maxHp = 60 + g.level*10 + (g.stamina.level||1)*2;
+    battleState = {
+        mob: mob,
+        playerHp: maxHp,
+        mobHp: mob.hp,
+        maxPlayerHp: maxHp,
+        turn: 'player',
+        inProgress: true,
+        defending: false,
+        log: []
+    };
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '⚔️ Бой с ' + mob.name + '!';
+    updateActions();
+    renderBattle();
+}
+
+function renderBattle() {
+    if (!battleState || !battleState.inProgress) return;
+    const { mob, playerHp, mobHp, maxPlayerHp, turn, log } = battleState;
+    let msg = '⚔️ БОЙ С ' + mob.name.toUpperCase() + '\n\n';
+    msg += '🐺 ' + mob.name + ': HP ' + Math.max(0, mobHp) + '/' + mob.hp + '\n';
+    msg += '❤️ Вы: HP ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n\n';
+    msg += '🔄 Ход: ' + (turn === 'player' ? 'ВАШ' : mob.name.toUpperCase());
+    
+    // Лог боя
+    if (log.length > 0) {
+        msg += '\n\n📋 Лог боя:\n';
+        log.slice(-5).forEach(entry => {
+            msg += '• ' + entry + '\n';
+        });
+    }
+    
+    setMessage(msg);
+    updateActions();
+}
+
+function battleAction(action) {
+    if (!battleState || !battleState.inProgress) return;
+    if (battleState.turn !== 'player') {
+        setMessage('⏳ Сейчас ход противника. Подождите.');
+        return;
+    }
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    const { mob, playerHp, mobHp, maxPlayerHp } = battleState;
+    let result = '';
+    let newMobHp = mobHp;
+    let newPlayerHp = playerHp;
+    let nextTurn = 'mob';
+    let battleOver = false;
+    
+    switch(action) {
+        case 'battle_attack':
+            const damage = Math.max(1, g.stats.damage + Math.floor(Math.random() * 4) - mob.defense);
+            newMobHp = Math.max(0, mobHp - damage);
+            result = '⚔️ Вы нанесли ' + damage + ' урона.';
+            battleState.log.push('Вы нанесли ' + damage + ' урона');
+            break;
+        case 'battle_defend':
+            battleState.defending = true;
+            result = '🛡️ Вы защищаетесь.';
+            battleState.log.push('Вы защищаетесь');
+            break;
+        case 'battle_dodge':
+            const dodgeChance = Math.min(50 + g.stats.agility * 2, 90);
+            if (Math.random() * 100 < dodgeChance) {
+                result = '💨 Вы увернулись!';
+                battleState.log.push('Вы увернулись');
+                nextTurn = 'player';
+            } else {
+                result = '💨 Уклонение не удалось!';
+                battleState.log.push('Уклонение не удалось');
+            }
+            break;
+        case 'battle_flee':
+            const fleeChance = Math.min(40 + g.stats.speed * 5, 80);
+            if (Math.random() * 100 < fleeChance) {
+                result = '🏃 Вы сбежали!';
+                battleState.log.push('Вы сбежали');
+                battleOver = true;
+                endBattle(false, 'Побег');
+                return;
+            } else {
+                result = '🏃 Побег не удался!';
+                battleState.log.push('Побег не удался');
+            }
+            break;
+    }
+    
+    if (!battleOver && action !== 'battle_dodge' && action !== 'battle_flee') {
+        battleState.mobHp = newMobHp;
+        battleState.playerHp = newPlayerHp;
+        if (newMobHp <= 0) {
+            battleOver = true;
+            endBattle(true, 'Победа');
+            return;
         }
-        setMessage('🏆 Вы победили '+mob.name+'! +'+xpGain+' опыта.');
-        updateMenu(); saveData();
-    }, 2000);
+        if (nextTurn === 'mob') {
+            battleState.turn = 'mob';
+            renderBattle();
+            setTimeout(() => {
+                if (!battleState || !battleState.inProgress) return;
+                mobTurn();
+            }, 4000);
+            return;
+        }
+    }
+    
+    if (!battleOver) {
+        battleState.turn = nextTurn;
+        battleState.mobHp = newMobHp;
+        battleState.playerHp = newPlayerHp;
+        renderBattle();
+    }
+}
+
+function mobTurn() {
+    if (!battleState || !battleState.inProgress) return;
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    const { mob, playerHp, mobHp } = battleState;
+    
+    let damage = Math.max(1, mob.damage + Math.floor(Math.random() * 3) - g.stats.defense);
+    if (battleState.defending) {
+        damage = Math.floor(damage / 2);
+        battleState.defending = false;
+    }
+    const newPlayerHp = Math.max(0, playerHp - damage);
+    battleState.log.push(mob.name + ' нанёс ' + damage + ' урона');
+    battleState.playerHp = newPlayerHp;
+    
+    if (newPlayerHp <= 0) {
+        battleState.inProgress = false;
+        endBattle(false, 'Смерть');
+        return;
+    }
+    
+    battleState.turn = 'player';
+    renderBattle();
+}
+
+function endBattle(won, reason) {
+    if (!battleState) return;
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    const { mob } = battleState;
+    
+    if (won) {
+        const xpGain = mob.xp + Math.floor(Math.random() * 5);
+        g.xp += xpGain;
+        while(g.xp >= g.nextLevelXp) {
+            g.xp -= g.nextLevelXp;
+            g.level++;
+            g.nextLevelXp = 100 + g.level * 10;
+            g.attributePoints++;
+            setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
+        }
+        // Прокачка выносливости
+        g.stamina.xp = (g.stamina.xp || 0) + 2;
+        while(g.stamina.xp >= g.stamina.level * 10) {
+            g.stamina.xp -= g.stamina.level * 10;
+            g.stamina.level++;
+            setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня!');
+        }
+        setMessage('🏆 Вы победили ' + mob.name + '! +' + xpGain + ' опыта.');
+    } else {
+        if (reason === 'Смерть') {
+            setMessage('💀 Вас убил ' + mob.name + '. Вы возродились в таверне.');
+            g.location.place = 'Таверна';
+            g.location.location = 'Королевская Гавань';
+            g.food = 100; g.thirst = 100; g.fatigue = 100;
+        } else {
+            setMessage('❌ Бой закончился: ' + reason);
+        }
+    }
+    
+    battleState.inProgress = false;
+    battleState = null;
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    updateMenu(); updateActions(); saveData();
 }
 
 // ============================================================
-// 7. КАРТА
+// 9. КАРТА
 // ============================================================
 
 function openMap() {
@@ -798,7 +1068,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// 8. ПЕРСОНАЖ
+// 10. ПЕРСОНАЖ
 // ============================================================
 
 function openCharacter() {
@@ -899,7 +1169,7 @@ function addAttribute(statId) {
 }
 
 // ============================================================
-// 9. ИНВЕНТАРЬ
+// 11. ИНВЕНТАРЬ
 // ============================================================
 
 function openInventory() {
@@ -927,7 +1197,7 @@ function openInventory() {
 function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
 
 // ============================================================
-// 10. МЕНЮ
+// 12. МЕНЮ И ДОМА
 // ============================================================
 
 function openMainMenu() {
@@ -944,10 +1214,6 @@ function openMainMenu() {
 function closeMenu() {
     document.getElementById('modal-menu').classList.add('hide');
 }
-
-// ============================================================
-// 11. ДОМА
-// ============================================================
 
 function openHouses() {
     const modal = document.getElementById('modal-houses');
@@ -1004,7 +1270,94 @@ function showHouseInfo(region, houseId) {
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
-// 12. ОНЛАЙН
+// 13. ТОРГОВЛЯ
+// ============================================================
+
+const SHOP_ITEMS = [
+    { name: '🍞 Хлеб', price: 5, type: 'food', value: 20 },
+    { name: '🥩 Мясо', price: 10, type: 'food', value: 30 },
+    { name: '🍺 Эль', price: 3, type: 'drink', value: 15 },
+    { name: '🍷 Вино', price: 8, type: 'drink', value: 25 },
+    { name: '🗡️ Деревянный меч', price: 15, type: 'weapon', damage: 4 },
+    { name: '🛡️ Деревянный щит', price: 10, type: 'shield', defense: 2 }
+];
+
+function openTrade() {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    
+    let html = '<div class="modal-section"><h4>🛒 ТОРГОВЛЯ</h4>';
+    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
+    SHOP_ITEMS.forEach(item => {
+        html += '<div class="row" style="padding:4px 0;">';
+        html += '<span class="label">'+item.name+'</span>';
+        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItem(\''+item.name+'\','+item.price+')">Купить</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ (50% цены)</h4>';
+    if(g.inventory.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
+    } else {
+        g.inventory.forEach((item, index) => {
+            const price = Math.floor((item.baseDamage || 5) * 0.5);
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">'+item.name+'</span>';
+            html += '<span class="value">'+price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellItem('+index+','+price+')">Продать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function buyItem(name, price) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if(!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег для покупки ' + name);
+        return;
+    }
+    // Добавляем предмет в инвентарь
+    const item = SHOP_ITEMS.find(i => i.name === name);
+    if (item) {
+        g.inventory.push({ name: name, baseDamage: item.damage || 1, type: 'weapon' });
+        setMessage('✅ Вы купили ' + name);
+        convertCurrency(g);
+        updateMenu(); saveData();
+        openTrade();
+    }
+}
+
+function sellItem(index, price) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if(index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    g.inventory.splice(index, 1);
+    g.copper += price;
+    convertCurrency(g);
+    setMessage('💰 Вы продали ' + item.name + ' за ' + price + ' МП');
+    updateMenu(); saveData();
+    openTrade();
+}
+
+function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
+
+// ============================================================
+// 14. ОНЛАЙН
 // ============================================================
 
 function updateOnline() {
@@ -1042,7 +1395,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// 13. ВЫХОД
+// 15. ВЫХОД
 // ============================================================
 
 function handleLogout() {
@@ -1060,10 +1413,11 @@ function handleLogout() {
     if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
     isBusy = false;
     document.getElementById('busy-status').classList.add('hide');
+    if (resourceInterval) { clearInterval(resourceInterval); resourceInterval = null; }
 }
 
 // ============================================================
-// 14. ЗАПУСК
+// 16. ЗАПУСК
 // ============================================================
 
 loadData();
