@@ -31,18 +31,17 @@
         .msg-error { background: #2a1210; border: 1px solid #4a2a20; color: #c96a5a; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; text-align: center; font-size: 14px; }
         .msg-success { background: #122a1a; border: 1px solid #2a4a2a; color: #7ac98a; padding: 14px 14px; border-radius: 10px; margin-bottom: 14px; text-align: center; font-size: 14px; line-height: 1.6; }
         .hide { display: none !important; }
-        .menu-grid { background: #120e0b; border: 1px solid #2a201a; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.7; }
-        .menu-grid .row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #1a1410; }
-        .menu-grid .row:last-child { border-bottom: none; }
-        .menu-grid .label { color: #7a6a58; }
-        .menu-grid .value { color: #c9b694; font-weight: bold; }
-        .menu-grid .value.gold { color: #f0d080; }
-        .menu-grid .value.silver { color: #c0c0c0; }
-        .menu-grid .value.copper { color: #b87333; }
+        #menu-bar { background: #120e0b; border: 1px solid #2a201a; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; color: #b8a890; }
+        .menu-top { display: flex; justify-content: space-between; border-bottom: 1px solid #1a1410; padding-bottom: 4px; margin-bottom: 4px; }
+        .menu-stats { display: flex; justify-content: space-between; flex-wrap: wrap; padding: 2px 0; }
+        .menu-resources { display: flex; justify-content: space-between; padding: 2px 0; border-top: 1px solid #1a1410; margin-top: 4px; padding-top: 4px; }
+        .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; padding-top: 6px; border-top: 1px solid #1a1410; }
+        .menu-btn { flex: 1; min-width: 60px; padding: 6px 8px; background: #2a201a; border: 1px solid #3d3026; border-radius: 8px; color: #c9b694; font-family: 'Georgia', serif; font-size: 12px; cursor: pointer; text-align: center; transition: 0.2s; }
+        .menu-btn:active { background: #3d3026; transform: scale(0.96); }
         .story-box { background: #120e0b; border: 1px solid #2a201a; border-radius: 12px; padding: 14px; margin-bottom: 12px; min-height: 100px; }
         .story-box h4 { color: #6a5a48; font-size: 15px; font-weight: 400; margin-bottom: 6px; letter-spacing: 1px; }
         .story-box p { color: #b8a890; font-size: 14px; line-height: 1.7; }
-        .story-box .game-msg { color: #6a5a48; font-style: italic; margin-top: 10px; padding-top: 8px; border-top: 1px solid #1f1712; font-size: 13px; }
+        .story-box .game-msg { color: #6a5a48; font-style: italic; margin-top: 10px; padding-top: 8px; border-top: 1px solid #1f1712; font-size: 13px; min-height: 20px; }
         .action-group { margin-top: 10px; padding-top: 10px; border-top: 1px solid #1f1712; }
         .action-group p { color: #6a5a48; font-size: 13px; margin-bottom: 6px; letter-spacing: 1px; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
@@ -64,13 +63,7 @@
         .online-bar span { color: #c9b694; }
         .online-bar .online-click { cursor: pointer; color: #8a7a5a; }
         .online-bar .online-click:hover { color: #c9b694; }
-        #menu-bar { background: #120e0b; border: 1px solid #2a201a; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; color: #b8a890; }
-        .menu-top { display: flex; justify-content: space-between; border-bottom: 1px solid #1a1410; padding-bottom: 4px; margin-bottom: 4px; }
-        .menu-stats { display: flex; justify-content: space-between; flex-wrap: wrap; padding: 2px 0; }
-        .menu-resources { display: flex; justify-content: space-between; padding: 2px 0; border-top: 1px solid #1a1410; margin-top: 4px; padding-top: 4px; }
-        .menu-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; padding-top: 6px; border-top: 1px solid #1a1410; }
-        .menu-btn { flex: 1; min-width: 60px; padding: 6px 8px; background: #2a201a; border: 1px solid #3d3026; border-radius: 8px; color: #c9b694; font-family: 'Georgia', serif; font-size: 12px; cursor: pointer; text-align: center; transition: 0.2s; }
-        .menu-btn:active { background: #3d3026; transform: scale(0.96); }
+        .warning-msg { color: #ff6b35; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -92,10 +85,6 @@
         <div class="form-group">
             <label>Пароль</label>
             <input type="password" id="login-password" placeholder="Введите пароль">
-        </div>
-        <div class="form-group" style="display:flex; align-items:center; gap:10px;">
-            <input type="checkbox" id="remember-me" checked style="width:auto;">
-            <label style="margin:0; color:#7a6a58; font-size:13px;">Запомнить меня</label>
         </div>
         <button class="btn btn-primary" onclick="handleLogin()">⚔️ ВОЙТИ</button>
         <div class="divider">— ИЛИ —</div>
@@ -150,7 +139,6 @@
             <span class="online-click">📋 список</span>
         </div>
 
-        <!-- МЕНЮ-БАР (постоянная панель) -->
         <div id="menu-bar">
             <div class="menu-top">
                 <div class="menu-time">🕐 <span id="menu-time">--:--</span> МСК | <span id="menu-period">🌤️ День</span></div>
@@ -160,6 +148,7 @@
                 <div class="menu-hp">❤️ <span id="menu-hp">60</span>/<span id="menu-hp-max">60</span></div>
                 <div class="menu-level">📈 Уровень: <span id="menu-level">1</span></div>
                 <div class="menu-money">🪙 <span id="menu-gold">0</span> | ⚪ <span id="menu-silver">0</span> | 🟤 <span id="menu-copper">0</span></div>
+                <div class="menu-protection" id="menu-protection" style="display:none;"></div>
             </div>
             <div class="menu-resources">
                 <div class="menu-food">🍖 <span id="menu-food">100</span>/100</div>
@@ -196,9 +185,9 @@
 <div id="modal-character" class="modal-overlay hide" onclick="if(event.target===this) closeCharacter()"><div class="modal-box"><div class="modal-header"><h3>👤 ПЕРСОНАЖ</h3><button class="close-btn" onclick="closeCharacter()">✕</button></div><div id="modal-content"></div></div></div>
 <div id="modal-inventory" class="modal-overlay hide" onclick="if(event.target===this) closeInventory()"><div class="modal-box"><div class="modal-header"><h3>🎒 ИНВЕНТАРЬ</h3><button class="close-btn" onclick="closeInventory()">✕</button></div><div id="modal-inventory-content"></div></div></div>
 <div id="modal-map" class="modal-overlay hide" onclick="if(event.target===this) closeMap()"><div class="modal-box"><div class="modal-header"><h3>🗺️ КОРОЛЕВСКАЯ ГАВАНЬ</h3><button class="close-btn" onclick="closeMap()">✕</button></div><div id="modal-map-content"></div></div></div>
-<div id="modal-houses" class="modal-overlay hide" onclick="if(event.target===this) closeHouses()"><div class="modal-box"><div class="modal-header"><h3>🏘️ ДОМА</h3><button class="close-btn" onclick="closeHouses()">✕</button></div><div id="modal-houses-content"></div></div></div>
+<div id="modal-houses" class="modal-overlay hide" onclick="if(event.target===this) closeHouses()"><div class="modal-box"><div class="modal-header"><h3>🏘️ ДОМА ВЕСТЕРОСА</h3><button class="close-btn" onclick="closeHouses()">✕</button></div><div id="modal-houses-content"></div></div></div>
 <div id="modal-online" class="modal-overlay hide" onclick="if(event.target===this) closeOnline()"><div class="modal-box"><div class="modal-header"><h3>👥 ОНЛАЙН</h3><button class="close-btn" onclick="closeOnline()">✕</button></div><div id="modal-online-content"></div></div></div>
-<div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВАЯ ПЛОЩАДКА</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
+<div id="modal-rest" class="modal-overlay hide" onclick="if(event.target===this) closeRest()"><div class="modal-box"><div class="modal-header"><h3>🛏️ ОТДЫХ В ТАВЕРНЕ</h3><button class="close-btn" onclick="closeRest()">✕</button></div><div id="modal-rest-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -238,11 +227,6 @@ const WEAPON_TYPES = [
     { name: 'Великий меч', level: 65, baseDamage: 40, type: 'sword' },
     { name: 'Валирийский меч', level: 100, baseDamage: 80, type: 'sword' }
 ];
-
-const SKILL_NAMES = {
-    'sword': '🗡️ Меч', 'spear': '🔱 Копьё', 'mace': '🔨 Булава', 'axe': '🪓 Топор',
-    'bow': '🏹 Лук', 'crossbow': '🎯 Арбалет', 'shield': '🛡️ Щит', 'dagger': '🔪 Кинжал'
-};
 
 const BUILDINGS = [
     { id: 'Таверна', label: '🍺 Таверна' },
@@ -394,7 +378,14 @@ function showPage(page) {
     document.getElementById('page-' + page).classList.remove('hide');
 }
 
-function setMessage(msg) { document.getElementById('game-message').textContent = msg; }
+function setMessage(msg) {
+    const el = document.getElementById('game-message');
+    el.textContent = msg || '';
+    clearTimeout(el._timer);
+    if (msg && msg.length > 0) {
+        el._timer = setTimeout(() => { el.textContent = ''; }, 15000);
+    }
+}
 
 function formatTime(seconds) {
     const m = Math.floor(seconds / 60);
@@ -447,6 +438,16 @@ function rollQuality(professionLevel = 0) {
     if (roll < current) return 'Мастерское';
     if (roll < current + 0.1 + legendaryBonus) return 'Легендарное';
     return 'Рваное';
+}
+
+function checkStatusEffects(g) {
+    let warnings = [];
+    if (g.food < 20) warnings.push('🍖 Голод! Съешьте что-нибудь.');
+    if (g.thirst < 20) warnings.push('💧 Жажда! Выпейте воды.');
+    if (g.fatigue < 20) warnings.push('😴 Усталость! Отдохните.');
+    if (warnings.length > 0) {
+        setMessage('⚠️ ' + warnings.join(' | '));
+    }
 }
 
 // ============================================================
@@ -515,13 +516,13 @@ function handleRegister() {
     okEl.innerHTML = '✅ Поздравляем, <strong>' + name + '</strong>!<br>Вы — ' + nationality;
     okEl.classList.remove('hide');
     currentUser = name;
+    localStorage.setItem('got_user', name);
     setTimeout(function() { enterGame(name); }, 1200);
 }
 
 function handleLogin() {
     const name = document.getElementById('login-name').value.trim();
     const password = document.getElementById('login-password').value;
-    const remember = document.getElementById('remember-me').checked;
     const errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
     if (!name || !password) {
@@ -545,10 +546,7 @@ function handleLogin() {
             saveData();
         }
     }
-    try {
-        if (remember) localStorage.setItem('got_remember', name);
-        else localStorage.removeItem('got_remember');
-    } catch(e) {}
+    localStorage.setItem('got_user', name);
     currentUser = name;
     enterGame(name);
 }
@@ -563,7 +561,6 @@ function enterGame(name) {
     showPage('game');
     user.game.online = true;
     
-    // Офлайн-трата
     const now = Date.now();
     const lastActive = user.game.lastActive || now;
     const diffMinutes = (now - lastActive) / 60000;
@@ -582,11 +579,12 @@ function enterGame(name) {
     updateMenuBar();
     updateStory();
     updateActions();
-    document.getElementById('game-message').textContent = '';
+    setMessage('');
     isBusy = false;
     if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
     document.getElementById('busy-status').classList.add('hide');
     updateOnline();
+    checkStatusEffects(user.game);
     saveData();
 }
 
@@ -609,14 +607,13 @@ function updateMenuBar() {
     document.getElementById('menu-thirst').textContent = Math.round(g.thirst);
     document.getElementById('menu-fatigue').textContent = Math.round(g.fatigue);
     
-    // Защита новичка
-    const protEl = document.getElementById('menu-protection');
     const now = Date.now();
-    if (now < user.protectionExpires && protEl) {
+    const protEl = document.getElementById('menu-protection');
+    if (now < user.protectionExpires) {
         const left = Math.ceil((user.protectionExpires - now) / 3600000);
         protEl.textContent = '🛡️ ' + left + ' ч';
         protEl.style.display = 'inline';
-    } else if (protEl) {
+    } else {
         protEl.style.display = 'none';
     }
 }
@@ -643,7 +640,7 @@ function updateActions() {
     const container = document.getElementById('actions-container');
     container.innerHTML = '';
     
-    const isInside = BUILDINGS.some(b => b.id === place) && place !== 'Ворота';
+    const isInside = BUILDINGS.some(b => b.id === place) && place !== 'Ворота' && place !== 'Дорога' && place !== 'За городом';
     const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
@@ -652,7 +649,6 @@ function updateActions() {
     let actions = [];
     
     if (inBattle) {
-        // Кнопки боя
         actions = [
             { id: 'battle_attack', label: '⚔️ Атака' },
             { id: 'battle_defend', label: '🛡️ Защита' },
@@ -660,10 +656,10 @@ function updateActions() {
             { id: 'battle_flee', label: '🏃 Побег' }
         ];
     } else {
-        // Обычные действия
         const common = [
             { id: 'inventory', label: '🎒 Инвентарь' },
-            { id: 'character', label: '👤 Персонаж' }
+            { id: 'character', label: '👤 Персонаж' },
+            { id: 'houses', label: '🏘️ Дома' }
         ];
         actions = [...common];
         
@@ -681,16 +677,11 @@ function updateActions() {
         if (isGuild) {
             actions = [
                 { id: 'trade_market', label: '🛒 Торговая площадка' },
-                { id: 'sell_item', label: '💰 Продать предмет' },
                 ...actions
             ];
         }
         
-        if (isOutside) {
-            actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
-        }
-        
-        if (!isInside || isTavern) {
+        if (isOutside || isTavern) {
             actions.push({ id: 'map', label: '🗺️ Карта' });
         }
         
@@ -699,6 +690,7 @@ function updateActions() {
         }
         
         if (isOutside) {
+            actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
             actions.push({ id: 'exit_city', label: '🚪 Выйти из города' });
         }
         
@@ -709,7 +701,7 @@ function updateActions() {
         const btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map') {
+        if (isBusy && a.id !== 'character' && a.id !== 'inventory' && a.id !== 'refresh' && a.id !== 'map' && a.id !== 'houses') {
             btn.disabled = true;
         }
         btn.onclick = function() { gameAction(a.id); };
@@ -722,7 +714,8 @@ function updateActions() {
 // ============================================================
 
 function gameAction(action) {
-    if (isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'search') {
+    setMessage('');
+    if (isBusy && action !== 'character' && action !== 'inventory' && action !== 'refresh' && action !== 'map' && action !== 'houses') {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
@@ -731,6 +724,9 @@ function gameAction(action) {
     const g = user.game;
     
     switch(action) {
+        case 'houses':
+            openHouses();
+            break;
         case 'eat':
             const now = Date.now();
             if (now - g.lastEat < 10800000) {
@@ -741,7 +737,7 @@ function gameAction(action) {
             g.food = Math.min(g.food + 20, 100);
             g.lastEat = now;
             setMessage('🍞 Вы поели. Еда +20.');
-            updateMenuBar(); saveData();
+            updateMenuBar(); saveData(); checkStatusEffects(g);
             break;
         case 'wash':
             startBusy('Моете посуду', 1, function() {
@@ -778,9 +774,6 @@ function gameAction(action) {
             break;
         case 'trade_market':
             openTrade();
-            break;
-        case 'sell_item':
-            openSellItem();
             break;
         case 'inventory':
             openInventory();
@@ -833,7 +826,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// 6. ОТДЫХ (СОН В ТАВЕРНЕ)
+// 6. ОТДЫХ
 // ============================================================
 
 function openRest() {
@@ -844,21 +837,21 @@ function openRest() {
         setMessage('😴 Вы не устали. Отдых не нужен.');
         return;
     }
-    const msg = '🛏️ ОТДЫХ В ТАВЕРНЕ\n\n' +
-        'Выберите время:\n' +
-        '1 час → 5 МП (+20 усталости)\n' +
-        '3 часа → 20 МП (+50 усталости)\n' +
-        '8 часов → 50 МП (+100 усталости, полный сон)\n\n' +
-        'Ваши деньги: ' + g.copper + ' МП\n' +
-        'Усталость: ' + Math.round(g.fatigue) + '/100';
-    setMessage(msg);
-    // Простой выбор через confirm
-    const choice = prompt('Выберите: 1 (1ч), 3 (3ч), 8 (8ч)');
-    if (choice === '1') restInTavern(1, 5, 20);
-    else if (choice === '3') restInTavern(3, 20, 50);
-    else if (choice === '8') restInTavern(8, 50, 100);
-    else setMessage('❌ Отдых отменён.');
+    const modal = document.getElementById('modal-rest');
+    const content = document.getElementById('modal-rest-content');
+    let html = '<div class="modal-section">';
+    html += '<p style="color:#6a5a48;">Выберите время отдыха:</p>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="restInTavern(1, 5, 20)">🛏️ 1 час — 5 МП (+20 усталости)</button>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="restInTavern(3, 20, 50)">🛏️ 3 часа — 20 МП (+50 усталости)</button>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="restInTavern(8, 50, 100)">🛏️ 8 часов — 50 МП (+100 усталости, полный сон)</button>';
+    html += '<p style="color:#6a5a48;margin-top:10px;">Усталость: ' + Math.round(g.fatigue) + '/100<br>Деньги: ' + g.copper + ' МП</p>';
+    html += '<button class="btn btn-secondary" onclick="closeRest()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
 }
+
+function closeRest() { document.getElementById('modal-rest').classList.add('hide'); }
 
 function restInTavern(hours, cost, fatigueRestore) {
     const user = users[currentUser];
@@ -866,10 +859,11 @@ function restInTavern(hours, cost, fatigueRestore) {
     const g = user.game;
     if (!spendMoney(g, cost)) {
         setMessage('❌ Недостаточно денег для отдыха.');
-        return;
+        closeRest(); return;
     }
     const restoreAmount = Math.min(fatigueRestore, 100 - g.fatigue);
     setMessage('🛏️ Вы сняли комнату на ' + hours + ' час(а). Отдыхаете...');
+    closeRest();
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '🛏️ Отдых... (' + hours + ' ч)';
@@ -892,7 +886,7 @@ function restInTavern(hours, cost, fatigueRestore) {
 }
 
 // ============================================================
-// 7. БОЙ (ПОШАГОВЫЙ)
+// 7. БОЙ
 // ============================================================
 
 function startBattle(mob) {
@@ -1032,13 +1026,11 @@ function endBattle(won, reason) {
             g.attributePoints++;
             setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
         }
-        // Прокачка выносливости
         g.stamina.xp = (g.stamina.xp || 0) + 2;
         while (g.stamina.xp >= g.stamina.level * 10) {
             g.stamina.xp -= g.stamina.level * 10;
             g.stamina.level++;
         }
-        // Лут
         const quality = rollQuality(g.professions['Охотник']);
         if (Math.random() < 0.3) {
             const weapon = WEAPON_TYPES.filter(w => w.level <= g.level + 5);
@@ -1053,14 +1045,12 @@ function endBattle(won, reason) {
             setMessage('🏆 Вы победили! +' + xpGain + ' опыта.');
         }
     } else {
-        // Смерть от моба
         if (mob && mob.name) {
             g.death = { isDead: true, deathTime: Date.now(), cooldown: 600, killedBy: mob.name };
             setMessage('💀 Вас убил ' + mob.name + '. Возрождение через 10 минут.');
         } else {
             setMessage('💀 Вы погибли.');
         }
-        // Возрождение сразу (для теста)
         setTimeout(() => {
             g.death = null;
             g.location.place = 'Таверна';
@@ -1076,10 +1066,11 @@ function endBattle(won, reason) {
     isBusy = false;
     document.getElementById('busy-status').classList.add('hide');
     updateMenuBar(); updateActions(); saveData();
+    checkStatusEffects(g);
 }
 
 // ============================================================
-// 8. ПОИСК МОБОВ
+// 8. ПОИСК
 // ============================================================
 
 function doSearch() {
@@ -1088,7 +1079,6 @@ function doSearch() {
     const g = user.game;
     const place = g.location.place;
     
-    // Проверяем, есть ли мобы в этой локации
     let mobs = [];
     if (place === 'Ворота' || place === 'Дорога' || place === 'За городом') {
         mobs = [
@@ -1108,26 +1098,33 @@ function doSearch() {
         return;
     }
     
-    // Шанс найти
     let chance = 50 + Math.min(g.level * 0.5, 20);
     if (Math.random() * 100 > chance) {
         setMessage('🔍 Вы никого не нашли. Тишина...');
         return;
     }
     
-    // Случайный моб
     const mob = mobs[Math.floor(Math.random() * mobs.length)];
     startBattle(mob);
 }
 
 // ============================================================
-// 9. КАРТА ГОРОДА
+// 9. КАРТА
 // ============================================================
 
 function openMap() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
+    const place = g.location.place;
+    const isOutside = (place === 'Ворота' || place === 'Дорога' || place === 'За городом');
+    const isTavern = place === 'Таверна';
+    
+    if (!isOutside && !isTavern) {
+        setMessage('❌ Карта доступна только на улице или в таверне.');
+        return;
+    }
+    
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
     let html = '<div class="modal-section"><h4>📍 Вы здесь: ' + g.location.place + '</h4></div>';
@@ -1186,9 +1183,9 @@ function goToBuilding(building, mode) {
         isBusy = false;
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
-        // Случайное событие при входе
         triggerRandomEvent();
         updateMenuBar(); updateStory(); updateActions(); saveData();
+        checkStatusEffects(g);
     }, time * 1000);
 }
 
@@ -1210,20 +1207,13 @@ function triggerRandomEvent() {
     } else if (roll < 30) {
         setMessage('🤝 Вы встретили купца. Он предлагает товары.');
     } else if (roll < 50) {
-        setMessage('⚔️ На вас напали разбойники!');
-        // Начинаем бой с разбойником
-        const bandits = [
-            { name: 'Разбойник', hp: 30, damage: 6, defense: 2, xp: 12 }
-        ];
+        const bandits = [{ name: 'Разбойник', hp: 30, damage: 6, defense: 2, xp: 12 }];
         startBattle(bandits[0]);
     } else if (roll < 65) {
         const damage = 1 + Math.floor(Math.random() * 3);
         setMessage('💀 Вы попали в ловушку! Потеряно ' + damage + ' HP.');
     } else if (roll < 75) {
-        const hints = [
-            '📜 Записка: «Клад за старым дубом.»',
-            '📜 Записка: «Торговец на рынке ждёт тебя.»'
-        ];
+        const hints = ['📜 Записка: «Клад за старым дубом.»', '📜 Записка: «Торговец на рынке ждёт тебя.»'];
         setMessage(hints[Math.floor(Math.random() * hints.length)]);
     } else if (roll < 80) {
         setMessage('🌟 Вам улыбнулась удача! Вы нашли редкий предмет.');
@@ -1464,7 +1454,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// 15. ТОРГОВАЯ ПЛОЩАДКА (ГИЛЬДИЯ)
+// 15. ТОРГОВАЯ ПЛОЩАДКА
 // ============================================================
 
 let marketListings = [];
@@ -1480,10 +1470,14 @@ function openTrade() {
             const q = QUALITIES[listing.quality] || QUALITIES['Обычное'];
             html += '<div class="row" style="padding:4px 0;">';
             html += '<span class="label">' + q.emoji + ' ' + listing.name + ' (' + listing.quality + ')</span>';
-            html += '<span class="value">' + listing.price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItem(' + i + ')">Купить</button></span>';
-            html += '</div>';
+            html += '<span class="value">' + listing.price + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItem(' + i + ')">Купить</button>';
+            if (listing.seller === currentUser) {
+                html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;background:#3d2a1a;" onclick="removeListing(' + i + ')">Снять</button>';
+            }
+            html += '</span></div>';
         });
     }
+    html += '<button class="btn" onclick="openSellItem()">💰 Продать предмет</button>';
     html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
     html += '</div>';
     content.innerHTML = html;
@@ -1534,6 +1528,7 @@ function openSellItem() {
     });
     setMessage('✅ Вы выставили ' + soldItem.name + ' на продажу за ' + priceNum + ' МП.');
     updateMenuBar(); saveData();
+    openTrade();
 }
 
 function buyItem(index) {
@@ -1555,7 +1550,6 @@ function buyItem(index) {
         baseDamage: listing.baseDamage,
         type: 'sword'
     });
-    // Передаём деньги продавцу
     const seller = users[listing.seller];
     if (seller) {
         seller.game.copper += listing.price;
@@ -1565,6 +1559,27 @@ function buyItem(index) {
     marketListings.splice(index, 1);
     setMessage('✅ Вы купили ' + listing.name + ' за ' + listing.price + ' МП.');
     updateMenuBar(); saveData();
+    openTrade();
+}
+
+function removeListing(index) {
+    if (index >= marketListings.length) return;
+    const listing = marketListings[index];
+    if (listing.seller !== currentUser) {
+        setMessage('❌ Это не ваш лот.');
+        return;
+    }
+    const user = users[currentUser];
+    if (!user) return;
+    user.game.inventory.push({
+        name: listing.name,
+        quality: listing.quality,
+        baseDamage: listing.baseDamage,
+        type: 'sword'
+    });
+    marketListings.splice(index, 1);
+    setMessage('✅ Вы сняли лот с продажи.');
+    saveData();
     openTrade();
 }
 
@@ -1581,6 +1596,7 @@ function handleLogout() {
         users[currentUser].game.lastActive = Date.now();
         saveData();
     }
+    localStorage.removeItem('got_user');
     currentUser = null;
     showPage('login');
     document.getElementById('login-name').value = '';
@@ -1595,15 +1611,11 @@ function handleLogout() {
 // ============================================================
 
 loadData();
-try {
-    const remembered = localStorage.getItem('got_remember');
-    if (remembered && users[remembered]) {
-        currentUser = remembered;
-        enterGame(remembered);
-    } else {
-        showPage('login');
-    }
-} catch(e) {
+const savedUser = localStorage.getItem('got_user');
+if (savedUser && users[savedUser]) {
+    currentUser = savedUser;
+    enterGame(savedUser);
+} else {
     showPage('login');
 }
 </script>
