@@ -966,6 +966,18 @@ function mobTurn() {
 
     battleState.turn = 'player';
     renderBattle();
+    function mobTurn() {
+    // ... расчёт урона
+    battleState.playerHp = newPlayerHp;
+    
+    if (newPlayerHp <= 0) {
+        battleState.inProgress = false;
+        endBattle(false, 'Смерть');
+        return;
+    }
+    
+    battleState.turn = 'player';
+    renderBattle(); // 
 }
 
 function endBattle(won, reason) {
