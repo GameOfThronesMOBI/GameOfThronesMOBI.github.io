@@ -802,7 +802,11 @@ function hash(str) { let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.ch
 function showPage(page) { ['login','register','game'].forEach(id => document.getElementById('page-'+id).classList.add('hide')); document.getElementById('page-'+page).classList.remove('hide'); }
 function setMessage(msg) { const el = document.getElementById('game-message'); el.textContent = msg || ''; clearTimeout(el._timer); if (msg && msg.length > 0) { el._timer = setTimeout(() => { el.textContent = ''; }, 8000); } }
 function getTimeOfDay() { const now=new Date(); const h=now.getHours(); const m=now.getMinutes(); const t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); let p='', e=''; if(h>=6&&h<12){ p='Утро'; e='☀️'; } else if(h>=12&&h<18){ p='День'; e='🌤️'; } else if(h>=18&&h<24){ p='Вечер'; e='🌆'; } else { p='Ночь'; e='🌙'; } return { timeStr:t, period:p, emoji:e }; }
-function convertCurrency(g) { if (g.copper >= 56) { g.silver += Math.floor(g.copper / 56); g.copper = g.copper % 56; } if (g.silver >= 210) { g.gold += Math.floor(g.silver / 210); g.silver = g.silver % 210; } return g; }
+function convertCurrency(g) { 
+    while (g.copper >= 56) { g.silver += Math.floor(g.copper / 56); g.copper = g.copper % 56; }
+    while (g.silver >= 210) { g.gold += Math.floor(g.silver / 210); g.silver = g.silver % 210; }
+    return g; 
+}
 function spendMoney(g, amount) { if (amount <= 0) return true; let total = g.copper + g.silver*56 + g.gold*210*56; if (total < amount) return false; total -= amount; g.gold = Math.floor(total / (210*56)); total %= (210*56); g.silver = Math.floor(total / 56); g.copper = total % 56; return true; }
 function getResourcePrice(resourceType, quality) { const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 }; const base = basePrices[resourceType] || 5; const q = QUALITIES[quality] || QUALITIES['Обычное']; return Math.round(base * q.multiplier); }
 
@@ -1169,8 +1173,8 @@ function getMaxHp(g) {
 }
 
 function getXpMultiplier(g) {
-    const intelligence=g.stats.intelligence||1;
-    return 1+(intelligence/100);
+    const intelligence = Math.max(1, g.stats.intelligence || 1);
+    return 1 + (intelligence / 100);
 }
 
 function getTotalStats(g) {
@@ -2236,17 +2240,20 @@ function endBattle(won, reason) {
 // ТОРГОВЛЯ (ПОЛНАЯ СИСТЕМА)
 // ============================================================
 function getTraderStock(place, itemKey) {
+    if (!traderInventory) traderInventory = {};
     if (!traderInventory[place]) traderInventory[place] = {};
     return traderInventory[place][itemKey] || 0;
 }
 
 function addTraderStock(place, itemKey, amount) {
+    if (!traderInventory) traderInventory = {};
     if (!traderInventory[place]) traderInventory[place] = {};
     traderInventory[place][itemKey] = (traderInventory[place][itemKey] || 0) + amount;
     saveData();
 }
 
 function removeTraderStock(place, itemKey, amount) {
+    if (!traderInventory) traderInventory = {};
     if (!traderInventory[place]) traderInventory[place] = {};
     const current = traderInventory[place][itemKey] || 0;
     traderInventory[place][itemKey] = Math.max(0, current - amount);
@@ -3294,6 +3301,7 @@ function closeLog() {
 // ============================================================
 function updateOnline() {
     const online = { global: 0, region: 0, location: 0 };
+    if (!currentUser || !users[currentUser]) return;
     const cur = users[currentUser];
     for (const name in users) {
         if (users[name].game.online) {
