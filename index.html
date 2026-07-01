@@ -120,6 +120,7 @@
 <div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВЛЯ</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
 <div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) closeGuild()"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="closeGuild()">✕</button></div><div id="modal-guild-content"></div></div></div>
 <div id="modal-log" class="modal-overlay hide" onclick="if(event.target===this) closeLog()"><div class="modal-box"><div class="modal-header"><h3>📜 ЛОГ СОБЫТИЙ</h3><button class="close-btn" onclick="closeLog()">✕</button></div><div id="modal-log-content"></div></div></div>
+
 <script>
 // ============================================================
 // КОНСТАНТЫ
@@ -196,9 +197,7 @@ const HOUSES_DATA = {
         { id:'greyjoy',name:'Грейджои',sigil:'🐙',castle:'Пайк',liege:'Грейджои',status:'Великий Дом',acres:80000 }
     ]}
 };
-</script>
-</body>
-</html>
+
 // ============================================================
 // ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК)
 // ============================================================
@@ -753,6 +752,7 @@ const ALL_ITEMS = {
         ]
     }
 };
+
 // ============================================================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ============================================================
@@ -777,7 +777,6 @@ function loadData() {
     try { const rawTrader = localStorage.getItem('got_trader'); if (rawTrader) traderInventory = JSON.parse(rawTrader); } catch(e) { traderInventory = {}; }
     try { const rawLog = localStorage.getItem('got_log'); if (rawLog) gameLog = JSON.parse(rawLog); } catch(e) { gameLog = []; }
     
-    // Инициализация магазинов при первом запуске
     if (Object.keys(traderInventory).length === 0) {
         initTraderStock();
     }
@@ -1005,7 +1004,7 @@ function enterGame(name) {
     const now = Date.now();
     const g = user.game;
     const lastActive = g.lastActive || now;
-    const diffMinutes = (now - lastActive) / 60000;
+    const diffMinutes = lastActive ? (now - lastActive) / 60000 : 0;
     if(diffMinutes > 1) {
         const foodLoss = Math.floor(diffMinutes / 15);
         const thirstLoss = Math.floor(diffMinutes / 10);
@@ -1550,6 +1549,32 @@ function openCraftMenu() {
     modal.classList.remove('hide');
 }
 
+function openCraftTab() {
+    const container = document.getElementById('shop-category-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    let ironCount = 0, coalCount = 0, steelCount = 0;
+    g.inventory.forEach(item => {
+        if (item.resourceType === 'iron') ironCount++;
+        if (item.resourceType === 'coal') coalCount++;
+        if (item.resourceType === 'steel') steelCount++;
+    });
+    let html = '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'Кузница\')">⬅️ Назад к разделам</button>';
+    html += '<h4 style="color:#c9b694;">🔨 КРАФТ</h4>';
+    html += '<p style="color:#6a5a48;">Ваши ресурсы:</p>';
+    html += '<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
+    html += '⛏️ Руда: ' + ironCount + '<br>';
+    html += '🔥 Уголь: ' + coalCount + '<br>';
+    html += '⚒️ Сталь: ' + steelCount;
+    html += '</div>';
+    html += '<div style="padding:15px;text-align:center;color:#6a5a48;border:1px dashed #3d3026;border-radius:10px;">';
+    html += '🔒 Новые рецепты крафта пока недоступны<br>';
+    html += '<span style="font-size:11px;">Появятся в следующем обновлении</span>';
+    html += '</div>';
+    container.innerHTML = html;
+}
+
 function craftSteel() {
     const user=users[currentUser];
     if(!user) return;
@@ -1600,7 +1625,8 @@ function craftSteel() {
     saveData();
     openCraftMenu();
 }
-        // ============================================================
+
+// ============================================================
 // БОЙ
 // ============================================================
 function saveBattleState() {
@@ -1737,7 +1763,10 @@ function renderBattle() {
 }
 
 function battleAction(action) {
-    if(!battleState||!battleState.inProgress) return;
+    if(!battleState||!battleState.inProgress) {
+        setMessage('❌ Бой не активен.');
+        return;
+    }
     if(battleState.turn!=='player'){
         setMessage('⏳ Сейчас ход противника. Подождите.');
         return;
@@ -1875,9 +1904,17 @@ function battleAction(action) {
 }
 
 function mobTurn() {
-    if(!battleState||!battleState.inProgress) return;
+    if(!battleState||!battleState.inProgress) {
+        battleState = null;
+        localStorage.removeItem('got_battle');
+        return;
+    }
     const user=users[currentUser];
-    if(!user) return;
+    if(!user) {
+        battleState = null;
+        localStorage.removeItem('got_battle');
+        return;
+    }
     const g=user.game;
     const { mob, playerHp }=battleState;
     const totalStats=getTotalStats(g);
@@ -2194,7 +2231,8 @@ function endBattle(won, reason) {
     updateActions();
     saveData();
 }
-                // ============================================================
+
+// ============================================================
 // ТОРГОВЛЯ (ПОЛНАЯ СИСТЕМА)
 // ============================================================
 function getTraderStock(place, itemKey) {
@@ -2651,7 +2689,8 @@ function goToBuilding(building) {
     updateActions();
     saveData();
 }
-            // ============================================================
+
+// ============================================================
 // ПЕРСОНАЖ
 // ============================================================
 function openCharacter() {
@@ -2962,7 +3001,8 @@ function useItem(index) {
     saveData();
     openInventory();
 }
-        // ============================================================
+
+// ============================================================
 // ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
 // ============================================================
 function openGuild() {
@@ -3325,4 +3365,4 @@ if (savedUser && users[savedUser]) {
 }
 </script>
 </body>
-    </html>
+</html>
