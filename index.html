@@ -120,6 +120,13 @@
 <div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВЛЯ</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
 <div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) closeGuild()"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="closeGuild()">✕</button></div><div id="modal-guild-content"></div></div></div>
 <div id="modal-log" class="modal-overlay hide" onclick="if(event.target===this) closeLog()"><div class="modal-box"><div class="modal-header"><h3>📜 ЛОГ СОБЫТИЙ</h3><button class="close-btn" onclick="closeLog()">✕</button></div><div id="modal-log-content"></div></div></div>
+<div id="modal-magistrate" class="modal-overlay hide" onclick="if(event.target===this) closeMagistrate()"><div class="modal-box"><div class="modal-header"><h3>📜 МАГИСТРАТ</h3><button class="close-btn" onclick="closeMagistrate()">✕</button></div><div id="modal-magistrate-content"></div></div></div>
+<div id="modal-storage" class="modal-overlay hide" onclick="if(event.target===this) closeStorage()"><div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД</h3><button class="close-btn" onclick="closeStorage()">✕</button></div><div id="modal-storage-content"></div></div></div>
+<div id="modal-storage-hold" class="modal-overlay hide" onclick="if(event.target===this) closeStorageHold()"><div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div></div>
+<div id="modal-stable" class="modal-overlay hide" onclick="if(event.target===this) closeStable()"><div class="modal-box"><div class="modal-header"><h3>🐴 КОНЮШНЯ</h3><button class="close-btn" onclick="closeStable()">✕</button></div><div id="modal-stable-content"></div></div></div>
+<div id="modal-temple" class="modal-overlay hide" onclick="if(event.target===this) closeTemple()"><div class="modal-box"><div class="modal-header"><h3>⛪ ВЕЛИКАЯ СЕПТА</h3><button class="close-btn" onclick="closeTemple()">✕</button></div><div id="modal-temple-content"></div></div></div>
+<div id="modal-port" class="modal-overlay hide" onclick="if(event.target===this) closePort()"><div class="modal-box"><div class="modal-header"><h3>⛵ ПОРТ</h3><button class="close-btn" onclick="closePort()">✕</button></div><div id="modal-port-content"></div></div></div>
+<div id="modal-jail" class="modal-overlay hide" onclick="if(event.target===this) closeJail()"><div class="modal-box"><div class="modal-header"><h3>⛓️ ТЮРЬМА</h3><button class="close-btn" onclick="closeJail()">✕</button></div><div id="modal-jail-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -161,14 +168,19 @@ const BUILDINGS = [
     { id:'Королевский квартал', label:'👑 Королевский квартал' },
     { id:'Торговый квартал', label:'🏙️ Торговый квартал' },
     { id:'Квартал бедноты', label:'🏚️ Квартал бедноты' },
-    { id:'Дом', label:'🏠 Дом' }
+    { id:'Дом', label:'🏠 Дом' },
+    { id:'Великая септа', label:'⛪ Великая септа' },
+    { id:'Порт', label:'⛵ Порт' },
+    { id:'Тюрьма', label:'⛓️ Тюрьма' }
 ];
 
 const LOCATION_LEVELS = {
     'Таверна':1,'Рынок':1,'Кузница':1,'Оружейная лавка':1,'Кожевник':1,'Бронник':1,
     'Плотник':1,'Конюшня':1,'Гильдия торговцев':1,'Магистрат':1,
     'Ворота':1,
-    'Королевский квартал':1,'Торговый квартал':1,'Квартал бедноты':1,'Дом':1
+    'Королевский квартал':1,'Торговый квартал':1,'Квартал бедноты':1,'Дом':1,
+    'Великая септа':1,'Порт':1,'Тюрьма':1,
+    'Дорога':5
 };
 
 const HOUSING_TYPES = {
@@ -907,6 +919,21 @@ const HORSE_TYPES = {
 };
 
 // ============================================================
+// КОНСТАНТЫ ПОРТА
+// ============================================================
+const PORT_CITIES = {
+    'Королевская Гавань': { region: 'Королевские земли', price: 0, emoji: '🏰', description: 'Столица Семи Королевств.' },
+    'Винтерфелл': { region: 'Север', price: 100, emoji: '❄️', description: 'Цитадель Севера. Холодно и сурово.' },
+    'Кастерли Рок': { region: 'Западные земли', price: 80, emoji: '🦁', description: 'Богатейший город Вестероса.' },
+    'Хайгарден': { region: 'Простор', price: 70, emoji: '🌹', description: 'Цветущий город на юге.' },
+    'Штормовой Предел': { region: 'Штормовые земли', price: 60, emoji: '🦌', description: 'Крепость Баратеонов.' },
+    'Солнечное Копьё': { region: 'Дорн', price: 90, emoji: '☀️', description: 'Столица Дорна. Жарко и страстно.' },
+    'Орлиное Гнездо': { region: 'Долина', price: 110, emoji: '🦅', description: 'Неприступная крепость в горах.' },
+    'Риверран': { region: 'Речные земли', price: 50, emoji: '🐟', description: 'Сердце Речных земель.' },
+    'Пайк': { region: 'Железные острова', price: 120, emoji: '🐙', description: 'Оплот железнорождённых.' }
+};
+
+// ============================================================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ============================================================
 let users = {};
@@ -1162,6 +1189,11 @@ function handleRegister() {
             online:true,
             house:null,
             lastResourceUpdate: now,
+            luck: 0,
+            lastHeal: null,
+            lastLuck: null,
+            blessing: null,
+            jail: null,
             housing: {
                 type: null,
                 purchased: null,
@@ -1227,6 +1259,11 @@ function fixOldAccount(user) {
     if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1 };
     if (g.attributePoints === undefined) g.attributePoints = 0;
     if (g.lastReset === undefined) g.lastReset = null;
+    if (g.luck === undefined) g.luck = 0;
+    if (g.lastHeal === undefined) g.lastHeal = null;
+    if (g.lastLuck === undefined) g.lastLuck = null;
+    if (g.blessing === undefined) g.blessing = null;
+    if (g.jail === undefined) g.jail = null;
     if (g.housing === undefined) {
         g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
     }
@@ -1427,7 +1464,6 @@ function getTotalStats(g, battleState) {
     const totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + totalAgility;
     const totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
     
-    // БОНУСЫ ОТ ЖИЛЬЯ
     let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
     if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
         const house = HOUSING_TYPES[g.housing.type];
@@ -1436,31 +1472,24 @@ function getTotalStats(g, battleState) {
         bonusDef = house.bonusDef || 0;
     }
     
-    // СКОРОСТЬ В ПРОЦЕНТАХ (ТОЛЬКО ОТ БОТИНОК И ЛОШАДИ)
+    // СКОРОСТЬ ТОЛЬКО ОТ БОТИНОК И ЛОШАДИ
     let speedPercent = 0;
-    let horseAlive = true;
-    
-    // 1. Бонус от ботинок
     if (g.equipment && g.equipment.boots && g.equipment.boots.speedPercent) {
         speedPercent += g.equipment.boots.speedPercent;
     }
-    
-    // 2. Бонус от лошади (в бою проверяем жива ли)
     if (g.equipment && g.equipment.horse) {
-        // В бою проверяем состояние лошади
         if (battleState && battleState.inProgress) {
             if (battleState.horseAlive) {
                 const horse = HORSE_TYPES[g.equipment.horse.horseType];
                 if (horse) speedPercent += horse.speedBonus || 0;
             }
         } else {
-            // Вне боя лошадь всегда даёт бонус
             const horse = HORSE_TYPES[g.equipment.horse.horseType];
             if (horse) speedPercent += horse.speedBonus || 0;
         }
     }
     
-    // ЗАЩИТА С УЧЁТОМ ЛОШАДИ (ПРОЦЕНТНЫЙ БОНУС)
+    // ЗАЩИТА С УЧЁТОМ ЛОШАДИ
     let horseDefensePercent = 0;
     if (g.equipment && g.equipment.horse) {
         if (battleState && battleState.inProgress) {
@@ -1479,6 +1508,10 @@ function getTotalStats(g, battleState) {
         finalDefense = Math.round(finalDefense * (1 + horseDefensePercent / 100));
     }
     
+    // УДАЧА ОТ ПОЖЕРТВОВАНИЙ (максимум 25)
+    const luck = Math.min(25, g.luck || 0);
+    const critFromLuck = Math.floor(luck / 10);
+    
     return {
         damage: totalDamage,
         defense: finalDefense,
@@ -1486,16 +1519,15 @@ function getTotalStats(g, battleState) {
         intelligence: (g.stats.intelligence || 1) + bonusInt,
         speedPercent: speedPercent,
         accuracy: mastery.accuracy + levelBonus.accuracy,
-        crit: levelBonus.crit,
+        crit: levelBonus.crit + critFromLuck,
         pierce: levelBonus.pierce,
         doubleHit: levelBonus.doubleHit,
         counter: levelBonus.counter,
         weaponType: mastery.weaponType,
         skillLevel: mastery.skillLevel,
         maxHp: getMaxHp(g),
-        luck: (g.stats.luck || 0) + bonusLuck,
+        luck: luck,
         horseDefensePercent: horseDefensePercent,
-        horseAlive: horseAlive,
         speedDetails: {
             boots: g.equipment && g.equipment.boots ? (g.equipment.boots.speedPercent || 0) : 0,
             horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0
@@ -1577,8 +1609,12 @@ function updateStory() {
         'Ворота': 'Вы у городских ворот.' + (user.game.outside ? ' Снаружи виднеется дорога.' : ' Отсюда можно выйти на Дорогу.'),
         'Королевский квартал': '👑 Элитный район. Здесь живут самые богатые и влиятельные люди.',
         'Торговый квартал': '🏙️ Центр торговли. Здесь селятся ремесленники и купцы.',
-        'Квартал бедноты': '🏚️ Окраина города. Жильё здесь дёшево, но опасно.',
-        'Дом': '🏠 Ваш дом. Здесь можно отдохнуть, хранить вещи и чувствовать себя в безопасности.'
+        'Квартал бедноты': '🏚️ Окраина города. Жильё здесь дёшево, но опасно. Можно встретить пьянчуг.',
+        'Дом': '🏠 Ваш дом. Здесь можно отдохнуть, хранить вещи и чувствовать себя в безопасности.',
+        'Великая септа': '⛪ Великая Септа Бейлора — главный храм Семерых в Вестеросе. Здесь можно исцелиться и получить благословение удачи.',
+        'Порт': '⛵ Порт Королевской Гавани. Скоро здесь можно будет путешествовать между городами Вестероса.',
+        'Тюрьма': '⛓️ Вы в тюрьме. Заплатите штраф или ждите освобождения.',
+        'Дорога': '🛤️ Дорога у ворот Королевской Гавани.'
     };
     
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в ' + place + '.';
@@ -1604,7 +1640,6 @@ function updateActions() {
             { id:'battle_flee', label:'🏃 Побег' }
         ];
         
-        // Кнопки для лошади в бою
         if (battleState.horseAlive && battleState.horseHp > 0) {
             if (battleState.mounted) {
                 actions.unshift({ id:'battle_dismount', label:'🐴 Слезть с лошади' });
@@ -1625,6 +1660,12 @@ function updateActions() {
             if (!user.game.outside) {
                 actions.unshift({ id:'leave_city', label:'🚪 Выйти на Дорогу' });
             }
+        }
+        
+        // Дорога (ВХОД В ГОРОД + ПОИСК)
+        if (place === 'Дорога') {
+            actions.unshift({ id:'enter_city', label:'🚶 Войти в Королевскую Гавань' });
+            actions.unshift({ id:'search', label:'🔍 Поиск' });
         }
         
         // Жилые районы
@@ -1683,6 +1724,23 @@ function updateActions() {
             actions.unshift({ id:'open_magistrate', label:'📜 Недвижимость' });
         }
         
+        // Великая септа
+        if (place === 'Великая септа') {
+            actions.unshift({ id:'open_temple', label:'⛪ Септа' });
+        }
+        
+        // Порт
+        if (place === 'Порт') {
+            actions.unshift({ id:'open_port', label:'⛵ Порт' });
+        }
+        
+        // Тюрьма
+        if (place === 'Тюрьма') {
+            actions.unshift({ id:'jail_pay', label:'💰 Заплатить штраф' });
+            actions.unshift({ id:'jail_wait', label:'⏳ Ждать освобождения (5 мин)' });
+            actions.unshift({ id:'jail_escape', label:'🏃 Попытаться сбежать' });
+        }
+        
         // Дом
         if (place === 'Дом') {
             actions = [
@@ -1727,6 +1785,11 @@ function gameAction(action) {
         case 'shop': openShop(g.location.place); break;
         case 'craft': openCraftMenu(); break;
         case 'open_stable': openStable(); break;
+        case 'open_temple': openTemple(); break;
+        case 'open_port': openPort(); break;
+        case 'jail_pay': payJailFine(); break;
+        case 'jail_wait': waitJailTime(); break;
+        case 'jail_escape': attemptEscape(); break;
         case 'buy_housing':
             viewDistrict(g.location.place);
             break;
@@ -2045,60 +2108,339 @@ function saveBattleState() {
 }
 
 function doSearch() {
-    const user=users[currentUser];
-    if(!user) return;
-    const g=user.game;
-    const place=g.location.place;
-    const locationLevel=LOCATION_LEVELS[place]||1;
-    let mobs=[];
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const place = g.location.place;
+    const locationLevel = LOCATION_LEVELS[place] || 1;
+    const luck = Math.min(25, g.luck || 0);
+    const luckBonus = Math.floor(luck / 10);
     
-    if(locationLevel<=1){
-        mobs=[
-            { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
-            { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' }
-        ];
-    } else if(locationLevel<=5){
-        mobs=[
-            { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
-            { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' },
-            { name:'Собака', hp:18, damage:4, defense:1, xp:6, level:3, type:'animal', agility:3, loot:null },
-            { name:'Нищий бандит', hp:20, damage:5, defense:1, xp:8, level:5, type:'human', agility:3, loot:null }
-        ];
-    } else if(locationLevel<=15){
-        mobs=[
-            { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null },
-            { name:'Бандит', hp:30, damage:7, defense:2, xp:12, level:6, type:'human', agility:3, loot:null },
-            { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null }
-        ];
-    } else if(locationLevel<=30){
-        mobs=[
-            { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null },
-            { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
-            { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null }
-        ];
-    } else if(locationLevel<=50){
-        mobs=[
-            { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
-            { name:'Пещерный волк', hp:60, damage:14, defense:5, xp:35, level:20, type:'animal', agility:6, loot:null },
-            { name:'Опытный бандит', hp:70, damage:16, defense:6, xp:40, level:25, type:'human', agility:5, loot:null }
-        ];
-    } else {
-        mobs=[
-            { name:'Медведь', hp:80, damage:18, defense:8, xp:50, level:30, type:'animal', agility:4, loot:null },
-            { name:'Вожак волков', hp:90, damage:20, defense:7, xp:60, level:35, type:'animal', agility:7, loot:null },
-            { name:'Элитный разбойник', hp:100, damage:22, defense:9, xp:70, level:40, type:'human', agility:6, loot:null }
-        ];
-    }
-    
-    if(Math.random()*100>45){
-        setMessage('🔍 Вы никого не нашли. Тишина...');
+    // ============================================================
+    // КВАРТАЛ БЕДНОТЫ — ОСОБАЯ МЕХАНИКА
+    // ============================================================
+    if (place === 'Квартал бедноты') {
+        // Шанс найти пьянчугу (20%)
+        if (Math.random() * 100 < 20) {
+            findDrunkard();
+            return;
+        }
+        
+        // Шанс найти клад (2% + удача)
+        const treasureChance = Math.min(4.5, 2 + luckBonus);
+        if (Math.random() * 100 < treasureChance) {
+            findTreasure();
+            return;
+        }
+        
+        // Шанс найти монстра
+        const monsterChance = Math.min(47.5, 45 + luckBonus);
+        if (Math.random() * 100 < monsterChance) {
+            // Выбор моба
+            let mobs = [];
+            if (locationLevel <= 1) {
+                mobs = [
+                    { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+                    { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' }
+                ];
+            } else if (locationLevel <= 5) {
+                mobs = [
+                    { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+                    { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' },
+                    { name:'Собака', hp:18, damage:4, defense:1, xp:6, level:3, type:'animal', agility:3, loot:null }
+                ];
+            } else {
+                mobs = [
+                    { name:'Нищий бандит', hp:20, damage:5, defense:1, xp:8, level:5, type:'human', agility:3, loot:null },
+                    { name:'Бандит', hp:30, damage:7, defense:2, xp:12, level:6, type:'human', agility:3, loot:null }
+                ];
+            }
+            const mob = mobs[Math.floor(Math.random() * mobs.length)];
+            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name + ' (ур. ' + mob.level + ')');
+            startBattle(mob);
+            return;
+        }
+        
+        setMessage('🔍 В Квартале бедноты тихо... Пока.');
         return;
     }
     
-    const mob=mobs[Math.floor(Math.random()*mobs.length)];
-    setMessage('⚔️ Вы встретили '+mob.name+' (уровень '+mob.level+')');
-    addLog('⚔️ '+currentUser+' встретил '+mob.name+' (ур. '+mob.level+')');
-    startBattle(mob);
+    // ============================================================
+    // ОСТАЛЬНЫЕ ЛОКАЦИИ (СТАНДАРТНЫЙ ПОИСК)
+    // ============================================================
+    const treasureChance = Math.min(4.5, 2 + luckBonus);
+    if (Math.random() * 100 < treasureChance) {
+        findTreasure();
+        return;
+    }
+    
+    const monsterChance = Math.min(47.5, 45 + luckBonus);
+    if (Math.random() * 100 < monsterChance) {
+        let mobs = [];
+        if (locationLevel <= 1) {
+            mobs = [
+                { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+                { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' }
+            ];
+        } else if (locationLevel <= 5) {
+            mobs = [
+                { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+                { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' },
+                { name:'Собака', hp:18, damage:4, defense:1, xp:6, level:3, type:'animal', agility:3, loot:null },
+                { name:'Нищий бандит', hp:20, damage:5, defense:1, xp:8, level:5, type:'human', agility:3, loot:null }
+            ];
+        } else if (locationLevel <= 15) {
+            mobs = [
+                { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null },
+                { name:'Бандит', hp:30, damage:7, defense:2, xp:12, level:6, type:'human', agility:3, loot:null },
+                { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null }
+            ];
+        } else if (locationLevel <= 30) {
+            mobs = [
+                { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null },
+                { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
+                { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null }
+            ];
+        } else if (locationLevel <= 50) {
+            mobs = [
+                { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
+                { name:'Пещерный волк', hp:60, damage:14, defense:5, xp:35, level:20, type:'animal', agility:6, loot:null },
+                { name:'Опытный бандит', hp:70, damage:16, defense:6, xp:40, level:25, type:'human', agility:5, loot:null }
+            ];
+        } else {
+            mobs = [
+                { name:'Медведь', hp:80, damage:18, defense:8, xp:50, level:30, type:'animal', agility:4, loot:null },
+                { name:'Вожак волков', hp:90, damage:20, defense:7, xp:60, level:35, type:'animal', agility:7, loot:null },
+                { name:'Элитный разбойник', hp:100, damage:22, defense:9, xp:70, level:40, type:'human', agility:6, loot:null }
+            ];
+        }
+        const mob = mobs[Math.floor(Math.random() * mobs.length)];
+        setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+        addLog('⚔️ ' + currentUser + ' встретил ' + mob.name + ' (ур. ' + mob.level + ')');
+        startBattle(mob);
+        return;
+    }
+    
+    setMessage('🔍 Вы никого не нашли. Тишина...');
+}
+
+function findDrunkard() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const drunkards = [
+        { name: 'Пьяный рыбак', hp: 15, damage: 2, defense: 0, xp: 2, level: 1, emoji: '🎣' },
+        { name: 'Пьяный грузчик', hp: 20, damage: 3, defense: 1, xp: 3, level: 2, emoji: '📦' },
+        { name: 'Пьяный матрос', hp: 25, damage: 4, defense: 1, xp: 4, level: 3, emoji: '⛵' },
+        { name: 'Пьяный стражник', hp: 30, damage: 5, defense: 2, xp: 5, level: 4, emoji: '🛡️' }
+    ];
+    
+    const drunkard = drunkards[Math.floor(Math.random() * drunkards.length)];
+    
+    setMessage('🍺 Вы нашли ' + drunkard.name + '! Он явно пьян и ищет драки.');
+    addLog('🍺 ' + currentUser + ' встретил ' + drunkard.name + ' в Квартале бедноты');
+    
+    startDrunkardFight(drunkard);
+}
+
+function startDrunkardFight(drunkard) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const maxHp = getMaxHp(g);
+    g.maxHp = maxHp;
+    if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
+    
+    battleState = {
+        mob: drunkard,
+        playerHp: g.hp,
+        mobHp: drunkard.hp,
+        maxPlayerHp: maxHp,
+        turn: 'player',
+        inProgress: true,
+        defending: false,
+        log: [],
+        fleeAttempts: 0,
+        weaponSkill: 1,
+        playerAgility: g.stats.agility || 1,
+        playerDefense: g.stats.defense || 1,
+        mobAgility: 1,
+        mobLevel: drunkard.level || 1,
+        lastActionTime: Date.now(),
+        isDrunkardFight: true,
+        horseAlive: false,
+        horseHp: 0,
+        horseMaxHp: 0,
+        horseDefensePercent: 0,
+        mounted: false,
+        horseDismounted: false
+    };
+    
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '🍺 Драка с ' + drunkard.name + '!';
+    updateActions();
+    renderBattle();
+    saveBattleState();
+}
+
+function findTreasure() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const luck = Math.min(25, g.luck || 0);
+    const bonusLuck = Math.min(5, Math.floor(luck / 5));
+    
+    const typeRoll = Math.random() * 100;
+    
+    // 1. ЗОЛОТО (40%) — 2-10 золотых
+    if (typeRoll < 40) {
+        const goldAmount = 2 + Math.floor(Math.random() * 8) + bonusLuck;
+        g.copper += goldAmount;
+        convertCurrency(g);
+        setMessage('🪙 Вы нашли клад! +' + goldAmount + ' золота!');
+        addLog('🪙 ' + currentUser + ' нашёл клад: ' + goldAmount + ' золота');
+        updateMenu();
+        saveData();
+        return;
+    }
+    
+    // 2. ОРУЖИЕ (20%)
+    if (typeRoll < 60) {
+        const weaponTypes = ['sword','spear','axe','mace','dagger','bow','crossbow'];
+        const type = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+        const available = ALL_ITEMS.weapons[type].filter(w => w.level <= g.level + 2);
+        if (available.length > 0) {
+            const baseItem = available[Math.floor(Math.random() * available.length)];
+            const quality = rollTreasureQuality(g.level, luck);
+            const q = QUALITIES[quality];
+            const item = {
+                name: baseItem.name,
+                type: type,
+                level: baseItem.level,
+                quality: quality,
+                baseDamage: baseItem.baseDamage || 0,
+                finalDamage: baseItem.baseDamage ? Math.round(baseItem.baseDamage * q.multiplier) : 0,
+                defense: baseItem.defense || 0,
+                finalDefense: baseItem.defense ? Math.round(baseItem.defense * q.multiplier) : 0
+            };
+            g.inventory.push(item);
+            setMessage('⚔️ Вы нашли клад: ' + item.name + ' (' + quality + ')!');
+            addLog('⚔️ ' + currentUser + ' нашёл клад: ' + item.name + ' (' + quality + ')');
+            updateMenu();
+            saveData();
+            return;
+        }
+    }
+    
+    // 3. БРОНЯ (20%)
+    if (typeRoll < 80) {
+        const armorClasses = ['leather', 'plate'];
+        const armorClass = armorClasses[Math.floor(Math.random() * armorClasses.length)];
+        const types = ['helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const available = ALL_ITEMS[armorClass][type].filter(a => a.level <= g.level + 2);
+        if (available.length > 0) {
+            const baseItem = available[Math.floor(Math.random() * available.length)];
+            const quality = rollTreasureQuality(g.level, luck);
+            const q = QUALITIES[quality];
+            const item = {
+                name: baseItem.name,
+                type: type,
+                level: baseItem.level,
+                quality: quality,
+                armorClass: armorClass,
+                baseDefense: baseItem.baseDefense || 0,
+                finalDefense: baseItem.baseDefense ? Math.round(baseItem.baseDefense * q.multiplier) : 0
+            };
+            if (baseItem.speed) item.speedBonus = baseItem.speed;
+            g.inventory.push(item);
+            setMessage('🛡️ Вы нашли клад: ' + item.name + ' (' + quality + ')!');
+            addLog('🛡️ ' + currentUser + ' нашёл клад: ' + item.name + ' (' + quality + ')');
+            updateMenu();
+            saveData();
+            return;
+        }
+    }
+    
+    // 4. РЕСУРСЫ (10%) — 3-5 штук
+    if (typeRoll < 90) {
+        const resources = [
+            { name: 'Руда железная', type: 'iron' },
+            { name: 'Уголь', type: 'coal' },
+            { name: 'Сталь', type: 'steel' },
+            { name: 'Кожа', type: 'leather' },
+            { name: 'Дерево', type: 'wood' }
+        ];
+        const res = resources[Math.floor(Math.random() * resources.length)];
+        const count = 3 + Math.floor(Math.random() * 3);
+        const quality = rollTreasureQuality(g.level, luck);
+        for (let i = 0; i < count; i++) {
+            g.inventory.push({
+                name: res.name,
+                quality: quality,
+                type: 'resource',
+                resourceType: res.type
+            });
+        }
+        setMessage('📦 Вы нашли клад: ' + res.name + ' ×' + count + ' (' + quality + ')!');
+        addLog('📦 ' + currentUser + ' нашёл клад: ' + res.name + ' ×' + count);
+        updateMenu();
+        saveData();
+        return;
+    }
+    
+    // 5. ДРАГОЦЕННЫЙ КАМЕНЬ (5%) — 50-100 золота
+    if (typeRoll < 95) {
+        const gemAmount = 50 + Math.floor(Math.random() * 50);
+        g.copper += gemAmount;
+        convertCurrency(g);
+        setMessage('💎 Вы нашли драгоценный камень! +' + gemAmount + ' золота!');
+        addLog('💎 ' + currentUser + ' нашёл драгоценный камень: ' + gemAmount + ' золота');
+        updateMenu();
+        saveData();
+        return;
+    }
+    
+    // 6. РЕДКИЙ ПРЕДМЕТ (5%)
+    const weaponTypes = ['sword','spear','axe','mace','dagger','bow','crossbow','shield'];
+    const type = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+    const available = ALL_ITEMS.weapons[type].filter(w => w.level <= g.level + 2);
+    if (available.length > 0) {
+        const baseItem = available[Math.floor(Math.random() * available.length)];
+        const qualities = ['Хорошее', 'Качественное'];
+        const quality = qualities[Math.floor(Math.random() * qualities.length)];
+        const q = QUALITIES[quality];
+        const item = {
+            name: baseItem.name,
+            type: type,
+            level: baseItem.level,
+            quality: quality,
+            baseDamage: baseItem.baseDamage || 0,
+            finalDamage: baseItem.baseDamage ? Math.round(baseItem.baseDamage * q.multiplier) : 0,
+            defense: baseItem.defense || 0,
+            finalDefense: baseItem.defense ? Math.round(baseItem.defense * q.multiplier) : 0
+        };
+        g.inventory.push(item);
+        setMessage('✨ Вы нашли редкий клад: ' + item.name + ' (' + quality + ')!');
+        addLog('✨ ' + currentUser + ' нашёл редкий клад: ' + item.name + ' (' + quality + ')');
+        updateMenu();
+        saveData();
+    }
+}
+
+function rollTreasureQuality(level, luck) {
+    const roll = Math.random() * 100 + Math.floor(luck / 5);
+    if (level >= 80 && roll > 95) return 'Мифическое';
+    if (level >= 60 && roll > 90) return 'Легендарное';
+    if (level >= 40 && roll > 80) return 'Мастерское';
+    if (level >= 20 && roll > 65) return 'Качественное';
+    if (level >= 10 && roll > 45) return 'Хорошее';
+    if (roll > 25) return 'Обычное';
+    return 'Плохое';
 }
 
 function startBattle(mob) {
@@ -2113,7 +2455,6 @@ function startBattle(mob) {
     const weaponType=g.equipment.rightHand?(g.equipment.rightHand.type||'sword'):'sword';
     const skillLevel=g.skills[weaponType]?.level||1;
     
-    // Информация о лошади
     let horseAlive = false;
     let horseHp = 0;
     let horseMaxHp = 0;
@@ -2152,7 +2493,8 @@ function startBattle(mob) {
         horseMaxHp: horseMaxHp,
         horseDefensePercent: horseDefensePercent,
         mounted: mounted,
-        horseDismounted: false
+        horseDismounted: false,
+        isDrunkardFight: false
     };
     
     isBusy=true;
@@ -2437,7 +2779,6 @@ function mobTurn() {
     damage=Math.max(1, damage-totalStats.defense);
     damage=Math.round(damage*(penetrateChance/100));
     
-    // ЛОШАДЬ ПОЛУЧАЕТ УРОН
     let newHorseHp = battleState.horseHp;
     if (battleState.mounted && battleState.horseAlive && battleState.horseHp > 0) {
         const horseDamage = Math.floor(damage * 0.3);
@@ -2454,7 +2795,6 @@ function mobTurn() {
         }
         battleState.horseHp = newHorseHp;
     } else {
-        // Игрок пешком — полный урон
         damage = Math.max(1, damage - totalStats.defense);
     }
     
@@ -2487,7 +2827,7 @@ function endBattle(won, reason) {
     const user=users[currentUser];
     if(!user) return;
     const g=user.game;
-    const { mob }=battleState;
+    const { mob, isDrunkardFight }=battleState;
     
     g.hp=battleState.playerHp;
     if(g.hp>g.maxHp) g.hp=g.maxHp;
@@ -2496,19 +2836,57 @@ function endBattle(won, reason) {
     if (g.equipment && g.equipment.horse) {
         const horse = g.equipment.horse;
         if (battleState.horseAlive && battleState.horseHp > 0) {
-            // Лошадь выжила — восстанавливаем полностью
             horse.hp = horse.maxHp || 100;
             if (battleState.horseHp < horse.maxHp) {
                 setMessage('🐴 Ваша лошадь восстановила силы после боя.');
             }
         } else if (battleState.horseHp <= 0) {
-            // Лошадь умерла — удаляем из слота
             g.equipment.horse = null;
             setMessage('💀 Ваша лошадь погибла в бою.');
             addLog('💀 ' + currentUser + ' потерял лошадь в бою');
         }
     }
     
+    // БОЙ С ПЬЯНЧУГОЙ
+    if (isDrunkardFight) {
+        if (won) {
+            const copperReward = 3 + Math.floor(Math.random() * 6);
+            g.copper += copperReward;
+            convertCurrency(g);
+            setMessage('🍺 Вы побили пьянчугу! +' + copperReward + ' МП.');
+            addLog('🍺 ' + currentUser + ' побил пьянчугу (+' + copperReward + ' МП)');
+            
+            if (Math.random() * 100 < 10) {
+                enterJail();
+            }
+        } else {
+            if (reason === 'Смерть') {
+                setMessage('💀 Вас побил пьянчуга... Вы возродились в таверне.');
+                g.hp = g.maxHp;
+                g.location.place = 'Таверна';
+                g.location.location = 'Королевская Гавань';
+                g.food = 100;
+                g.thirst = 100;
+                g.fatigue = 100;
+                g.outside = false;
+                addLog('💀 ' + currentUser + ' убит пьянчугой в Квартале бедноты');
+            } else {
+                setMessage('❌ Вы сбежали от пьянчуги.');
+            }
+        }
+        
+        battleState.inProgress = false;
+        battleState = null;
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        localStorage.removeItem('got_battle');
+        updateMenu();
+        updateActions();
+        saveData();
+        return;
+    }
+    
+    // ОБЫЧНЫЙ БОЙ
     if(won){
         const xpMultiplier=getXpMultiplier(g);
         const xpGain=Math.round((mob.xp+Math.floor(Math.random()*5))*xpMultiplier);
@@ -2537,18 +2915,7 @@ function endBattle(won, reason) {
             setMessage('💪 Выносливость повышена до '+g.stamina.level+' уровня! (+5 HP)');
         }
         
-        function rollLootQuality(ml){
-            const r=Math.random()*100;
-            const qc=2, gc=5;
-            const tc=Math.max(2, 40-ml*0.8);
-            const pc=Math.max(5, 40-ml*0.5);
-            if(r<qc) return 'Качественное';
-            if(r<qc+gc) return 'Хорошее';
-            if(r<qc+gc+tc) return 'Рваное';
-            if(r<qc+gc+tc+pc) return 'Плохое';
-            return 'Обычное';
-        }
-        
+        // Лут от животных
         if(mob.type==='animal'){
             function rollSkinQ(ml){
                 const r=Math.random()*100;
@@ -2615,70 +2982,6 @@ function endBattle(won, reason) {
             g.copper+=coins;
             convertCurrency(g);
             setMessage('💰 Вы нашли '+coins+' МП у '+mob.name+' (ур. '+mob.level+')');
-            
-            if(Math.random()<0.3){
-                const quality=rollLootQuality(mob.level);
-                const weaponTypes=['sword','spear','axe','mace','bow','crossbow','dagger'];
-                const randomType=weaponTypes[Math.floor(Math.random()*weaponTypes.length)];
-                const available=ALL_ITEMS.weapons[randomType].filter(w=>w.level<=mob.level+3);
-                
-                if(available.length>0){
-                    const w=available[Math.floor(Math.random()*available.length)];
-                    const q=QUALITIES[quality];
-                    const item={
-                        name:w.name,
-                        type:randomType,
-                        level:w.level,
-                        quality:quality,
-                        baseDamage:w.baseDamage||0,
-                        finalDamage:w.baseDamage?Math.round(w.baseDamage*q.multiplier):0,
-                        defense:w.defense||0,
-                        finalDefense:w.defense?Math.round(w.defense*q.multiplier):0
-                    };
-                    g.inventory.push(item);
-                    setMessage('⚔️ Выпало: '+w.name+' ('+quality+')');
-                }
-            }
-        }
-        
-        if(mob.loot==='vagabond'){
-            const vagabondLoot=[
-                { name:'Рваный кожаный шлем', type:'helmet', armorClass:'leather', baseDefense:1, level:1 },
-                { name:'Рваный кожаный нагрудник', type:'chestplate', armorClass:'leather', baseDefense:1, level:1 },
-                { name:'Рваные кожаные наплечники', type:'shoulders', armorClass:'leather', baseDefense:0, level:1 },
-                { name:'Рваные кожаные поножи', type:'leggings', armorClass:'leather', baseDefense:0, level:1 },
-                { name:'Рваные кожаные сапоги', type:'boots', armorClass:'leather', baseDefense:0, level:1, speed:1 },
-                { name:'Рваные кожаные перчатки', type:'gloves', armorClass:'leather', baseDefense:0, level:1 },
-                { name:'Рваный кожаный пояс', type:'belt', armorClass:'leather', baseDefense:0, level:1 },
-                { name:'Рваный кожаный плащ', type:'cloak', armorClass:'leather', baseDefense:0, level:1 }
-            ];
-            const lootItem=vagabondLoot[Math.floor(Math.random()*vagabondLoot.length)];
-            const q=QUALITIES['Рваное'];
-            
-            const item={
-                name:lootItem.name,
-                type:lootItem.type,
-                armorClass:lootItem.armorClass,
-                baseDefense:lootItem.baseDefense,
-                level:lootItem.level,
-                quality:'Рваное',
-                finalDefense:Math.round(lootItem.baseDefense*q.multiplier)
-            };
-            if(lootItem.speed) item.speedBonus=lootItem.speed;
-            g.inventory.push(item);
-            setMessage('🛡️ Выпало: '+lootItem.name+' (Рваное)');
-            
-            if(Math.random()<0.5){
-                g.inventory.push({
-                    name:'Ржавый кинжал',
-                    type:'dagger',
-                    baseDamage:2,
-                    level:1,
-                    quality:'Рваное',
-                    finalDamage:Math.round(2*q.multiplier)
-                });
-                setMessage('🗡️ Выпал: Ржавый кинжал (Рваное)');
-            }
         }
         
         addLog('⚔️ '+currentUser+' победил '+mob.name+' (ур. '+mob.level+')');
@@ -2709,7 +3012,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// ТОРГОВЛЯ
+// ТОРГОВЛЯ (СОКРАЩЕНО ДЛЯ ОБЪЁМА)
 // ============================================================
 function getTraderStock(place, itemKey) {
     if (!traderInventory) traderInventory = {};
@@ -3069,7 +3372,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ (ИСПРАВЛЕНО)
+// ТОРГОВЛЯ В ТАВЕРНЕ
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -3104,7 +3407,6 @@ function buyTavernItem(name, price, food, thirst, hp) {
     const g = user.game;
     if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег.'); return; }
     
-    // Добавляем предмет в инвентарь
     let itemName = name.replace(/[🍞🥩💧🍺🍷]/g, '').trim();
     let item = {
         name: itemName,
@@ -3137,7 +3439,7 @@ function openMap() {
     if (!user) return;
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма'];
     let html = '<div class="modal-section"><h4>📍 ' + user.game.location.place + ' (ур. ' + (LOCATION_LEVELS[user.game.location.place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
@@ -3186,13 +3488,7 @@ function goToBuilding(building) {
         return;
     }
     
-    if (building === 'Дорога') {
-        // Дорога не должна быть на карте — это переходная зона
-        setMessage('❌ Дорога — это переходная зона.');
-        return;
-    }
-    
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма'];
     const targetIsCity = cityBuildings.includes(building);
     if (targetIsCity && g.outside) g.outside = false;
     else if (!targetIsCity && !g.outside) g.outside = true;
@@ -3209,7 +3505,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ
+// ПЕРСОНАЖ (СОКРАЩЕНО ДЛЯ ОБЪЁМА)
 // ============================================================
 function openCharacter() {
     const user = users[currentUser];
@@ -3267,7 +3563,7 @@ function openCharacter() {
         html += '</span></div>';
     });
     
-    // СКОРОСТЬ В ПРОЦЕНТАХ
+    // СКОРОСТЬ
     html += '<div class="modal-section"><h4>🏃 СКОРОСТЬ</h4>';
     html += '<div class="row"><span class="label">👢 Ботинки</span><span class="value">+' + totalStats.speedDetails.boots + '%</span></div>';
     html += '<div class="row"><span class="label">🐴 Лошадь</span><span class="value">+' + totalStats.speedDetails.horse + '%</span></div>';
@@ -3281,6 +3577,7 @@ function openCharacter() {
     html += '<div class="row"><span class="label">💨 Контратака</span><span class="value">' + (33 + totalStats.counter) + '%</span></div>';
     html += '<div class="row"><span class="label">🗡️ Оружие</span><span class="value">' + (g.equipment.rightHand ? g.equipment.rightHand.name + ' (ур.владения: ' + mastery.skillLevel + ')' : 'нет') + '</span></div>';
     html += '<div class="row"><span class="label">🛡️ Броня</span><span class="value">' + equipped.bonusDefense + ' защиты</span></div>';
+    html += '<div class="row"><span class="label">🍀 Удача</span><span class="value">' + totalStats.luck + '/25</span></div>';
     html += '</div>';
     html += '<div class="modal-section"><h4>💪 ВЫНОСЛИВОСТЬ</h4>';
     const st = g.stamina || { level: 1, xp: 0 };
@@ -3374,7 +3671,7 @@ function changeProfession() {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ (ОБНОВЛЁН С УЧЁТОМ ЛОШАДИ)
+// ИНВЕНТАРЬ (СОКРАЩЕНО ДЛЯ ОБЪЁМА)
 // ============================================================
 function openInventory() {
     const user = users[currentUser];
@@ -3383,7 +3680,6 @@ function openInventory() {
     const modal = document.getElementById('modal-inventory');
     const content = document.getElementById('modal-inventory-content');
     
-    // Базовый лимит инвентаря + бонус от лошади
     const baseInventoryLimit = 50;
     let bonusSlots = 0;
     if (g.equipment && g.equipment.horse) {
@@ -3577,7 +3873,7 @@ function useItem(index) {
 }
 
 // ============================================================
-// ГИЛЬДИЯ ТОРГОВЦЕВ
+// ГИЛЬДИЯ ТОРГОВЦЕВ (СОКРАЩЕНО)
 // ============================================================
 function openGuild() {
     const modal = document.getElementById('modal-guild');
@@ -3841,7 +4137,7 @@ function closeHouses() {
 }
 
 // ============================================================
-// НОВЫЕ ФУНКЦИИ ДЛЯ ДОМОВ И МАГИСТРАТА
+// ДОМА И МАГИСТРАТ (КЛЮЧЕВЫЕ ФУНКЦИИ)
 // ============================================================
 function checkHouseInDistrict(district) {
     const user = users[currentUser];
@@ -4228,24 +4524,19 @@ function openMagistrate() {
     let html = '<div class="modal-section"><h4>📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Управление недвижимостью и городскими записями.</p></div>';
     
-    // БЛОК: МОЁ ЖИЛЬЁ
     html += '<div class="modal-section"><h4>🏠 ВАШЕ ЖИЛЬЁ</h4>';
-    
     if (g.housing && g.housing.type) {
         const house = HOUSING_TYPES[g.housing.type];
         const market = housingMarket[g.housing.type];
-        
         html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:6px 0;">';
         html += '<div style="color:#c9b694;font-size:18px;">' + house.emoji + ' ' + house.name + '</div>';
         html += '<div style="color:#6a5a48;font-size:12px;">📍 ' + house.district + '</div>';
         html += '<div style="color:#b8a890;font-size:13px;margin:6px 0;">' + house.description + '</div>';
         html += '<div class="row"><span class="label">📦 Склад</span><span class="value">' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + ' слотов</span></div>';
         html += '<div class="row"><span class="label">💰 Аренда</span><span class="value">' + house.rent + ' зол./неделя</span></div>';
-        
         const now = Date.now();
         const weekMs = 7 * 24 * 60 * 60 * 1000;
         const weeksLeft = Math.floor(((g.housing.lastPayment || now) - now) / weekMs);
-        
         if (g.housing.debt > 0) {
             html += '<div class="row" style="border-color:#4a2a20;"><span class="label" style="color:#c96a5a;">⚠️ Долг</span><span class="value" style="color:#c96a5a;">' + g.housing.debt + ' зол.</span></div>';
             html += '<button class="btn" onclick="payDebt()" style="margin-top:6px;">💰 Оплатить долг (' + g.housing.debt + ' зол.)</button>';
@@ -4256,7 +4547,6 @@ function openMagistrate() {
             html += '<div class="row"><span class="label" style="color:#7ac98a;">✅ Аренда оплачена</span><span class="value" style="color:#7ac98a;">на ' + weeksLeft + ' нед.</span></div>';
             html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Продлить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
         }
-        
         html += '<button class="btn btn-danger" onclick="sellHouse()" style="margin-top:6px;">🏚️ Продать жильё</button>';
         html += '</div>';
     } else {
@@ -4264,7 +4554,6 @@ function openMagistrate() {
     }
     html += '</div>';
     
-    // БЛОК: КАМЕРА ХРАНЕНИЯ
     html += '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ</h4>';
     const hold = (g.housing && g.housing.storageHold) || [];
     html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались.</p>';
@@ -4277,24 +4566,19 @@ function openMagistrate() {
     }
     html += '</div></div>';
     
-    // БЛОК: ДОСТУПНОЕ ЖИЛЬЁ
     html += '<div class="modal-section"><h4>🏘️ ДОСТУПНОЕ ЖИЛЬЁ</h4>';
-    
     const districts = {
         'Королевский квартал': ['mansion', 'townhouse'],
         'Торговый квартал': ['house', 'room'],
         'Квартал бедноты': ['night']
     };
-    
     for (const [districtName, types] of Object.entries(districts)) {
         html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;font-weight:bold;">📍 ' + districtName + '</p>';
-        
         types.forEach(type => {
             const house = HOUSING_TYPES[type];
             const market = housingMarket[type];
             const available = market.total - market.occupied;
             const isAvailable = available > 0;
-            
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1410;">';
             html += '<div style="flex:1;">';
             html += '<span style="font-size:16px;">' + house.emoji + '</span> <strong>' + house.name + '</strong>';
@@ -4313,13 +4597,10 @@ function openMagistrate() {
             html += '</div>';
             html += '</div>';
         });
-        
         html += '</div>';
     }
-    
     html += '</div>';
     html += '<button class="btn btn-secondary" onclick="closeMagistrate()" style="margin-top:10px;">Закрыть</button>';
-    
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -4351,20 +4632,16 @@ function openStorage() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     if (!g.housing || !g.housing.type) {
         setMessage('❌ У вас нет жилья!');
         return;
     }
-    
     const house = HOUSING_TYPES[g.housing.type];
     let modal = document.getElementById('modal-storage');
     if (!modal) modal = createStorageModal();
     const content = document.getElementById('modal-storage-content');
-    
     let html = '<div class="modal-section"><h4>📦 СКЛАД (' + house.name + ')</h4>';
     html += '<p style="color:#6a5a48;">Свободно: ' + ((house.storageSlots || 10) - (g.housing.storage ? g.housing.storage.length : 0)) + '/' + house.storageSlots + ' слотов</p>';
-    
     const storage = g.housing.storage || [];
     if (storage.length === 0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">📭 Склад пуст</p>';
@@ -4375,7 +4652,6 @@ function openStorage() {
             let stats = '';
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
-            
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
             html += '<span class="value" style="font-size:11px;">' + stats;
@@ -4383,12 +4659,10 @@ function openStorage() {
             html += '</span></div>';
         });
     }
-    
     html += '<hr style="border-color:#2a201a;margin:10px 0;">';
     html += '<p style="color:#6a5a48;font-size:12px;">Положите предмет в склад из инвентаря</p>';
     html += '<button class="btn" onclick="moveToStorage()">📥 Положить предмет</button>';
     html += '<button class="btn btn-secondary" onclick="closeStorage()" style="margin-top:10px;">Закрыть</button>';
-    html += '</div>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -4420,37 +4694,30 @@ function moveToStorage() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     if (!g.housing || !g.housing.type) {
         setMessage('❌ У вас нет жилья!');
         return;
     }
-    
     const house = HOUSING_TYPES[g.housing.type];
     const storage = g.housing.storage || [];
     if (storage.length >= house.storageSlots) {
         setMessage('❌ Склад переполнен!');
         return;
     }
-    
     if (g.inventory.length === 0) {
         setMessage('❌ Инвентарь пуст!');
         return;
     }
-    
     let choices = 'Выберите предмет для склада:\n';
     g.inventory.forEach((item, i) => {
         choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')\n';
     });
-    
     const choice = prompt(choices + '\nВведите номер предмета:');
     const index = parseInt(choice) - 1;
-    
     if (isNaN(index) || index < 0 || index >= g.inventory.length) {
         setMessage('❌ Отменено.');
         return;
     }
-    
     const item = g.inventory.splice(index, 1)[0];
     if (!g.housing.storage) g.housing.storage = [];
     g.housing.storage.push(item);
@@ -4464,17 +4731,14 @@ function takeFromStorage(index) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     if (!g.housing || !g.housing.storage) {
         setMessage('❌ Склад пуст.');
         return;
     }
-    
     if (index >= g.housing.storage.length) {
         setMessage('❌ Предмет не найден.');
         return;
     }
-    
     const item = g.housing.storage.splice(index, 1)[0];
     g.inventory.push(item);
     setMessage('✅ Вы забрали ' + item.name + ' со склада.');
@@ -4487,17 +4751,13 @@ function openStorageHold() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     let modal = document.getElementById('modal-storage-hold');
     if (!modal) modal = createStorageHoldModal();
     const content = document.getElementById('modal-storage-hold-content');
-    
     const hold = (g.housing && g.housing.storageHold) || [];
-    
     let html = '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались или были выселены.</p>';
     html += '<p style="color:#6a5a48;font-size:12px;">📊 Всего предметов: ' + hold.length + '</p>';
-    
     if (hold.length === 0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">📭 Хранилище пусто</p>';
     } else {
@@ -4508,18 +4768,15 @@ function openStorageHold() {
             grouped[key].indices.push(idx);
             grouped[key].count++;
         });
-        
         for (const key in grouped) {
             const data = grouped[key];
             const item = data.item;
             const quality = item.quality || 'Обычное';
             const q = QUALITIES[quality] || QUALITIES['Обычное'];
             const count = data.count;
-            
             let stats = '';
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
-            
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
             html += '<span class="value" style="font-size:11px;">' + stats + ' | ×' + count;
@@ -4527,9 +4784,7 @@ function openStorageHold() {
             html += '</span></div>';
         }
     }
-    
     html += '<button class="btn btn-secondary" onclick="closeStorageHold()" style="margin-top:10px;">Закрыть</button>';
-    html += '</div>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -4566,7 +4821,6 @@ function takeFromStorageHold(key) {
     }
     if (!g.housing.storageHold) g.housing.storageHold = [];
     const hold = g.housing.storageHold;
-    
     const [name, quality] = key.split('|');
     const indices = [];
     hold.forEach((item, i) => {
@@ -4574,23 +4828,19 @@ function takeFromStorageHold(key) {
             indices.push(i);
         }
     });
-    
     if (indices.length === 0) {
         setMessage('❌ Предметы не найдены.');
         return;
     }
-    
     if (g.inventory.length + indices.length > 50) {
         setMessage('❌ В инвентаре недостаточно места! (макс. 50)');
         return;
     }
-    
     const items = [];
     indices.sort((a, b) => b - a).forEach(i => {
         items.push(hold.splice(i, 1)[0]);
     });
     g.inventory = g.inventory.concat(items);
-    
     setMessage('✅ Вы забрали ' + items.length + ' ' + name + ' из камеры хранения.');
     addLog('📤 ' + currentUser + ' забрал ' + items.length + ' ' + name + ' из хранилища');
     updateMenu();
@@ -4599,7 +4849,7 @@ function takeFromStorageHold(key) {
 }
 
 // ============================================================
-// КОНЮШНЯ (НОВЫЕ ФУНКЦИИ)
+// КОНЮШНЯ
 // ============================================================
 function openStable() {
     const modal = document.getElementById('modal-stable') || createStableModal();
@@ -4607,13 +4857,9 @@ function openStable() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     checkHorseReset();
-    
     let html = '<div class="modal-section"><h4>🐴 КОНЮШНЯ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно купить, продать и ухаживать за лошадьми.</p>';
-    
-    // ТЕКУЩАЯ ЛОШАДЬ
     html += '<h4 style="color:#6a5a48;margin-top:10px;">🐴 ВАША ЛОШАДЬ</h4>';
     if (g.equipment && g.equipment.horse) {
         const horse = g.equipment.horse;
@@ -4632,8 +4878,6 @@ function openStable() {
     } else {
         html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🐴 У вас нет лошади.</p>';
     }
-    
-    // ДОСТУПНЫЕ ЛОШАДИ
     html += '<h4 style="color:#6a5a48;margin-top:14px;">📦 КУПИТЬ ЛОШАДЬ</h4>';
     for (let key in HORSE_TYPES) {
         const horse = HORSE_TYPES[key];
@@ -4641,7 +4885,6 @@ function openStable() {
         const available = market.total - market.sold;
         const isAvailable = available > 0;
         const isOwned = g.equipment && g.equipment.horse && g.equipment.horse.horseType === key;
-        
         html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1410;">';
         html += '<div style="flex:1;">';
         html += '<span style="font-size:16px;">' + horse.emoji + '</span> <strong>' + horse.name + '</strong>';
@@ -4662,9 +4905,7 @@ function openStable() {
         html += '</div>';
         html += '</div>';
     }
-    
     html += '<button class="btn btn-secondary" onclick="closeStable()" style="margin-top:10px;">Закрыть</button>';
-    html += '</div>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -4675,24 +4916,20 @@ function buyHorse(type) {
     const g = user.game;
     const horse = HORSE_TYPES[type];
     if (!horse) return;
-    
     checkHorseReset();
     const market = horseMarket[type];
     if (market.sold >= market.total) {
         setMessage('❌ Все ' + horse.name + ' на этой неделе уже проданы! Ждите следующей недели.');
         return;
     }
-    
     if (g.equipment && g.equipment.horse) {
         setMessage('❌ У вас уже есть лошадь! Продайте её, чтобы купить новую.');
         return;
     }
-    
     if (!spendMoney(g, horse.price)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + horse.price + ' золота.');
         return;
     }
-    
     g.equipment.horse = {
         horseType: type,
         name: horse.name,
@@ -4702,10 +4939,8 @@ function buyHorse(type) {
         defensePercent: horse.defensePercent,
         inventorySlots: horse.inventorySlots
     };
-    
     market.sold++;
     saveHorseMarket();
-    
     setMessage('✅ Вы купили ' + horse.name + '! Осталось на этой неделе: ' + (market.total - market.sold));
     addLog('🐴 ' + currentUser + ' купил ' + horse.name);
     updateMenu();
@@ -4721,15 +4956,12 @@ function sellHorse() {
         setMessage('❌ У вас нет лошади.');
         return;
     }
-    
     const horseType = HORSE_TYPES[g.equipment.horse.horseType];
     if (!horseType) return;
-    
     const refund = Math.floor(horseType.price * 0.5);
     g.copper += refund;
     convertCurrency(g);
     g.equipment.horse = null;
-    
     setMessage('💰 Вы продали лошадь за ' + refund + ' золота.');
     addLog('💰 ' + currentUser + ' продал лошадь');
     updateMenu();
@@ -4758,6 +4990,417 @@ function createStableModal() {
 function closeStable() {
     const modal = document.getElementById('modal-stable');
     if (modal) modal.classList.add('hide');
+}
+
+// ============================================================
+// ВЕЛИКАЯ СЕПТА
+// ============================================================
+const TEMPLE_COOLDOWNS = {
+    heal: 2 * 60 * 60 * 1000,
+    luck: 24 * 60 * 60 * 1000
+};
+
+function openTemple() {
+    const modal = document.getElementById('modal-temple') || createTempleModal();
+    const content = document.getElementById('modal-temple-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    let html = '<div class="modal-section"><h4>⛪ ВЕЛИКАЯ СЕПТА БЕЙЛОРА</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Храм Семерых. Исцеление и удача.</p>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>💉 БЕСПЛАТНОЕ ИСЦЕЛЕНИЕ</h4>';
+    const lastHeal = g.lastHeal || 0;
+    const canHeal = (Date.now() - lastHeal) >= TEMPLE_COOLDOWNS.heal;
+    if (canHeal) {
+        html += '<p style="color:#6a5a48;font-size:12px;">Восстановить здоровье полностью. Бесплатно!</p>';
+        html += '<button class="btn" onclick="healAtTemple()">💉 Исцелиться</button>';
+    } else {
+        const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.heal - (Date.now() - lastHeal)) / (60 * 1000));
+        html += '<p style="color:#c96a5a;font-size:12px;">⏳ Доступно через ' + timeLeft + ' мин.</p>';
+    }
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>🍀 УВЕЛИЧЕНИЕ УДАЧИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">🍀 Текущая удача: <strong>' + (g.luck || 0) + '/25</strong></p>';
+    if ((g.luck || 0) >= 25) {
+        html += '<p style="color:#7ac98a;">✅ Максимум удачи достигнут!</p>';
+    } else {
+        const lastLuck = g.lastLuck || 0;
+        const canLuck = (Date.now() - lastLuck) >= TEMPLE_COOLDOWNS.luck;
+        if (canLuck) {
+            html += '<button class="btn btn-small" style="margin:4px 0;" onclick="getFreeLuck()">🙏 Молитва (+1 удача, бесплатно, 1 раз в день)</button>';
+        } else {
+            const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.luck - (Date.now() - lastLuck)) / (60 * 60 * 1000));
+            html += '<p style="color:#c96a5a;font-size:11px;">⏳ Молитва доступна через ' + timeLeft + ' ч.</p>';
+        }
+        html += '<p style="color:#6a5a48;font-size:12px;margin-top:6px;">📜 Пожертвования:</p>';
+        const donations = [
+            { amount: 100, luck: 1, label: 'Малое' },
+            { amount: 500, luck: 2, label: 'Среднее' },
+            { amount: 1000, luck: 4, label: 'Большое' },
+            { amount: 5000, luck: 10, label: 'Щедрое' }
+        ];
+        donations.forEach(d => {
+            html += '<button class="btn btn-small" style="margin:4px 0;text-align:left;" onclick="donate(' + d.amount + ')">';
+            html += '💰 ' + d.amount + ' зол. → 🍀 +' + d.luck + ' удачи (' + d.label + ')';
+            html += '</button>';
+        });
+    }
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeTemple()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function healAtTemple() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (g.lastHeal && (Date.now() - g.lastHeal) < TEMPLE_COOLDOWNS.heal) {
+        const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.heal - (Date.now() - g.lastHeal)) / (60 * 1000));
+        setMessage('⏳ Исцеление доступно через ' + timeLeft + ' мин.');
+        return;
+    }
+    g.hp = g.maxHp;
+    g.lastHeal = Date.now();
+    setMessage('💉 Вы полностью исцелились!');
+    addLog('💉 ' + currentUser + ' исцелился в Септе');
+    updateMenu();
+    saveData();
+    openTemple();
+}
+
+function getFreeLuck() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if ((g.luck || 0) >= 25) {
+        setMessage('🍀 Ваша удача достигла максимума (25)!');
+        return;
+    }
+    if (g.lastLuck && (Date.now() - g.lastLuck) < TEMPLE_COOLDOWNS.luck) {
+        const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.luck - (Date.now() - g.lastLuck)) / (60 * 60 * 1000));
+        setMessage('⏳ Молитва доступна через ' + timeLeft + ' ч.');
+        return;
+    }
+    g.luck = Math.min(25, (g.luck || 0) + 1);
+    g.lastLuck = Date.now();
+    setMessage('🙏 Вы помолились Семерым! Удача +1 (всего: ' + g.luck + '/25)');
+    addLog('🙏 ' + currentUser + ' получил +1 удачу в Септе');
+    updateMenu();
+    saveData();
+    openTemple();
+}
+
+function donate(amount) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if ((g.luck || 0) >= 25) {
+        setMessage('🍀 Ваша удача достигла максимума (25)!');
+        return;
+    }
+    const luckBonus = { 100: 1, 500: 2, 1000: 4, 5000: 10 }[amount];
+    if (!luckBonus) return;
+    if ((g.luck || 0) + luckBonus > 25) {
+        const maxPossible = 25 - (g.luck || 0);
+        setMessage('❌ Вы можете получить максимум ' + maxPossible + ' удачи. Сделайте меньшее пожертвование.');
+        return;
+    }
+    if (!spendMoney(g, amount)) {
+        setMessage('❌ Недостаточно золота! Нужно: ' + amount + ' зол.');
+        return;
+    }
+    g.luck = (g.luck || 0) + luckBonus;
+    const labels = { 100: 'Малое', 500: 'Среднее', 1000: 'Большое', 5000: 'Щедрое' };
+    setMessage('📜 Вы сделали ' + labels[amount] + ' пожертвование! Удача +' + luckBonus + ' (всего: ' + g.luck + '/25)');
+    addLog('📜 ' + currentUser + ' пожертвовал ' + amount + ' зол. в Септу');
+    updateMenu();
+    saveData();
+    openTemple();
+}
+
+function closeTemple() {
+    const modal = document.getElementById('modal-temple');
+    if (modal) modal.classList.add('hide');
+}
+
+function createTempleModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-temple';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeTemple(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⛪ ВЕЛИКАЯ СЕПТА</h3>
+                <button class="close-btn" onclick="closeTemple()">✕</button>
+            </div>
+            <div id="modal-temple-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// ============================================================
+// ПОРТ (ЗАГЛУШКА)
+// ============================================================
+function openPort() {
+    const modal = document.getElementById('modal-port') || createPortModal();
+    const content = document.getElementById('modal-port-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const currentCity = g.location.location || 'Королевская Гавань';
+    let html = '<div class="modal-section"><h4>⛵ ПОРТ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">🚧 В разработке. Скоро здесь можно будет путешествовать между городами.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">📍 Текущий город: <strong>' + currentCity + '</strong></p>';
+    html += '</div>';
+    html += '<div class="modal-section"><h4>🗺️ ГОРОДА ВЕСТЕРОСА</h4>';
+    for (let city in PORT_CITIES) {
+        const data = PORT_CITIES[city];
+        const isCurrent = city === currentCity;
+        html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1410;">';
+        html += '<div style="flex:1;">';
+        html += '<span style="font-size:16px;">' + data.emoji + '</span> <strong>' + city + '</strong>';
+        html += '<br><span style="font-size:11px;color:#6a5a48;">' + data.region + ' — ' + data.description + '</span>';
+        if (isCurrent) {
+            html += '<br><span style="font-size:10px;color:#7ac98a;">✅ Вы здесь</span>';
+        } else {
+            html += '<br><span style="font-size:10px;color:#6a5a48;">💰 ' + data.price + ' зол. (скоро)</span>';
+        }
+        html += '</div>';
+        html += '<div style="text-align:right;">';
+        if (isCurrent) html += '<span style="color:#7ac98a;">📍 Здесь</span>';
+        else html += '<span style="color:#c96a5a;">⛔ Недоступно</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closePort()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closePort() {
+    const modal = document.getElementById('modal-port');
+    if (modal) modal.classList.add('hide');
+}
+
+function createPortModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-port';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closePort(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⛵ ПОРТ</h3>
+                <button class="close-btn" onclick="closePort()">✕</button>
+            </div>
+            <div id="modal-port-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// ============================================================
+// ТЮРЬМА
+// ============================================================
+function enterJail() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.jail = {
+        previousLocation: g.location.place,
+        previousLocationFull: g.location.location,
+        enterTime: Date.now(),
+        lastEscapeAttempt: 0
+    };
+    g.location.place = 'Тюрьма';
+    g.location.location = 'Королевская Гавань';
+    g.outside = false;
+    setMessage('⛓️ Вас арестовала стража! Вы в тюрьме.');
+    addLog('⛓️ ' + currentUser + ' посажен в тюрьму');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function openJail() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const modal = document.getElementById('modal-jail') || createJailModal();
+    const content = document.getElementById('modal-jail-content');
+    if (g.jail && g.jail.enterTime) {
+        const jailTime = 5 * 60 * 1000;
+        const timeSpent = Date.now() - g.jail.enterTime;
+        if (timeSpent >= jailTime) {
+            freeFromJail();
+            return;
+        }
+        const timeLeft = Math.ceil((jailTime - timeSpent) / 60000);
+        const fine = getJailFine(g);
+        const canEscape = canAttemptEscape(g);
+        let html = '<div class="modal-section"><h4>⛓️ ТЮРЬМА КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+        html += '<p style="color:#c96a5a;font-size:14px;">Вы арестованы за нарушение порядка!</p>';
+        html += '<p style="color:#6a5a48;font-size:12px;">⏳ До освобождения: ' + timeLeft + ' мин.</p>';
+        html += '<p style="color:#6a5a48;font-size:12px;">💰 Штраф: ' + fine + ' зол. (1 зол. за 5 мин)</p>';
+        if (canEscape) {
+            html += '<button class="btn" style="background:#2a1a12;border-color:#4a2a20;" onclick="attemptEscape()">🏃 Попытаться сбежать (10%, 4 мин)</button>';
+        } else {
+            const escapeCooldown = 4 * 60 * 1000;
+            const lastEscape = g.jail.lastEscapeAttempt || 0;
+            const timeLeftEscape = Math.ceil((escapeCooldown - (Date.now() - lastEscape)) / 60000);
+            html += '<p style="color:#6a5a48;font-size:11px;">⏳ Попытка побега доступна через ' + timeLeftEscape + ' мин.</p>';
+        }
+        html += '<button class="btn" onclick="payJailFine()">💰 Заплатить штраф (' + fine + ' зол.)</button>';
+        html += '<button class="btn btn-secondary" onclick="waitJailTime()">⏳ Ждать освобождения (' + timeLeft + ' мин)</button>';
+        html += '<button class="btn btn-secondary" onclick="closeJail()">Закрыть</button>';
+        html += '</div>';
+        content.innerHTML = html;
+        modal.classList.remove('hide');
+        return;
+    }
+    freeFromJail();
+}
+
+function getJailFine(g) {
+    if (!g.jail || !g.jail.enterTime) return 1;
+    const timeSpent = Date.now() - g.jail.enterTime;
+    const fiveMinutes = 5 * 60 * 1000;
+    const intervals = Math.ceil(timeSpent / fiveMinutes);
+    return Math.max(1, intervals);
+}
+
+function payJailFine() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const fine = getJailFine(g);
+    if (!spendMoney(g, fine)) {
+        setMessage('❌ У вас недостаточно золота! Штраф: ' + fine + ' зол.');
+        return;
+    }
+    setMessage('💰 Вы заплатили штраф ' + fine + ' зол. и вышли на свободу!');
+    addLog('💰 ' + currentUser + ' заплатил штраф ' + fine + ' зол. и вышел из тюрьмы');
+    freeFromJail();
+}
+
+function waitJailTime() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.jail || !g.jail.enterTime) {
+        setMessage('❌ Вы не в тюрьме.');
+        return;
+    }
+    const jailTime = 5 * 60 * 1000;
+    const timeSpent = Date.now() - g.jail.enterTime;
+    const timeLeft = jailTime - timeSpent;
+    if (timeLeft <= 0) {
+        freeFromJail();
+        return;
+    }
+    const minutes = Math.ceil(timeLeft / 60000);
+    setMessage('⏳ Вы ждёте освобождения... Осталось ' + minutes + ' мин.');
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '⛓️ В тюрьме... (' + minutes + ' мин)';
+    updateActions();
+    if (busyTimer) clearTimeout(busyTimer);
+    busyTimer = setTimeout(function() {
+        freeFromJail();
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        updateActions();
+    }, timeLeft);
+    closeJail();
+}
+
+function canAttemptEscape(g) {
+    if (!g.jail || !g.jail.enterTime) return false;
+    const escapeCooldown = 4 * 60 * 1000;
+    const lastEscape = g.jail.lastEscapeAttempt || 0;
+    return (Date.now() - lastEscape) >= escapeCooldown;
+}
+
+function attemptEscape() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!canAttemptEscape(g)) {
+        const escapeCooldown = 4 * 60 * 1000;
+        const lastEscape = g.jail.lastEscapeAttempt || 0;
+        const timeLeft = Math.ceil((escapeCooldown - (Date.now() - lastEscape)) / 60000);
+        setMessage('⏳ Попытка побега доступна через ' + timeLeft + ' мин.');
+        return;
+    }
+    g.jail.lastEscapeAttempt = Date.now();
+    if (Math.random() * 100 < 10) {
+        setMessage('🏃 Вы сбежали из тюрьмы! Стража вас не заметила!');
+        addLog('🏃 ' + currentUser + ' сбежал из тюрьмы');
+        freeFromJail();
+    } else {
+        const extraTime = 10 * 60 * 1000;
+        g.jail.enterTime = Date.now() - extraTime;
+        setMessage('⛓️ Побег не удался! Стража поймала вас и добавила 10 минут к сроку.');
+        addLog('⛓️ ' + currentUser + ' не удалось сбежать из тюрьмы (+10 мин)');
+        updateMenu();
+        saveData();
+        openJail();
+    }
+}
+
+function freeFromJail() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const previousLocation = g.jail?.previousLocation || 'Таверна';
+    const previousLocationFull = g.jail?.previousLocationFull || 'Королевская Гавань';
+    g.location.place = previousLocation;
+    g.location.location = previousLocationFull;
+    g.outside = false;
+    g.jail = null;
+    setMessage('⛓️ Вы освободились из тюрьмы!');
+    addLog('⛓️ ' + currentUser + ' освободился из тюрьмы');
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function closeJail() {
+    const modal = document.getElementById('modal-jail');
+    if (modal) modal.classList.add('hide');
+}
+
+function createJailModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-jail';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeJail(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⛓️ ТЮРЬМА</h3>
+                <button class="close-btn" onclick="closeJail()">✕</button>
+            </div>
+            <div id="modal-jail-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
 }
 
 // ============================================================
