@@ -72,7 +72,6 @@
         <h2>MOBI</h2>
     </div>
 
-    <!-- СТРАНИЦА ВХОДА -->
     <div id="page-login">
         <div class="page-title">ВХОД</div>
         <div id="login-error" class="msg-error hide"></div>
@@ -89,7 +88,6 @@
         <button class="btn btn-secondary" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
     </div>
 
-    <!-- СТРАНИЦА РЕГИСТРАЦИИ -->
     <div id="page-register" class="hide">
         <div class="page-title">СОЗДАНИЕ ПЕРСОНАЖА</div>
         <div id="register-error" class="msg-error hide"></div>
@@ -128,7 +126,6 @@
         </div>
     </div>
 
-    <!-- СТРАНИЦА ИГРЫ -->
     <div id="page-game" class="hide">
         <div class="online-bar" onclick="showOnlineList()">
             <span>👥 <span id="online-global">0</span> игроков</span>
@@ -178,7 +175,6 @@
     <div class="footer">❄️ ЗИМА БЛИЗКО</div>
 </div>
 
-<!-- МОДАЛЬНЫЕ ОКНА -->
 <div id="modal-character" class="modal-overlay hide" onclick="if(event.target===this) closeCharacter()"><div class="modal-box"><div class="modal-header"><h3>👤 ПЕРСОНАЖ</h3><button class="close-btn" onclick="closeCharacter()">✕</button></div><div id="modal-content"></div></div></div>
 <div id="modal-inventory" class="modal-overlay hide" onclick="if(event.target===this) closeInventory()"><div class="modal-box"><div class="modal-header"><h3>🎒 ИНВЕНТАРЬ</h3><button class="close-btn" onclick="closeInventory()">✕</button></div><div id="modal-inventory-content"></div></div></div>
 <div id="modal-map" class="modal-overlay hide" onclick="if(event.target===this) closeMap()"><div class="modal-box"><div class="modal-header"><h3>🗺️ КОРОЛЕВСКАЯ ГАВАНЬ</h3><button class="close-btn" onclick="closeMap()">✕</button></div><div id="modal-map-content"></div></div></div>
@@ -190,9 +186,8 @@
 
 <script>
 // ============================================================
-// 1. ДАННЫЕ
+// ДАННЫЕ
 // ============================================================
-
 const NATIONALITIES = {
     'Северные земли': { strength:10, cunning:0, defense:5, diplomacy:0 },
     'Речные земли': { strength:0, cunning:10, defense:0, diplomacy:5 },
@@ -301,7 +296,7 @@ let battleState = null;
 let marketListings = [];
 
 // ============================================================
-// 2. ОСНОВНЫЕ ФУНКЦИИ
+// ОСНОВНЫЕ ФУНКЦИИ
 // ============================================================
 
 function loadData() {
@@ -367,7 +362,7 @@ function spendMoney(g, amount) {
 }
 
 // ============================================================
-// 3. РЕГИСТРАЦИЯ / ВХОД
+// РЕГИСТРАЦИЯ / ВХОД
 // ============================================================
 
 function handleRegister() {
@@ -453,7 +448,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// 4. ИГРА
+// ИГРА
 // ============================================================
 
 function fixOldAccount(user) {
@@ -551,7 +546,7 @@ function updateStory() {
 }
 
 // ============================================================
-// 5. СИСТЕМА РЕСУРСОВ
+// СИСТЕМА РЕСУРСОВ
 // ============================================================
 
 let resourceInterval = null;
@@ -588,7 +583,7 @@ function startResourceSystem() {
 }
 
 // ============================================================
-// 6. ОБНОВЛЕНИЕ КНОПОК
+// ОБНОВЛЕНИЕ КНОПОК
 // ============================================================
 
 function updateActions() {
@@ -659,7 +654,7 @@ function updateActions() {
 }
 
 // ============================================================
-// 7. ДЕЙСТВИЯ
+// ДЕЙСТВИЯ
 // ============================================================
 
 function gameAction(action) {
@@ -775,7 +770,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// 8. БОЙ
+// БОЙ
 // ============================================================
 
 function doSearch() {
@@ -992,7 +987,7 @@ function endBattle(won, reason) {
             setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня!');
         }
 
-        // ===== ЛУТ =====
+        // ЛУТ
         if (Math.random() < 0.3) {
             const quality = rollQuality(g.professions['Охотник'], false);
             const available = WEAPON_TYPES.filter(w => w.level <= g.level + 5);
@@ -1068,7 +1063,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// 9. КАРТА
+// КАРТА
 // ============================================================
 
 function openMap() {
@@ -1115,7 +1110,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// 10. ПЕРСОНАЖ
+// ПЕРСОНАЖ
 // ============================================================
 
 function openCharacter() {
@@ -1216,7 +1211,7 @@ function addAttribute(statId) {
 }
 
 // ============================================================
-// 11. ИНВЕНТАРЬ
+// ИНВЕНТАРЬ
 // ============================================================
 
 function openInventory() {
@@ -1244,7 +1239,7 @@ function openInventory() {
 function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
 
 // ============================================================
-// 12. МЕНЮ И ДОМА
+// МЕНЮ И ДОМА
 // ============================================================
 
 function openMainMenu() {
@@ -1317,7 +1312,7 @@ function showHouseInfo(region, houseId) {
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
-// 13. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
+// ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
 // ============================================================
 
 function openGuild() {
@@ -1505,7 +1500,7 @@ function removeListing(index) {
 }
 
 // ============================================================
-// 14. ОНЛАЙН
+// ОНЛАЙН
 // ============================================================
 
 function updateOnline() {
@@ -1543,7 +1538,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// 15. ВЫХОД
+// ВЫХОД
 // ============================================================
 
 function handleLogout() {
@@ -1565,7 +1560,7 @@ function handleLogout() {
 }
 
 // ============================================================
-// 16. ЗАПУСК
+// ЗАПУСК
 // ============================================================
 
 loadData();
