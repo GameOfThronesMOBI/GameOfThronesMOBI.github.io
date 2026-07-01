@@ -67,6 +67,21 @@
         .tab-btn { flex:1; min-width:50px; padding:8px 6px; background:#2a201a; border:1px solid #3d3026; border-radius:8px; color:#c9b694; font-family:'Georgia',serif; font-size:11px; cursor:pointer; text-align:center; }
         .tab-btn.active { background:#3d2e20; border-color:#8a7a5a; }
         .tab-btn:active { background:#3d3026; }
+        /* Стили для магистрата */
+        #modal-magistrate-content .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+            color: #b8a890;
+            border-bottom: 1px solid #1a1410;
+        }
+        #modal-magistrate-content .row .label {
+            color: #7a6a58;
+        }
+        #modal-magistrate-content .row .value {
+            color: #c9b694;
+        }
     </style>
 </head>
 <body>
@@ -120,10 +135,14 @@
 <div id="modal-trade" class="modal-overlay hide" onclick="if(event.target===this) closeTrade()"><div class="modal-box"><div class="modal-header"><h3>🛒 ТОРГОВЛЯ</h3><button class="close-btn" onclick="closeTrade()">✕</button></div><div id="modal-trade-content"></div></div></div>
 <div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) closeGuild()"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="closeGuild()">✕</button></div><div id="modal-guild-content"></div></div></div>
 <div id="modal-log" class="modal-overlay hide" onclick="if(event.target===this) closeLog()"><div class="modal-box"><div class="modal-header"><h3>📜 ЛОГ СОБЫТИЙ</h3><button class="close-btn" onclick="closeLog()">✕</button></div><div id="modal-log-content"></div></div></div>
+<!-- НОВЫЕ МОДАЛЬНЫЕ ОКНА ДЛЯ ДОМОВ И МАГИСТРАТА -->
+<div id="modal-magistrate" class="modal-overlay hide" onclick="if(event.target===this) closeMagistrate()"><div class="modal-box"><div class="modal-header"><h3>📜 МАГИСТРАТ</h3><button class="close-btn" onclick="closeMagistrate()">✕</button></div><div id="modal-magistrate-content"></div></div></div>
+<div id="modal-storage" class="modal-overlay hide" onclick="if(event.target===this) closeStorage()"><div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД</h3><button class="close-btn" onclick="closeStorage()">✕</button></div><div id="modal-storage-content"></div></div></div>
+<div id="modal-storage-hold" class="modal-overlay hide" onclick="if(event.target===this) closeStorageHold()"><div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div></div>
 
 <script>
 // ============================================================
-// КОНСТАНТЫ
+// КОНСТАНТЫ (СУЩЕСТВУЮЩИЕ + НОВЫЕ)
 // ============================================================
 const QUALITIES = {
     'Рваное': { color: '#666', short: 'рван.', multiplier: 0.4, emoji: '🟫' },
@@ -146,17 +165,32 @@ const NATIONALITIES = {
     'Дорн': { strength:0, cunning:10, defense:5, diplomacy:0 }
 };
 
+// ОБНОВЛЁННЫЙ BUILDINGS (ДОБАВЛЕНЫ РАЙОНЫ)
 const BUILDINGS = [
-    { id:'Таверна', label:'🍺 Таверна' }, { id:'Рынок', label:'🛒 Рынок' },
-    { id:'Кузница', label:'⚒️ Кузница' }, { id:'Оружейная лавка', label:'🗡️ Оружейная лавка' },
-    { id:'Кожевник', label:'🪡 Кожевник' }, { id:'Бронник', label:'🛡️ Бронник' },
-    { id:'Плотник', label:'🪵 Плотник' }, { id:'Конюшня', label:'🐴 Конюшня' },
-    { id:'Гильдия торговцев', label:'🏛️ Гильдия торговцев' }, { id:'Гильдия наёмников', label:'⚔️ Гильдия наёмников' },
-    { id:'Магистрат', label:'📜 Магистрат' }, { id:'Храм', label:'⛪ Храм' },
-    { id:'Порт', label:'⛵ Порт' }, { id:'Тюрьма', label:'⛓️ Тюрьма' },
-    { id:'Арена', label:'🎭 Арена' }, { id:'Орден мейстеров', label:'📚 Орден мейстеров' },
-    { id:'Квартал бедноты', label:'🏘️ Квартал бедноты' }, { id:'Красный замок', label:'🏰 Красный замок' },
-    { id:'Ворота', label:'🚪 Ворота' }, { id:'Дорога', label:'🛤️ Дорога' }
+    // ЖИЛЫЕ РАЙОНЫ (НОВЫЕ)
+    { id:'Королевский квартал', label:'👑 Королевский квартал' },
+    { id:'Торговый квартал', label:'🏙️ Торговый квартал' },
+    { id:'Квартал бедноты', label:'🏚️ Квартал бедноты' },
+    
+    // ОСТАЛЬНЫЕ ЗДАНИЯ (БЕЗ ИЗМЕНЕНИЙ)
+    { id:'Таверна', label:'🍺 Таверна' },
+    { id:'Рынок', label:'🛒 Рынок' },
+    { id:'Кузница', label:'⚒️ Кузница' },
+    { id:'Оружейная лавка', label:'🗡️ Оружейная лавка' },
+    { id:'Кожевник', label:'🪡 Кожевник' },
+    { id:'Бронник', label:'🛡️ Бронник' },
+    { id:'Плотник', label:'🪵 Плотник' },
+    { id:'Конюшня', label:'🐴 Конюшня' },
+    { id:'Гильдия торговцев', label:'🏛️ Гильдия торговцев' },
+    { id:'Гильдия наёмников', label:'⚔️ Гильдия наёмников' },
+    { id:'Магистрат', label:'📜 Магистрат' },
+    { id:'Храм', label:'⛪ Храм' },
+    { id:'Порт', label:'⛵ Порт' },
+    { id:'Тюрьма', label:'⛓️ Тюрьма' },
+    { id:'Арена', label:'🎭 Арена' },
+    { id:'Орден мейстеров', label:'📚 Орден мейстеров' },
+    { id:'Красный замок', label:'🏰 Красный замок' },
+    { id:'Ворота', label:'🚪 Ворота' }
 ];
 
 const LOCATION_LEVELS = {
@@ -164,7 +198,82 @@ const LOCATION_LEVELS = {
     'Плотник':1,'Конюшня':1,'Гильдия торговцев':1,'Гильдия наёмников':1,
     'Магистрат':1,'Храм':1,'Порт':1,'Тюрьма':1,'Арена':1,'Орден мейстеров':1,
     'Квартал бедноты':1,'Красный замок':1,'Королевская Гавань':1,
-    'Ворота':1,'Дорога':5
+    'Королевский квартал':1,'Торговый квартал':1,'Ворота':1,'Дорога':5,
+    'Дом':1
+};
+
+// НОВЫЕ КОНСТАНТЫ ДЛЯ ДОМОВ
+const HOUSING_TYPES = {
+    'night': { 
+        name: 'Ночлежка', 
+        district: 'Квартал бедноты',
+        price: 30, 
+        rent: 3, 
+        storageSlots: 10,
+        restHp: 10,
+        restFatigue: 10,
+        bonusInt: 0,
+        bonusLuck: -1,
+        bonusDef: 0,
+        emoji: '🏚️',
+        description: 'Общая комната. Дешево, но шумно. Есть сундук для вещей.'
+    },
+    'room': { 
+        name: 'Комната', 
+        district: 'Торговый квартал',
+        price: 120, 
+        rent: 8, 
+        storageSlots: 20,
+        restHp: 20,
+        restFatigue: 20,
+        bonusInt: 1,
+        bonusLuck: 0,
+        bonusDef: 0,
+        emoji: '🏠',
+        description: 'Скромная комната с кроватью, столом и шкафом.'
+    },
+    'house': { 
+        name: 'Дом', 
+        district: 'Торговый квартал',
+        price: 400, 
+        rent: 20, 
+        storageSlots: 40,
+        restHp: 35,
+        restFatigue: 35,
+        bonusInt: 2,
+        bonusLuck: 0,
+        bonusDef: 1,
+        emoji: '🏡',
+        description: 'Собственный дом с садом, подвалом и чердаком для хранения.'
+    },
+    'townhouse': { 
+        name: 'Таунхаус', 
+        district: 'Королевский квартал',
+        price: 800, 
+        rent: 35, 
+        storageSlots: 60,
+        restHp: 50,
+        restFatigue: 50,
+        bonusInt: 3,
+        bonusLuck: 1,
+        bonusDef: 2,
+        emoji: '🏘️',
+        description: 'Двухэтажный дом в престижном районе. Много комнат и кладовых.'
+    },
+    'mansion': { 
+        name: 'Особняк', 
+        district: 'Королевский квартал',
+        price: 2000, 
+        rent: 80, 
+        storageSlots: 100,
+        restHp: 70,
+        restFatigue: 70,
+        bonusInt: 5,
+        bonusLuck: 2,
+        bonusDef: 3,
+        emoji: '🏛️',
+        description: 'Роскошный особняк. Огромные залы, подвалы и чердаки для хранения.'
+    }
 };
 
 const HOUSES_DATA = {
@@ -199,7 +308,7 @@ const HOUSES_DATA = {
 };
 
 // ============================================================
-// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК)
+// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК) — БЕЗ ИЗМЕНЕНИЙ
 // ============================================================
 const ALL_ITEMS = {
     weapons: {
@@ -768,14 +877,43 @@ let resourceInterval = null;
 let autoSaveInterval = null;
 let gameLog = [];
 
+// НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ДОМОВ
+let housingMarket = {
+    'night': { total: 400, occupied: 0 },
+    'room': { total: 300, occupied: 0 },
+    'house': { total: 250, occupied: 0 },
+    'townhouse': { total: 80, occupied: 0 },
+    'mansion': { total: 10, occupied: 0 }
+};
+
 // ============================================================
-// ЗАГРУЗКА / СОХРАНЕНИЕ
+// ЗАГРУЗКА / СОХРАНЕНИЕ (ОБНОВЛЕНЫ)
 // ============================================================
+function loadHousingMarket() {
+    try {
+        const raw = localStorage.getItem('got_housing_market');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            for (let key in housingMarket) {
+                if (parsed[key]) {
+                    housingMarket[key].occupied = parsed[key].occupied || 0;
+                }
+            }
+        }
+    } catch(e) {}
+}
+
+function saveHousingMarket() {
+    localStorage.setItem('got_housing_market', JSON.stringify(housingMarket));
+}
+
 function loadData() {
     try { const raw = localStorage.getItem('got_users'); if (raw) users = JSON.parse(raw); } catch(e) { users = {}; }
     try { const rawMarket = localStorage.getItem('got_market'); if (rawMarket) marketListings = JSON.parse(rawMarket); } catch(e) { marketListings = []; }
     try { const rawTrader = localStorage.getItem('got_trader'); if (rawTrader) traderInventory = JSON.parse(rawTrader); } catch(e) { traderInventory = {}; }
     try { const rawLog = localStorage.getItem('got_log'); if (rawLog) gameLog = JSON.parse(rawLog); } catch(e) { gameLog = []; }
+    
+    loadHousingMarket();
     
     if (Object.keys(traderInventory).length === 0) {
         initTraderStock();
@@ -788,6 +926,7 @@ function saveData() {
     localStorage.setItem('got_trader', JSON.stringify(traderInventory));
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
+    saveHousingMarket();
 }
 
 function addLog(msg) {
@@ -811,7 +950,7 @@ function spendMoney(g, amount) { if (amount <= 0) return true; let total = g.cop
 function getResourcePrice(resourceType, quality) { const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 }; const base = basePrices[resourceType] || 5; const q = QUALITIES[quality] || QUALITIES['Обычное']; return Math.round(base * q.multiplier); }
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ
+// ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function initTraderStock() {
     const shops = ['Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Кузница'];
@@ -886,7 +1025,7 @@ function initTraderStock() {
 }
 
 // ============================================================
-// РЕГИСТРАЦИЯ / ВХОД
+// РЕГИСТРАЦИЯ / ВХОД (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function handleRegister() {
     const name = document.getElementById('reg-name').value.trim();
@@ -937,7 +1076,16 @@ function handleRegister() {
             lastActive:now,
             online:true,
             house:null,
-            lastResourceUpdate: now
+            lastResourceUpdate: now,
+            // НОВОЕ: данные о жилье
+            housing: {
+                type: null,
+                purchased: null,
+                lastPayment: null,
+                debt: 0,
+                storage: [],
+                storageHold: []
+            }
         }
     };
     addLog('👤 '+name+' создал персонажа ('+nationality+')');
@@ -969,7 +1117,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// ВХОД В ИГРУ
+// ВХОД В ИГРУ (ОБНОВЛЕН: ДОБАВЛЕНА ПРОВЕРКА АРЕНДЫ)
 // ============================================================
 function fixOldAccount(user) {
     if (!user.game) return;
@@ -995,6 +1143,12 @@ function fixOldAccount(user) {
     if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1, speed:1 };
     if (g.attributePoints === undefined) g.attributePoints = 0;
     if (g.lastReset === undefined) g.lastReset = null;
+    // НОВОЕ: инициализация housing
+    if (g.housing === undefined) {
+        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+    }
+    if (g.housing.storage === undefined) g.housing.storage = [];
+    if (g.housing.storageHold === undefined) g.housing.storageHold = [];
     return user;
 }
 
@@ -1002,6 +1156,9 @@ function enterGame(name) {
     const user = users[name];
     if(!user) return;
     fixOldAccount(user);
+    
+    // НОВОЕ: проверка аренды при входе
+    checkRent();
     
     showPage('game');
     user.game.online = true;
@@ -1124,7 +1281,7 @@ function handleDeath(cause) {
 }
 
 // ============================================================
-// СТАТЫ И БОНУСЫ
+// СТАТЫ И БОНУСЫ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function getLevelBonuses(level) {
     const specialLevel = Math.min(level, 400);
@@ -1169,7 +1326,13 @@ function getWeaponMasteryBonus(g) {
 
 function getMaxHp(g) {
     const staminaLevel=g.stamina?.level||1;
-    return 60+(g.level-1)*10+staminaLevel*2;
+    // НОВОЕ: бонус от жилья
+    let bonusHp = 0;
+    if (g.housing && g.housing.type) {
+        const house = HOUSING_TYPES[g.housing.type];
+        if (house) bonusHp = house.restHp || 0;
+    }
+    return 60+(g.level-1)*10+staminaLevel*2 + bonusHp;
 }
 
 function getXpMultiplier(g) {
@@ -1184,11 +1347,23 @@ function getTotalStats(g) {
     const totalAgility=(g.stats.agility||1)+equipped.bonusAgility;
     const totalDefense=(g.stats.defense||1)+equipped.bonusDefense+totalAgility;
     const totalDamage=(g.stats.damage||1)+equipped.bonusDamage+mastery.damageBonus;
+    
+    // НОВОЕ: бонусы от жилья
+    let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
+    if (g.housing && g.housing.type) {
+        const house = HOUSING_TYPES[g.housing.type];
+        if (house) {
+            bonusInt = house.bonusInt || 0;
+            bonusLuck = house.bonusLuck || 0;
+            bonusDef = house.bonusDef || 0;
+        }
+    }
+    
     return {
         damage:totalDamage,
-        defense:totalDefense,
+        defense:totalDefense + bonusDef,
         agility:totalAgility,
-        intelligence:(g.stats.intelligence||1),
+        intelligence:(g.stats.intelligence||1) + bonusInt,
         speed:(g.stats.speed||1)+equipped.bonusSpeed,
         accuracy:mastery.accuracy+levelBonus.accuracy,
         crit:levelBonus.crit,
@@ -1197,7 +1372,8 @@ function getTotalStats(g) {
         counter:levelBonus.counter,
         weaponType:mastery.weaponType,
         skillLevel:mastery.skillLevel,
-        maxHp:getMaxHp(g)
+        maxHp:getMaxHp(g),
+        luck: (g.stats.luck||0) + bonusLuck
     };
 }
 
@@ -1229,7 +1405,7 @@ function resetAttributes() {
 }
 
 // ============================================================
-// МЕНЮ
+// МЕНЮ (ОБНОВЛЕНО: ДОБАВЛЕНА ИНФОРМАЦИЯ О ДОМЕ)
 // ============================================================
 function updateMenu() {
     const user=users[currentUser];
@@ -1256,63 +1432,850 @@ function updateMenu() {
 }
 
 function updateStory() {
-    const user=users[currentUser];
-    if(!user) return;
-    const place=user.game.location.place;
-    document.getElementById('story-title').textContent='📍 '+place+' (ур.'+(LOCATION_LEVELS[place]||1)+')';
-    const texts={
-        'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
-        'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
-        'Кузница':'Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
-        'Оружейная лавка':'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
-        'Кожевник':'Вы у кожевника. Здесь можно купить и продать кожаную броню.',
-        'Бронник':'Вы у бронника. Здесь можно купить и продать латную броню.',
-        'Плотник':'Вы у плотника. Здесь можно купить и продать луки и арбалеты.',
-        'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
-        'Ворота':'Вы у городских ворот.'+(user.game.outside?' Снаружи виднеется дорога.':' Отсюда можно выйти на Дорогу.'),
-        'Дорога':'🛤️ Дорога у ворот Королевской Гавани.'
+    const user = users[currentUser];
+    if (!user) return;
+    const place = user.game.location.place;
+    document.getElementById('story-title').textContent = '📍 ' + place + ' (ур.' + (LOCATION_LEVELS[place] || 1) + ')';
+    
+    const texts = {
+        // Жилые районы
+        'Королевский квартал': '👑 Элитный район. Здесь живут самые богатые и влиятельные люди. Доступно: ' + 
+            (housingMarket.mansion.total - housingMarket.mansion.occupied) + ' особняков и ' + 
+            (housingMarket.townhouse.total - housingMarket.townhouse.occupied) + ' таунхаусов.' +
+            (user.game.housing && user.game.housing.type && HOUSING_TYPES[user.game.housing.type].district === 'Королевский квартал' ? ' 🏠 Ваш дом здесь.' : ''),
+        
+        'Торговый квартал': '🏙️ Центр торговли. Здесь селятся ремесленники и купцы. Доступно: ' + 
+            (housingMarket.house.total - housingMarket.house.occupied) + ' домов и ' + 
+            (housingMarket.room.total - housingMarket.room.occupied) + ' комнат.' +
+            (user.game.housing && user.game.housing.type && HOUSING_TYPES[user.game.housing.type].district === 'Торговый квартал' ? ' 🏠 Ваш дом здесь.' : ''),
+        
+        'Квартал бедноты': '🏚️ Окраина города. Жильё здесь дёшево, но опасно. Доступно: ' + 
+            (housingMarket.night.total - housingMarket.night.occupied) + ' ночлежек.' +
+            (user.game.housing && user.game.housing.type && HOUSING_TYPES[user.game.housing.type].district === 'Квартал бедноты' ? ' 🏠 Ваш дом здесь.' : ''),
+        
+        // Дом
+        'Дом': '🏠 Ваш дом. Здесь можно отдохнуть, хранить вещи и чувствовать себя в безопасности.',
+        
+        // Остальные
+        'Таверна': 'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
+        'Рынок': 'Вы на рынке. Здесь можно купить и продать товары.',
+        'Кузница': 'Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
+        'Оружейная лавка': 'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
+        'Кожевник': 'Вы у кожевника. Здесь можно купить и продать кожаную броню.',
+        'Бронник': 'Вы у бронника. Здесь можно купить и продать латную броню.',
+        'Плотник': 'Вы у плотника. Здесь можно купить и продать луки и арбалеты.',
+        'Гильдия торговцев': 'Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
+        'Магистрат': '📜 Магистрат — центр управления городом. Здесь можно купить жильё, оплатить аренду и уладить городские дела.',
+        'Красный замок': '🏰 Резиденция короля Железного трона. Сюда будут допущены только избранные.',
+        'Ворота': 'Вы у городских ворот.' + (user.game.outside ? ' Снаружи виднеется дорога.' : ' Отсюда можно выйти на Дорогу.'),
+        'Дорога': '🛤️ Дорога у ворот Королевской Гавани.'
     };
-    document.getElementById('story-text').textContent=texts[place]||'Вы находитесь в '+place+'.';
+    
+    document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в ' + place + '.';
 }
 
 // ============================================================
-// КНОПКИ ДЕЙСТВИЙ
+// ФУНКЦИИ ДЛЯ ДОМОВ И МАГИСТРАТА (НОВЫЕ)
+// ============================================================
+function checkHouseInDistrict(district) {
+    const user = users[currentUser];
+    if (!user) return false;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) return false;
+    const house = HOUSING_TYPES[g.housing.type];
+    return house && house.district === district;
+}
+
+function buyHouse(type) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const house = HOUSING_TYPES[type];
+    if (!house) { setMessage('❌ Такого жилья нет.'); return; }
+    
+    if (g.housing && g.housing.type) {
+        setMessage('❌ У вас уже есть жильё! Продайте его, чтобы купить новое.');
+        return;
+    }
+    
+    const market = housingMarket[type];
+    if (!market || market.occupied >= market.total) {
+        setMessage('❌ Все ' + house.name + ' уже проданы! Попробуйте другой вариант.');
+        return;
+    }
+    
+    if (!spendMoney(g, house.price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + house.price + ' золота.');
+        return;
+    }
+    
+    if (!g.housing) {
+        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+    }
+    
+    g.housing.type = type;
+    g.housing.purchased = Date.now();
+    g.housing.lastPayment = Date.now();
+    g.housing.debt = 0;
+    if (!g.housing.storage) g.housing.storage = [];
+    if (!g.housing.storageHold) g.housing.storageHold = [];
+    
+    market.occupied++;
+    saveHousingMarket();
+    
+    setMessage('✅ Вы купили ' + house.name + '! Осталось: ' + (market.total - market.occupied) + ' свободных.');
+    addLog('🏠 ' + currentUser + ' купил ' + house.name);
+    updateMenu();
+    saveData();
+    if (typeof openMagistrate === 'function') openMagistrate();
+}
+
+function sellHouse() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) { setMessage('❌ У вас нет жилья.'); return; }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const refund = Math.floor(house.price * 0.6);
+    
+    g.copper += refund;
+    convertCurrency(g);
+    
+    if (g.housing.storage && g.housing.storage.length > 0) {
+        if (!g.housing.storageHold) g.housing.storageHold = [];
+        g.housing.storageHold = g.housing.storageHold.concat(g.housing.storage);
+        g.housing.storage = [];
+        setMessage('📦 Предметы со склада перемещены в камеру хранения Магистрата.');
+    }
+    
+    const market = housingMarket[g.housing.type];
+    if (market) market.occupied = Math.max(0, market.occupied - 1);
+    saveHousingMarket();
+    
+    g.housing.type = null;
+    g.housing.debt = 0;
+    g.housing.lastPayment = null;
+    
+    setMessage('🏚️ Вы продали ' + house.name + ' за ' + refund + ' золота.');
+    addLog('💰 ' + currentUser + ' продал ' + house.name);
+    updateMenu();
+    saveData();
+    if (typeof openMagistrate === 'function') openMagistrate();
+}
+
+function payRent() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет жилья!');
+        return;
+    }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    
+    if (g.housing.debt > 0) {
+        setMessage('⚠️ Сначала оплатите долг (' + g.housing.debt + ' зол.)');
+        return;
+    }
+    
+    if (!spendMoney(g, house.rent)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + house.rent + ' золота.');
+        return;
+    }
+    
+    g.housing.lastPayment = Math.max(g.housing.lastPayment || now, now) + weekMs;
+    
+    setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю вперёд!');
+    addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
+    updateMenu();
+    saveData();
+    if (typeof openMagistrate === 'function') openMagistrate();
+}
+
+function payDebt() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет жилья!');
+        return;
+    }
+    
+    if (g.housing.debt === 0) {
+        setMessage('✅ У вас нет долгов.');
+        return;
+    }
+    
+    if (!spendMoney(g, g.housing.debt)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + g.housing.debt + ' золота.');
+        return;
+    }
+    
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    g.housing.lastPayment = Math.max(g.housing.lastPayment || now, now) + weekMs;
+    g.housing.debt = 0;
+    
+    setMessage('✅ Вы оплатили долг и продлили аренду на неделю!');
+    addLog('💰 ' + currentUser + ' оплатил долг за ' + g.housing.type);
+    updateMenu();
+    saveData();
+    if (typeof openMagistrate === 'function') openMagistrate();
+}
+
+function evictFromHousing() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) return;
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    
+    const market = housingMarket[g.housing.type];
+    if (market) market.occupied = Math.max(0, market.occupied - 1);
+    saveHousingMarket();
+    
+    if (g.housing.storage && g.housing.storage.length > 0) {
+        if (!g.housing.storageHold) g.housing.storageHold = [];
+        g.housing.storageHold = g.housing.storageHold.concat(g.housing.storage);
+        g.housing.storage = [];
+        setMessage('📦 ' + g.housing.storageHold.length + ' предметов перемещены в камеру хранения Магистрата.');
+    }
+    
+    const oldType = g.housing.type;
+    g.housing.type = null;
+    g.housing.debt = 0;
+    g.housing.lastPayment = null;
+    
+    setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
+    addLog('💀 ' + currentUser + ' выселен из ' + oldType);
+    updateMenu();
+    saveData();
+}
+
+function checkRent() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) return;
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    
+    const weeksPassed = Math.floor((now - (g.housing.lastPayment || now)) / weekMs);
+    if (weeksPassed === 0) return;
+    
+    const totalRent = house.rent * weeksPassed;
+    
+    if (spendMoney(g, totalRent)) {
+        g.housing.lastPayment = now;
+        setMessage('🏠 Аренда за ' + weeksPassed + ' недель оплачена (' + totalRent + ' зол.).');
+        return;
+    }
+    
+    g.housing.debt = (g.housing.debt || 0) + totalRent;
+    g.housing.lastPayment = now;
+    
+    if (g.housing.debt > house.rent * 3) {
+        evictFromHousing();
+    } else {
+        setMessage('⚠️ У вас долг за аренду: ' + g.housing.debt + ' зол. Оплатите в ближайшее время!');
+    }
+}
+
+function enterHome() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const place = g.location.place;
+    
+    const housingDistricts = ['Королевский квартал', 'Торговый квартал', 'Квартал бедноты'];
+    if (!housingDistricts.includes(place)) {
+        setMessage('❌ Здесь нет жилых домов.');
+        return;
+    }
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет дома в этом районе. Купите жильё в Магистрате.');
+        return;
+    }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    if (house.district !== place) {
+        setMessage('❌ Ваш дом находится в районе: ' + house.district + '. Идите туда.');
+        return;
+    }
+    
+    if (g.housing.debt > house.rent * 3) {
+        setMessage('❌ Вас выселили из дома за неуплату! Обратитесь в Магистрат.');
+        return;
+    }
+    
+    g.location.place = 'Дом';
+    g.location.location = 'Королевская Гавань';
+    setMessage('🏠 Вы вошли в свой дом.');
+    addLog('🏠 ' + currentUser + ' вошёл в дом');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function restAtHome() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет жилья! Купите дом, чтобы отдыхать.');
+        return;
+    }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    
+    if (g.housing.debt > house.rent * 2) {
+        setMessage('❌ У вас слишком большой долг! Оплатите аренду, чтобы отдохнуть.');
+        return;
+    }
+    
+    g.hp = Math.min(g.hp + house.restHp, g.maxHp || 60);
+    g.fatigue = Math.min(g.fatigue + house.restFatigue, 100);
+    
+    setMessage('🛏️ Вы отдохнули дома! HP +' + house.restHp + ', усталость +' + house.restFatigue);
+    addLog('🛏️ ' + currentUser + ' отдохнул в ' + house.name);
+    updateMenu();
+    saveData();
+}
+
+function viewDistrict(district) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const districtMap = {
+        'Королевский квартал': ['mansion', 'townhouse'],
+        'Торговый квартал': ['house', 'room'],
+        'Квартал бедноты': ['night']
+    };
+    
+    const housingTypes = districtMap[district];
+    if (!housingTypes) {
+        setMessage('❌ В этом районе нет жилья для покупки.');
+        return;
+    }
+    
+    if (g.housing && g.housing.type) {
+        setMessage('❌ У вас уже есть жильё! Продайте его, чтобы купить новое.');
+        return;
+    }
+    
+    let msg = '📍 ' + district + '\n\nДоступные варианты:\n';
+    let availableTypes = [];
+    
+    housingTypes.forEach(type => {
+        const house = HOUSING_TYPES[type];
+        const market = housingMarket[type];
+        const available = market.total - market.occupied;
+        
+        if (available > 0) {
+            availableTypes.push(type);
+            msg += house.emoji + ' ' + house.name + ' — ' + house.price + ' зол. (свободно: ' + available + ')\n';
+        } else {
+            msg += house.emoji + ' ' + house.name + ' — ❌ РАСПРОДАНО\n';
+        }
+    });
+    
+    if (availableTypes.length === 0) {
+        msg += '\n❌ В этом районе нет свободного жилья.';
+        setMessage(msg);
+        return;
+    }
+    
+    msg += '\nВведите номер типа для покупки:\n';
+    availableTypes.forEach((type, i) => {
+        const house = HOUSING_TYPES[type];
+        msg += (i + 1) + '. ' + house.emoji + ' ' + house.name + ' (' + house.price + ' зол., аренда ' + house.rent + '/нед)\n';
+    });
+    msg += '0. Отмена';
+    
+    const choice = prompt(msg);
+    if (!choice || choice === '0') {
+        setMessage('❌ Отменено.');
+        return;
+    }
+    
+    const index = parseInt(choice) - 1;
+    if (isNaN(index) || index < 0 || index >= availableTypes.length) {
+        setMessage('❌ Неверный выбор.');
+        return;
+    }
+    
+    const selectedType = availableTypes[index];
+    const house = HOUSING_TYPES[selectedType];
+    const market = housingMarket[selectedType];
+    const available = market.total - market.occupied;
+    
+    if (available <= 0) {
+        setMessage('❌ К сожалению, пока вы выбирали, все ' + house.name + ' распродали!');
+        return;
+    }
+    
+    const confirmMsg = '🏠 ' + house.name + '\n' +
+                       '📖 ' + house.description + '\n' +
+                       '📍 ' + house.district + '\n' +
+                       '💰 Цена: ' + house.price + ' зол.\n' +
+                       '💳 Аренда: ' + house.rent + ' зол./нед\n' +
+                       '📦 Склад: ' + house.storageSlots + ' слотов\n' +
+                       '🛏️ Отдых: +' + house.restHp + ' HP\n' +
+                       '📊 Свободно: ' + available + ' из ' + market.total + '\n\n' +
+                       'Купить? (да/нет)';
+    
+    if (confirm(confirmMsg)) {
+        buyHouse(selectedType);
+    }
+}
+
+// ============================================================
+// ФУНКЦИИ МАГИСТРАТА (НОВЫЕ)
+// ============================================================
+function openMagistrate() {
+    const modal = document.getElementById('modal-magistrate') || createMagistrateModal();
+    const content = document.getElementById('modal-magistrate-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    let html = '<div class="modal-section"><h4>📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Управление недвижимостью и городскими записями.</p></div>';
+    
+    // БЛОК: МОЁ ЖИЛЬЁ
+    html += '<div class="modal-section"><h4>🏠 ВАШЕ ЖИЛЬЁ</h4>';
+    
+    if (g.housing && g.housing.type) {
+        const house = HOUSING_TYPES[g.housing.type];
+        const market = housingMarket[g.housing.type];
+        
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:6px 0;">';
+        html += '<div style="color:#c9b694;font-size:18px;">' + house.emoji + ' ' + house.name + '</div>';
+        html += '<div style="color:#6a5a48;font-size:12px;">📍 ' + house.district + '</div>';
+        html += '<div style="color:#b8a890;font-size:13px;margin:6px 0;">' + house.description + '</div>';
+        html += '<div class="row"><span class="label">📦 Склад</span><span class="value">' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + ' слотов</span></div>';
+        html += '<div class="row"><span class="label">💰 Аренда</span><span class="value">' + house.rent + ' зол./неделя</span></div>';
+        
+        const now = Date.now();
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+        const weeksLeft = Math.floor(((g.housing.lastPayment || now) - now) / weekMs);
+        
+        if (g.housing.debt > 0) {
+            html += '<div class="row" style="border-color:#4a2a20;"><span class="label" style="color:#c96a5a;">⚠️ Долг</span><span class="value" style="color:#c96a5a;">' + g.housing.debt + ' зол.</span></div>';
+            html += '<button class="btn" onclick="payDebt()" style="margin-top:6px;">💰 Оплатить долг (' + g.housing.debt + ' зол.)</button>';
+        } else if (weeksLeft <= 0) {
+            html += '<div class="row" style="border-color:#4a2a20;"><span class="label" style="color:#c96a5a;">⏰ Аренда истекла</span><span class="value" style="color:#c96a5a;">Оплатите сейчас!</span></div>';
+            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+        } else {
+            html += '<div class="row"><span class="label" style="color:#7ac98a;">✅ Аренда оплачена</span><span class="value" style="color:#7ac98a;">на ' + weeksLeft + ' нед.</span></div>';
+            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Продлить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+        }
+        
+        html += '<button class="btn btn-danger" onclick="sellHouse()" style="margin-top:6px;">🏚️ Продать жильё</button>';
+        html += '</div>';
+    } else {
+        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🏚️ У вас нет жилья. Выберите вариант ниже.</p>';
+    }
+    html += '</div>';
+    
+    // БЛОК: КАМЕРА ХРАНЕНИЯ
+    html += '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ</h4>';
+    const hold = (g.housing && g.housing.storageHold) || [];
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались.</p>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">';
+    html += '<span style="color:#b8a890;">📊 Всего предметов: ' + hold.length + '</span>';
+    if (hold.length > 0) {
+        html += '<button class="btn btn-small" onclick="openStorageHold()">📤 Посмотреть и забрать</button>';
+    } else {
+        html += '<span style="color:#6a5a48;">📭 Пусто</span>';
+    }
+    html += '</div></div>';
+    
+    // БЛОК: ДОСТУПНОЕ ЖИЛЬЁ
+    html += '<div class="modal-section"><h4>🏘️ ДОСТУПНОЕ ЖИЛЬЁ</h4>';
+    
+    const districts = {
+        'Королевский квартал': ['mansion', 'townhouse'],
+        'Торговый квартал': ['house', 'room'],
+        'Квартал бедноты': ['night']
+    };
+    
+    for (const [districtName, types] of Object.entries(districts)) {
+        html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;font-weight:bold;">📍 ' + districtName + '</p>';
+        
+        types.forEach(type => {
+            const house = HOUSING_TYPES[type];
+            const market = housingMarket[type];
+            const available = market.total - market.occupied;
+            const isAvailable = available > 0;
+            
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1410;">';
+            html += '<div style="flex:1;">';
+            html += '<span style="font-size:16px;">' + house.emoji + '</span> <strong>' + house.name + '</strong>';
+            html += '<span style="color:#6a5a48;font-size:11px;"> (' + market.total + ')</span>';
+            html += '<br><span style="font-size:11px;color:#6a5a48;">📦 ' + house.storageSlots + ' слотов | 🛏️ +' + house.restHp + ' HP</span>';
+            html += '</div>';
+            html += '<div style="text-align:right;">';
+            if (isAvailable) {
+                html += '<span style="color:#c9b694;">' + house.price + ' зол.</span><br>';
+                html += '<span style="font-size:10px;color:#6a5a48;">аренда ' + house.rent + '/нед</span><br>';
+                html += '<button class="btn btn-small" onclick="buyHouse(\'' + type + '\')" style="margin-top:2px;">✅ Купить</button>';
+                html += ' <span style="font-size:10px;color:#7ac98a;">' + available + ' свободно</span>';
+            } else {
+                html += '<span style="color:#c96a5a;">❌ РАСПРОДАНО</span>';
+            }
+            html += '</div>';
+            html += '</div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeMagistrate()" style="margin-top:10px;">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeMagistrate() {
+    const modal = document.getElementById('modal-magistrate');
+    if (modal) modal.classList.add('hide');
+}
+
+function createMagistrateModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-magistrate';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeMagistrate(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📜 МАГИСТРАТ</h3>
+                <button class="close-btn" onclick="closeMagistrate()">✕</button>
+            </div>
+            <div id="modal-magistrate-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// ============================================================
+// ФУНКЦИИ ДЛЯ СКЛАДА И КАМЕРЫ ХРАНЕНИЯ (НОВЫЕ)
+// ============================================================
+function openStorage() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет жилья!');
+        return;
+    }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const modal = document.getElementById('modal-storage') || createStorageModal();
+    const content = document.getElementById('modal-storage-content');
+    
+    let html = '<div class="modal-section"><h4>📦 СКЛАД (' + house.name + ')</h4>';
+    html += '<p style="color:#6a5a48;">Свободно: ' + ((house.storageSlots || 10) - (g.housing.storage ? g.housing.storage.length : 0)) + '/' + house.storageSlots + ' слотов</p>';
+    
+    const storage = g.housing.storage || [];
+    if (storage.length === 0) {
+        html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">📭 Склад пуст</p>';
+    } else {
+        storage.forEach((item, i) => {
+            const quality = item.quality || 'Обычное';
+            const q = QUALITIES[quality] || QUALITIES['Обычное'];
+            let stats = '';
+            if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
+            else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
+            
+            html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
+            html += '<span class="value" style="font-size:11px;">' + stats;
+            html += ' <button class="btn btn-small" onclick="takeFromStorage(' + i + ')">📤 Забрать</button>';
+            html += '</span></div>';
+        });
+    }
+    
+    html += '<hr style="border-color:#2a201a;margin:10px 0;">';
+    html += '<p style="color:#6a5a48;font-size:12px;">Положите предмет в склад из инвентаря</p>';
+    html += '<button class="btn" onclick="moveToStorage()">📥 Положить предмет</button>';
+    html += '<button class="btn btn-secondary" onclick="closeStorage()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeStorage() {
+    const modal = document.getElementById('modal-storage');
+    if (modal) modal.classList.add('hide');
+}
+
+function createStorageModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-storage';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeStorage(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📦 СКЛАД</h3>
+                <button class="close-btn" onclick="closeStorage()">✕</button>
+            </div>
+            <div id="modal-storage-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function moveToStorage() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет жилья!');
+        return;
+    }
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const storage = g.housing.storage || [];
+    if (storage.length >= house.storageSlots) {
+        setMessage('❌ Склад переполнен!');
+        return;
+    }
+    
+    if (g.inventory.length === 0) {
+        setMessage('❌ Инвентарь пуст!');
+        return;
+    }
+    
+    let choices = 'Выберите предмет для склада:\n';
+    g.inventory.forEach((item, i) => {
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')\n';
+    });
+    
+    const choice = prompt(choices + '\nВведите номер предмета:');
+    const index = parseInt(choice) - 1;
+    
+    if (isNaN(index) || index < 0 || index >= g.inventory.length) {
+        setMessage('❌ Отменено.');
+        return;
+    }
+    
+    const item = g.inventory.splice(index, 1)[0];
+    if (!g.housing.storage) g.housing.storage = [];
+    g.housing.storage.push(item);
+    setMessage('✅ Вы положили ' + item.name + ' на склад.');
+    updateMenu();
+    saveData();
+    openStorage();
+}
+
+function takeFromStorage(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.housing || !g.housing.storage) {
+        setMessage('❌ Склад пуст.');
+        return;
+    }
+    
+    if (index >= g.housing.storage.length) {
+        setMessage('❌ Предмет не найден.');
+        return;
+    }
+    
+    const item = g.housing.storage.splice(index, 1)[0];
+    g.inventory.push(item);
+    setMessage('✅ Вы забрали ' + item.name + ' со склада.');
+    updateMenu();
+    saveData();
+    openStorage();
+}
+
+function openStorageHold() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const modal = document.getElementById('modal-storage-hold') || createStorageHoldModal();
+    const content = document.getElementById('modal-storage-hold-content');
+    
+    const hold = (g.housing && g.housing.storageHold) || [];
+    
+    let html = '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались или были выселены.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">📊 Всего предметов: ' + hold.length + '</p>';
+    
+    if (hold.length === 0) {
+        html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">📭 Хранилище пусто</p>';
+    } else {
+        const grouped = {};
+        hold.forEach((item, idx) => {
+            const key = item.name + '|' + (item.quality || 'Обычное');
+            if (!grouped[key]) grouped[key] = { item: item, indices: [], count: 0 };
+            grouped[key].indices.push(idx);
+            grouped[key].count++;
+        });
+        
+        for (const key in grouped) {
+            const data = grouped[key];
+            const item = data.item;
+            const quality = item.quality || 'Обычное';
+            const q = QUALITIES[quality] || QUALITIES['Обычное'];
+            const count = data.count;
+            
+            let stats = '';
+            if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
+            else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
+            
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
+            html += '<span class="value" style="font-size:11px;">' + stats + ' | ×' + count;
+            html += ' <button class="btn btn-small" onclick="takeFromStorageHold(\'' + key + '\')">📤 Забрать все</button>';
+            html += '</span></div>';
+        }
+    }
+    
+    html += '<button class="btn btn-secondary" onclick="closeStorageHold()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeStorageHold() {
+    const modal = document.getElementById('modal-storage-hold');
+    if (modal) modal.classList.add('hide');
+}
+
+function createStorageHoldModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-storage-hold';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeStorageHold(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📦 КАМЕРА ХРАНЕНИЯ</h3>
+                <button class="close-btn" onclick="closeStorageHold()">✕</button>
+            </div>
+            <div id="modal-storage-hold-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function takeFromStorageHold(key) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing) g.housing = { storageHold: [] };
+    const hold = g.housing.storageHold || [];
+    
+    const [name, quality] = key.split('|');
+    const indices = [];
+    hold.forEach((item, i) => {
+        if (item.name === name && (item.quality || 'Обычное') === quality) {
+            indices.push(i);
+        }
+    });
+    
+    if (indices.length === 0) {
+        setMessage('❌ Предметы не найдены.');
+        return;
+    }
+    
+    if (g.inventory.length + indices.length > 50) {
+        setMessage('❌ В инвентаре недостаточно места! (макс. 50)');
+        return;
+    }
+    
+    const items = [];
+    indices.sort((a, b) => b - a).forEach(i => {
+        items.push(hold.splice(i, 1)[0]);
+    });
+    g.inventory = g.inventory.concat(items);
+    
+    setMessage('✅ Вы забрали ' + items.length + ' ' + name + ' из камеры хранения.');
+    addLog('📤 ' + currentUser + ' забрал ' + items.length + ' ' + name + ' из хранилища');
+    updateMenu();
+    saveData();
+    openStorageHold();
+}
+
+// ============================================================
+// КНОПКИ ДЕЙСТВИЙ (ОБНОВЛЕНЫ)
 // ============================================================
 function updateActions() {
-    const user=users[currentUser];
-    if(!user) return;
-    const place=user.game.location.place;
-    const container=document.getElementById('actions-container');
-    container.innerHTML='';
-    const inBattle=battleState&&battleState.inProgress;
-    const cityBuildings=['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Гильдия наёмников','Магистрат','Храм','Порт','Тюрьма','Арена','Орден мейстеров','Квартал бедноты','Красный замок'];
-    let actions=[];
+    const user = users[currentUser];
+    if (!user) return;
+    const place = user.game.location.place;
+    const container = document.getElementById('actions-container');
+    container.innerHTML = '';
+    const inBattle = battleState && battleState.inProgress;
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Гильдия наёмников','Магистрат','Храм','Порт','Тюрьма','Арена','Орден мейстеров','Квартал бедноты','Красный замок'];
+    let actions = [];
     
-    if(inBattle){
-        actions=[
+    if (inBattle) {
+        actions = [
             { id:'battle_attack', label:'⚔️ Атака' },
             { id:'battle_defend', label:'🛡️ Защита' },
             { id:'battle_dodge', label:'💨 Уклонение' },
             { id:'battle_flee', label:'🏃 Побег' }
         ];
     } else {
-        actions=[
+        actions = [
             { id:'inventory', label:'🎒 Инвентарь' },
             { id:'character', label:'👤 Персонаж' },
             { id:'menu', label:'📋 Меню' },
             { id:'map', label:'🗺️ Карта' }
         ];
         
-        if(place==='Ворота'){
-            if(user.game.outside){
-                actions.unshift({ id:'enter_city', label:'🚶 Войти в Королевскую Гавань' });
-            } else {
+        // ВОРОТА: ВЫХОД ИЗ ГОРОДА
+        if (place === 'Ворота') {
+            if (!user.game.outside) {
                 actions.unshift({ id:'leave_city', label:'🚪 Выйти на Дорогу' });
             }
         }
         
-        if(place==='Таверна'){
-            actions=[
+        // ДОРОГА: ВХОД В ГОРОД
+        if (place === 'Дорога') {
+            actions.unshift({ id:'enter_city', label:'🚶 Войти в Королевскую Гавань' });
+            actions.unshift({ id:'search', label:'🔍 Поиск' });
+        }
+        
+        // ЖИЛЫЕ РАЙОНЫ
+        const housingDistricts = ['Королевский квартал', 'Торговый квартал', 'Квартал бедноты'];
+        if (housingDistricts.includes(place)) {
+            const hasHouseInDistrict = checkHouseInDistrict(place);
+            if (hasHouseInDistrict) {
+                actions.unshift({ id:'enter_home', label:'🏠 Зайти домой' });
+            } else {
+                actions.unshift({ id:'buy_housing', label:'🏠 Купить жильё в этом районе' });
+            }
+        }
+        
+        // ТАВЕРНА
+        if (place === 'Таверна') {
+            actions = [
                 { id:'eat', label:'🍞 Попросить еды (+25)' },
                 { id:'trade', label:'🛒 Торговля в таверне' },
                 { id:'wash', label:'🧹 Помыть посуду (1 мин → 1 МП)' },
@@ -1323,73 +2286,137 @@ function updateActions() {
             ];
         }
         
-        if(place==='Гильдия торговцев'){
-            actions=[{ id:'guild', label:'🏛️ Аукцион' }, ...actions];
+        // ГИЛЬДИЯ ТОРГОВЦЕВ
+        if (place === 'Гильдия торговцев') {
+            actions = [{ id:'guild', label:'🏛️ Аукцион' }, ...actions];
         }
         
-        if(place==='Оружейная лавка'){
-            actions=[{ id:'shop', label:'🗡️ Оружейная лавка' }, ...actions];
+        // ОРУЖЕЙНАЯ ЛАВКА
+        if (place === 'Оружейная лавка') {
+            actions = [{ id:'shop', label:'🗡️ Оружейная лавка' }, ...actions];
         }
-        if(place==='Кожевник'){
-            actions=[{ id:'shop', label:'🪡 Кожевник' }, ...actions];
+        if (place === 'Кожевник') {
+            actions = [{ id:'shop', label:'🪡 Кожевник' }, ...actions];
         }
-        if(place==='Бронник'){
-            actions=[{ id:'shop', label:'🛡️ Бронник' }, ...actions];
+        if (place === 'Бронник') {
+            actions = [{ id:'shop', label:'🛡️ Бронник' }, ...actions];
         }
-        if(place==='Плотник'){
-            actions=[{ id:'shop', label:'🪵 Плотник' }, ...actions];
+        if (place === 'Плотник') {
+            actions = [{ id:'shop', label:'🪵 Плотник' }, ...actions];
         }
-        if(place==='Кузница'){
-            actions=[{ id:'shop', label:'⚒️ Кузница' }, { id:'craft', label:'🔨 Крафт' }, ...actions];
+        if (place === 'Кузница') {
+            actions = [{ id:'shop', label:'⚒️ Кузница' }, { id:'craft', label:'🔨 Крафт' }, ...actions];
         }
         
-        if(place==='Дорога'){
-            actions=[{ id:'search', label:'🔍 Поиск' }, ...actions];
+        // ДОМ
+        if (place === 'Дом') {
+            actions = [
+                { id:'rest_at_home', label:'🛏️ Отдохнуть (бесплатно)' },
+                { id:'storage', label:'📦 Склад' },
+                { id:'leave_home', label:'🚪 Выйти из дома' },
+                ...actions
+            ];
         }
         
         actions.push({ id:'refresh', label:'🔄 Обновить' });
     }
     
     actions.forEach(a => {
-        const btn=document.createElement('button');
-        btn.className='btn-game';
-        btn.textContent=a.label;
-        if(isBusy && !['character','inventory','refresh','map','menu','enter_city','leave_city'].includes(a.id) && !a.id.startsWith('battle_')){
-            btn.disabled=true;
+        const btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        if (isBusy && !['character','inventory','refresh','map','menu','enter_city','leave_city'].includes(a.id) && !a.id.startsWith('battle_')) {
+            btn.disabled = true;
         }
-        btn.onclick=function(){ gameAction(a.id); };
+        btn.onclick = function(){ gameAction(a.id); };
         container.appendChild(btn);
     });
 }
 
 // ============================================================
-// ДЕЙСТВИЯ
+// ДЕЙСТВИЯ (ОБНОВЛЕНЫ)
 // ============================================================
 function gameAction(action) {
     setMessage('');
-    if(isBusy && !['character','inventory','refresh','map','menu','enter_city','leave_city'].includes(action) && !action.startsWith('battle_')){
+    if (isBusy && !['character','inventory','refresh','map','menu','enter_city','leave_city'].includes(action) && !action.startsWith('battle_')) {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
-    const user=users[currentUser];
-    if(!user) return;
-    const g=user.game;
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
     
-    switch(action){
+    switch(action) {
         case 'menu': openMainMenu(); break;
         case 'guild': openGuild(); break;
         case 'shop': openShop(g.location.place); break;
         case 'craft': openCraftMenu(); break;
+        
+        // НОВЫЕ ДЕЙСТВИЯ ДЛЯ ДОМОВ
+        case 'buy_housing':
+            const place = g.location.place;
+            const housingDistricts = ['Королевский квартал', 'Торговый квартал', 'Квартал бедноты'];
+            if (housingDistricts.includes(place)) {
+                viewDistrict(place);
+            } else {
+                setMessage('❌ В этом районе нет жилья для покупки.');
+            }
+            break;
+            
+        case 'enter_home':
+            enterHome();
+            break;
+            
+        case 'rest_at_home':
+            restAtHome();
+            break;
+            
+        case 'storage':
+            openStorage();
+            break;
+            
+        case 'leave_home':
+            if (g.housing && g.housing.type) {
+                const house = HOUSING_TYPES[g.housing.type];
+                g.location.place = house.district;
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вышли из дома в ' + house.district + '.');
+            } else {
+                g.location.place = 'Таверна';
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вышли из дома.');
+            }
+            updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        
+        // ВОРОТА И ДОРОГА
+        case 'leave_city':
+            g.location.place = 'Дорога';
+            g.location.location = 'Дорога';
+            g.outside = true;
+            setMessage('🛤️ Вы вышли на Дорогу у ворот города.');
+            updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+            
+        case 'enter_city':
+            g.location.place = 'Таверна';
+            g.location.location = 'Королевская Гавань';
+            g.outside = false;
+            setMessage('🏰 Вы вошли в Королевскую Гавань.');
+            updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        
+        // ОСТАЛЬНЫЕ ДЕЙСТВИЯ (БЕЗ ИЗМЕНЕНИЙ)
         case 'eat':
-            if(g.food>=100){ setMessage('🍖 Вы сыты.'); return; }
-            g.food=Math.min(g.food+25, 100);
+            if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
+            g.food = Math.min(g.food + 25, 100);
             setMessage('🍞 Вы поели. Еда +25.');
             updateMenu(); saveData();
             break;
         case 'trade': openTavernTrade(); break;
         case 'wash':
             startBusy('Моете посуду', 1, function(){
-                g.copper+=1;
+                g.copper += 1;
                 convertCurrency(g);
                 setMessage('🧹 Вы помыли посуду. +1 МП.');
                 updateMenu(); saveData();
@@ -1397,48 +2424,34 @@ function gameAction(action) {
             break;
         case 'sweep':
             startBusy('Подметаете пол', 5, function(){
-                g.copper+=5;
+                g.copper += 5;
                 convertCurrency(g);
                 setMessage('🧹 Вы подмели пол. +5 МП.');
                 updateMenu(); saveData();
             });
             break;
         case 'rest':
-            if(!spendMoney(g, 10)){
+            if (!spendMoney(g, 10)) {
                 setMessage('❌ Недостаточно денег для отдыха (10 МП).');
                 return;
             }
-            g.fatigue=Math.min(100, g.fatigue+30);
-            g.hp=Math.min(g.maxHp, g.hp+15);
+            g.fatigue = Math.min(100, g.fatigue + 30);
+            g.hp = Math.min(g.maxHp, g.hp + 15);
             setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.');
             updateMenu(); saveData();
             break;
         case 'talk':
-            const msgs=[
+            const msgs = [
                 '🍺 Трактирщик: «Добро пожаловать, путник!»',
                 '🍺 Трактирщик: «Хочешь заработать? Помой посуду.»',
                 '🍺 Трактирщик: «Будь осторожен за воротами.»'
             ];
-            setMessage(msgs[Math.floor(Math.random()*msgs.length)]);
-            break;
-        case 'enter_city':
-            g.location.place='Таверна';
-            g.location.location='Королевская Гавань';
-            g.outside=false;
-            setMessage('🏰 Вы вошли в Королевскую Гавань.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-            break;
-        case 'leave_city':
-            g.location.place='Дорога';
-            g.location.location='Дорога';
-            g.outside=true;
-            setMessage('🛤️ Вы вышли на Дорогу у ворот города.');
-            updateMenu(); updateStory(); updateActions(); saveData();
+            setMessage(msgs[Math.floor(Math.random() * msgs.length)]);
             break;
         case 'search':
-            if(searchCooldown){ setMessage('⏳ Подождите 5 секунд.'); return; }
-            searchCooldown=true;
-            setTimeout(()=>{ searchCooldown=false; }, 5000);
+            if (searchCooldown) { setMessage('⏳ Подождите 5 секунд.'); return; }
+            searchCooldown = true;
+            setTimeout(() => { searchCooldown = false; }, 5000);
             doSearch();
             break;
         case 'map': openMap(); break;
@@ -1471,7 +2484,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// ДОБЫЧА И КРАФТ
+// ДОБЫЧА И КРАФТ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function gatherResource(type) {
     const user=users[currentUser];
@@ -1631,7 +2644,7 @@ function craftSteel() {
 }
 
 // ============================================================
-// БОЙ
+// БОЙ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function saveBattleState() {
     if(battleState){
@@ -2237,7 +3250,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// ТОРГОВЛЯ (ПОЛНАЯ СИСТЕМА)
+// ТОРГОВЛЯ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function getTraderStock(place, itemKey) {
     if (!traderInventory) traderInventory = {};
@@ -2313,7 +3326,7 @@ function getSellPrice(item) {
         basePrice = 5 + (item.level || 1) * 2 + def;
     }
     
-    return Math.round(basePrice * q.multiplier * 0.5);
+    return Math.max(1, Math.round(basePrice * q.multiplier * 0.5));
 }
 
 function openShop(shopType) {
@@ -2597,7 +3610,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ
+// ТОРГОВЛЯ В ТАВЕРНЕ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -2642,7 +3655,7 @@ function buyTavernItem(name, price, food, thirst, hp) {
 }
 
 // ============================================================
-// КАРТА И ПЕРЕМЕЩЕНИЕ
+// КАРТА И ПЕРЕМЕЩЕНИЕ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openMap() {
     const user = users[currentUser];
@@ -2698,7 +3711,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ
+// ПЕРСОНАЖ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openCharacter() {
     const user = users[currentUser];
@@ -2850,7 +3863,7 @@ function changeProfession() {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ
+// ИНВЕНТАРЬ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openInventory() {
     const user = users[currentUser];
@@ -3010,7 +4023,7 @@ function useItem(index) {
 }
 
 // ============================================================
-// ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
+// ГИЛЬДИЯ ТОРГОВЦЕВ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openGuild() {
     const modal = document.getElementById('modal-guild');
@@ -3200,12 +4213,13 @@ function removeListing(index) {
 }
 
 // ============================================================
-// МЕНЮ И ДОМА
+// МЕНЮ И ДОМА (ОБНОВЛЕНО: ДОБАВЛЕНА КНОПКА МАГИСТРАТА)
 // ============================================================
 function openMainMenu() {
     const modal = document.getElementById('modal-menu');
     const content = document.getElementById('modal-menu-content');
     let html = '<div class="modal-section">';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openMagistrate(); closeMenu();">📜 Магистрат</button>';
     html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
     html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
     html += '</div>';
@@ -3274,7 +4288,7 @@ function closeHouses() {
 }
 
 // ============================================================
-// ЛОГ
+// ЛОГ (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function openLog() {
     const modal = document.getElementById('modal-log');
@@ -3297,7 +4311,7 @@ function closeLog() {
 }
 
 // ============================================================
-// ОНЛАЙН
+// ОНЛАЙН (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function updateOnline() {
     const online = { global: 0, region: 0, location: 0 };
@@ -3338,7 +4352,7 @@ function closeOnline() {
 }
 
 // ============================================================
-// ВЫХОД
+// ВЫХОД (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================================
 function handleLogout() {
     if (isBusy) { setMessage('⏳ Вы заняты. Завершите текущее действие.'); return; }
