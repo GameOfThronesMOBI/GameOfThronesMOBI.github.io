@@ -186,8 +186,9 @@
 
 <script>
 // ============================================================
-// ДАННЫЕ
+// 1. ДАННЫЕ
 // ============================================================
+
 const NATIONALITIES = {
     'Северные земли': { strength:10, cunning:0, defense:5, diplomacy:0 },
     'Речные земли': { strength:0, cunning:10, defense:0, diplomacy:5 },
@@ -297,7 +298,7 @@ let marketListings = [];
 let traderInventory = {};
 
 // ============================================================
-// ОСНОВНЫЕ ФУНКЦИИ
+// 2. ОСНОВНЫЕ ФУНКЦИИ
 // ============================================================
 
 function loadData() {
@@ -417,7 +418,7 @@ const WEAPON_TYPES = [
 ];
 
 // ============================================================
-// РЕГИСТРАЦИЯ / ВХОД
+// 3. РЕГИСТРАЦИЯ / ВХОД
 // ============================================================
 
 function handleRegister() {
@@ -503,7 +504,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// ИГРА
+// 4. ИГРА
 // ============================================================
 
 function fixOldAccount(user) {
@@ -604,7 +605,7 @@ function updateStory() {
 }
 
 // ============================================================
-// СИСТЕМА РЕСУРСОВ
+// 5. СИСТЕМА РЕСУРСОВ
 // ============================================================
 
 let resourceInterval = null;
@@ -641,7 +642,7 @@ function startResourceSystem() {
 }
 
 // ============================================================
-// ОБНОВЛЕНИЕ КНОПОК
+// 6. ОБНОВЛЕНИЕ КНОПОК
 // ============================================================
 
 function updateActions() {
@@ -695,7 +696,7 @@ function updateActions() {
 
         if (isTrader) {
             actions = [
-                { id: 'trader', label: '🛒 Торговля с ' + place },
+                { id: 'trader', label: '🛒 Торговля' },
                 ...actions
             ];
         }
@@ -720,7 +721,7 @@ function updateActions() {
 }
 
 // ============================================================
-// ДЕЙСТВИЯ
+// 7. ДЕЙСТВИЯ
 // ============================================================
 
 function gameAction(action) {
@@ -830,7 +831,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// БОЙ
+// 8. БОЙ
 // ============================================================
 
 function doSearch() {
@@ -978,7 +979,7 @@ function battleAction(action) {
         battleState.log.push('Вы защищаетесь');
     }
 
-    // Уклонение (отдельная механика)
+    // Уклонение
     if (action === 'battle_dodge') {
         const dodgeChance = Math.max(5, Math.min(80, (playerAgility - mobAgility) * 2));
         if (Math.random() * 100 < dodgeChance) {
@@ -1025,7 +1026,7 @@ function mobTurn() {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
-    const { mob, playerHp, playerDefense, playerAgility, weaponSkill, mobAgility } = battleState;
+    const { mob, playerHp, playerDefense, playerAgility, mobAgility } = battleState;
 
     // Уворот игрока
     const dodgeChance = Math.max(5, Math.min(80, (playerAgility - mobAgility) * 2));
@@ -1177,7 +1178,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// КАРТА
+// 9. КАРТА
 // ============================================================
 
 function openMap() {
@@ -1224,7 +1225,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ
+// 10. ПЕРСОНАЖ
 // ============================================================
 
 function openCharacter() {
@@ -1325,7 +1326,7 @@ function addAttribute(statId) {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ
+// 11. ИНВЕНТАРЬ
 // ============================================================
 
 function openInventory() {
@@ -1353,7 +1354,7 @@ function openInventory() {
 function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
 
 // ============================================================
-// МЕНЮ И ДОМА
+// 12. МЕНЮ И ДОМА
 // ============================================================
 
 function openMainMenu() {
@@ -1426,7 +1427,7 @@ function showHouseInfo(region, houseId) {
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ
+// 13. ТОРГОВЛЯ В ТАВЕРНЕ
 // ============================================================
 
 function openTrade() {
@@ -1440,7 +1441,6 @@ function openTrade() {
     html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
     html += '</div>';
 
-    // ПОКУПКА
     html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
     const shopItems = [
         { name: '🍞 Хлеб', price: 5, type: 'food', value: 20 },
@@ -1457,7 +1457,6 @@ function openTrade() {
     });
     html += '</div>';
 
-    // ПРОДАЖА (еда ×1, остальное ×0.5)
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     const foodItems = ['Хлеб', 'Мясо', 'Вода', 'Эль', 'Вино'];
     if(g.inventory.length === 0) {
@@ -1535,7 +1534,7 @@ function sellTradeItem(itemName, count, pricePerItem) {
 function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
 
 // ============================================================
-// ТОРГОВЦЫ (Кожевник, Бронник, Плотник)
+// 14. ТОРГОВЦЫ (Кожевник, Бронник, Плотник)
 // ============================================================
 
 function getTraderStock(place, itemName) {
@@ -1613,7 +1612,6 @@ function openTrader(place) {
     html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
     html += '</div>';
 
-    // ПРОДАЖА
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     const grouped = {};
     g.inventory.forEach((item, index) => {
@@ -1644,7 +1642,6 @@ function openTrader(place) {
     }
     html += '</div>';
 
-    // ПОКУПКА
     html += '<div class="modal-section"><h4>📦 КУПИТЬ (×2)</h4>';
     data.sell.forEach(item => {
         const stock = getTraderStock(place, item.name);
@@ -1716,7 +1713,7 @@ function buyFromTrader(name, price, place) {
 }
 
 // ============================================================
-// ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
+// 15. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
 // ============================================================
 
 function openGuild() {
@@ -1904,7 +1901,7 @@ function removeListing(index) {
 }
 
 // ============================================================
-// ОНЛАЙН
+// 16. ОНЛАЙН
 // ============================================================
 
 function updateOnline() {
@@ -1942,7 +1939,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// ВЫХОД
+// 17. ВЫХОД
 // ============================================================
 
 function handleLogout() {
@@ -1964,7 +1961,7 @@ function handleLogout() {
 }
 
 // ============================================================
-// ЗАПУСК
+// 18. ЗАПУСК
 // ============================================================
 
 loadData();
