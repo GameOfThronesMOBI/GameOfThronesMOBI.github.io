@@ -137,7 +137,7 @@
         <div id="menu-bar">
             <div class="menu-top">
                 <div class="menu-time">🕐 <span id="menu-time">--:--</span> МСК | <span id="menu-period">🌤️ День</span></div>
-                <div class="menu-location">🏠 <span id="menu-location">Таверна</span></div>
+                <div class="menu-location">🏠 <span id="menu-location">Таверна</span> <span id="menu-location-level" style="color:#6a5a48;font-size:11px;"></span></div>
             </div>
             <div class="menu-stats">
                 <div class="menu-hp">❤️ <span id="menu-hp">60</span>/<span id="menu-hp-max">60</span></div>
@@ -186,7 +186,7 @@
 
 <script>
 // ============================================================
-// 1. ДАННЫЕ
+// 1. КОНСТАНТЫ И ДАННЫЕ
 // ============================================================
 
 const NATIONALITIES = {
@@ -221,73 +221,361 @@ const BUILDINGS = [
     { id:'Ворота', label:'🚪 Ворота' }
 ];
 
-const HOUSES_DATA = {
-    'Север': {
-        region: 'Север',
-        capital: 'Винтерфелл',
-        totalAcres: 4000000,
-        houses: [
-            { id: 'stark', name: 'Старки', sigil: '🐺', castle: 'Винтерфелл', liege: 'Король Севера', status: 'Правящий', acres: 1500000 },
-            { id: 'bolton', name: 'Болтоны', sigil: '🩸', castle: 'Дредфорт', liege: 'Старки', status: 'Вассал', acres: 450000 },
-            { id: 'karstark', name: 'Карстарки', sigil: '⭐', castle: 'Кархольд', liege: 'Старки', status: 'Вассал', acres: 250000 }
+const QUALITIES = {
+    'Плохое': { color: '#888', short: 'плох.', multiplier: 0.6, emoji: '⚪' },
+    'Обычное': { color: '#ccc', short: 'обыч.', multiplier: 1.0, emoji: '⬜' },
+    'Хорошее': { color: '#4caf50', short: 'хорош.', multiplier: 1.3, emoji: '🟩' },
+    'Качественное': { color: '#2196f3', short: 'кач.', multiplier: 1.6, emoji: '🟦' },
+    'Мастерское': { color: '#9c27b0', short: 'маст.', multiplier: 2.0, emoji: '🟪' },
+    'Легендарное': { color: '#ff9800', short: 'легенд.', multiplier: 2.5, emoji: '🟧' },
+    'Мифическое': { color: '#ffd700', short: 'миф.', multiplier: 3.0, emoji: '🌟' }
+};
+
+const LOCATION_LEVELS = {
+    'Таверна': 1, 'Рынок': 1, 'Кузница': 1, 'Оружейная лавка': 1,
+    'Кожевник': 1, 'Бронник': 1, 'Плотник': 1, 'Гильдия торговцев': 1,
+    'Гильдия наёмников': 1, 'Магистрат': 1, 'Храм': 1, 'Порт': 1,
+    'Тюрьма': 1, 'Арена': 1, 'Орден мейстеров': 1, 'Квартал бедноты': 1,
+    'Красный замок': 1, 'Королевская Гавань': 1,
+    'Ворота': 5, 'Дорога': 10, 'За городом': 10,
+    'Лес': 20, 'Горы': 35, 'Шахта': 45,
+    'Глухой лес': 55, 'Опасные земли': 75
+};
+
+// ============================================================
+// 2. ВСЕ ПРЕДМЕТЫ (280+)
+// ============================================================
+
+const ALL_ITEMS = {
+    weapons: {
+        sword: [
+            { name: 'Деревянный меч', level: 1, baseDamage: 3 },
+            { name: 'Ржавый меч', level: 5, baseDamage: 5 },
+            { name: 'Короткий меч', level: 10, baseDamage: 7 },
+            { name: 'Меч разбойника', level: 15, baseDamage: 10 },
+            { name: 'Меч наёмника', level: 20, baseDamage: 13 },
+            { name: 'Длинный меч', level: 25, baseDamage: 16 },
+            { name: 'Меч стражи', level: 30, baseDamage: 19 },
+            { name: 'Стальной меч', level: 35, baseDamage: 22 },
+            { name: 'Закалённый меч', level: 40, baseDamage: 26 },
+            { name: 'Меч рыцаря', level: 45, baseDamage: 30 },
+            { name: 'Меч лорда', level: 50, baseDamage: 34 },
+            { name: 'Двуручный меч', level: 55, baseDamage: 38 },
+            { name: 'Великий меч', level: 60, baseDamage: 42 },
+            { name: 'Меч героя', level: 65, baseDamage: 46 },
+            { name: 'Меч чемпиона', level: 70, baseDamage: 50 },
+            { name: 'Меч командующего', level: 75, baseDamage: 55 },
+            { name: 'Королевский меч', level: 80, baseDamage: 60 },
+            { name: 'Меч завоевателя', level: 85, baseDamage: 65 },
+            { name: 'Легендарный меч', level: 90, baseDamage: 70 },
+            { name: 'Меч судьбы', level: 95, baseDamage: 75 },
+            { name: 'Валирийский меч', level: 100, baseDamage: 90 }
+        ],
+        spear: [
+            { name: 'Деревянное копьё', level: 1, baseDamage: 3 },
+            { name: 'Ржавое копьё', level: 5, baseDamage: 5 },
+            { name: 'Короткое копьё', level: 10, baseDamage: 7 },
+            { name: 'Копьё охотника', level: 15, baseDamage: 9 },
+            { name: 'Копьё разбойника', level: 20, baseDamage: 12 },
+            { name: 'Копьё наёмника', level: 25, baseDamage: 14 },
+            { name: 'Копьё стражи', level: 30, baseDamage: 16 },
+            { name: 'Копьё рыцаря', level: 35, baseDamage: 19 },
+            { name: 'Стальное копьё', level: 40, baseDamage: 22 },
+            { name: 'Копьё лорда', level: 45, baseDamage: 25 },
+            { name: 'Длинное копьё', level: 50, baseDamage: 28 },
+            { name: 'Копьё героя', level: 55, baseDamage: 32 },
+            { name: 'Копьё чемпиона', level: 60, baseDamage: 36 },
+            { name: 'Копьё командующего', level: 65, baseDamage: 40 },
+            { name: 'Королевское копьё', level: 70, baseDamage: 44 },
+            { name: 'Копьё завоевателя', level: 75, baseDamage: 48 },
+            { name: 'Великое копьё', level: 80, baseDamage: 52 },
+            { name: 'Легендарное копьё', level: 85, baseDamage: 56 },
+            { name: 'Копьё судьбы', level: 90, baseDamage: 60 },
+            { name: 'Копьё бессмертного', level: 95, baseDamage: 65 },
+            { name: 'Валирийское копьё', level: 100, baseDamage: 75 }
+        ],
+        axe: [
+            { name: 'Деревянный топор', level: 1, baseDamage: 4 },
+            { name: 'Ржавый топор', level: 5, baseDamage: 6 },
+            { name: 'Боевой топор', level: 10, baseDamage: 8 },
+            { name: 'Топор разбойника', level: 15, baseDamage: 10 },
+            { name: 'Топор наёмника', level: 20, baseDamage: 13 },
+            { name: 'Топор стражи', level: 25, baseDamage: 16 },
+            { name: 'Стальной топор', level: 30, baseDamage: 19 },
+            { name: 'Топор рыцаря', level: 35, baseDamage: 22 },
+            { name: 'Топор лорда', level: 40, baseDamage: 26 },
+            { name: 'Двуручный топор', level: 45, baseDamage: 30 },
+            { name: 'Топор героя', level: 50, baseDamage: 34 },
+            { name: 'Топор чемпиона', level: 55, baseDamage: 38 },
+            { name: 'Топор командующего', level: 60, baseDamage: 42 },
+            { name: 'Королевский топор', level: 65, baseDamage: 46 },
+            { name: 'Великий топор', level: 70, baseDamage: 50 },
+            { name: 'Топор завоевателя', level: 75, baseDamage: 55 },
+            { name: 'Легендарный топор', level: 80, baseDamage: 60 },
+            { name: 'Топор судьбы', level: 85, baseDamage: 65 },
+            { name: 'Топор бессмертного', level: 90, baseDamage: 70 },
+            { name: 'Топор бога', level: 95, baseDamage: 75 },
+            { name: 'Валирийский топор', level: 100, baseDamage: 85 }
+        ],
+        mace: [
+            { name: 'Деревянная булава', level: 1, baseDamage: 3 },
+            { name: 'Ржавая булава', level: 5, baseDamage: 5 },
+            { name: 'Булава разбойника', level: 10, baseDamage: 8 },
+            { name: 'Булава наёмника', level: 15, baseDamage: 10 },
+            { name: 'Булава стражи', level: 20, baseDamage: 13 },
+            { name: 'Стальная булава', level: 25, baseDamage: 16 },
+            { name: 'Булава рыцаря', level: 30, baseDamage: 19 },
+            { name: 'Тяжёлая булава', level: 35, baseDamage: 22 },
+            { name: 'Булава лорда', level: 40, baseDamage: 26 },
+            { name: 'Булава героя', level: 45, baseDamage: 30 },
+            { name: 'Булава чемпиона', level: 50, baseDamage: 34 },
+            { name: 'Булава командующего', level: 55, baseDamage: 38 },
+            { name: 'Королевская булава', level: 60, baseDamage: 42 },
+            { name: 'Великая булава', level: 65, baseDamage: 46 },
+            { name: 'Булава завоевателя', level: 70, baseDamage: 50 },
+            { name: 'Легендарная булава', level: 75, baseDamage: 55 },
+            { name: 'Булава судьбы', level: 80, baseDamage: 60 },
+            { name: 'Булава бессмертного', level: 85, baseDamage: 65 },
+            { name: 'Булава бога', level: 90, baseDamage: 70 },
+            { name: 'Булава властелина', level: 95, baseDamage: 75 },
+            { name: 'Валирийская булава', level: 100, baseDamage: 85 }
+        ],
+        bow: [
+            { name: 'Короткий лук', level: 1, baseDamage: 3 },
+            { name: 'Охотничий лук', level: 5, baseDamage: 5 },
+            { name: 'Лук разбойника', level: 10, baseDamage: 7 },
+            { name: 'Лук наёмника', level: 15, baseDamage: 9 },
+            { name: 'Лук стражи', level: 20, baseDamage: 11 },
+            { name: 'Длинный лук', level: 25, baseDamage: 13 },
+            { name: 'Стальной лук', level: 30, baseDamage: 15 },
+            { name: 'Лук рыцаря', level: 35, baseDamage: 18 },
+            { name: 'Лук лорда', level: 40, baseDamage: 21 },
+            { name: 'Лук героя', level: 45, baseDamage: 24 },
+            { name: 'Лук чемпиона', level: 50, baseDamage: 28 },
+            { name: 'Лук командующего', level: 55, baseDamage: 32 },
+            { name: 'Королевский лук', level: 60, baseDamage: 36 },
+            { name: 'Великий лук', level: 65, baseDamage: 40 },
+            { name: 'Лук завоевателя', level: 70, baseDamage: 44 },
+            { name: 'Легендарный лук', level: 75, baseDamage: 48 },
+            { name: 'Лук судьбы', level: 80, baseDamage: 52 },
+            { name: 'Лук бессмертного', level: 85, baseDamage: 56 },
+            { name: 'Лук бога', level: 90, baseDamage: 60 },
+            { name: 'Лук властелина', level: 95, baseDamage: 65 },
+            { name: 'Валирийский лук', level: 100, baseDamage: 75 }
+        ],
+        crossbow: [
+            { name: 'Лёгкий арбалет', level: 5, baseDamage: 5 },
+            { name: 'Арбалет разбойника', level: 10, baseDamage: 7 },
+            { name: 'Арбалет наёмника', level: 15, baseDamage: 9 },
+            { name: 'Арбалет стражи', level: 20, baseDamage: 12 },
+            { name: 'Стальной арбалет', level: 25, baseDamage: 15 },
+            { name: 'Арбалет рыцаря', level: 30, baseDamage: 18 },
+            { name: 'Тяжёлый арбалет', level: 35, baseDamage: 21 },
+            { name: 'Арбалет лорда', level: 40, baseDamage: 25 },
+            { name: 'Арбалет героя', level: 45, baseDamage: 28 },
+            { name: 'Арбалет чемпиона', level: 50, baseDamage: 32 },
+            { name: 'Арбалет командующего', level: 55, baseDamage: 36 },
+            { name: 'Королевский арбалет', level: 60, baseDamage: 40 },
+            { name: 'Великий арбалет', level: 65, baseDamage: 44 },
+            { name: 'Арбалет завоевателя', level: 70, baseDamage: 48 },
+            { name: 'Легендарный арбалет', level: 75, baseDamage: 52 },
+            { name: 'Арбалет судьбы', level: 80, baseDamage: 56 },
+            { name: 'Арбалет бессмертного', level: 85, baseDamage: 60 },
+            { name: 'Арбалет бога', level: 90, baseDamage: 65 },
+            { name: 'Арбалет властелина', level: 95, baseDamage: 70 },
+            { name: 'Валирийский арбалет', level: 100, baseDamage: 80 }
+        ],
+        dagger: [
+            { name: 'Ржавый кинжал', level: 1, baseDamage: 2 },
+            { name: 'Кинжал разбойника', level: 5, baseDamage: 4 },
+            { name: 'Кинжал наёмника', level: 10, baseDamage: 6 },
+            { name: 'Кинжал стражи', level: 15, baseDamage: 8 },
+            { name: 'Стальной кинжал', level: 20, baseDamage: 10 },
+            { name: 'Кинжал рыцаря', level: 25, baseDamage: 12 },
+            { name: 'Кинжал лорда', level: 30, baseDamage: 14 },
+            { name: 'Кинжал героя', level: 35, baseDamage: 16 },
+            { name: 'Кинжал чемпиона', level: 40, baseDamage: 18 },
+            { name: 'Кинжал командующего', level: 45, baseDamage: 20 },
+            { name: 'Королевский кинжал', level: 50, baseDamage: 22 },
+            { name: 'Великий кинжал', level: 55, baseDamage: 24 },
+            { name: 'Кинжал завоевателя', level: 60, baseDamage: 26 },
+            { name: 'Легендарный кинжал', level: 65, baseDamage: 28 },
+            { name: 'Кинжал судьбы', level: 70, baseDamage: 30 },
+            { name: 'Кинжал бессмертного', level: 75, baseDamage: 32 },
+            { name: 'Кинжал бога', level: 80, baseDamage: 34 },
+            { name: 'Кинжал драконоборца', level: 85, baseDamage: 36 },
+            { name: 'Кинжал властелина', level: 90, baseDamage: 38 },
+            { name: 'Кинжал бессмертного', level: 95, baseDamage: 40 },
+            { name: 'Валирийский кинжал', level: 100, baseDamage: 50 }
+        ],
+        shield: [
+            { name: 'Деревянный щит', level: 1, defense: 2 },
+            { name: 'Кожаный щит', level: 5, defense: 4 },
+            { name: 'Щит разбойника', level: 10, defense: 6 },
+            { name: 'Щит наёмника', level: 15, defense: 8 },
+            { name: 'Щит стражи', level: 20, defense: 10 },
+            { name: 'Стальной щит', level: 25, defense: 12 },
+            { name: 'Щит рыцаря', level: 30, defense: 14 },
+            { name: 'Щит лорда', level: 35, defense: 16 },
+            { name: 'Щит героя', level: 40, defense: 18 },
+            { name: 'Щит чемпиона', level: 45, defense: 20 },
+            { name: 'Щит командующего', level: 50, defense: 22 },
+            { name: 'Королевский щит', level: 55, defense: 24 },
+            { name: 'Великий щит', level: 60, defense: 26 },
+            { name: 'Щит завоевателя', level: 65, defense: 28 },
+            { name: 'Легендарный щит', level: 70, defense: 30 },
+            { name: 'Щит судьбы', level: 75, defense: 32 },
+            { name: 'Щит бессмертного', level: 80, defense: 34 },
+            { name: 'Щит бога', level: 85, defense: 36 },
+            { name: 'Щит властелина', level: 90, defense: 38 },
+            { name: 'Щит драконоборца', level: 95, defense: 40 },
+            { name: 'Валирийский щит', level: 100, defense: 50 }
         ]
     },
-    'Западные земли': {
-        region: 'Западные земли',
-        capital: 'Утёс Кастерли',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'lannister', name: 'Ланнистеры', sigil: '🦁', castle: 'Утёс Кастерли', liege: 'Король Запада', status: 'Правящий', acres: 350000 },
-            { id: 'marbrand', name: 'Марбранды', sigil: '🔥', castle: 'Золотой Путь', liege: 'Ланнистеры', status: 'Вассал', acres: 90000 },
-            { id: 'lefford', name: 'Леффорды', sigil: '🪙', castle: 'Золотой Зуб', liege: 'Ланнистеры', status: 'Вассал', acres: 80000 }
+    leather: {
+        helmet: [
+            { name: 'Плохой кожаный шлем', level: 1, baseDefense: 1 },
+            { name: 'Кожаный шлем', level: 5, baseDefense: 2 },
+            { name: 'Кожаный шлем разбойника', level: 10, baseDefense: 3 },
+            { name: 'Кожаный шлем наёмника', level: 15, baseDefense: 4 },
+            { name: 'Кожаный шлем стражи', level: 20, baseDefense: 5 },
+            { name: 'Кожаный шлем рыцаря', level: 25, baseDefense: 6 },
+            { name: 'Кожаный шлем лорда', level: 30, baseDefense: 7 },
+            { name: 'Кожаный шлем героя', level: 35, baseDefense: 8 },
+            { name: 'Кожаный шлем чемпиона', level: 40, baseDefense: 9 },
+            { name: 'Кожаный шлем командующего', level: 45, baseDefense: 10 },
+            { name: 'Королевский кожаный шлем', level: 50, baseDefense: 11 },
+            { name: 'Великий кожаный шлем', level: 55, baseDefense: 12 },
+            { name: 'Кожаный шлем завоевателя', level: 60, baseDefense: 13 },
+            { name: 'Легендарный кожаный шлем', level: 65, baseDefense: 14 },
+            { name: 'Кожаный шлем судьбы', level: 70, baseDefense: 15 },
+            { name: 'Кожаный шлем бессмертного', level: 75, baseDefense: 16 },
+            { name: 'Кожаный шлем бога', level: 80, baseDefense: 17 },
+            { name: 'Кожаный шлем властелина', level: 85, baseDefense: 18 },
+            { name: 'Кожаный шлем драконоборца', level: 90, baseDefense: 19 },
+            { name: 'Кожаный шлем легенды', level: 95, baseDefense: 20 },
+            { name: 'Валирийский кожаный шлем', level: 100, baseDefense: 25 }
+        ],
+        chestplate: [
+            { name: 'Плохой кожаный нагрудник', level: 1, baseDefense: 1 },
+            { name: 'Кожаный нагрудник', level: 5, baseDefense: 3 },
+            { name: 'Кожаный нагрудник разбойника', level: 10, baseDefense: 4 },
+            { name: 'Кожаный нагрудник наёмника', level: 15, baseDefense: 6 },
+            { name: 'Кожаный нагрудник стражи', level: 20, baseDefense: 8 },
+            { name: 'Кожаный нагрудник рыцаря', level: 25, baseDefense: 10 },
+            { name: 'Кожаный нагрудник лорда', level: 30, baseDefense: 12 },
+            { name: 'Кожаный нагрудник героя', level: 35, baseDefense: 14 },
+            { name: 'Кожаный нагрудник чемпиона', level: 40, baseDefense: 16 },
+            { name: 'Кожаный нагрудник командующего', level: 45, baseDefense: 18 },
+            { name: 'Королевский кожаный нагрудник', level: 50, baseDefense: 20 },
+            { name: 'Великий кожаный нагрудник', level: 55, baseDefense: 22 },
+            { name: 'Кожаный нагрудник завоевателя', level: 60, baseDefense: 24 },
+            { name: 'Легендарный кожаный нагрудник', level: 65, baseDefense: 26 },
+            { name: 'Кожаный нагрудник судьбы', level: 70, baseDefense: 28 },
+            { name: 'Кожаный нагрудник бессмертного', level: 75, baseDefense: 30 },
+            { name: 'Кожаный нагрудник бога', level: 80, baseDefense: 32 },
+            { name: 'Кожаный нагрудник властелина', level: 85, baseDefense: 34 },
+            { name: 'Кожаный нагрудник драконоборца', level: 90, baseDefense: 36 },
+            { name: 'Кожаный нагрудник легенды', level: 95, baseDefense: 38 },
+            { name: 'Валирийский кожаный нагрудник', level: 100, baseDefense: 45 }
+        ],
+        boots: [
+            { name: 'Плохие кожаные сапоги', level: 1, baseDefense: 0, speed: 1 },
+            { name: 'Кожаные сапоги', level: 5, baseDefense: 1, speed: 1 },
+            { name: 'Сапоги разбойника', level: 10, baseDefense: 2, speed: 1 },
+            { name: 'Сапоги наёмника', level: 15, baseDefense: 3, speed: 1 },
+            { name: 'Сапоги стражи', level: 20, baseDefense: 4, speed: 1 },
+            { name: 'Сапоги рыцаря', level: 25, baseDefense: 5, speed: 1 },
+            { name: 'Сапоги лорда', level: 30, baseDefense: 6, speed: 1 },
+            { name: 'Сапоги героя', level: 35, baseDefense: 7, speed: 1 },
+            { name: 'Сапоги чемпиона', level: 40, baseDefense: 8, speed: 1 },
+            { name: 'Сапоги командующего', level: 45, baseDefense: 9, speed: 1 },
+            { name: 'Королевские сапоги', level: 50, baseDefense: 10, speed: 1 },
+            { name: 'Великие сапоги', level: 55, baseDefense: 11, speed: 1 },
+            { name: 'Сапоги завоевателя', level: 60, baseDefense: 12, speed: 1 },
+            { name: 'Легендарные сапоги', level: 65, baseDefense: 13, speed: 1 },
+            { name: 'Сапоги судьбы', level: 70, baseDefense: 14, speed: 1 },
+            { name: 'Сапоги бессмертного', level: 75, baseDefense: 15, speed: 1 },
+            { name: 'Сапоги бога', level: 80, baseDefense: 16, speed: 1 },
+            { name: 'Сапоги властелина', level: 85, baseDefense: 17, speed: 1 },
+            { name: 'Сапоги драконоборца', level: 90, baseDefense: 18, speed: 1 },
+            { name: 'Сапоги легенды', level: 95, baseDefense: 19, speed: 1 },
+            { name: 'Валирийские сапоги', level: 100, baseDefense: 25, speed: 2 }
         ]
     },
-    'Речные земли': {
-        region: 'Речные земли',
-        capital: 'Риверран',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'tully', name: 'Талли', sigil: '🐟', castle: 'Риверран', liege: 'Король Речных земель', status: 'Правящий', acres: 250000 },
-            { id: 'frey', name: 'Фреи', sigil: '🌉', castle: 'Близнецы', liege: 'Талли', status: 'Вассал', acres: 200000 }
-        ]
-    },
-    'Простор': {
-        region: 'Простор',
-        capital: 'Хайгарден',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'tyrell', name: 'Тиррелы', sigil: '🌹', castle: 'Хайгарден', liege: 'Король Простора', status: 'Правящий', acres: 300000 },
-            { id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', castle: 'Старомест', liege: 'Тиррелы', status: 'Вассал', acres: 120000 }
-        ]
-    },
-    'Долина': {
-        region: 'Долина',
-        capital: 'Орлиное Гнездо',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'arryn', name: 'Аррены', sigil: '🦅', castle: 'Орлиное Гнездо', liege: 'Король Долины', status: 'Правящий', acres: 300000 },
-            { id: 'royce', name: 'Ройсы', sigil: '⚔️', castle: 'Красные Врата', liege: 'Аррены', status: 'Вассал', acres: 120000 }
-        ]
-    },
-    'Штормовые земли': {
-        region: 'Штормовые земли',
-        capital: 'Штормовой Предел',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'baratheon', name: 'Баратеоны', sigil: '🦌', castle: 'Штормовой Предел', liege: 'Король Штормовых земель', status: 'Правящий', acres: 280000 },
-            { id: 'connington', name: 'Коннингтоны', sigil: '🦅', castle: 'Грифонья скала', liege: 'Баратеоны', status: 'Вассал', acres: 100000 }
-        ]
-    },
-    'Дорн': {
-        region: 'Дорн',
-        capital: 'Солнечное Копьё',
-        totalAcres: 1000000,
-        houses: [
-            { id: 'martell', name: 'Мартеллы', sigil: '☀️', castle: 'Солнечное Копьё', liege: 'Король Дорна', status: 'Правящий', acres: 260000 },
-            { id: 'yronwood', name: 'Иронвуды', sigil: '🌵', castle: 'Иронвуд', liege: 'Мартеллы', status: 'Вассал', acres: 120000 }
+    plate: {
+        helmet: [
+            { name: 'Ржавый латный шлем', level: 5, baseDefense: 3 },
+            { name: 'Латый шлем', level: 10, baseDefense: 5 },
+            { name: 'Латый шлем разбойника', level: 15, baseDefense: 7 },
+            { name: 'Латый шлем наёмника', level: 20, baseDefense: 9 },
+            { name: 'Латый шлем стражи', level: 25, baseDefense: 11 },
+            { name: 'Латый шлем рыцаря', level: 30, baseDefense: 13 },
+            { name: 'Латый шлем лорда', level: 35, baseDefense: 15 },
+            { name: 'Латый шлем героя', level: 40, baseDefense: 17 },
+            { name: 'Латый шлем чемпиона', level: 45, baseDefense: 19 },
+            { name: 'Латый шлем командующего', level: 50, baseDefense: 21 },
+            { name: 'Королевский латный шлем', level: 55, baseDefense: 23 },
+            { name: 'Великий латный шлем', level: 60, baseDefense: 25 },
+            { name: 'Латый шлем завоевателя', level: 65, baseDefense: 27 },
+            { name: 'Легендарный латный шлем', level: 70, baseDefense: 29 },
+            { name: 'Латый шлем судьбы', level: 75, baseDefense: 31 },
+            { name: 'Латый шлем бессмертного', level: 80, baseDefense: 33 },
+            { name: 'Латый шлем бога', level: 85, baseDefense: 35 },
+            { name: 'Латый шлем властелина', level: 90, baseDefense: 37 },
+            { name: 'Латый шлем легенды', level: 95, baseDefense: 39 },
+            { name: 'Валирийский латный шлем', level: 100, baseDefense: 50 }
+        ],
+        chestplate: [
+            { name: 'Ржавый латный нагрудник', level: 5, baseDefense: 4 },
+            { name: 'Латый нагрудник', level: 10, baseDefense: 6 },
+            { name: 'Латый нагрудник разбойника', level: 15, baseDefense: 8 },
+            { name: 'Латый нагрудник наёмника', level: 20, baseDefense: 10 },
+            { name: 'Латый нагрудник стражи', level: 25, baseDefense: 12 },
+            { name: 'Латый нагрудник рыцаря', level: 30, baseDefense: 14 },
+            { name: 'Латый нагрудник лорда', level: 35, baseDefense: 16 },
+            { name: 'Латый нагрудник героя', level: 40, baseDefense: 18 },
+            { name: 'Латый нагрудник чемпиона', level: 45, baseDefense: 20 },
+            { name: 'Латый нагрудник командующего', level: 50, baseDefense: 22 },
+            { name: 'Королевский латный нагрудник', level: 55, baseDefense: 24 },
+            { name: 'Великий латный нагрудник', level: 60, baseDefense: 26 },
+            { name: 'Латый нагрудник завоевателя', level: 65, baseDefense: 28 },
+            { name: 'Легендарный латный нагрудник', level: 70, baseDefense: 30 },
+            { name: 'Латый нагрудник судьбы', level: 75, baseDefense: 32 },
+            { name: 'Латый нагрудник бессмертного', level: 80, baseDefense: 34 },
+            { name: 'Латый нагрудник бога', level: 85, baseDefense: 36 },
+            { name: 'Латый нагрудник властелина', level: 90, baseDefense: 38 },
+            { name: 'Латый нагрудник легенды', level: 95, baseDefense: 40 },
+            { name: 'Валирийский латный нагрудник', level: 100, baseDefense: 55 }
+        ],
+        boots: [
+            { name: 'Ржавые латные сапоги', level: 5, baseDefense: 2, speed: 1 },
+            { name: 'Латые сапоги', level: 10, baseDefense: 4, speed: 1 },
+            { name: 'Латые сапоги разбойника', level: 15, baseDefense: 6, speed: 1 },
+            { name: 'Латые сапоги наёмника', level: 20, baseDefense: 8, speed: 1 },
+            { name: 'Латые сапоги стражи', level: 25, baseDefense: 10, speed: 1 },
+            { name: 'Латые сапоги рыцаря', level: 30, baseDefense: 12, speed: 1 },
+            { name: 'Латые сапоги лорда', level: 35, baseDefense: 14, speed: 1 },
+            { name: 'Латые сапоги героя', level: 40, baseDefense: 16, speed: 1 },
+            { name: 'Латые сапоги чемпиона', level: 45, baseDefense: 18, speed: 1 },
+            { name: 'Латые сапоги командующего', level: 50, baseDefense: 20, speed: 1 },
+            { name: 'Королевские латные сапоги', level: 55, baseDefense: 22, speed: 1 },
+            { name: 'Великие латные сапоги', level: 60, baseDefense: 24, speed: 1 },
+            { name: 'Латые сапоги завоевателя', level: 65, baseDefense: 26, speed: 1 },
+            { name: 'Легендарные латные сапоги', level: 70, baseDefense: 28, speed: 1 },
+            { name: 'Латые сапоги судьбы', level: 75, baseDefense: 30, speed: 1 },
+            { name: 'Латые сапоги бессмертного', level: 80, baseDefense: 32, speed: 1 },
+            { name: 'Латые сапоги бога', level: 85, baseDefense: 34, speed: 1 },
+            { name: 'Латые сапоги властелина', level: 90, baseDefense: 36, speed: 1 },
+            { name: 'Латые сапоги легенды', level: 95, baseDefense: 38, speed: 1 },
+            { name: 'Валирийские латные сапоги', level: 100, baseDefense: 45, speed: 2 }
         ]
     }
 };
+
+// ============================================================
+// 3. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+// ============================================================
 
 let users = {};
 let currentUser = null;
@@ -297,9 +585,10 @@ let searchCooldown = false;
 let battleState = null;
 let marketListings = [];
 let traderInventory = {};
+let resourceInterval = null;
 
 // ============================================================
-// 2. ОСНОВНЫЕ ФУНКЦИИ
+// 4. ОСНОВНЫЕ ФУНКЦИИ
 // ============================================================
 
 function loadData() {
@@ -372,7 +661,7 @@ function rollQuality(professionLevel = 0, isBoss = false) {
     let current = 0;
 
     current += Math.max(50 - bonus, 0);
-    if (roll < current) return 'Рваное';
+    if (roll < current) return 'Плохое';
 
     current += Math.max(40 - bonus, 0);
     if (roll < current) return 'Обычное';
@@ -387,39 +676,36 @@ function rollQuality(professionLevel = 0, isBoss = false) {
         if (roll < current) return 'Легендарное';
     }
 
-    return 'Рваное';
+    return 'Плохое';
 }
 
-const WEAPON_TYPES = [
-    { name: 'Деревянный меч', level: 2, baseDamage: 4, type: 'sword' },
-    { name: 'Ржавый меч', level: 4, baseDamage: 5, type: 'sword' },
-    { name: 'Короткий меч', level: 6, baseDamage: 7, type: 'sword' },
-    { name: 'Меч разбойника', level: 10, baseDamage: 9, type: 'sword' },
-    { name: 'Меч наёмника', level: 14, baseDamage: 11, type: 'sword' },
-    { name: 'Длинный меч', level: 18, baseDamage: 13, type: 'sword' },
-    { name: 'Меч стражи', level: 22, baseDamage: 15, type: 'sword' },
-    { name: 'Стальной меч', level: 30, baseDamage: 19, type: 'sword' },
-    { name: 'Двуручный меч', level: 50, baseDamage: 30, type: 'sword' },
-    { name: 'Великий меч', level: 65, baseDamage: 40, type: 'sword' },
-    { name: 'Валирийский меч', level: 100, baseDamage: 80, type: 'sword' },
-    { name: 'Кинжал', level: 3, baseDamage: 3, type: 'dagger' },
-    { name: 'Боевой кинжал', level: 8, baseDamage: 6, type: 'dagger' },
-    { name: 'Короткое копьё', level: 5, baseDamage: 5, type: 'spear' },
-    { name: 'Копьё', level: 12, baseDamage: 10, type: 'spear' },
-    { name: 'Длинное копьё', level: 20, baseDamage: 14, type: 'spear' },
-    { name: 'Боевой топор', level: 7, baseDamage: 8, type: 'axe' },
-    { name: 'Топор', level: 15, baseDamage: 12, type: 'axe' },
-    { name: 'Двуручный топор', level: 25, baseDamage: 18, type: 'axe' },
-    { name: 'Булава', level: 6, baseDamage: 7, type: 'mace' },
-    { name: 'Тяжёлая булава', level: 14, baseDamage: 11, type: 'mace' },
-    { name: 'Короткий лук', level: 4, baseDamage: 4, type: 'bow' },
-    { name: 'Длинный лук', level: 16, baseDamage: 10, type: 'bow' },
-    { name: 'Арбалет', level: 10, baseDamage: 12, type: 'crossbow' },
-    { name: 'Тяжёлый арбалет', level: 24, baseDamage: 16, type: 'crossbow' }
-];
+function getItemFinalStats(item, quality) {
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    const result = { ...item, quality: quality };
+    if (item.baseDamage) result.finalDamage = Math.round(item.baseDamage * q.multiplier);
+    if (item.defense) result.finalDefense = Math.round(item.defense * q.multiplier);
+    if (item.baseDefense) {
+        const isLeather = item.armorClass === 'leather';
+        const defense = isLeather ? Math.floor(item.baseDefense / 2) : item.baseDefense;
+        result.finalDefense = Math.round(defense * q.multiplier);
+        result.agilityBonus = isLeather ? result.finalDefense : 0;
+        result.speedBonus = item.speed || (isLeather ? 1 : 0);
+        if (item.name.includes('Валирийские')) result.speedBonus = 2;
+    }
+    return result;
+}
+
+function getResourcePrice(resourceType, quality) {
+    const basePrices = {
+        'leather': 5, 'iron': 8, 'wood': 3, 'steel': 20, 'coal': 4, 'valyrian': 10000
+    };
+    const base = basePrices[resourceType] || 5;
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    return Math.round(base * q.multiplier);
+}
 
 // ============================================================
-// 3. РЕГИСТРАЦИЯ / ВХОД
+// 5. РЕГИСТРАЦИЯ / ВХОД
 // ============================================================
 
 function handleRegister() {
@@ -468,6 +754,8 @@ function handleRegister() {
             stamina: { level:1, xp:0 },
             professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
             professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
+            activeProfession: 'Охотник',
+            lastProfessionChange: 0,
             inventory: [],
             location: { region:'Речные земли', location:'Королевская Гавань', place:'Таверна' },
             death: null,
@@ -505,7 +793,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// 4. ИГРА
+// 6. ИГРА
 // ============================================================
 
 function fixOldAccount(user) {
@@ -526,6 +814,8 @@ function fixOldAccount(user) {
     }
     if (g.hp === undefined) g.hp = 60;
     if (g.maxHp === undefined) g.maxHp = 60;
+    if (g.activeProfession === undefined) g.activeProfession = 'Охотник';
+    if (g.lastProfessionChange === undefined) g.lastProfessionChange = 0;
     return user;
 }
 
@@ -556,13 +846,11 @@ function enterGame(name) {
     g.maxHp = maxHp;
     if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
     
-    // СТАРТОВЫЕ ДЕНЬГИ ДЛЯ ТЕСТОВ
     if (g.gold === 0 && g.silver === 0 && g.copper === 0) {
         g.gold = 100;
         setMessage('💰 Вы получили 100 Золотых Драконов для старта!');
     }
     
-    // Восстановление боя при перезагрузке
     const savedBattle = localStorage.getItem('got_battle');
     if (savedBattle) {
         try {
@@ -600,6 +888,8 @@ function updateMenu() {
     document.getElementById('menu-time').textContent = time.timeStr;
     document.getElementById('menu-period').textContent = time.emoji+' '+time.period;
     document.getElementById('menu-location').textContent = g.location.place;
+    const locationLevel = LOCATION_LEVELS[g.location.place] || 1;
+    document.getElementById('menu-location-level').textContent = ' (ур. ' + locationLevel + ')';
     document.getElementById('menu-hp').textContent = Math.round(g.hp);
     document.getElementById('menu-hp-max').textContent = Math.round(g.maxHp);
     document.getElementById('menu-level').textContent = g.level;
@@ -622,7 +912,7 @@ function updateStory() {
         'Кузница':'Вы в кузнице. Здесь можно создать и улучшить оружие.',
         'Оружейная лавка':'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
         'Кожевник':'Вы у кожевника. Здесь можно купить и продать кожу и кожаную броню.',
-        'Бронник':'Вы у бронника. Здесь можно купить и продать железо и стальную броню.',
+        'Бронник':'Вы у бронника. Здесь можно купить и продать сталь и латную броню.',
         'Плотник':'Вы у плотника. Здесь можно купить и продать дерево, луки и арбалеты.',
         'Гильдия торговцев':'Вы в гильдии торговцев. Здесь можно торговать.',
         'Ворота':'Вы у городских ворот.'
@@ -631,10 +921,8 @@ function updateStory() {
 }
 
 // ============================================================
-// 5. СИСТЕМА РЕСУРСОВ
+// 7. СИСТЕМА РЕСУРСОВ
 // ============================================================
-
-let resourceInterval = null;
 
 function startResourceSystem() {
     if (resourceInterval) clearInterval(resourceInterval);
@@ -668,7 +956,7 @@ function startResourceSystem() {
 }
 
 // ============================================================
-// 6. ОБНОВЛЕНИЕ КНОПОК
+// 8. ОБНОВЛЕНИЕ КНОПОК
 // ============================================================
 
 function updateActions() {
@@ -682,7 +970,8 @@ function updateActions() {
     const isGuild = place === 'Гильдия торговцев';
     const isWeaponShop = place === 'Оружейная лавка';
     const isTrader = ['Кожевник', 'Бронник', 'Плотник'].includes(place);
-    const isOutsideCity = (place === 'Ворота' || place === 'Дорога' || place === 'За городом' || place === 'Лес' || place === 'Горы');
+    const isForge = place === 'Кузница';
+    const isOutsideCity = (place === 'Ворота' || place === 'Дорога' || place === 'За городом' || place === 'Лес' || place === 'Горы' || place === 'Шахта' || place === 'Глухой лес' || place === 'Опасные земли');
     const inBattle = battleState && battleState.inProgress;
 
     let actions = [];
@@ -721,16 +1010,15 @@ function updateActions() {
             ];
         }
 
-        if (isWeaponShop) {
+        if (isWeaponShop || isForge || isTrader) {
+            let shopLabel = '🛒 Торговля';
+            if (isWeaponShop) shopLabel = '🗡️ Оружейная лавка';
+            else if (isForge) shopLabel = '⚒️ Кузница';
+            else if (place === 'Кожевник') shopLabel = '🪡 Кожевник';
+            else if (place === 'Бронник') shopLabel = '🛡️ Бронник';
+            else if (place === 'Плотник') shopLabel = '🪵 Плотник';
             actions = [
-                { id: 'weapon_shop', label: '🗡️ Оружейная лавка' },
-                ...actions
-            ];
-        }
-
-        if (isTrader) {
-            actions = [
-                { id: 'trader', label: '🛒 Торговля' },
+                { id: 'shop', label: shopLabel },
                 ...actions
             ];
         }
@@ -755,7 +1043,7 @@ function updateActions() {
 }
 
 // ============================================================
-// 7. ДЕЙСТВИЯ
+// 9. ДЕЙСТВИЯ
 // ============================================================
 
 function gameAction(action) {
@@ -775,11 +1063,8 @@ function gameAction(action) {
         case 'guild':
             openGuild();
             break;
-        case 'weapon_shop':
-            openWeaponShop();
-            break;
-        case 'trader':
-            openTrader(g.location.place);
+        case 'shop':
+            openShop(g.location.place);
             break;
         case 'eat':
             if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
@@ -788,7 +1073,7 @@ function gameAction(action) {
             updateMenu(); saveData();
             break;
         case 'trade':
-            openTrade();
+            openTavernTrade();
             break;
         case 'wash':
             startBusy('Моете посуду', 1, function() {
@@ -868,7 +1153,7 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// 8. БОЙ
+// 10. БОЙ
 // ============================================================
 
 function saveBattleState() {
@@ -885,34 +1170,50 @@ function doSearch() {
     const g = user.game;
     const place = g.location.place;
 
-    // В городе нельзя искать
     const cityBuildings = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Гильдия торговцев', 'Гильдия наёмников', 'Магистрат', 'Храм', 'Порт', 'Тюрьма', 'Арена', 'Орден мейстеров', 'Квартал бедноты', 'Красный замок'];
     if (cityBuildings.includes(place)) {
         setMessage('⛔ В городе нельзя искать врагов.');
         return;
     }
 
+    const locationLevel = LOCATION_LEVELS[place] || 1;
     let mobs = [];
 
-    if (place === 'Ворота' || place === 'Дорога' || place === 'За городом') {
-        mobs = [
-            { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2, loot: null },
-            { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3, loot: null },
-            { name: 'Лиса', hp: 15, damage: 3, defense: 0, xp: 5, level: 4, type: 'animal', agility: 5, loot: null },
-            { name: 'Бродяга', hp: 12, damage: 3, defense: 0, xp: 4, level: 2, type: 'human', agility: 2, loot: { name: 'Ржавый кинжал', baseDamage: 3, level: 2, chance: 0.3 } },
-            { name: 'Нищий бандит', hp: 20, damage: 5, defense: 1, xp: 8, level: 5, type: 'human', agility: 3, loot: { name: 'Кинжал', baseDamage: 4, level: 5, chance: 0.2 } }
-        ];
-    } else if (place === 'Таверна' || place === 'Гильдия торговцев' || place === 'Рынок' || place === 'Кузница' || place === 'Оружейная лавка' || place === 'Кожевник' || place === 'Бронник' || place === 'Плотник') {
+    if (locationLevel <= 1) {
         mobs = [
             { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2, loot: null },
             { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3, loot: null }
         ];
-    } else {
+    } else if (locationLevel <= 5) {
+        mobs = [
+            { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2, loot: null },
+            { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3, loot: null },
+            { name: 'Бродяга', hp: 12, damage: 3, defense: 0, xp: 4, level: 2, type: 'human', agility: 2, loot: { name: 'Ржавый кинжал', baseDamage: 3, level: 2, chance: 0.3 } },
+            { name: 'Нищий бандит', hp: 20, damage: 5, defense: 1, xp: 8, level: 5, type: 'human', agility: 3, loot: { name: 'Кинжал', baseDamage: 4, level: 5, chance: 0.2 } }
+        ];
+    } else if (locationLevel <= 15) {
         mobs = [
             { name: 'Волк', hp: 25, damage: 6, defense: 2, xp: 10, level: 8, type: 'animal', agility: 4, loot: null },
             { name: 'Бандит', hp: 30, damage: 7, defense: 2, xp: 12, level: 6, type: 'human', agility: 3, loot: null },
+            { name: 'Разбойник', hp: 40, damage: 9, defense: 3, xp: 18, level: 10, type: 'human', agility: 4, loot: null }
+        ];
+    } else if (locationLevel <= 30) {
+        mobs = [
+            { name: 'Волк', hp: 25, damage: 6, defense: 2, xp: 10, level: 8, type: 'animal', agility: 4, loot: null },
             { name: 'Разбойник', hp: 40, damage: 9, defense: 3, xp: 18, level: 10, type: 'human', agility: 4, loot: null },
             { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human', agility: 5, loot: null }
+        ];
+    } else if (locationLevel <= 50) {
+        mobs = [
+            { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human', agility: 5, loot: null },
+            { name: 'Пещерный волк', hp: 60, damage: 14, defense: 5, xp: 35, level: 20, type: 'animal', agility: 6, loot: null },
+            { name: 'Опытный бандит', hp: 70, damage: 16, defense: 6, xp: 40, level: 25, type: 'human', agility: 5, loot: null }
+        ];
+    } else {
+        mobs = [
+            { name: 'Медведь', hp: 80, damage: 18, defense: 8, xp: 50, level: 30, type: 'animal', agility: 4, loot: null },
+            { name: 'Вожак волков', hp: 90, damage: 20, defense: 7, xp: 60, level: 35, type: 'animal', agility: 7, loot: null },
+            { name: 'Элитный разбойник', hp: 100, damage: 22, defense: 9, xp: 70, level: 40, type: 'human', agility: 6, loot: null }
         ];
     }
 
@@ -932,7 +1233,6 @@ function startBattle(mob) {
     const g = user.game;
     const place = g.location.place;
 
-    // В городе нельзя драться
     const cityBuildings = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Гильдия торговцев', 'Гильдия наёмников', 'Магистрат', 'Храм', 'Порт', 'Тюрьма', 'Арена', 'Орден мейстеров', 'Квартал бедноты', 'Красный замок'];
     if (cityBuildings.includes(place)) {
         setMessage('⛔ В городе нельзя драться.');
@@ -943,7 +1243,8 @@ function startBattle(mob) {
     g.maxHp = maxHp;
     if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
 
-    const weaponType = g.equipment.rightHand || 'sword';
+    const weaponType = g.equipment.rightHand ? 
+        (g.equipment.rightHand.type || 'sword') : 'sword';
     const skillLevel = g.skills[weaponType]?.level || 1;
 
     battleState = {
@@ -1003,6 +1304,7 @@ function renderBattle() {
 
     setMessage(msg);
     updateActions();
+    updateMenu();
     saveBattleState();
 }
 
@@ -1024,7 +1326,6 @@ function battleAction(action) {
     let nextTurn = 'mob';
     let battleOver = false;
 
-    // Побег (25%)
     if (action === 'battle_flee') {
         if (Math.random() * 100 < 25) {
             result = '🏃 Вы сбежали!';
@@ -1046,7 +1347,6 @@ function battleAction(action) {
         }
     }
 
-    // Атака
     if (action === 'battle_attack') {
         const missChance = Math.max(0, (10 - weaponSkill) * 2);
         if (Math.random() * 100 < missChance) {
@@ -1068,14 +1368,12 @@ function battleAction(action) {
         battleState.log.push('Вы нанесли ' + damage + ' урона');
     }
 
-    // Защита
     if (action === 'battle_defend') {
         battleState.defending = true;
         result = '🛡️ Вы защищаетесь.';
         battleState.log.push('Вы защищаетесь');
     }
 
-    // Уклонение
     if (action === 'battle_dodge') {
         const dodgeChance = Math.max(5, Math.min(80, (playerAgility - mobAgility) * 2));
         if (Math.random() * 100 < dodgeChance) {
@@ -1126,7 +1424,6 @@ function mobTurn() {
     const g = user.game;
     const { mob, playerHp, playerDefense, playerAgility, mobAgility } = battleState;
 
-    // Уворот игрока
     const dodgeChance = Math.max(5, Math.min(80, (playerAgility - mobAgility) * 2));
     if (Math.random() * 100 < dodgeChance) {
         battleState.log.push('💨 Вы увернулись от атаки!');
@@ -1136,7 +1433,6 @@ function mobTurn() {
         return;
     }
 
-    // Расчёт урона с защитой
     let damage = mob.damage + Math.floor(Math.random() * 3);
     const defenseDiff = playerDefense - (mob.defense || 0);
     if (defenseDiff > 0) {
@@ -1148,7 +1444,6 @@ function mobTurn() {
         battleState.defending = false;
     }
 
-    // Промах моба
     const mobMissChance = Math.max(0, (10 - mobAgility) * 2);
     if (Math.random() * 100 < mobMissChance) {
         battleState.log.push('🐺 ' + mob.name + ' промахнулся!');
@@ -1200,24 +1495,17 @@ function endBattle(won, reason) {
             setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня!');
         }
 
-        // ЛУТ (30% оружие)
         if (Math.random() < 0.3) {
             const quality = rollQuality(g.professions['Охотник'], false);
-            const available = WEAPON_TYPES.filter(w => w.level <= g.level + 5);
+            const available = ALL_ITEMS.weapons.sword.filter(w => w.level <= g.level + 5);
             if (available.length > 0) {
                 const w = available[Math.floor(Math.random() * available.length)];
-                g.inventory.push({
-                    name: w.name,
-                    level: w.level,
-                    quality: quality,
-                    baseDamage: w.baseDamage,
-                    type: w.type
-                });
+                const item = getItemFinalStats(w, quality);
+                g.inventory.push(item);
                 setMessage('🏆 Выпал: ' + w.name + ' (' + quality + ')');
             }
         }
 
-        // Дополнительный лут с мобов (кинжалы и т.д.)
         if (mob.loot && Math.random() < mob.loot.chance) {
             const quality = rollQuality(g.professions['Охотник'] || 1, false);
             g.inventory.push({
@@ -1225,36 +1513,55 @@ function endBattle(won, reason) {
                 baseDamage: mob.loot.baseDamage,
                 level: mob.loot.level,
                 quality: quality,
-                type: 'dagger'
+                type: 'dagger',
+                finalDamage: Math.round(mob.loot.baseDamage * (QUALITIES[quality]?.multiplier || 1))
             });
             setMessage('🗡️ Вы нашли ' + mob.loot.name + ' (' + quality + ')');
         }
 
-        // Шкуры с животных (50% шанс)
         if (mob.type === 'animal') {
             const hunterLevel = g.professions['Охотник'] || 1;
             const bonus = Math.min(hunterLevel * 0.5, 50);
             const totalChance = Math.min(50 + bonus, 100);
 
             if (Math.random() * 100 < totalChance) {
-                let quality = 'Рваное';
-                if (mob.level >= 10) quality = 'Обычное';
-                if (mob.level >= 20) quality = 'Хорошее';
-                if (mob.level >= 35) quality = 'Качественное';
-                if (mob.level >= 50) quality = 'Мастерское';
-                if (mob.level >= 75) quality = 'Легендарное';
+                let quality = 'Плохое';
+                if (mob.level >= 6) quality = 'Обычное';
+                if (mob.level >= 11) quality = 'Хорошее';
+                if (mob.level >= 21) quality = 'Качественное';
+                if (mob.level >= 36) quality = 'Мастерское';
+                if (mob.level >= 51) quality = 'Легендарное';
+                if (mob.level >= 76) quality = 'Мифическое';
 
-                g.inventory.push({
-                    name: 'Шкура ' + mob.name,
-                    quality: quality,
-                    type: 'leather',
-                    level: mob.level
-                });
-                setMessage('🧵 Выпала шкура ' + mob.name + ' (' + quality + ')');
+                const qualityBonus = Math.floor(hunterLevel / 10);
+                const qualityLevels = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное', 'Мифическое'];
+                let qualityIndex = qualityLevels.indexOf(quality);
+                qualityIndex = Math.min(qualityIndex + qualityBonus, qualityLevels.length - 1);
+                quality = qualityLevels[qualityIndex];
+
+                let baseCount = 1;
+                if (mob.level >= 6) baseCount = 2;
+                if (mob.level >= 11) baseCount = 3;
+                if (mob.level >= 21) baseCount = 4;
+                if (mob.level >= 36) baseCount = 5;
+                if (mob.level >= 51) baseCount = 7;
+                if (mob.level >= 76) baseCount = 10;
+
+                const hunterCountBonus = Math.floor(hunterLevel / 10) * 0.1;
+                const count = Math.floor(baseCount * (1 + hunterCountBonus));
+
+                for (let i = 0; i < count; i++) {
+                    g.inventory.push({
+                        name: 'Кожа',
+                        quality: quality,
+                        type: 'resource',
+                        resourceType: 'leather'
+                    });
+                }
+                setMessage('🧵 Выпала кожа ×' + count + ' (' + quality + ')');
             }
         }
 
-        // МП с бандитов
         if (mob.type === 'human') {
             const coins = (mob.level * 2) + Math.floor(Math.random() * (mob.level * 2));
             g.copper += coins;
@@ -1262,7 +1569,6 @@ function endBattle(won, reason) {
             setMessage('💰 Вы нашли ' + coins + ' МП у ' + mob.name + ' (ур. ' + mob.level + ')');
         }
 
-        // Прокачка охотника
         if (mob.type === 'animal') {
             g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + 2;
             while (g.professionXp['Охотник'] >= g.professions['Охотник'] * 10) {
@@ -1293,7 +1599,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// 9. КАРТА
+// 11. КАРТА
 // ============================================================
 
 function openMap() {
@@ -1302,7 +1608,7 @@ function openMap() {
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
 
-    let html = '<div class="modal-section"><h4>📍 Вы здесь: '+user.game.location.place+'</h4></div>';
+    let html = '<div class="modal-section"><h4>📍 Вы здесь: '+user.game.location.place+' (ур. '+LOCATION_LEVELS[user.game.location.place]+')</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
         const isCurrent = b.id === user.game.location.place;
@@ -1340,7 +1646,547 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// 10. ПЕРСОНАЖ
+// 12. ТОРГОВЛЯ (НОВАЯ СИСТЕМА)
+// ============================================================
+
+function getTraderStock(place, itemKey) {
+    if (!traderInventory[place]) traderInventory[place] = {};
+    return traderInventory[place][itemKey] || 0;
+}
+
+function addTraderStock(place, itemKey, amount) {
+    if (!traderInventory[place]) traderInventory[place] = {};
+    traderInventory[place][itemKey] = (traderInventory[place][itemKey] || 0) + amount;
+    saveData();
+}
+
+function removeTraderStock(place, itemKey, amount) {
+    if (!traderInventory[place]) traderInventory[place] = {};
+    const current = traderInventory[place][itemKey] || 0;
+    traderInventory[place][itemKey] = Math.max(0, current - amount);
+    saveData();
+}
+
+function getShopCategories(shopType) {
+    const categories = {
+        'Оружейная лавка': [
+            { id: 'sword', label: 'Мечи', icon: '🗡️' },
+            { id: 'spear', label: 'Копья', icon: '🔱' },
+            { id: 'axe', label: 'Топоры', icon: '🪓' },
+            { id: 'mace', label: 'Булавы', icon: '🔨' },
+            { id: 'bow', label: 'Луки', icon: '🏹' },
+            { id: 'crossbow', label: 'Арбалеты', icon: '🎯' },
+            { id: 'dagger', label: 'Кинжалы', icon: '🔪' },
+            { id: 'shield', label: 'Щиты', icon: '🛡️' }
+        ],
+        'Кожевник': [
+            { id: 'leather', label: 'Кожа (ресурс)', icon: '🧵' },
+            { id: 'helmet', label: 'Шлемы (кожа)', icon: '🪖' },
+            { id: 'chestplate', label: 'Нагрудники (кожа)', icon: '🦺' },
+            { id: 'boots', label: 'Сапоги (кожа)', icon: '👢' }
+        ],
+        'Бронник': [
+            { id: 'steel', label: 'Сталь (ресурс)', icon: '⚒️' },
+            { id: 'helmet', label: 'Шлемы (латные)', icon: '🪖' },
+            { id: 'chestplate', label: 'Нагрудники (латные)', icon: '🦺' },
+            { id: 'boots', label: 'Сапоги (латные)', icon: '👢' }
+        ],
+        'Плотник': [
+            { id: 'wood', label: 'Дерево (ресурс)', icon: '🪵' },
+            { id: 'bow', label: 'Луки', icon: '🏹' },
+            { id: 'crossbow', label: 'Арбалеты', icon: '🎯' }
+        ],
+        'Кузница': [
+            { id: 'iron', label: 'Руда железная', icon: '⛏️' },
+            { id: 'coal', label: 'Уголь', icon: '🔥' },
+            { id: 'valyrian', label: 'Валирийская сталь', icon: '🌟' },
+            { id: 'sword', label: 'Мечи (крафт)', icon: '🗡️' },
+            { id: 'axe', label: 'Топоры (крафт)', icon: '🪓' }
+        ]
+    };
+    return categories[shopType] || [];
+}
+
+function getCategoryItems(shopType, categoryId) {
+    const user = users[currentUser];
+    const playerLevel = user?.game?.level || 1;
+    let items = [];
+
+    // Ресурсы
+    if (categoryId === 'leather') {
+        const qualities = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'];
+        qualities.forEach(q => {
+            items.push({
+                name: 'Кожа',
+                quality: q,
+                level: 1,
+                type: 'resource',
+                resourceType: 'leather',
+                price: getResourcePrice('leather', q)
+            });
+        });
+        return items;
+    }
+    if (categoryId === 'steel') {
+        const qualities = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'];
+        qualities.forEach(q => {
+            items.push({
+                name: 'Сталь',
+                quality: q,
+                level: 1,
+                type: 'resource',
+                resourceType: 'steel',
+                price: getResourcePrice('steel', q)
+            });
+        });
+        return items;
+    }
+    if (categoryId === 'wood') {
+        const qualities = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'];
+        qualities.forEach(q => {
+            items.push({
+                name: 'Дерево',
+                quality: q,
+                level: 1,
+                type: 'resource',
+                resourceType: 'wood',
+                price: getResourcePrice('wood', q)
+            });
+        });
+        return items;
+    }
+    if (categoryId === 'iron') {
+        const qualities = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'];
+        qualities.forEach(q => {
+            items.push({
+                name: 'Руда железная',
+                quality: q,
+                level: 1,
+                type: 'resource',
+                resourceType: 'iron',
+                price: getResourcePrice('iron', q)
+            });
+        });
+        return items;
+    }
+    if (categoryId === 'coal') {
+        const qualities = ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское'];
+        qualities.forEach(q => {
+            items.push({
+                name: 'Уголь',
+                quality: q,
+                level: 1,
+                type: 'resource',
+                resourceType: 'coal',
+                price: getResourcePrice('coal', q)
+            });
+        });
+        return items;
+    }
+    if (categoryId === 'valyrian') {
+        items.push({
+            name: 'Валирийская сталь',
+            quality: 'Мифическое',
+            level: 100,
+            type: 'resource',
+            resourceType: 'valyrian',
+            price: 99999,
+            legendary: true,
+            unavailable: true
+        });
+        return items;
+    }
+
+    // Оружие
+    if (shopType === 'Оружейная лавка' || shopType === 'Кузница') {
+        if (ALL_ITEMS.weapons[categoryId]) {
+            items = ALL_ITEMS.weapons[categoryId].map(item => ({
+                ...item,
+                type: categoryId
+            }));
+        }
+    }
+
+    // Кожаная броня
+    if (shopType === 'Кожевник') {
+        if (ALL_ITEMS.leather[categoryId]) {
+            items = ALL_ITEMS.leather[categoryId].map(item => ({
+                ...item,
+                type: categoryId,
+                armorClass: 'leather'
+            }));
+        }
+    }
+
+    // Латная броня
+    if (shopType === 'Бронник') {
+        if (ALL_ITEMS.plate[categoryId]) {
+            items = ALL_ITEMS.plate[categoryId].map(item => ({
+                ...item,
+                type: categoryId,
+                armorClass: 'plate'
+            }));
+        }
+    }
+
+    // Плотник
+    if (shopType === 'Плотник') {
+        if (categoryId === 'bow' && ALL_ITEMS.weapons.bow) {
+            items = ALL_ITEMS.weapons.bow.map(item => ({ ...item, type: 'bow' }));
+        } else if (categoryId === 'crossbow' && ALL_ITEMS.weapons.crossbow) {
+            items = ALL_ITEMS.weapons.crossbow.map(item => ({ ...item, type: 'crossbow' }));
+        }
+    }
+
+    const resourceCategories = ['leather', 'steel', 'wood', 'iron', 'coal', 'valyrian'];
+    if (!resourceCategories.includes(categoryId)) {
+        items = items.filter(item => item.level <= playerLevel + 5);
+    }
+
+    return items;
+}
+
+function getCategoryLabel(categoryId) {
+    const labels = {
+        'sword': '🗡️ Мечи', 'spear': '🔱 Копья', 'axe': '🪓 Топоры',
+        'mace': '🔨 Булавы', 'bow': '🏹 Луки', 'crossbow': '🎯 Арбалеты',
+        'dagger': '🔪 Кинжалы', 'shield': '🛡️ Щиты',
+        'helmet': '🪖 Шлемы', 'chestplate': '🦺 Нагрудники', 'boots': '👢 Сапоги'
+    };
+    return labels[categoryId] || categoryId;
+}
+
+function openShop(shopType) {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+
+    const categories = getShopCategories(shopType);
+    
+    let html = '<div class="modal-section"><h4>🏪 ' + shopType + '</h4>';
+    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>📂 РАЗДЕЛЫ</h4>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
+    categories.forEach(cat => {
+        html += '<button class="btn" style="flex:1; min-width:70px; padding:8px; font-size:12px;" onclick="openShopCategory(\'' + shopType + '\', \'' + cat.id + '\')">' + cat.icon + ' ' + cat.label + '</button>';
+    });
+    html += '</div>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
+    const grouped = {};
+    g.inventory.forEach((item, index) => {
+        const key = item.name + '|' + (item.quality || 'Обычное');
+        if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
+        grouped[key].items.push(index);
+        grouped[key].count++;
+    });
+    const tradeItems = Object.keys(grouped);
+    if (tradeItems.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
+    } else {
+        tradeItems.forEach(key => {
+            const [itemName, quality] = key.split('|');
+            const count = grouped[key].count;
+            const price = getSellPrice(shopType, itemName, quality);
+            if (price > 0) {
+                html += '<div class="row" style="padding:4px 0;">';
+                html += '<span class="label">' + itemName + ' (' + quality + ') ×' + count + '</span>';
+                html += '<span class="value">' + (price * count) + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellToShop(\'' + shopType + '\',\'' + itemName + '\',\'' + quality + '\',' + count + ',' + price + ')">Продать</button></span>';
+                html += '</div>';
+            }
+        });
+    }
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function openShopCategory(shopType, categoryId) {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    
+    const items = getCategoryItems(shopType, categoryId);
+    
+    let html = '<div class="modal-section"><h4>📂 ' + getCategoryLabel(categoryId) + '</h4>';
+    html += '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'' + shopType + '\')">⬅️ Назад</button>';
+    html += '</div>';
+    
+    html += '<div class="modal-section">';
+    if (items.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет доступных предметов.</p>';
+    } else {
+        items.forEach(item => {
+            const stockKey = item.name + '|' + (item.quality || 'Обычное');
+            const stock = getTraderStock(shopType, stockKey);
+            const hasStock = stock > 0 || ['leather', 'steel', 'wood', 'iron', 'coal'].includes(item.resourceType);
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">' + item.name + (item.level ? ' (ур. ' + item.level + ')' : '') + (hasStock ? ' ✅' : ' ❌') + '</span>';
+            html += '<span class="value"><button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="openItemQualities(\'' + shopType + '\',\'' + item.name + '\',' + (item.level || 1) + ',\'' + (item.type || 'resource') + '\',' + (item.baseDamage || 0) + ',' + (item.defense || item.baseDefense || 0) + ',\'' + (item.resourceType || '') + '\',\'' + (item.armorClass || '') + '\')">Выбрать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function openItemQualities(shopType, itemName, level, type, baseDamage, defense, resourceType, armorClass) {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    
+    const isResource = resourceType !== undefined && resourceType !== '';
+    const qualities = isResource ? 
+        ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'] :
+        ['Плохое', 'Обычное', 'Хорошее', 'Качественное', 'Мастерское', 'Легендарное'];
+    
+    if (resourceType === 'valyrian') {
+        qualities.push('Мифическое');
+    }
+    
+    let html = '<div class="modal-section"><h4>📦 ' + itemName + (isResource ? ' (ресурс)' : ' (ур. ' + level + ')') + '</h4>';
+    html += '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShopCategory(\'' + shopType + '\',\'' + type + '\')">⬅️ Назад</button>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>📦 КАЧЕСТВО И ЦЕНА</h4>';
+    qualities.forEach(quality => {
+        const stockKey = itemName + '|' + quality;
+        const stock = getTraderStock(shopType, stockKey);
+        let price;
+        if (isResource) {
+            price = getResourcePrice(resourceType, quality);
+        } else {
+            const basePrice = 5 + level * 2;
+            const q = QUALITIES[quality] || QUALITIES['Обычное'];
+            price = Math.round(basePrice * q.multiplier);
+        }
+        const inStock = stock > 0 || (isResource && resourceType !== 'valyrian');
+        const isValyrian = resourceType === 'valyrian';
+        
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + quality + ' <span style="color:' + QUALITIES[quality].color + ';">(' + QUALITIES[quality].short + ')</span> ' + (inStock ? '✅' : '❌') + '</span>';
+        html += '<span class="value">' + (isValyrian ? '—' : price + ' МП') + ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyItemWithQuality(\'' + shopType + '\',\'' + itemName + '\',\'' + quality + '\',' + price + ',' + level + ',\'' + type + '\',' + baseDamage + ',' + defense + ',\'' + (resourceType || '') + '\',\'' + (armorClass || '') + '\')"' + (isValyrian ? ' disabled' : '') + '>' + (isValyrian ? '🔒' : 'Купить') + '</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function buyItemWithQuality(shopType, itemName, quality, price, level, type, baseDamage, defense, resourceType, armorClass) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    
+    const stockKey = itemName + '|' + quality;
+    const stock = getTraderStock(shopType, stockKey);
+    const isResource = resourceType !== undefined && resourceType !== '';
+    
+    if (!isResource && stock <= 0) {
+        setMessage('❌ У торговца нет ' + itemName + ' (' + quality + ')');
+        return;
+    }
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег');
+        return;
+    }
+    
+    if (!isResource) {
+        removeTraderStock(shopType, stockKey, 1);
+    }
+    
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    let item = {
+        name: itemName,
+        level: level,
+        quality: quality,
+        type: type
+    };
+    
+    if (baseDamage > 0) {
+        item.baseDamage = baseDamage;
+        item.finalDamage = Math.round(baseDamage * q.multiplier);
+    }
+    if (defense > 0) {
+        const isLeather = armorClass === 'leather';
+        const def = isLeather ? Math.floor(defense / 2) : defense;
+        item.baseDefense = defense;
+        item.defense = def;
+        item.finalDefense = Math.round(def * q.multiplier);
+        if (isLeather) {
+            item.agilityBonus = item.finalDefense;
+        }
+        if (type === 'boots') {
+            item.speedBonus = isLeather ? 1 : 1;
+            if (itemName.includes('Валирийские')) item.speedBonus = 2;
+        }
+        item.armorClass = armorClass || 'plate';
+    }
+    if (isResource) {
+        item.type = 'resource';
+        item.resourceType = resourceType;
+        item.finalDamage = 0;
+        item.finalDefense = 0;
+    }
+    
+    g.inventory.push(item);
+    setMessage('✅ Вы купили ' + itemName + ' (' + quality + ')');
+    convertCurrency(g);
+    updateMenu(); saveData();
+    openItemQualities(shopType, itemName, level, type, baseDamage, defense, resourceType, armorClass);
+}
+
+function sellToShop(shopType, itemName, quality, count, pricePerItem) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    
+    let removed = 0;
+    for (let i = g.inventory.length - 1; i >= 0; i--) {
+        if (g.inventory[i].name === itemName && g.inventory[i].quality === quality && removed < count) {
+            g.inventory.splice(i, 1);
+            removed++;
+        }
+    }
+    
+    const totalPrice = pricePerItem * count;
+    g.copper += totalPrice;
+    convertCurrency(g);
+    
+    const stockKey = itemName + '|' + quality;
+    addTraderStock(shopType, stockKey, count);
+    
+    setMessage('💰 Вы продали ' + itemName + ' (' + quality + ') ×' + count + ' за ' + totalPrice + ' МП');
+    updateMenu(); saveData();
+    openShop(shopType);
+}
+
+function getSellPrice(shopType, itemName, quality) {
+    const level = 1;
+    const basePrice = 5 + level * 2;
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    return Math.round(basePrice * q.multiplier * 0.5);
+}
+
+function openTavernTrade() {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+
+    let html = '<div class="modal-section"><h4>🍺 ТОРГОВЛЯ В ТАВЕРНЕ</h4>';
+    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
+    html += '</div>';
+
+    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
+    const shopItems = [
+        { name: '🍞 Хлеб', price: 5, type: 'food', value: 20 },
+        { name: '🥩 Мясо', price: 10, type: 'food', value: 30 },
+        { name: '💧 Вода', price: 2, type: 'drink', value: 15 },
+        { name: '🍺 Эль', price: 5, type: 'heal_drink', valueHP: 5, valueThirst: 10 },
+        { name: '🍷 Вино', price: 8, type: 'heal_drink', valueHP: 8, valueThirst: 15 }
+    ];
+    shopItems.forEach(item => {
+        html += '<div class="row" style="padding:4px 0;">';
+        html += '<span class="label">'+item.name+'</span>';
+        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyTavernItem(\''+item.name+'\','+item.price+',\''+item.type+'\','+(item.valueHP || item.value)+','+(item.valueThirst || 0)+')">Купить</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
+    const foodItems = ['Хлеб', 'Мясо', 'Вода', 'Эль', 'Вино'];
+    const grouped = {};
+    g.inventory.forEach((item, index) => {
+        const key = item.name;
+        if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
+        grouped[key].items.push(index);
+        grouped[key].count++;
+    });
+    const tradeItems = Object.keys(grouped);
+    if (tradeItems.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
+    } else {
+        tradeItems.forEach(itemName => {
+            const count = grouped[itemName].count;
+            const isFood = foodItems.some(f => itemName.includes(f));
+            const basePrice = 5;
+            const pricePerItem = isFood ? basePrice : Math.floor(basePrice * 0.5);
+            const totalPrice = pricePerItem * count;
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">' + itemName + ' ×' + count + '</span>';
+            html += '<span class="value">' + totalPrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellTavernItem(\'' + itemName + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function buyTavernItem(name, price, type, valueHP, valueThirst) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег для покупки ' + name);
+        return;
+    }
+    g.inventory.push({
+        name: name,
+        type: 'item',
+        baseDamage: 0,
+        effect: { type: type, valueHP: valueHP || 0, valueThirst: valueThirst || 0 }
+    });
+    setMessage('✅ Вы купили ' + name);
+    convertCurrency(g);
+    updateMenu(); saveData();
+    openTavernTrade();
+}
+
+function sellTavernItem(itemName, count, pricePerItem) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    let removed = 0;
+    for (let i = g.inventory.length - 1; i >= 0; i--) {
+        if (g.inventory[i].name === itemName && removed < count) {
+            g.inventory.splice(i, 1);
+            removed++;
+        }
+    }
+    const totalPrice = pricePerItem * count;
+    g.copper += totalPrice;
+    convertCurrency(g);
+    setMessage('💰 Вы продали ' + itemName + ' ×' + count + ' за ' + totalPrice + ' МП');
+    updateMenu(); saveData();
+    openTavernTrade();
+}
+
+function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
+
+// ============================================================
+// 13. ПЕРСОНАЖ
 // ============================================================
 
 function openCharacter() {
@@ -1393,12 +2239,15 @@ function openCharacter() {
     const nx = st.level*10;
     html += '<div class="row"><span class="label">Уровень</span><span class="value">'+st.level+' ('+st.xp+'/'+nx+')</span></div></div>';
     
-    html += '<div class="modal-section"><h4>👷 ПРОФЕССИИ</h4>';
+    html += '<div class="modal-section"><h4>👷 ПРОФЕССИЯ</h4>';
+    html += '<div class="row"><span class="label">Активная</span><span class="value">' + (g.activeProfession || 'Охотник') + '</span></div>';
+    html += '<div class="row"><span class="label">Смена</span><span class="value"><button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="changeProfession()">Сменить</button></span></div>';
     ['Шахтёр','Лесоруб','Охотник','Кузнец'].forEach(p => {
         const level = g.professions[p]||1;
         const xp = g.professionXp[p]||0;
         const nx2 = level*10;
-        html += '<div class="row"><span class="label">'+p+'</span><span class="value">ур. '+level+' ('+xp+'/'+nx2+')</span></div>';
+        const isActive = g.activeProfession === p;
+        html += '<div class="row"><span class="label">' + p + (isActive ? ' ✅' : '') + '</span><span class="value">ур. '+level+' ('+xp+'/'+nx2+')</span></div>';
     });
     html += '</div>';
     
@@ -1417,7 +2266,7 @@ function openCharacter() {
     ];
     slots.forEach(s => {
         const item = g.equipment[s.key];
-        html += '<div class="row"><span class="label">'+s.label+'</span><span class="value">'+(item?'✅':'пусто')+'</span></div>';
+        html += '<div class="row"><span class="label">'+s.label+'</span><span class="value">'+(item ? (item.quality ? item.quality + ' ' : '') + item.name : 'пусто')+'</span></div>';
     });
     html += '</div>';
     
@@ -1440,8 +2289,40 @@ function addAttribute(statId) {
     updateMenu();
 }
 
+function changeProfession() {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    const now = Date.now();
+    
+    if (g.lastProfessionChange && (now - g.lastProfessionChange) < 86400000) {
+        const hoursLeft = Math.ceil((86400000 - (now - g.lastProfessionChange)) / 3600000);
+        setMessage('⏳ Смена доступна через ' + hoursLeft + ' часов.');
+        return;
+    }
+    
+    const professions = ['Охотник', 'Шахтёр', 'Лесоруб', 'Кузнец'];
+    let msg = '👷 ВЫБЕРИТЕ ПРОФЕССИЮ\n\n';
+    professions.forEach(p => {
+        msg += '• ' + p + (g.activeProfession === p ? ' ✅' : '') + '\n';
+    });
+    msg += '\nВведите название профессии:';
+    
+    const choice = prompt(msg);
+    if (choice && professions.includes(choice)) {
+        const oldProfession = g.activeProfession || 'Охотник';
+        g.activeProfession = choice;
+        g.lastProfessionChange = now;
+        setMessage('✅ Вы сменили профессию с ' + oldProfession + ' на ' + choice);
+        updateMenu(); saveData();
+        openCharacter();
+    } else {
+        setMessage('❌ Отменено.');
+    }
+}
+
 // ============================================================
-// 11. ИНВЕНТАРЬ
+// 14. ИНВЕНТАРЬ
 // ============================================================
 
 function openInventory() {
@@ -1451,16 +2332,81 @@ function openInventory() {
     const modal = document.getElementById('modal-inventory');
     const content = document.getElementById('modal-inventory-content');
     let html = '';
+    
     if(g.inventory.length===0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">🎒 Пусто</p>';
     } else {
-        g.inventory.forEach((item) => {
-            html += '<div class="row" style="padding:4px 0;">';
-            html += '<span class="label">'+item.name+'</span>';
-            html += '<span class="value">⚔️ '+item.baseDamage+'</span>';
-            html += '</div>';
+        g.inventory.forEach((item, i) => {
+            const quality = item.quality || 'Обычное';
+            const q = QUALITIES[quality] || QUALITIES['Обычное'];
+            
+            let stats = '';
+            let isEquippable = false;
+            let levelReq = item.level || 1;
+            let canEquip = g.level >= levelReq;
+            
+            if (item.finalDamage) {
+                stats = '⚔️ Урон: ' + item.finalDamage;
+            } else if (item.finalDefense) {
+                stats = '🛡️ Защита: ' + item.finalDefense;
+                if (item.agilityBonus) stats += ' | 💨 +' + item.agilityBonus;
+                if (item.speedBonus) stats += ' | 🏃 +' + item.speedBonus;
+            } else if (item.type === 'resource') {
+                stats = '📦 ' + (item.resourceType || 'ресурс');
+            }
+            
+            if (item.type === 'sword' || item.type === 'spear' || item.type === 'axe' || 
+                item.type === 'mace' || item.type === 'bow' || item.type === 'crossbow' || 
+                item.type === 'dagger' || item.type === 'shield' || 
+                item.type === 'helmet' || item.type === 'chestplate' || 
+                item.type === 'shoulders' || item.type === 'leggings' || 
+                item.type === 'boots' || item.type === 'gloves' || 
+                item.type === 'belt' || item.type === 'cloak') {
+                isEquippable = true;
+            }
+            
+            const isUsable = ['Хлеб','Мясо','Вода','Эль','Вино'].some(n => item.name.includes(n));
+            
+            html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410; flex-wrap:wrap;">';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
+            html += '<span class="value" style="font-size:12px;">' + stats;
+            
+            if (isEquippable) {
+                if (canEquip) {
+                    html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="equipItem('+i+')">Надеть</button>';
+                } else {
+                    html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;opacity:0.4;cursor:not-allowed;" disabled>🔒 ур. ' + levelReq + '</button>';
+                }
+            }
+            if (isUsable) {
+                html += ' <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="useItem('+i+')">Использовать</button>';
+            }
+            html += '</span></div>';
         });
     }
+    
+    html += '<div class="modal-section"><h4>🛡️ НАДЕТО</h4>';
+    const slots = [
+        { key:'rightHand', label:'Правая рука' },
+        { key:'leftHand', label:'Левая рука' },
+        { key:'helmet', label:'Голова' },
+        { key:'chestplate', label:'Грудь' },
+        { key:'shoulders', label:'Плечи' },
+        { key:'leggings', label:'Ноги' },
+        { key:'boots', label:'Стопы' },
+        { key:'gloves', label:'Руки' },
+        { key:'belt', label:'Пояс' },
+        { key:'cloak', label:'Спина' }
+    ];
+    slots.forEach(s => {
+        const item = g.equipment[s.key];
+        html += '<div class="row" style="padding:2px 0;">';
+        html += '<span class="label">' + s.label + '</span>';
+        html += '<span class="value">' + (item ? (item.quality ? item.quality + ' ' : '') + item.name : 'пусто') + '</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
     html += '<button class="btn" onclick="closeInventory()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
@@ -1468,8 +2414,80 @@ function openInventory() {
 
 function closeInventory() { document.getElementById('modal-inventory').classList.add('hide'); }
 
+function equipItem(index) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if(index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    
+    if (item.level && g.level < item.level) {
+        setMessage('❌ Требуется уровень ' + item.level + ' для надевания.');
+        return;
+    }
+    
+    const slotMap = {
+        'sword': 'rightHand', 'spear': 'rightHand', 'axe': 'rightHand',
+        'mace': 'rightHand', 'bow': 'rightHand', 'crossbow': 'rightHand',
+        'dagger': 'rightHand', 'shield': 'leftHand',
+        'helmet': 'helmet', 'chestplate': 'chestplate',
+        'shoulders': 'shoulders', 'leggings': 'leggings',
+        'boots': 'boots', 'gloves': 'gloves',
+        'belt': 'belt', 'cloak': 'cloak'
+    };
+    const slot = slotMap[item.type];
+    
+    if (!slot) {
+        setMessage('❌ Этот предмет нельзя надеть.');
+        return;
+    }
+    
+    if (g.equipment[slot]) {
+        g.inventory.push(g.equipment[slot]);
+    }
+    
+    g.equipment[slot] = item;
+    g.inventory.splice(index, 1);
+    setMessage('✅ Вы надели ' + item.name);
+    updateMenu();
+    saveData();
+    openInventory();
+}
+
+function useItem(index) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if(index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    
+    if (item.name.includes('Хлеб') || item.name.includes('Мясо')) {
+        g.food = Math.min(g.food + 20, 100);
+        g.inventory.splice(index, 1);
+        setMessage('🍞 Вы съели ' + item.name + '. Еда +20.');
+    } else if (item.name.includes('Вода')) {
+        g.thirst = Math.min(g.thirst + 15, 100);
+        g.inventory.splice(index, 1);
+        setMessage('💧 Вы выпили воду. Жажда +15.');
+    } else if (item.name.includes('Эль')) {
+        g.hp = Math.min(g.maxHp, g.hp + 5);
+        g.thirst = Math.min(g.thirst + 10, 100);
+        g.inventory.splice(index, 1);
+        setMessage('🍺 Вы выпили эль. HP +5, жажда +10.');
+    } else if (item.name.includes('Вино')) {
+        g.hp = Math.min(g.maxHp, g.hp + 8);
+        g.thirst = Math.min(g.thirst + 15, 100);
+        g.inventory.splice(index, 1);
+        setMessage('🍷 Вы выпили вино. HP +8, жажда +15.');
+    } else {
+        setMessage('❌ Этот предмет нельзя использовать.');
+        return;
+    }
+    updateMenu(); saveData(); openInventory();
+}
+
 // ============================================================
-// 12. МЕНЮ И ДОМА
+// 15. МЕНЮ И ДОМА
 // ============================================================
 
 function openMainMenu() {
@@ -1540,406 +2558,6 @@ function showHouseInfo(region, houseId) {
 }
 
 function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
-
-// ============================================================
-// 13. ТОРГОВЛЯ В ТАВЕРНЕ
-// ============================================================
-
-function openTrade() {
-    const modal = document.getElementById('modal-trade');
-    const content = document.getElementById('modal-trade-content');
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-
-    let html = '<div class="modal-section"><h4>🛒 ТОРГОВЛЯ</h4>';
-    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
-    const shopItems = [
-        { name: '🍞 Хлеб', price: 5, type: 'food', value: 20 },
-        { name: '🥩 Мясо', price: 10, type: 'food', value: 30 },
-        { name: '💧 Вода', price: 2, type: 'drink', value: 15 },
-        { name: '🍺 Эль', price: 5, type: 'heal_drink', valueHP: 5, valueThirst: 10 },
-        { name: '🍷 Вино', price: 8, type: 'heal_drink', valueHP: 8, valueThirst: 15 }
-    ];
-    shopItems.forEach(item => {
-        html += '<div class="row" style="padding:4px 0;">';
-        html += '<span class="label">'+item.name+'</span>';
-        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyTradeItem(\''+item.name+'\','+item.price+',\''+item.type+'\','+(item.valueHP || item.value)+','+(item.valueThirst || 0)+')">Купить</button></span>';
-        html += '</div>';
-    });
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
-    const foodItems = ['Хлеб', 'Мясо', 'Вода', 'Эль', 'Вино'];
-    if(g.inventory.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
-    } else {
-        const grouped = {};
-        g.inventory.forEach((item, index) => {
-            const key = item.name;
-            if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
-            grouped[key].items.push(index);
-            grouped[key].count++;
-        });
-        Object.keys(grouped).forEach(itemName => {
-            const count = grouped[itemName].count;
-            const isFood = foodItems.some(f => itemName.includes(f));
-            const basePrice = 5;
-            const pricePerItem = isFood ? basePrice : Math.floor(basePrice * 0.5);
-            const totalPrice = pricePerItem * count;
-            html += '<div class="row" style="padding:4px 0;">';
-            html += '<span class="label">' + itemName + ' ×' + count + '</span>';
-            html += '<span class="value">' + totalPrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellTradeItem(\'' + itemName + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
-            html += '</div>';
-        });
-    }
-    html += '</div>';
-
-    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function buyTradeItem(name, price, type, valueHP, valueThirst) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег для покупки ' + name);
-        return;
-    }
-    if (type === 'food') {
-        g.food = Math.min(g.food + valueHP, 100);
-        setMessage('🍞 Вы купили ' + name + '. Еда +' + valueHP + '.');
-    } else if (type === 'drink') {
-        g.thirst = Math.min(g.thirst + valueHP, 100);
-        setMessage('💧 Вы купили ' + name + '. Жажда +' + valueHP + '.');
-    } else if (type === 'heal_drink') {
-        g.hp = Math.min(g.maxHp, g.hp + valueHP);
-        g.thirst = Math.min(g.thirst + valueThirst, 100);
-        setMessage('🍺 Вы выпили ' + name + '. HP +' + valueHP + ', Жажда +' + valueThirst + '.');
-    }
-    convertCurrency(g);
-    updateMenu(); saveData();
-    openTrade();
-}
-
-function sellTradeItem(itemName, count, pricePerItem) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    let removed = 0;
-    for (let i = g.inventory.length - 1; i >= 0; i--) {
-        if (g.inventory[i].name === itemName && removed < count) {
-            g.inventory.splice(i, 1);
-            removed++;
-        }
-    }
-    const totalPrice = pricePerItem * count;
-    g.copper += totalPrice;
-    convertCurrency(g);
-    setMessage('💰 Вы продали ' + itemName + ' ×' + count + ' за ' + totalPrice + ' МП');
-    updateMenu(); saveData();
-    openTrade();
-}
-
-function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
-
-// ============================================================
-// 14. ОРУЖЕЙНАЯ ЛАВКА
-// ============================================================
-
-function openWeaponShop() {
-    const modal = document.getElementById('modal-trade');
-    const content = document.getElementById('modal-trade-content');
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-
-    let html = '<div class="modal-section"><h4>🗡️ ОРУЖЕЙНАЯ ЛАВКА</h4>';
-    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
-    const weaponShopItems = [
-        { name: '🗡️ Короткий меч', price: 40, baseDamage: 7, level: 6 },
-        { name: '🗡️ Длинный меч', price: 80, baseDamage: 13, level: 18 },
-        { name: '🪓 Топор', price: 60, baseDamage: 12, level: 15 },
-        { name: '🔱 Копьё', price: 50, baseDamage: 10, level: 12 },
-        { name: '🔨 Булава', price: 70, baseDamage: 11, level: 14 },
-        { name: '🏹 Короткий лук', price: 50, baseDamage: 4, level: 4 },
-        { name: '🎯 Арбалет', price: 80, baseDamage: 12, level: 10 }
-    ];
-    weaponShopItems.forEach(item => {
-        html += '<div class="row" style="padding:4px 0;">';
-        html += '<span class="label">'+item.name+'</span>';
-        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyWeapon(\''+item.name+'\','+item.price+','+item.baseDamage+','+item.level+')">Купить</button></span>';
-        html += '</div>';
-    });
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ (×1)</h4>';
-    const weaponItems = ['Меч', 'Кинжал', 'Копьё', 'Топор', 'Булава', 'Лук', 'Арбалет'];
-    const grouped = {};
-    g.inventory.forEach((item, index) => {
-        const key = item.name;
-        if (weaponItems.some(w => key.includes(w))) {
-            if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
-            grouped[key].items.push(index);
-            grouped[key].count++;
-        }
-    });
-    const tradeItems = Object.keys(grouped);
-    if (tradeItems.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет оружия для продажи.</p>';
-    } else {
-        tradeItems.forEach(itemName => {
-            const count = grouped[itemName].count;
-            const basePrice = 20;
-            const pricePerItem = Math.floor(basePrice * 1);
-            const totalPrice = pricePerItem * count;
-            html += '<div class="row" style="padding:4px 0;">';
-            html += '<span class="label">' + itemName + ' ×' + count + '</span>';
-            html += '<span class="value">' + totalPrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellWeapon(\'' + itemName + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
-            html += '</div>';
-        });
-    }
-    html += '</div>';
-
-    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function buyWeapon(name, price, baseDamage, level) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег для покупки ' + name);
-        return;
-    }
-    let type = 'sword';
-    if (name.includes('Копьё')) type = 'spear';
-    else if (name.includes('Топор')) type = 'axe';
-    else if (name.includes('Булава')) type = 'mace';
-    else if (name.includes('Лук')) type = 'bow';
-    else if (name.includes('Арбалет')) type = 'crossbow';
-    
-    const quality = rollQuality(g.professions['Кузнец'] || 1, false);
-    g.inventory.push({
-        name: name,
-        baseDamage: baseDamage,
-        level: level,
-        quality: quality,
-        type: type
-    });
-    setMessage('✅ Вы купили ' + name + ' (' + quality + ')');
-    convertCurrency(g);
-    updateMenu(); saveData();
-    openWeaponShop();
-}
-
-function sellWeapon(itemName, count, pricePerItem) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    let removed = 0;
-    for (let i = g.inventory.length - 1; i >= 0; i--) {
-        if (g.inventory[i].name === itemName && removed < count) {
-            g.inventory.splice(i, 1);
-            removed++;
-        }
-    }
-    const totalPrice = pricePerItem * count;
-    g.copper += totalPrice;
-    convertCurrency(g);
-    setMessage('💰 Вы продали ' + itemName + ' ×' + count + ' за ' + totalPrice + ' МП');
-    updateMenu(); saveData();
-    openWeaponShop();
-}
-
-// ============================================================
-// 15. ТОРГОВЦЫ (Кожевник, Бронник, Плотник)
-// ============================================================
-
-function getTraderStock(place, itemName) {
-    if (!traderInventory[place]) traderInventory[place] = {};
-    return traderInventory[place][itemName] || 0;
-}
-
-function addTraderStock(place, itemName, amount) {
-    if (!traderInventory[place]) traderInventory[place] = {};
-    traderInventory[place][itemName] = (traderInventory[place][itemName] || 0) + amount;
-    saveData();
-}
-
-function removeTraderStock(place, itemName, amount) {
-    if (!traderInventory[place]) traderInventory[place] = {};
-    const current = traderInventory[place][itemName] || 0;
-    traderInventory[place][itemName] = Math.max(0, current - amount);
-    saveData();
-}
-
-function openTrader(place) {
-    const modal = document.getElementById('modal-trade');
-    const content = document.getElementById('modal-trade-content');
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-
-    const traderData = {
-        'Кожевник': {
-            buy: [
-                { name: 'Кожа', basePrice: 5 },
-                { name: 'Кожаная броня', basePrice: 20 },
-                { name: 'Сапоги', basePrice: 15 },
-                { name: 'Шкура', basePrice: 10 }
-            ],
-            sell: [
-                { name: 'Кожа', basePrice: 10 },
-                { name: 'Кожаная броня', basePrice: 40 },
-                { name: 'Сапоги', basePrice: 30 }
-            ],
-            specialty: ['Кожа', 'Кожаная броня', 'Сапоги', 'Шкура']
-        },
-        'Бронник': {
-            buy: [
-                { name: 'Железо', basePrice: 8 },
-                { name: 'Стальная броня', basePrice: 30 },
-                { name: 'Кольчуга', basePrice: 25 }
-            ],
-            sell: [
-                { name: 'Железо', basePrice: 16 },
-                { name: 'Стальная броня', basePrice: 60 },
-                { name: 'Кольчуга', basePrice: 50 }
-            ],
-            specialty: ['Железо', 'Стальная броня', 'Кольчуга']
-        },
-        'Плотник': {
-            buy: [
-                { name: 'Дерево', basePrice: 3 },
-                { name: 'Лук', basePrice: 15 },
-                { name: 'Арбалет', basePrice: 20 }
-            ],
-            sell: [
-                { name: 'Дерево', basePrice: 6 },
-                { name: 'Лук', basePrice: 30 },
-                { name: 'Арбалет', basePrice: 40 }
-            ],
-            specialty: ['Дерево', 'Лук', 'Арбалет']
-        }
-    };
-
-    const data = traderData[place];
-    if (!data) return;
-
-    let html = '<div class="modal-section"><h4>🛒 ' + place + '</h4>';
-    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
-    const grouped = {};
-    g.inventory.forEach((item, index) => {
-        const key = item.name;
-        if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
-        grouped[key].items.push(index);
-        grouped[key].count++;
-    });
-    const tradeItems = Object.keys(grouped);
-    if (tradeItems.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
-    } else {
-        tradeItems.forEach(itemName => {
-            const isSpecialty = data.specialty.some(s => itemName.includes(s));
-            const buyItem = data.buy.find(b => itemName.includes(b.name));
-            if (buyItem || isSpecialty) {
-                const count = grouped[itemName].count;
-                const multiplier = isSpecialty ? 1 : 0.5;
-                const basePrice = buyItem ? buyItem.basePrice : 5;
-                const pricePerItem = Math.floor(basePrice * multiplier);
-                const totalPrice = pricePerItem * count;
-                html += '<div class="row" style="padding:4px 0;">';
-                html += '<span class="label">' + itemName + ' ×' + count + '</span>';
-                html += '<span class="value">' + totalPrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellToTrader(\'' + itemName + '\',' + count + ',' + pricePerItem + ',\'' + place + '\')">Продать</button></span>';
-                html += '</div>';
-            }
-        });
-    }
-    html += '</div>';
-
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ (×2)</h4>';
-    data.sell.forEach(item => {
-        const stock = getTraderStock(place, item.name);
-        html += '<div class="row" style="padding:4px 0;">';
-        html += '<span class="label">' + item.name + ' (в наличии: ' + stock + ')</span>';
-        html += '<span class="value">' + item.basePrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyFromTrader(\''+item.name+'\','+item.basePrice+',\''+place+'\')">Купить</button></span>';
-        html += '</div>';
-    });
-    html += '</div>';
-
-    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function sellToTrader(itemName, count, pricePerItem, place) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    let removed = 0;
-    for (let i = g.inventory.length - 1; i >= 0; i--) {
-        if (g.inventory[i].name === itemName && removed < count) {
-            g.inventory.splice(i, 1);
-            removed++;
-        }
-    }
-    const totalPrice = pricePerItem * count;
-    g.copper += totalPrice;
-    convertCurrency(g);
-    
-    const traderData = {
-        'Кожевник': ['Кожа', 'Кожаная броня', 'Сапоги', 'Шкура'],
-        'Бронник': ['Железо', 'Стальная броня', 'Кольчуга'],
-        'Плотник': ['Дерево', 'Лук', 'Арбалет']
-    };
-    const specialty = traderData[place] || [];
-    const isSpecialty = specialty.some(s => itemName.includes(s));
-    if (isSpecialty) {
-        addTraderStock(place, itemName, count);
-    }
-    setMessage('💰 Вы продали ' + itemName + ' ×' + count + ' за ' + totalPrice + ' МП');
-    updateMenu(); saveData();
-    openTrader(place);
-}
-
-function buyFromTrader(name, price, place) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    const stock = getTraderStock(place, name);
-    if (stock <= 0) {
-        setMessage('❌ У торговца нет ' + name);
-        return;
-    }
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег для покупки ' + name);
-        return;
-    }
-    removeTraderStock(place, name, 1);
-    g.inventory.push({
-        name: name,
-        type: 'item',
-        baseDamage: 0
-    });
-    setMessage('✅ Вы купили ' + name + ' за ' + price + ' МП');
-    convertCurrency(g);
-    updateMenu(); saveData();
-    openTrader(place);
-}
 
 // ============================================================
 // 16. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
@@ -2203,4 +2821,4 @@ if(savedUser && users[savedUser]) {
 }
 </script>
 </body>
-</html>
+                    </html>
