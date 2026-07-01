@@ -157,7 +157,6 @@ const BUILDINGS = [
     { id:'Гильдия торговцев', label:'🏛️ Гильдия торговцев' },
     { id:'Магистрат', label:'📜 Магистрат' },
     { id:'Ворота', label:'🚪 Ворота' },
-    { id:'Дорога', label:'🛤️ Дорога' },
     { id:'Королевский квартал', label:'👑 Королевский квартал' },
     { id:'Торговый квартал', label:'🏙️ Торговый квартал' },
     { id:'Квартал бедноты', label:'🏚️ Квартал бедноты' },
@@ -167,7 +166,7 @@ const BUILDINGS = [
 const LOCATION_LEVELS = {
     'Таверна':1,'Рынок':1,'Кузница':1,'Оружейная лавка':1,'Кожевник':1,'Бронник':1,
     'Плотник':1,'Гильдия торговцев':1,'Магистрат':1,
-    'Ворота':1,'Дорога':5,
+    'Ворота':1,
     'Королевский квартал':1,'Торговый квартал':1,'Квартал бедноты':1,'Дом':1
 };
 
@@ -1404,7 +1403,6 @@ function updateStory() {
         'Гильдия торговцев': 'Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
         'Магистрат': '📜 Магистрат — центр управления городом. Здесь можно купить жильё, оплатить аренду и уладить городские дела.',
         'Ворота': 'Вы у городских ворот.' + (user.game.outside ? ' Снаружи виднеется дорога.' : ' Отсюда можно выйти на Дорогу.'),
-        'Дорога': '🛤️ Дорога у ворот Королевской Гавани.',
         'Королевский квартал': '👑 Элитный район. Здесь живут самые богатые и влиятельные люди.',
         'Торговый квартал': '🏙️ Центр торговли. Здесь селятся ремесленники и купцы.',
         'Квартал бедноты': '🏚️ Окраина города. Жильё здесь дёшево, но опасно.',
@@ -1424,7 +1422,7 @@ function updateActions() {
     const container = document.getElementById('actions-container');
     container.innerHTML = '';
     const inBattle = battleState && battleState.inProgress;
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Дорога','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     let actions = [];
     
     if (inBattle) {
@@ -1447,12 +1445,6 @@ function updateActions() {
             if (!user.game.outside) {
                 actions.unshift({ id:'leave_city', label:'🚪 Выйти на Дорогу' });
             }
-        }
-        
-        // Дорога
-        if (place === 'Дорога') {
-            actions.unshift({ id:'enter_city', label:'🚶 Войти в Королевскую Гавань' });
-            actions.unshift({ id:'search', label:'🔍 Поиск' });
         }
         
         // Жилые районы
@@ -1499,6 +1491,11 @@ function updateActions() {
         }
         if (place === 'Кузница') {
             actions = [{ id:'shop', label:'⚒️ Кузница' }, { id:'craft', label:'🔨 Крафт' }, ...actions];
+        }
+        
+        // Магистрат
+        if (place === 'Магистрат') {
+            actions.unshift({ id:'open_magistrate', label:'📜 Недвижимость' });
         }
         
         // Дом
@@ -1569,11 +1566,18 @@ function gameAction(action) {
             }
             updateMenu(); updateStory(); updateActions(); saveData();
             break;
+        case 'open_magistrate':
+            if (typeof openMagistrate === 'function') {
+                openMagistrate();
+            } else {
+                setMessage('❌ Магистрат временно недоступен.');
+            }
+            break;
         case 'enter_city':
-            g.location.place = 'Таверна';
+            g.location.place = 'Ворота';
             g.location.location = 'Королевская Гавань';
             g.outside = false;
-            setMessage('🏰 Вы вошли в Королевскую Гавань.');
+            setMessage('🚪 Вы вошли в город через Ворота.');
             updateMenu(); updateStory(); updateActions(); saveData();
             break;
         case 'leave_city':
@@ -2787,7 +2791,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ
+// ТОРГОВЛЯ В ТАВЕРНЕ (ИСПРАВЛЕНО)
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -2821,10 +2825,28 @@ function buyTavernItem(name, price, food, thirst, hp) {
     if (!user) return;
     const g = user.game;
     if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег.'); return; }
+    
+    // Добавляем предмет в инвентарь
+    let itemName = name.replace(/[🍞🥩💧🍺🍷]/g, '').trim();
+    let item = {
+        name: itemName,
+        quality: 'Обычное',
+        type: 'food',
+        effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 }
+    };
+    
+    // Если это еда или напиток - добавляем в инвентарь
+    if (food > 0 || thirst > 0 || hp > 0) {
+        g.inventory.push(item);
+    }
+    
+    // Применяем эффекты
     if (food > 0) g.food = Math.min(100, g.food + food);
     if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
     if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
-    setMessage('✅ Вы купили ' + name);
+    
+    setMessage('✅ Вы купили ' + name + ' и положили в инвентарь.');
+    addLog('🛒 ' + currentUser + ' купил ' + name);
     convertCurrency(g);
     updateMenu();
     saveData();
@@ -2839,7 +2861,7 @@ function openMap() {
     if (!user) return;
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Дорога','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     let html = '<div class="modal-section"><h4>📍 ' + user.game.location.place + ' (ур. ' + (LOCATION_LEVELS[user.game.location.place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
@@ -2871,6 +2893,25 @@ function goToBuilding(building) {
     const g = user.game;
     if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
     if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
+    
+    // Вход в Магистрат
+    if (building === 'Магистрат') {
+        g.location.place = 'Магистрат';
+        g.location.location = 'Королевская Гавань';
+        g.outside = false;
+        setMessage('📜 Вы вошли в Магистрат.');
+        addLog('🚶 ' + currentUser + ' вошёл в Магистрат');
+        closeMap();
+        updateMenu(); updateStory(); updateActions(); saveData();
+        // Открываем окно Магистрата после перехода
+        setTimeout(function() {
+            if (typeof openMagistrate === 'function') {
+                openMagistrate();
+            }
+        }, 300);
+        return;
+    }
+    
     const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     const targetIsCity = cityBuildings.includes(building);
     if (targetIsCity && g.outside) g.outside = false;
@@ -3172,6 +3213,29 @@ function useItem(index) {
     const g = user.game;
     if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     const item = g.inventory[index];
+    
+    // Проверка на предметы из таверны (с полем effect)
+    if (item.effect) {
+        if (item.effect.food) {
+            g.food = Math.min(100, g.food + item.effect.food);
+            setMessage('🍽️ Вы съели ' + item.name + '. Еда +' + item.effect.food);
+        }
+        if (item.effect.thirst) {
+            g.thirst = Math.min(100, g.thirst + item.effect.thirst);
+            setMessage('💧 Вы выпили ' + item.name + '. Жажда +' + item.effect.thirst);
+        }
+        if (item.effect.hp) {
+            g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
+            setMessage('❤️ Вы выпили ' + item.name + '. HP +' + item.effect.hp);
+        }
+        g.inventory.splice(index, 1);
+        updateMenu();
+        saveData();
+        openInventory();
+        return;
+    }
+    
+    // Старые предметы
     if (item.name.includes('Хлеб') || item.name.includes('Мясо')) {
         g.food = Math.min(g.food + 20, 100);
         g.inventory.splice(index, 1);
@@ -3390,13 +3454,13 @@ function removeListing(index) {
 }
 
 // ============================================================
-// МЕНЮ И ДОМА
+// МЕНЮ И ДОМА (ИСПРАВЛЕНО: УБРАНА КНОПКА МАГИСТРАТА)
 // ============================================================
 function openMainMenu() {
     const modal = document.getElementById('modal-menu');
     const content = document.getElementById('modal-menu-content');
     let html = '<div class="modal-section">';
-    html += '<button class="btn" style="margin:4px 0;" onclick="openMagistrate(); closeMenu();">📜 Магистрат</button>';
+    // Кнопка Магистрата УБРАНА — она теперь на карте
     html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
     html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
     html += '</div>';
@@ -3566,9 +3630,18 @@ function payRent() {
     const house = HOUSING_TYPES[g.housing.type];
     const now = Date.now();
     const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const maxWeeks = 4; // Максимум 4 недели вперёд
     
     if (g.housing.debt > 0) {
         setMessage('⚠️ Сначала оплатите долг (' + g.housing.debt + ' зол.)');
+        return;
+    }
+    
+    // Проверка: не оплачено ли уже 4 недели вперёд
+    const lastPayment = g.housing.lastPayment || now;
+    const weeksPaidAhead = Math.floor((lastPayment - now) / weekMs);
+    if (weeksPaidAhead >= maxWeeks) {
+        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд. Приходите позже.');
         return;
     }
     
@@ -3577,7 +3650,7 @@ function payRent() {
         return;
     }
     
-    g.housing.lastPayment = Math.max(g.housing.lastPayment || now, now) + weekMs;
+    g.housing.lastPayment = Math.max(lastPayment, now) + weekMs;
     
     setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю вперёд!');
     addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
