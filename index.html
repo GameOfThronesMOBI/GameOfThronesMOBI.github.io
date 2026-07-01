@@ -111,7 +111,6 @@
     </div>
     <div class="footer">❄️ ЗИМА БЛИЗКО</div>
 </div>
-<!-- ВСЕ МОДАЛЬНЫЕ ОКНА (ПОЛНЫЙ СПИСОК) -->
 <div id="modal-character" class="modal-overlay hide" onclick="if(event.target===this) closeCharacter()"><div class="modal-box"><div class="modal-header"><h3>👤 ПЕРСОНАЖ</h3><button class="close-btn" onclick="closeCharacter()">✕</button></div><div id="modal-content"></div></div></div>
 <div id="modal-inventory" class="modal-overlay hide" onclick="if(event.target===this) closeInventory()"><div class="modal-box"><div class="modal-header"><h3>🎒 ИНВЕНТАРЬ</h3><button class="close-btn" onclick="closeInventory()">✕</button></div><div id="modal-inventory-content"></div></div></div>
 <div id="modal-map" class="modal-overlay hide" onclick="if(event.target===this) closeMap()"><div class="modal-box"><div class="modal-header"><h3>🗺️ ПЕРЕМЕЩЕНИЕ</h3><button class="close-btn" onclick="closeMap()">✕</button></div><div id="modal-map-content"></div></div></div>
@@ -133,7 +132,7 @@
 
 <script>
 // ============================================================
-// ВСЕ КОНСТАНТЫ (ПОЛНЫЙ СПИСОК)
+// КОНСТАНТЫ
 // ============================================================
 const QUALITIES = {
     'Рваное': { color: '#666', short: 'рван.', multiplier: 0.4, emoji: '🟫' },
@@ -156,9 +155,6 @@ const NATIONALITIES = {
     'Дорн': { strength:0, cunning:10, defense:5, diplomacy:0 }
 };
 
-// ============================================================
-// BUILDINGS (ПОЛНЫЙ СПИСОК — ВСЁ НА МЕСТЕ)
-// ============================================================
 const BUILDINGS = [
     { id:'Таверна', label:'🍺 Таверна' },
     { id:'Рынок', label:'🏪 Рынок' },
@@ -180,9 +176,6 @@ const BUILDINGS = [
     { id:'Тюрьма', label:'⛓️ Тюрьма' }
 ];
 
-// ============================================================
-// LOCATION_LEVELS (ПОЛНЫЙ СПИСОК)
-// ============================================================
 const LOCATION_LEVELS = {
     'Таверна':1,'Рынок':1,'Кузница':1,'Оружейная лавка':1,'Кожевник':1,'Бронник':1,
     'Плотник':1,'Конюшня':1,'Гильдия торговцев':1,'Магистрат':1,
@@ -192,115 +185,23 @@ const LOCATION_LEVELS = {
     'Дорога':5
 };
 
-// ============================================================
-// HOUSING_TYPES (ПОЛНЫЙ СПИСОК — ВСЁ НА МЕСТЕ)
-// ============================================================
 const HOUSING_TYPES = {
-    'night': { 
-        name: 'Ночлежка', 
-        district: 'Квартал бедноты',
-        price: 30, 
-        rent: 3, 
-        storageSlots: 10,
-        restHp: 10,
-        restFatigue: 10,
-        bonusInt: 0,
-        bonusLuck: -1,
-        bonusDef: 0,
-        emoji: '🏚️',
-        description: 'Общая комната. Дешево, но шумно. Есть сундук для вещей.'
-    },
-    'room': { 
-        name: 'Комната', 
-        district: 'Торговый квартал',
-        price: 120, 
-        rent: 8, 
-        storageSlots: 20,
-        restHp: 20,
-        restFatigue: 20,
-        bonusInt: 1,
-        bonusLuck: 0,
-        bonusDef: 0,
-        emoji: '🏠',
-        description: 'Скромная комната с кроватью, столом и шкафом.'
-    },
-    'house': { 
-        name: 'Дом', 
-        district: 'Торговый квартал',
-        price: 400, 
-        rent: 20, 
-        storageSlots: 40,
-        restHp: 35,
-        restFatigue: 35,
-        bonusInt: 2,
-        bonusLuck: 0,
-        bonusDef: 1,
-        emoji: '🏡',
-        description: 'Собственный дом с садом, подвалом и чердаком для хранения.'
-    },
-    'townhouse': { 
-        name: 'Таунхаус', 
-        district: 'Королевский квартал',
-        price: 800, 
-        rent: 35, 
-        storageSlots: 60,
-        restHp: 50,
-        restFatigue: 50,
-        bonusInt: 3,
-        bonusLuck: 1,
-        bonusDef: 2,
-        emoji: '🏘️',
-        description: 'Двухэтажный дом в престижном районе. Много комнат и кладовых.'
-    },
-    'mansion': { 
-        name: 'Особняк', 
-        district: 'Королевский квартал',
-        price: 2000, 
-        rent: 80, 
-        storageSlots: 100,
-        restHp: 70,
-        restFatigue: 70,
-        bonusInt: 5,
-        bonusLuck: 2,
-        bonusDef: 3,
-        emoji: '🏛️',
-        description: 'Роскошный особняк. Огромные залы, подвалы и чердаки для хранения.'
-    }
+    'night': { name: 'Ночлежка', district: 'Квартал бедноты', price: 30, rent: 3, storageSlots: 10, restHp: 10, restFatigue: 10, bonusInt: 0, bonusLuck: -1, bonusDef: 0, emoji: '🏚️', description: 'Общая комната. Дешево, но шумно.' },
+    'room': { name: 'Комната', district: 'Торговый квартал', price: 120, rent: 8, storageSlots: 20, restHp: 20, restFatigue: 20, bonusInt: 1, bonusLuck: 0, bonusDef: 0, emoji: '🏠', description: 'Скромная комната с кроватью, столом и шкафом.' },
+    'house': { name: 'Дом', district: 'Торговый квартал', price: 400, rent: 20, storageSlots: 40, restHp: 35, restFatigue: 35, bonusInt: 2, bonusLuck: 0, bonusDef: 1, emoji: '🏡', description: 'Собственный дом с садом, подвалом и чердаком.' },
+    'townhouse': { name: 'Таунхаус', district: 'Королевский квартал', price: 800, rent: 35, storageSlots: 60, restHp: 50, restFatigue: 50, bonusInt: 3, bonusLuck: 1, bonusDef: 2, emoji: '🏘️', description: 'Двухэтажный дом в престижном районе.' },
+    'mansion': { name: 'Особняк', district: 'Королевский квартал', price: 2000, rent: 80, storageSlots: 100, restHp: 70, restFatigue: 70, bonusInt: 5, bonusLuck: 2, bonusDef: 3, emoji: '🏛️', description: 'Роскошный особняк. Огромные залы и подвалы.' }
 };
 
 const HOUSES_DATA = {
     'Север': { capital:'Винтерфелл', totalAcres:1000000, houses:[
         { id:'stark',name:'Старки',sigil:'🐺',castle:'Винтерфелл',liege:'Старки',status:'Великий Дом',acres:500000 },
         { id:'bolton',name:'Болтоны',sigil:'🩸',castle:'Дредфорт',liege:'Старки',status:'Вассал',acres:200000 }
-    ]},
-    'Речные земли': { capital:'Риверран', totalAcres:800000, houses:[
-        { id:'tully',name:'Талли',sigil:'🐟',castle:'Риверран',liege:'Талли',status:'Великий Дом',acres:400000 }
-    ]},
-    'Западные земли': { capital:'Кастерли Рок', totalAcres:900000, houses:[
-        { id:'lannister',name:'Ланнистеры',sigil:'🦁',castle:'Кастерли Рок',liege:'Ланнистеры',status:'Великий Дом',acres:600000 }
-    ]},
-    'Королевские земли': { capital:'Королевская Гавань', totalAcres:300000, houses:[
-        { id:'targaryen',name:'Таргариены',sigil:'🐉',castle:'Красный Замок',liege:'Таргариены',status:'Королевский Дом',acres:200000 }
-    ]},
-    'Штормовые земли': { capital:'Штормовой Предел', totalAcres:700000, houses:[
-        { id:'baratheon',name:'Баратеоны',sigil:'🦌',castle:'Штормовой Предел',liege:'Баратеоны',status:'Великий Дом',acres:400000 }
-    ]},
-    'Дорн': { capital:'Солнечное Копьё', totalAcres:600000, houses:[
-        { id:'martell',name:'Мартеллы',sigil:'☀️',castle:'Солнечное Копьё',liege:'Мартеллы',status:'Великий Дом',acres:350000 }
-    ]},
-    'Простор': { capital:'Хайгарден', totalAcres:1200000, houses:[
-        { id:'tyrell',name:'Тиреллы',sigil:'🌹',castle:'Хайгарден',liege:'Тиреллы',status:'Великий Дом',acres:700000 }
-    ]},
-    'Долина': { capital:'Орлиное Гнездо', totalAcres:500000, houses:[
-        { id:'arryn',name:'Аррены',sigil:'🦅',castle:'Орлиное Гнездо',liege:'Аррены',status:'Великий Дом',acres:300000 }
-    ]},
-    'Железные острова': { capital:'Пайк', totalAcres:100000, houses:[
-        { id:'greyjoy',name:'Грейджои',sigil:'🐙',castle:'Пайк',liege:'Грейджои',status:'Великий Дом',acres:80000 }
     ]}
 };
 
 // ============================================================
-// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК — СОКРАЩЁН ДЛЯ ОБЪЁМА, НО ВЕСЬ)
+// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК)
 // ============================================================
 const ALL_ITEMS = {
     weapons: {
@@ -855,7 +756,7 @@ const ALL_ITEMS = {
 };
 
 // ============================================================
-// КОНФИГ ЛОШАДЕЙ (ПОЛНЫЙ)
+// КОНФИГ ЛОШАДЕЙ
 // ============================================================
 const HORSE_TYPES = {
     'work': { name: 'Рабочая лошадь', price: 50, speedBonus: 10, defensePercent: 0, hp: 80, inventorySlots: 5, emoji: '🐴', description: 'Надёжная, но медленная. +5 слотов инвентаря.' },
@@ -883,13 +784,13 @@ const PORT_CITIES = {
 };
 
 // ============================================================
-// КОНСТАНТЫ РЫНКА (НОВЫЕ)
+// КОНСТАНТЫ РЫНКА
 // ============================================================
 const MARKET_STALLS_TOTAL = 50;
 let marketStalls = {};
 
 // ============================================================
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (ПОЛНЫЙ СПИСОК)
+// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ============================================================
 let users = {};
 let currentUser = null;
@@ -920,7 +821,7 @@ let horseMarket = {
 };
 
 // ============================================================
-// ЗАГРУЗКА / СОХРАНЕНИЕ (ПОЛНОЕ)
+// ЗАГРУЗКА / СОХРАНЕНИЕ
 // ============================================================
 function loadHousingMarket() {
     try {
@@ -1050,7 +951,7 @@ function spendMoney(g, amount) { if (amount <= 0) return true; let total = g.cop
 function getResourcePrice(resourceType, quality) { const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 }; const base = basePrices[resourceType] || 5; const q = QUALITIES[quality] || QUALITIES['Обычное']; return Math.round(base * q.multiplier); }
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ (ПОЛНАЯ)
+// ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ
 // ============================================================
 function initTraderStock() {
     const shops = ['Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Кузница'];
@@ -1065,13 +966,61 @@ function initTraderStock() {
                 });
             });
         }
-        // ... остальные магазины
+        if (shop === 'Кожевник') {
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
+                traderInventory[shop]['Кожа|' + q] = 10;
+            });
+            Object.keys(ALL_ITEMS.leather).forEach(type => {
+                ALL_ITEMS.leather[type].forEach(item => {
+                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(q => {
+                        traderInventory[shop][item.name + '|' + q] = 1;
+                    });
+                });
+            });
+        }
+        if (shop === 'Бронник') {
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
+                traderInventory[shop]['Сталь|' + q] = 5;
+            });
+            Object.keys(ALL_ITEMS.plate).forEach(type => {
+                ALL_ITEMS.plate[type].forEach(item => {
+                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(q => {
+                        traderInventory[shop][item.name + '|' + q] = 1;
+                    });
+                });
+            });
+        }
+        if (shop === 'Плотник') {
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
+                traderInventory[shop]['Дерево|' + q] = 10;
+            });
+            ['bow','crossbow'].forEach(type => {
+                ALL_ITEMS.weapons[type].forEach(item => {
+                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(q => {
+                        traderInventory[shop][item.name + '|' + q] = 1;
+                    });
+                });
+            });
+        }
+        if (shop === 'Кузница') {
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
+                traderInventory[shop]['Руда железная|' + q] = 15;
+            });
+            traderInventory[shop]['Руда 14 огней|Мифическое'] = 1;
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское'].forEach(q => {
+                traderInventory[shop]['Уголь|' + q] = 10;
+            });
+            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
+                traderInventory[shop]['Сталь|' + q] = 3;
+            });
+            traderInventory[shop]['Валирийская сталь|Мифическое'] = 1;
+        }
     });
     saveData();
 }
 
 // ============================================================
-// РЕГИСТРАЦИЯ / ВХОД (ПОЛНЫЙ)
+// РЕГИСТРАЦИЯ / ВХОД
 // ============================================================
 function handleRegister() {
     const name = document.getElementById('reg-name').value.trim();
@@ -1172,7 +1121,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// ВХОД В ИГРУ (ПОЛНЫЙ)
+// ВХОД В ИГРУ
 // ============================================================
 function fixOldAccount(user) {
     if (!user.game) return;
@@ -1342,7 +1291,7 @@ function handleDeath(cause) {
 }
 
 // ============================================================
-// СТАТЫ И БОНУСЫ (ПОЛНЫЕ)
+// СТАТЫ И БОНУСЫ
 // ============================================================
 function getLevelBonuses(level) {
     const specialLevel = Math.min(level, 400);
@@ -1513,7 +1462,7 @@ function resetAttributes() {
 }
 
 // ============================================================
-// МЕНЮ (ПОЛНОЕ)
+// МЕНЮ
 // ============================================================
 function updateMenu() {
     const user=users[currentUser];
@@ -1709,7 +1658,7 @@ function updateActions() {
 }
 
 // ============================================================
-// gameAction (ПОЛНЫЙ)
+// gameAction
 // ============================================================
 function gameAction(action) {
     setMessage('');
@@ -1878,13 +1827,172 @@ function startBusy(actionName, minutes, callback) {
 }
 
 // ============================================================
-// ВСЕ ОСТАЛЬНЫЕ СИСТЕМЫ (БОЙ, ТОРГОВЛЯ, КРАФТ, ДОМА, КОНЮШНЯ, СЕПТА, ПОРТ, ТЮРЬМА, РЫНОК, СТЕКИ, ИНВЕН
+// ДОБЫЧА И КРАФТ
 // ============================================================
-// БОЙ (ПОЛНАЯ ВЕРСИЯ)
+function gatherResource(type) {
+    const user=users[currentUser];
+    if(!user) return;
+    const g=user.game;
+    const profession=type==='wood'?'Лесоруб':'Шахтёр';
+    const level=g.professions[profession]||1;
+    
+    startBusy('Добыча '+(type==='wood'?'дерева':'руды'), 5, function(){
+        const roll=Math.random()*100;
+        const poorChance=Math.max(5, 50-level*1.5);
+        const normalChance=Math.min(35, 20+level);
+        const goodChance=Math.min(25, 15+level*0.7);
+        const qualityChance=Math.min(15, 5+level*0.5);
+        let quality='Плохое';
+        if(roll<poorChance) quality='Плохое';
+        else if(roll<poorChance+normalChance) quality='Обычное';
+        else if(roll<poorChance+normalChance+goodChance) quality='Хорошее';
+        else if(roll<poorChance+normalChance+goodChance+qualityChance) quality='Качественное';
+        else quality='Мастерское';
+        
+        const count=1+Math.floor(level/10);
+        for(let i=0;i<count;i++){
+            g.inventory.push({
+                name:type==='wood'?'Дерево':'Руда железная',
+                quality:quality,
+                type:'resource',
+                resourceType:type
+            });
+        }
+        
+        g.professionXp[profession]=(g.professionXp[profession]||0)+Math.round(2*getXpMultiplier(g));
+        while(g.professionXp[profession]>=g.professions[profession]*10){
+            g.professionXp[profession]-=g.professions[profession]*10;
+            g.professions[profession]++;
+            setMessage('👷 '+profession+' повышен до '+g.professions[profession]+' уровня!');
+        }
+        
+        setMessage('✅ Добыто: '+(type==='wood'?'Дерево':'Руда железная')+' ×'+count+' ('+quality+')');
+        updateMenu();
+        saveData();
+    });
+}
+
+function openCraftMenu() {
+    const modal=document.getElementById('modal-trade');
+    const content=document.getElementById('modal-trade-content');
+    const user=users[currentUser];
+    if(!user) return;
+    const g=user.game;
+    
+    let ironCount=0, coalCount=0, steelCount=0;
+    g.inventory.forEach(item=>{
+        if(item.resourceType==='iron') ironCount++;
+        if(item.resourceType==='coal') coalCount++;
+        if(item.resourceType==='steel') steelCount++;
+    });
+    
+    let html='<div class="modal-section"><h4>🔨 КРАФТ</h4>';
+    html+='<p style="color:#6a5a48;">Ваши ресурсы:</p>';
+    html+='<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
+    html+='⛏️ Руда: '+ironCount+'<br>';
+    html+='🔥 Уголь: '+coalCount+'<br>';
+    html+='⚒️ Сталь: '+steelCount;
+    html+='</div></div>';
+    
+    html+='<div class="modal-section"><h4>⚒️ Создать сталь</h4>';
+    html+='<p style="color:#6a5a48;font-size:12px;">Требуется: 2 руды + 1 уголь</p>';
+    html+='<button class="btn" onclick="craftSteel()"'+(ironCount>=2&&coalCount>=1?'':' disabled')+'>Создать сталь</button>';
+    html+='</div>';
+    
+    html+='<div class="modal-section" style="padding:20px;text-align:center;color:#6a5a48;border:1px dashed #3d3026;border-radius:10px;">';
+    html+='🔒 Новые рецепты крафта пока недоступны<br>';
+    html+='<span style="font-size:11px;">Появятся в следующем обновлении</span>';
+    html+='</div>';
+    
+    html+='<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML=html;
+    modal.classList.remove('hide');
+}
+
+function openCraftTab() {
+    const container = document.getElementById('shop-category-content');
+    if (!container) return;
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    let ironCount = 0, coalCount = 0, steelCount = 0;
+    g.inventory.forEach(item => {
+        if (item.resourceType === 'iron') ironCount++;
+        if (item.resourceType === 'coal') coalCount++;
+        if (item.resourceType === 'steel') steelCount++;
+    });
+    let html = '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'Кузница\')">⬅️ Назад к разделам</button>';
+    html += '<h4 style="color:#c9b694;">🔨 КРАФТ</h4>';
+    html += '<p style="color:#6a5a48;">Ваши ресурсы:</p>';
+    html += '<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
+    html += '⛏️ Руда: ' + ironCount + '<br>';
+    html += '🔥 Уголь: ' + coalCount + '<br>';
+    html += '⚒️ Сталь: ' + steelCount;
+    html += '</div>';
+    html += '<div style="padding:15px;text-align:center;color:#6a5a48;border:1px dashed #3d3026;border-radius:10px;">';
+    html += '🔒 Новые рецепты крафта пока недоступны<br>';
+    html += '<span style="font-size:11px;">Появятся в следующем обновлении</span>';
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function craftSteel() {
+    const user=users[currentUser];
+    if(!user) return;
+    const g=user.game;
+    
+    let removed=0;
+    for(let i=g.inventory.length-1;i>=0;i--){
+        if(g.inventory[i].resourceType==='iron'&&removed<2){
+            g.inventory.splice(i,1);
+            removed++;
+        }
+    }
+    for(let i=g.inventory.length-1;i>=0;i--){
+        if(g.inventory[i].resourceType==='coal'){
+            g.inventory.splice(i,1);
+            break;
+        }
+    }
+    
+    const smithLevel=g.professions['Кузнец']||1;
+    const roll=Math.random()*100;
+    let quality='Обычное';
+    
+    if(smithLevel>=30&&roll<5) quality='Легендарное';
+    else if(smithLevel>=20&&roll<15) quality='Мастерское';
+    else if(smithLevel>=10&&roll<35) quality='Качественное';
+    else if(smithLevel>=5&&roll<60) quality='Хорошее';
+    else if(roll<80) quality='Обычное';
+    else quality='Плохое';
+    
+    g.inventory.push({
+        name:'Сталь',
+        quality:quality,
+        type:'resource',
+        resourceType:'steel'
+    });
+    
+    g.professionXp['Кузнец']=(g.professionXp['Кузнец']||0)+Math.round(3*getXpMultiplier(g));
+    while(g.professionXp['Кузнец']>=g.professions['Кузнец']*10){
+        g.professionXp['Кузнец']-=g.professions['Кузнец']*10;
+        g.professions['Кузнец']++;
+        setMessage('👷 Кузнец повышен до '+g.professions['Кузнец']+' уровня!');
+    }
+    
+    setMessage('✅ Вы скрафтили сталь ('+quality+')!');
+    addLog('🔨 '+currentUser+' скрафтил сталь ('+quality+')');
+    updateMenu();
+    saveData();
+    openCraftMenu();
+}
+
+// ============================================================
+// БОЙ
 // ============================================================
 function saveBattleState() {
     if(battleState){
-        battleState.lastActionTime = Date.now();
+        battleState.lastActionTime=Date.now();
         localStorage.setItem('got_battle', JSON.stringify(battleState));
     } else {
         localStorage.removeItem('got_battle');
@@ -2762,7 +2870,7 @@ function endBattle(won, reason) {
 }
 
 // ============================================================
-// ТОРГОВЛЯ (ПОЛНАЯ ВЕРСИЯ)
+// ТОРГОВЛЯ
 // ============================================================
 function getTraderStock(place, itemKey) {
     if (!traderInventory) traderInventory = {};
@@ -3415,7 +3523,7 @@ function changeProfession() {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ (ОБНОВЛЁННЫЙ С НОВЫМИ КНОПКАМИ)
+// ИНВЕНТАРЬ (С КНОПКАМИ)
 // ============================================================
 function openInventory() {
     const user = users[currentUser];
@@ -3833,7 +3941,7 @@ function removeListing(index) {
 }
 
 // ============================================================
-// МЕНЮ И ДОМА (ПОЛНАЯ ВЕРСИЯ)
+// МЕНЮ И ДОМА
 // ============================================================
 function openMainMenu() {
     const modal = document.getElementById('modal-menu');
@@ -4705,7 +4813,7 @@ function closeStable() {
 }
 
 // ============================================================
-// ВЕЛИКАЯ СЕПТА (ПОЛНАЯ ВЕРСИЯ)
+// ВЕЛИКАЯ СЕПТА
 // ============================================================
 const TEMPLE_COOLDOWNS = { heal: 2 * 60 * 60 * 1000, luck: 24 * 60 * 60 * 1000 };
 
@@ -4916,7 +5024,7 @@ function createPortModal() {
 }
 
 // ============================================================
-// ТЮРЬМА (ПОЛНАЯ ВЕРСИЯ)
+// ТЮРЬМА
 // ============================================================
 function enterJail() {
     const user = users[currentUser];
@@ -5111,11 +5219,39 @@ function createJailModal() {
 }
 
 // ============================================================
-// РЫНОК (ТОРГОВЫЕ ЛАВКИ) — ВСЕ ФУНКЦИИ УЖЕ ДОБАВЛЕНЫ ВЫШЕ
+// РЫНОК (ТОРГОВЫЕ ЛАВКИ) — ПОЛНАЯ ВЕРСИЯ
 // ============================================================
+// Все функции рынка уже добавлены выше:
+// - openMarket()
+// - buyStall()
+// - enterStall()
+// - openMyStall()
+// - addToStall()
+// - removeFromStall()
+// - buyFromStall()
+// - payStallRent()
+// - checkStallRent()
+// - evictFromStall()
+// - closeMarket()
+// - closeStall()
+// - createMarketModal()
+// - createStallModal()
+// - checkStallErrors()
+// - checkRentStatus()
+// - getItemCategory()
+// - getCategoryLabel()
+// - isStackable()
+// - isConsumable()
+// - splitStack()
+// - mergeStacks()
+// - mergeSpecificStack()
+// - useOneFromStack()
+// - addToInventory()
+// - removeFromInventory()
+// - applyItemEffect()
 
 // ============================================================
-// ЛОГ (ПОЛНАЯ ВЕРСИЯ)
+// ЛОГ
 // ============================================================
 function openLog() {
     const modal = document.getElementById('modal-log');
