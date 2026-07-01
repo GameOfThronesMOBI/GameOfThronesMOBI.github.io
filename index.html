@@ -154,6 +154,7 @@ const BUILDINGS = [
     { id:'Кожевник', label:'🪡 Кожевник' },
     { id:'Бронник', label:'🛡️ Бронник' },
     { id:'Плотник', label:'🪵 Плотник' },
+    { id:'Конюшня', label:'🐴 Конюшня' },
     { id:'Гильдия торговцев', label:'🏛️ Гильдия торговцев' },
     { id:'Магистрат', label:'📜 Магистрат' },
     { id:'Ворота', label:'🚪 Ворота' },
@@ -165,7 +166,7 @@ const BUILDINGS = [
 
 const LOCATION_LEVELS = {
     'Таверна':1,'Рынок':1,'Кузница':1,'Оружейная лавка':1,'Кожевник':1,'Бронник':1,
-    'Плотник':1,'Гильдия торговцев':1,'Магистрат':1,
+    'Плотник':1,'Конюшня':1,'Гильдия торговцев':1,'Магистрат':1,
     'Ворота':1,
     'Королевский квартал':1,'Торговый квартал':1,'Квартал бедноты':1,'Дом':1
 };
@@ -511,27 +512,27 @@ const ALL_ITEMS = {
             { name:'Валирийский кожаный нагрудник', level:100, baseDefense:70 }
         ],
         boots: [
-            { name:'Рваные кожаные сапоги', level:1, baseDefense:0, speed:1 },
-            { name:'Плохие кожаные сапоги', level:5, baseDefense:1, speed:1 },
-            { name:'Кожаные сапоги', level:10, baseDefense:2, speed:1 },
-            { name:'Сапоги разбойника', level:15, baseDefense:3, speed:1 },
-            { name:'Сапоги наёмника', level:20, baseDefense:4, speed:1 },
-            { name:'Сапоги стражи', level:25, baseDefense:5, speed:1 },
-            { name:'Сапоги рыцаря', level:30, baseDefense:6, speed:1 },
-            { name:'Сапоги лорда', level:35, baseDefense:7, speed:1 },
-            { name:'Сапоги героя', level:40, baseDefense:8, speed:1 },
-            { name:'Сапоги чемпиона', level:45, baseDefense:9, speed:1 },
-            { name:'Сапоги командующего', level:50, baseDefense:10, speed:1 },
-            { name:'Королевские сапоги', level:55, baseDefense:11, speed:1 },
-            { name:'Великие сапоги', level:60, baseDefense:12, speed:1 },
-            { name:'Сапоги завоевателя', level:65, baseDefense:13, speed:1 },
-            { name:'Легендарные сапоги', level:70, baseDefense:14, speed:1 },
-            { name:'Сапоги судьбы', level:75, baseDefense:15, speed:1 },
-            { name:'Сапоги бессмертного', level:80, baseDefense:16, speed:1 },
-            { name:'Сапоги бога', level:85, baseDefense:17, speed:1 },
-            { name:'Сапоги властелина', level:90, baseDefense:18, speed:1 },
-            { name:'Сапоги драконоборца', level:95, baseDefense:19, speed:1 },
-            { name:'Валирийские сапоги', level:100, baseDefense:30, speed:2 }
+            { name:'Рваные кожаные сапоги', level:1, baseDefense:0, speedPercent: 1 },
+            { name:'Плохие кожаные сапоги', level:5, baseDefense:1, speedPercent: 2 },
+            { name:'Кожаные сапоги', level:10, baseDefense:2, speedPercent: 3 },
+            { name:'Сапоги разбойника', level:15, baseDefense:3, speedPercent: 5 },
+            { name:'Сапоги наёмника', level:20, baseDefense:4, speedPercent: 7 },
+            { name:'Сапоги стражи', level:25, baseDefense:5, speedPercent: 9 },
+            { name:'Сапоги рыцаря', level:30, baseDefense:6, speedPercent: 11 },
+            { name:'Сапоги лорда', level:35, baseDefense:7, speedPercent: 13 },
+            { name:'Сапоги героя', level:40, baseDefense:8, speedPercent: 15 },
+            { name:'Сапоги чемпиона', level:45, baseDefense:9, speedPercent: 17 },
+            { name:'Сапоги командующего', level:50, baseDefense:10, speedPercent: 19 },
+            { name:'Королевские сапоги', level:55, baseDefense:11, speedPercent: 21 },
+            { name:'Великие сапоги', level:60, baseDefense:12, speedPercent: 23 },
+            { name:'Сапоги завоевателя', level:65, baseDefense:13, speedPercent: 25 },
+            { name:'Легендарные сапоги', level:70, baseDefense:14, speedPercent: 27 },
+            { name:'Сапоги судьбы', level:75, baseDefense:15, speedPercent: 29 },
+            { name:'Сапоги бессмертного', level:80, baseDefense:16, speedPercent: 30 },
+            { name:'Сапоги бога', level:85, baseDefense:17, speedPercent: 30 },
+            { name:'Сапоги властелина', level:90, baseDefense:18, speedPercent: 30 },
+            { name:'Сапоги драконоборца', level:95, baseDefense:19, speedPercent: 30 },
+            { name:'Валирийские сапоги', level:100, baseDefense:30, speedPercent: 30 }
         ],
         shoulders: [
             { name:'Рваные кожаные наплечники', level:1, baseDefense:0 },
@@ -695,26 +696,26 @@ const ALL_ITEMS = {
             { name:'Валирийский латный нагрудник', level:100, baseDefense:90 }
         ],
         boots: [
-            { name:'Ржавые латные сапоги', level:5, baseDefense:2, speed:1 },
-            { name:'Латные сапоги', level:10, baseDefense:4, speed:1 },
-            { name:'Латные сапоги разбойника', level:15, baseDefense:6, speed:1 },
-            { name:'Латные сапоги наёмника', level:20, baseDefense:8, speed:1 },
-            { name:'Латные сапоги стражи', level:25, baseDefense:10, speed:1 },
-            { name:'Латные сапоги рыцаря', level:30, baseDefense:12, speed:1 },
-            { name:'Латные сапоги лорда', level:35, baseDefense:14, speed:1 },
-            { name:'Латные сапоги героя', level:40, baseDefense:16, speed:1 },
-            { name:'Латные сапоги чемпиона', level:45, baseDefense:18, speed:1 },
-            { name:'Латные сапоги командующего', level:50, baseDefense:20, speed:1 },
-            { name:'Королевские латные сапоги', level:55, baseDefense:22, speed:1 },
-            { name:'Великие латные сапоги', level:60, baseDefense:24, speed:1 },
-            { name:'Латные сапоги завоевателя', level:65, baseDefense:26, speed:1 },
-            { name:'Легендарные латные сапоги', level:70, baseDefense:28, speed:1 },
-            { name:'Латные сапоги судьбы', level:75, baseDefense:30, speed:1 },
-            { name:'Латные сапоги бессмертного', level:80, baseDefense:32, speed:1 },
-            { name:'Латные сапоги бога', level:85, baseDefense:34, speed:1 },
-            { name:'Латные сапоги властелина', level:90, baseDefense:36, speed:1 },
-            { name:'Латные сапоги легенды', level:95, baseDefense:38, speed:1 },
-            { name:'Валирийские латные сапоги', level:100, baseDefense:45, speed:2 }
+            { name:'Ржавые латные сапоги', level:5, baseDefense:2, speedPercent: 1 },
+            { name:'Латные сапоги', level:10, baseDefense:4, speedPercent: 2 },
+            { name:'Латные сапоги разбойника', level:15, baseDefense:6, speedPercent: 3 },
+            { name:'Латные сапоги наёмника', level:20, baseDefense:8, speedPercent: 4 },
+            { name:'Латные сапоги стражи', level:25, baseDefense:10, speedPercent: 5 },
+            { name:'Латные сапоги рыцаря', level:30, baseDefense:12, speedPercent: 6 },
+            { name:'Латные сапоги лорда', level:35, baseDefense:14, speedPercent: 7 },
+            { name:'Латные сапоги героя', level:40, baseDefense:16, speedPercent: 8 },
+            { name:'Латные сапоги чемпиона', level:45, baseDefense:18, speedPercent: 9 },
+            { name:'Латные сапоги командующего', level:50, baseDefense:20, speedPercent: 10 },
+            { name:'Королевские латные сапоги', level:55, baseDefense:22, speedPercent: 11 },
+            { name:'Великие латные сапоги', level:60, baseDefense:24, speedPercent: 12 },
+            { name:'Латные сапоги завоевателя', level:65, baseDefense:26, speedPercent: 13 },
+            { name:'Легендарные латные сапоги', level:70, baseDefense:28, speedPercent: 14 },
+            { name:'Латные сапоги судьбы', level:75, baseDefense:30, speedPercent: 15 },
+            { name:'Латные сапоги бессмертного', level:80, baseDefense:32, speedPercent: 15 },
+            { name:'Латные сапоги бога', level:85, baseDefense:34, speedPercent: 15 },
+            { name:'Латные сапоги властелина', level:90, baseDefense:36, speedPercent: 15 },
+            { name:'Латные сапоги легенды', level:95, baseDefense:38, speedPercent: 15 },
+            { name:'Валирийские латные сапоги', level:100, baseDefense:45, speedPercent: 15 }
         ],
         shoulders: [
             { name:'Ржавые латные наплечники', level:5, baseDefense:2 },
@@ -830,6 +831,82 @@ const ALL_ITEMS = {
 };
 
 // ============================================================
+// КОНФИГ ЛОШАДЕЙ
+// ============================================================
+const HORSE_TYPES = {
+    'work': { 
+        name: 'Рабочая лошадь', 
+        price: 50, 
+        speedBonus: 10, 
+        defensePercent: 0,
+        hp: 80,
+        inventorySlots: 5,
+        emoji: '🐴',
+        description: 'Надёжная, но медленная. +5 слотов инвентаря.'
+    },
+    'riding': { 
+        name: 'Верховая лошадь', 
+        price: 150, 
+        speedBonus: 25, 
+        defensePercent: 2,
+        hp: 100,
+        inventorySlots: 10,
+        emoji: '🏇',
+        description: 'Отличный баланс скорости и выносливости. +10 слотов инвентаря.'
+    },
+    'war': { 
+        name: 'Боевой конь', 
+        price: 400, 
+        speedBonus: 20, 
+        defensePercent: 5,
+        hp: 150,
+        inventorySlots: 8,
+        emoji: '⚔️',
+        description: 'Смелый и сильный. +8 слотов инвентаря.'
+    },
+    'racer': { 
+        name: 'Скакун', 
+        price: 600, 
+        speedBonus: 50, 
+        defensePercent: 0,
+        hp: 70,
+        inventorySlots: 3,
+        emoji: '🏃',
+        description: 'Очень быстрый, но хрупкий. +3 слота инвентаря.'
+    },
+    'heavy': { 
+        name: 'Тяжелый скакун', 
+        price: 800, 
+        speedBonus: 15, 
+        defensePercent: 8,
+        hp: 200,
+        inventorySlots: 15,
+        emoji: '🛡️',
+        description: 'Мощный и выносливый. +15 слотов инвентаря.'
+    },
+    'royal': { 
+        name: 'Королевский скакун', 
+        price: 1500, 
+        speedBonus: 40, 
+        defensePercent: 6,
+        hp: 180,
+        inventorySlots: 12,
+        emoji: '👑',
+        description: 'Элитный скакун для знати. +12 слотов инвентаря.'
+    },
+    'fire': { 
+        name: 'Огненный жеребец', 
+        price: 3000, 
+        speedBonus: 60, 
+        defensePercent: 10,
+        hp: 250,
+        inventorySlots: 10,
+        emoji: '🔥',
+        description: 'Легендарный жеребец. Всего 1 в неделю! +10 слотов инвентаря.'
+    }
+};
+
+// ============================================================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ============================================================
 let users = {};
@@ -849,6 +926,15 @@ let housingMarket = {
     'house': { total: 250, occupied: 0 },
     'townhouse': { total: 80, occupied: 0 },
     'mansion': { total: 10, occupied: 0 }
+};
+let horseMarket = {
+    'work': { total: 50, sold: 0, resetTime: null },
+    'riding': { total: 30, sold: 0, resetTime: null },
+    'war': { total: 20, sold: 0, resetTime: null },
+    'racer': { total: 15, sold: 0, resetTime: null },
+    'heavy': { total: 10, sold: 0, resetTime: null },
+    'royal': { total: 5, sold: 0, resetTime: null },
+    'fire': { total: 1, sold: 0, resetTime: null }
 };
 
 // ============================================================
@@ -872,6 +958,39 @@ function saveHousingMarket() {
     localStorage.setItem('got_housing_market', JSON.stringify(housingMarket));
 }
 
+function loadHorseMarket() {
+    try {
+        const raw = localStorage.getItem('got_horse_market');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            for (let key in horseMarket) {
+                if (parsed[key]) {
+                    horseMarket[key].sold = parsed[key].sold || 0;
+                    horseMarket[key].resetTime = parsed[key].resetTime || null;
+                }
+            }
+        }
+    } catch(e) {}
+}
+
+function saveHorseMarket() {
+    localStorage.setItem('got_horse_market', JSON.stringify(horseMarket));
+}
+
+function checkHorseReset() {
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    let reset = false;
+    for (let key in horseMarket) {
+        if (!horseMarket[key].resetTime || (now - horseMarket[key].resetTime) > weekMs) {
+            horseMarket[key].sold = 0;
+            horseMarket[key].resetTime = now;
+            reset = true;
+        }
+    }
+    if (reset) saveHorseMarket();
+}
+
 function loadData() {
     try { const raw = localStorage.getItem('got_users'); if (raw) users = JSON.parse(raw); } catch(e) { users = {}; }
     try { const rawMarket = localStorage.getItem('got_market'); if (rawMarket) marketListings = JSON.parse(rawMarket); } catch(e) { marketListings = []; }
@@ -879,6 +998,7 @@ function loadData() {
     try { const rawLog = localStorage.getItem('got_log'); if (rawLog) gameLog = JSON.parse(rawLog); } catch(e) { gameLog = []; }
     
     loadHousingMarket();
+    loadHorseMarket();
     
     if (Object.keys(traderInventory).length === 0) {
         initTraderStock();
@@ -892,6 +1012,7 @@ function saveData() {
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
     saveHousingMarket();
+    saveHorseMarket();
 }
 
 function addLog(msg) {
@@ -1024,8 +1145,8 @@ function handleRegister() {
             hp:60, maxHp:60,
             level:1, xp:0, nextLevelXp:100,
             attributePoints:0,
-            stats: { damage:1, defense:1, intelligence:1, agility:1, speed:1 },
-            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null },
+            stats: { damage:1, defense:1, intelligence:1, agility:1 },
+            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
             skills: skills,
             stamina: { level:1, xp:0 },
             professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
@@ -1098,12 +1219,12 @@ function fixOldAccount(user) {
         ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { g.skills[s]={level:1,xp:0}; });
     }
     if (g.equipment === undefined) {
-        g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null };
+        g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null };
     }
     if (g.hp === undefined) g.hp = 60;
     if (g.maxHp === undefined) g.maxHp = 60;
     if (g.outside === undefined) g.outside = false;
-    if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1, speed:1 };
+    if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1 };
     if (g.attributePoints === undefined) g.attributePoints = 0;
     if (g.lastReset === undefined) g.lastReset = null;
     if (g.housing === undefined) {
@@ -1259,7 +1380,7 @@ function getLevelBonuses(level) {
 }
 
 function getEquippedStats(g) {
-    let bonusDamage=0, bonusDefense=0, bonusAgility=0, bonusSpeed=0;
+    let bonusDamage=0, bonusDefense=0, bonusAgility=0, bonusSpeedPercent=0;
     const slots=['rightHand','leftHand','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'];
     slots.forEach(slot => {
         const item=g.equipment[slot];
@@ -1267,10 +1388,10 @@ function getEquippedStats(g) {
             if(item.finalDamage) bonusDamage+=item.finalDamage;
             if(item.finalDefense) bonusDefense+=item.finalDefense;
             if(item.agilityBonus) bonusAgility+=item.agilityBonus;
-            if(item.speedBonus) bonusSpeed+=item.speedBonus;
+            if(item.speedPercent) bonusSpeedPercent+=item.speedPercent;
         }
     });
-    return { bonusDamage, bonusDefense, bonusAgility, bonusSpeed };
+    return { bonusDamage, bonusDefense, bonusAgility, bonusSpeedPercent };
 }
 
 function getWeaponMasteryBonus(g) {
@@ -1298,14 +1419,15 @@ function getXpMultiplier(g) {
     return 1 + (intelligence / 100);
 }
 
-function getTotalStats(g) {
-    const equipped=getEquippedStats(g);
-    const mastery=getWeaponMasteryBonus(g);
-    const levelBonus=getLevelBonuses(g.level);
-    const totalAgility=(g.stats.agility||1)+equipped.bonusAgility;
-    const totalDefense=(g.stats.defense||1)+equipped.bonusDefense+totalAgility;
-    const totalDamage=(g.stats.damage||1)+equipped.bonusDamage+mastery.damageBonus;
+function getTotalStats(g, battleState) {
+    const equipped = getEquippedStats(g);
+    const mastery = getWeaponMasteryBonus(g);
+    const levelBonus = getLevelBonuses(g.level);
+    const totalAgility = (g.stats.agility || 1) + equipped.bonusAgility;
+    const totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + totalAgility;
+    const totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
     
+    // БОНУСЫ ОТ ЖИЛЬЯ
     let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
     if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
         const house = HOUSING_TYPES[g.housing.type];
@@ -1314,21 +1436,70 @@ function getTotalStats(g) {
         bonusDef = house.bonusDef || 0;
     }
     
+    // СКОРОСТЬ В ПРОЦЕНТАХ (ТОЛЬКО ОТ БОТИНОК И ЛОШАДИ)
+    let speedPercent = 0;
+    let horseAlive = true;
+    
+    // 1. Бонус от ботинок
+    if (g.equipment && g.equipment.boots && g.equipment.boots.speedPercent) {
+        speedPercent += g.equipment.boots.speedPercent;
+    }
+    
+    // 2. Бонус от лошади (в бою проверяем жива ли)
+    if (g.equipment && g.equipment.horse) {
+        // В бою проверяем состояние лошади
+        if (battleState && battleState.inProgress) {
+            if (battleState.horseAlive) {
+                const horse = HORSE_TYPES[g.equipment.horse.horseType];
+                if (horse) speedPercent += horse.speedBonus || 0;
+            }
+        } else {
+            // Вне боя лошадь всегда даёт бонус
+            const horse = HORSE_TYPES[g.equipment.horse.horseType];
+            if (horse) speedPercent += horse.speedBonus || 0;
+        }
+    }
+    
+    // ЗАЩИТА С УЧЁТОМ ЛОШАДИ (ПРОЦЕНТНЫЙ БОНУС)
+    let horseDefensePercent = 0;
+    if (g.equipment && g.equipment.horse) {
+        if (battleState && battleState.inProgress) {
+            if (battleState.horseAlive) {
+                const horse = HORSE_TYPES[g.equipment.horse.horseType];
+                if (horse) horseDefensePercent = horse.defensePercent || 0;
+            }
+        } else {
+            const horse = HORSE_TYPES[g.equipment.horse.horseType];
+            if (horse) horseDefensePercent = horse.defensePercent || 0;
+        }
+    }
+    
+    let finalDefense = totalDefense + bonusDef;
+    if (horseDefensePercent > 0) {
+        finalDefense = Math.round(finalDefense * (1 + horseDefensePercent / 100));
+    }
+    
     return {
-        damage:totalDamage,
-        defense:totalDefense + bonusDef,
-        agility:totalAgility,
-        intelligence:(g.stats.intelligence||1) + bonusInt,
-        speed:(g.stats.speed||1)+equipped.bonusSpeed,
-        accuracy:mastery.accuracy+levelBonus.accuracy,
-        crit:levelBonus.crit,
-        pierce:levelBonus.pierce,
-        doubleHit:levelBonus.doubleHit,
-        counter:levelBonus.counter,
-        weaponType:mastery.weaponType,
-        skillLevel:mastery.skillLevel,
-        maxHp:getMaxHp(g),
-        luck: (g.stats.luck||0) + bonusLuck
+        damage: totalDamage,
+        defense: finalDefense,
+        agility: totalAgility,
+        intelligence: (g.stats.intelligence || 1) + bonusInt,
+        speedPercent: speedPercent,
+        accuracy: mastery.accuracy + levelBonus.accuracy,
+        crit: levelBonus.crit,
+        pierce: levelBonus.pierce,
+        doubleHit: levelBonus.doubleHit,
+        counter: levelBonus.counter,
+        weaponType: mastery.weaponType,
+        skillLevel: mastery.skillLevel,
+        maxHp: getMaxHp(g),
+        luck: (g.stats.luck || 0) + bonusLuck,
+        horseDefensePercent: horseDefensePercent,
+        horseAlive: horseAlive,
+        speedDetails: {
+            boots: g.equipment && g.equipment.boots ? (g.equipment.boots.speedPercent || 0) : 0,
+            horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0
+        }
     };
 }
 
@@ -1338,7 +1509,7 @@ function getHitChance(attackerStats, defenderStats) {
 }
 
 function getDistributedPoints(g) {
-    return (g.stats.damage||1)+(g.stats.defense||1)+(g.stats.agility||1)+(g.stats.intelligence||1)+(g.stats.speed||1)-5;
+    return (g.stats.damage||1)+(g.stats.defense||1)+(g.stats.agility||1)+(g.stats.intelligence||1)-4;
 }
 
 function resetAttributes() {
@@ -1351,7 +1522,7 @@ function resetAttributes() {
         return;
     }
     g.attributePoints=Math.min(100, g.level);
-    g.stats={ damage:1, defense:1, intelligence:1, agility:1, speed:1 };
+    g.stats={ damage:1, defense:1, intelligence:1, agility:1 };
     g.lastReset=now;
     setMessage('✅ Атрибуты сброшены! Доступно очков: '+g.attributePoints);
     updateMenu();
@@ -1400,6 +1571,7 @@ function updateStory() {
         'Кожевник': 'Вы у кожевника. Здесь можно купить и продать кожаную броню.',
         'Бронник': 'Вы у бронника. Здесь можно купить и продать латную броню.',
         'Плотник': 'Вы у плотника. Здесь можно купить и продать луки и арбалеты.',
+        'Конюшня': '🐴 Королевская конюшня. Здесь можно купить лошадь, продать или просто полюбоваться на скакунов.',
         'Гильдия торговцев': 'Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
         'Магистрат': '📜 Магистрат — центр управления городом. Здесь можно купить жильё, оплатить аренду и уладить городские дела.',
         'Ворота': 'Вы у городских ворот.' + (user.game.outside ? ' Снаружи виднеется дорога.' : ' Отсюда можно выйти на Дорогу.'),
@@ -1422,7 +1594,6 @@ function updateActions() {
     const container = document.getElementById('actions-container');
     container.innerHTML = '';
     const inBattle = battleState && battleState.inProgress;
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     let actions = [];
     
     if (inBattle) {
@@ -1432,6 +1603,15 @@ function updateActions() {
             { id:'battle_dodge', label:'💨 Уклонение' },
             { id:'battle_flee', label:'🏃 Побег' }
         ];
+        
+        // Кнопки для лошади в бою
+        if (battleState.horseAlive && battleState.horseHp > 0) {
+            if (battleState.mounted) {
+                actions.unshift({ id:'battle_dismount', label:'🐴 Слезть с лошади' });
+            } else {
+                actions.unshift({ id:'battle_mount', label:'🐴 Сесть на лошадь' });
+            }
+        }
     } else {
         actions = [
             { id:'inventory', label:'🎒 Инвентарь' },
@@ -1493,6 +1673,11 @@ function updateActions() {
             actions = [{ id:'shop', label:'⚒️ Кузница' }, { id:'craft', label:'🔨 Крафт' }, ...actions];
         }
         
+        // Конюшня
+        if (place === 'Конюшня') {
+            actions.unshift({ id:'open_stable', label:'🐴 Конюшня' });
+        }
+        
         // Магистрат
         if (place === 'Магистрат') {
             actions.unshift({ id:'open_magistrate', label:'📜 Недвижимость' });
@@ -1541,6 +1726,7 @@ function gameAction(action) {
         case 'guild': openGuild(); break;
         case 'shop': openShop(g.location.place); break;
         case 'craft': openCraftMenu(); break;
+        case 'open_stable': openStable(); break;
         case 'buy_housing':
             viewDistrict(g.location.place);
             break;
@@ -1586,6 +1772,28 @@ function gameAction(action) {
             g.outside = true;
             setMessage('🛤️ Вы вышли на Дорогу.');
             updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        case 'battle_dismount':
+            if (battleState && battleState.inProgress && battleState.mounted) {
+                battleState.mounted = false;
+                battleState.horseDismounted = true;
+                battleState.log.push('🐴 Вы слезли с лошади. Она отходит в сторону.');
+                setMessage('🐴 Вы слезли с лошади. Она в безопасности.');
+                renderBattle();
+                saveBattleState();
+            }
+            break;
+        case 'battle_mount':
+            if (battleState && battleState.inProgress && !battleState.mounted && battleState.horseAlive && battleState.horseHp > 0) {
+                battleState.mounted = true;
+                battleState.horseDismounted = false;
+                battleState.log.push('🐴 Вы сели на лошадь!');
+                setMessage('🐴 Вы снова верхом!');
+                renderBattle();
+                saveBattleState();
+            } else if (!battleState.horseAlive || battleState.horseHp <= 0) {
+                setMessage('❌ Ваша лошадь мертва. Вы не можете на неё сесть.');
+            }
             break;
         case 'eat':
             if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
@@ -1825,7 +2033,7 @@ function craftSteel() {
 }
 
 // ============================================================
-// БОЙ
+// БОЙ (ОБНОВЛЁН С ЛОШАДЬЮ)
 // ============================================================
 function saveBattleState() {
     if(battleState){
@@ -1905,6 +2113,24 @@ function startBattle(mob) {
     const weaponType=g.equipment.rightHand?(g.equipment.rightHand.type||'sword'):'sword';
     const skillLevel=g.skills[weaponType]?.level||1;
     
+    // Информация о лошади
+    let horseAlive = false;
+    let horseHp = 0;
+    let horseMaxHp = 0;
+    let horseDefensePercent = 0;
+    let mounted = false;
+    
+    if (g.equipment && g.equipment.horse) {
+        const horse = HORSE_TYPES[g.equipment.horse.horseType];
+        if (horse) {
+            horseAlive = true;
+            horseHp = horse.hp;
+            horseMaxHp = horse.hp;
+            horseDefensePercent = horse.defensePercent || 0;
+            mounted = true;
+        }
+    }
+    
     battleState={
         mob:mob,
         playerHp:g.hp,
@@ -1920,7 +2146,13 @@ function startBattle(mob) {
         playerDefense:g.stats.defense||1,
         mobAgility:mob.agility||1,
         mobLevel:mob.level||1,
-        lastActionTime:Date.now()
+        lastActionTime:Date.now(),
+        horseAlive: horseAlive,
+        horseHp: horseHp,
+        horseMaxHp: horseMaxHp,
+        horseDefensePercent: horseDefensePercent,
+        mounted: mounted,
+        horseDismounted: false
     };
     
     isBusy=true;
@@ -1933,7 +2165,7 @@ function startBattle(mob) {
 
 function renderBattle() {
     if(!battleState||!battleState.inProgress) return;
-    const { mob, playerHp, mobHp, maxPlayerHp, turn, log, mobLevel }=battleState;
+    const { mob, playerHp, mobHp, maxPlayerHp, turn, log, mobLevel, horseAlive, horseHp, horseMaxHp, mounted }=battleState;
     const mobHpPercent=Math.max(0, (mobHp/mob.hp)*100);
     const playerHpPercent=Math.max(0, (playerHp/maxPlayerHp)*100);
     
@@ -1944,7 +2176,12 @@ function renderBattle() {
     msg+='❤️ Вы\n';
     msg+='HP: '+Math.max(0,playerHp)+'/'+maxPlayerHp+'\n';
     msg+='█'.repeat(Math.floor(playerHpPercent/5))+'░'.repeat(20-Math.floor(playerHpPercent/5))+'\n\n';
-    msg+='🔄 Ход: '+(turn==='player'?'ВАШ':mob.name.toUpperCase());
+    if (horseAlive && horseHp > 0) {
+        msg+='🐴 Лошадь (HP: '+Math.max(0,horseHp)+'/'+horseMaxHp+')\n';
+        msg+='█'.repeat(Math.floor((horseHp/horseMaxHp)*20))+'░'.repeat(20-Math.floor((horseHp/horseMaxHp)*20))+'\n';
+        msg+='📌 ' + (mounted ? '🐴 Верхом' : '🚶 Пешком') + '\n';
+    }
+    msg+='\n🔄 Ход: '+(turn==='player'?'ВАШ':mob.name.toUpperCase());
     if(turn==='mob') msg+=' (⏳ 4 сек)';
     
     if(log.length>0){
@@ -1973,9 +2210,10 @@ function battleAction(action) {
     const user=users[currentUser];
     if(!user) return;
     const g=user.game;
-    const { mob, playerHp, mobHp }=battleState;
+    const { mob, playerHp, mobHp, horseHp, horseAlive, mounted }=battleState;
     let newMobHp=mobHp;
     let newPlayerHp=playerHp;
+    let newHorseHp=horseHp;
     let nextTurn='mob';
     let battleOver=false;
     
@@ -1998,7 +2236,7 @@ function battleAction(action) {
     }
     
     if(action==='battle_attack'){
-        const totalStats=getTotalStats(g);
+        const totalStats=getTotalStats(g, battleState);
         const mobStats={ agility:mob.agility||1, defense:mob.defense||0 };
         const hitChance=getHitChance(totalStats, mobStats);
         
@@ -2043,7 +2281,7 @@ function battleAction(action) {
     }
     
     if(action==='battle_dodge'){
-        const totalStats=getTotalStats(g);
+        const totalStats=getTotalStats(g, battleState);
         const mobAgility=mob.agility||1;
         let dodgeChance=15;
         
@@ -2074,6 +2312,7 @@ function battleAction(action) {
     if(!battleOver&&action!=='battle_flee'){
         battleState.mobHp=newMobHp;
         battleState.playerHp=newPlayerHp;
+        battleState.horseHp=newHorseHp;
         
         if(newMobHp<=0){
             battleOver=true;
@@ -2096,6 +2335,7 @@ function battleAction(action) {
         battleState.turn=nextTurn;
         battleState.mobHp=newMobHp;
         battleState.playerHp=newPlayerHp;
+        battleState.horseHp=newHorseHp;
         renderBattle();
         saveBattleState();
     }
@@ -2114,8 +2354,8 @@ function mobTurn() {
         return;
     }
     const g=user.game;
-    const { mob, playerHp }=battleState;
-    const totalStats=getTotalStats(g);
+    const { mob, playerHp, horseAlive, horseHp, horseMaxHp, mounted }=battleState;
+    const totalStats=getTotalStats(g, battleState);
     const mobAgility=mob.agility||1;
     
     let dodgeChance=10;
@@ -2197,6 +2437,27 @@ function mobTurn() {
     damage=Math.max(1, damage-totalStats.defense);
     damage=Math.round(damage*(penetrateChance/100));
     
+    // ЛОШАДЬ ПОЛУЧАЕТ УРОН
+    let newHorseHp = battleState.horseHp;
+    if (battleState.mounted && battleState.horseAlive && battleState.horseHp > 0) {
+        const horseDamage = Math.floor(damage * 0.3);
+        newHorseHp = Math.max(0, battleState.horseHp - horseDamage);
+        damage = Math.floor(damage * 0.7);
+        battleState.log.push('🐴 Лошадь получила ' + horseDamage + ' урона (HP: ' + newHorseHp + '/' + battleState.horseMaxHp + ')');
+        
+        if (newHorseHp <= 0) {
+            battleState.horseAlive = false;
+            battleState.mounted = false;
+            battleState.horseDefensePercent = 0;
+            battleState.log.push('💀 Ваша лошадь пала в бою! Бонусы защиты потеряны.');
+            setMessage('💀 Ваша лошадь пала в бою!');
+        }
+        battleState.horseHp = newHorseHp;
+    } else {
+        // Игрок пешком — полный урон
+        damage = Math.max(1, damage - totalStats.defense);
+    }
+    
     const mobMissChance=Math.max(0, totalStats.agility-mobAgility);
     if(Math.random()*100<mobMissChance){
         battleState.log.push('🐺 '+mob.name+' промахнулся!');
@@ -2230,6 +2491,23 @@ function endBattle(won, reason) {
     
     g.hp=battleState.playerHp;
     if(g.hp>g.maxHp) g.hp=g.maxHp;
+    
+    // ЛОШАДЬ: ВОССТАНОВЛЕНИЕ HP ПОСЛЕ БОЯ
+    if (g.equipment && g.equipment.horse) {
+        const horse = g.equipment.horse;
+        if (battleState.horseAlive && battleState.horseHp > 0) {
+            // Лошадь выжила — восстанавливаем полностью
+            horse.hp = horse.maxHp || 100;
+            if (battleState.horseHp < horse.maxHp) {
+                setMessage('🐴 Ваша лошадь восстановила силы после боя.');
+            }
+        } else if (battleState.horseHp <= 0) {
+            // Лошадь умерла — удаляем из слота
+            g.equipment.horse = null;
+            setMessage('💀 Ваша лошадь погибла в бою.');
+            addLog('💀 ' + currentUser + ' потерял лошадь в бою');
+        }
+    }
     
     if(won){
         const xpMultiplier=getXpMultiplier(g);
@@ -2835,12 +3113,10 @@ function buyTavernItem(name, price, food, thirst, hp) {
         effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 }
     };
     
-    // Если это еда или напиток - добавляем в инвентарь
     if (food > 0 || thirst > 0 || hp > 0) {
         g.inventory.push(item);
     }
     
-    // Применяем эффекты
     if (food > 0) g.food = Math.min(100, g.food + food);
     if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
     if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
@@ -2861,7 +3137,7 @@ function openMap() {
     if (!user) return;
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     let html = '<div class="modal-section"><h4>📍 ' + user.game.location.place + ' (ур. ' + (LOCATION_LEVELS[user.game.location.place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
@@ -2894,7 +3170,6 @@ function goToBuilding(building) {
     if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
     if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
     
-    // Вход в Магистрат
     if (building === 'Магистрат') {
         g.location.place = 'Магистрат';
         g.location.location = 'Королевская Гавань';
@@ -2903,7 +3178,6 @@ function goToBuilding(building) {
         addLog('🚶 ' + currentUser + ' вошёл в Магистрат');
         closeMap();
         updateMenu(); updateStory(); updateActions(); saveData();
-        // Открываем окно Магистрата после перехода
         setTimeout(function() {
             if (typeof openMagistrate === 'function') {
                 openMagistrate();
@@ -2912,7 +3186,13 @@ function goToBuilding(building) {
         return;
     }
     
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
+    if (building === 'Дорога') {
+        // Дорога не должна быть на карте — это переходная зона
+        setMessage('❌ Дорога — это переходная зона.');
+        return;
+    }
+    
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом'];
     const targetIsCity = cityBuildings.includes(building);
     if (targetIsCity && g.outside) g.outside = false;
     else if (!targetIsCity && !g.outside) g.outside = true;
@@ -2948,16 +3228,21 @@ function openCharacter() {
     html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + ' (' + g.xp + '/' + g.nextLevelXp + ')</span></div>';
     html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div>';
     html += '<div class="row"><span class="label">HP</span><span class="value">' + Math.round(g.hp) + '/' + g.maxHp + '</span></div>';
+    if (g.equipment && g.equipment.horse) {
+        const horse = HORSE_TYPES[g.equipment.horse.horseType];
+        if (horse) {
+            html += '<div class="row"><span class="label">🐴 Лошадь</span><span class="value">' + horse.emoji + ' ' + horse.name + ' (HP: ' + g.equipment.horse.hp + '/' + g.equipment.horse.maxHp + ')</span></div>';
+        }
+    }
     html += '</div>';
     html += '<div class="modal-section"><h4>⚔️ АТРИБУТЫ (распределено: ' + getDistributedPoints(g) + '/100)</h4>';
     const statLabels = {
         damage: '⚔️ Урон',
         defense: '🛡️ Защита',
         intelligence: '🧠 Интеллект',
-        agility: '💨 Ловкость',
-        speed: '🏃 Скорость'
+        agility: '💨 Ловкость'
     };
-    ['damage', 'defense', 'intelligence', 'agility', 'speed'].forEach(s => {
+    ['damage', 'defense', 'intelligence', 'agility'].forEach(s => {
         const base = g.stats[s] || 1;
         let bonus = 0;
         let bonusText = '';
@@ -2970,7 +3255,6 @@ function openCharacter() {
             bonusText = ' (броня: +' + equipped.bonusDefense + ' | ловкость: +' + totalStats.agility + ')';
         }
         if (s === 'agility') bonus = equipped.bonusAgility;
-        if (s === 'speed') bonus = equipped.bonusSpeed;
         const total = base + bonus;
         html += '<div class="row"><span class="label">' + statLabels[s] + '</span>';
         html += '<span class="value">' + base;
@@ -2982,6 +3266,14 @@ function openCharacter() {
         html += '<br><span style="font-size:10px;color:#6a5a48;">' + bonusText + '</span>';
         html += '</span></div>';
     });
+    
+    // СКОРОСТЬ В ПРОЦЕНТАХ
+    html += '<div class="modal-section"><h4>🏃 СКОРОСТЬ</h4>';
+    html += '<div class="row"><span class="label">👢 Ботинки</span><span class="value">+' + totalStats.speedDetails.boots + '%</span></div>';
+    html += '<div class="row"><span class="label">🐴 Лошадь</span><span class="value">+' + totalStats.speedDetails.horse + '%</span></div>';
+    html += '<div class="row" style="border-top:1px solid #3d3026;padding-top:6px;"><span class="label" style="color:#c9b694;">✅ ИТОГО</span><span class="value" style="color:#7ac98a;font-size:16px;">+' + totalStats.speedPercent + '%</span></div>';
+    html += '</div>';
+    
     html += '<div class="row"><span class="label">🎯 Меткость</span><span class="value">' + totalStats.accuracy + '% (мастерство: +' + mastery.skillLevel + ')</span></div>';
     html += '<div class="row"><span class="label">💥 Крит</span><span class="value">' + totalStats.crit + '%</span></div>';
     html += '<div class="row"><span class="label">🛡️ Пробитие</span><span class="value">' + totalStats.pierce + '%</span></div>';
@@ -3016,7 +3308,8 @@ function openCharacter() {
         { key: 'boots', label: 'Стопы' },
         { key: 'gloves', label: 'Руки' },
         { key: 'belt', label: 'Пояс' },
-        { key: 'cloak', label: 'Спина' }
+        { key: 'cloak', label: 'Спина' },
+        { key: 'horse', label: '🐴 Лошадь' }
     ];
     slots.forEach(s => {
         const item = g.equipment[s.key];
@@ -3081,7 +3374,7 @@ function changeProfession() {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ
+// ИНВЕНТАРЬ (ОБНОВЛЁН С УЧЁТОМ ЛОШАДИ)
 // ============================================================
 function openInventory() {
     const user = users[currentUser];
@@ -3089,7 +3382,27 @@ function openInventory() {
     const g = user.game;
     const modal = document.getElementById('modal-inventory');
     const content = document.getElementById('modal-inventory-content');
+    
+    // Базовый лимит инвентаря + бонус от лошади
+    const baseInventoryLimit = 50;
+    let bonusSlots = 0;
+    if (g.equipment && g.equipment.horse) {
+        const horse = HORSE_TYPES[g.equipment.horse.horseType];
+        if (horse) {
+            bonusSlots = horse.inventorySlots || 0;
+        }
+    }
+    const maxInventory = baseInventoryLimit + bonusSlots;
+    const currentItems = g.inventory.length;
+    
     let html = '';
+    html += '<div class="modal-section">';
+    html += '<h4>🎒 ИНВЕНТАРЬ (' + currentItems + '/' + maxInventory + ')</h4>';
+    if (bonusSlots > 0) {
+        html += '<p style="color:#6a5a48;font-size:11px;">🐴 Лошадь даёт +' + bonusSlots + ' дополнительных слотов.</p>';
+    }
+    html += '</div>';
+    
     if (g.inventory.length === 0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">🎒 Пусто</p>';
     } else {
@@ -3105,11 +3418,11 @@ function openInventory() {
             } else if (item.finalDefense) {
                 stats = '🛡️ Защита: ' + item.finalDefense;
                 if (item.agilityBonus) stats += ' | 💨 +' + item.agilityBonus;
-                if (item.speedBonus) stats += ' | 🏃 +' + item.speedBonus;
+                if (item.speedPercent) stats += ' | 🏃 +' + item.speedPercent + '%';
             } else if (item.type === 'resource') {
                 stats = '📦 ' + (item.resourceType || 'ресурс');
             }
-            const equippableTypes = ['sword','spear','axe','mace','bow','crossbow','dagger','shield','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'];
+            const equippableTypes = ['sword','spear','axe','mace','bow','crossbow','dagger','shield','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak','horse'];
             if (equippableTypes.includes(item.type)) isEquippable = true;
             const isUsable = ['Хлеб','Мясо','Вода','Эль','Вино'].some(n => item.name.includes(n));
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410; flex-wrap:wrap;">';
@@ -3139,7 +3452,8 @@ function openInventory() {
         { key: 'boots', label: 'Стопы' },
         { key: 'gloves', label: 'Руки' },
         { key: 'belt', label: 'Пояс' },
-        { key: 'cloak', label: 'Спина' }
+        { key: 'cloak', label: 'Спина' },
+        { key: 'horse', label: '🐴 Лошадь' }
     ];
     slots.forEach(s => {
         const item = g.equipment[s.key];
@@ -3175,7 +3489,8 @@ function equipItem(index) {
         'helmet': 'helmet', 'chestplate': 'chestplate',
         'shoulders': 'shoulders', 'leggings': 'leggings',
         'boots': 'boots', 'gloves': 'gloves',
-        'belt': 'belt', 'cloak': 'cloak'
+        'belt': 'belt', 'cloak': 'cloak',
+        'horse': 'horse'
     };
     const slot = slotMap[item.type];
     if (!slot) {
@@ -3214,7 +3529,6 @@ function useItem(index) {
     if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     const item = g.inventory[index];
     
-    // Проверка на предметы из таверны (с полем effect)
     if (item.effect) {
         if (item.effect.food) {
             g.food = Math.min(100, g.food + item.effect.food);
@@ -3235,7 +3549,6 @@ function useItem(index) {
         return;
     }
     
-    // Старые предметы
     if (item.name.includes('Хлеб') || item.name.includes('Мясо')) {
         g.food = Math.min(g.food + 20, 100);
         g.inventory.splice(index, 1);
@@ -3454,13 +3767,12 @@ function removeListing(index) {
 }
 
 // ============================================================
-// МЕНЮ И ДОМА (ИСПРАВЛЕНО: УБРАНА КНОПКА МАГИСТРАТА)
+// МЕНЮ И ДОМА
 // ============================================================
 function openMainMenu() {
     const modal = document.getElementById('modal-menu');
     const content = document.getElementById('modal-menu-content');
     let html = '<div class="modal-section">';
-    // Кнопка Магистрата УБРАНА — она теперь на карте
     html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
     html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
     html += '</div>';
@@ -3630,14 +3942,13 @@ function payRent() {
     const house = HOUSING_TYPES[g.housing.type];
     const now = Date.now();
     const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const maxWeeks = 4; // Максимум 4 недели вперёд
+    const maxWeeks = 4;
     
     if (g.housing.debt > 0) {
         setMessage('⚠️ Сначала оплатите долг (' + g.housing.debt + ' зол.)');
         return;
     }
     
-    // Проверка: не оплачено ли уже 4 недели вперёд
     const lastPayment = g.housing.lastPayment || now;
     const weeksPaidAhead = Math.floor((lastPayment - now) / weekMs);
     if (weeksPaidAhead >= maxWeeks) {
@@ -4285,6 +4596,168 @@ function takeFromStorageHold(key) {
     updateMenu();
     saveData();
     openStorageHold();
+}
+
+// ============================================================
+// КОНЮШНЯ (НОВЫЕ ФУНКЦИИ)
+// ============================================================
+function openStable() {
+    const modal = document.getElementById('modal-stable') || createStableModal();
+    const content = document.getElementById('modal-stable-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    checkHorseReset();
+    
+    let html = '<div class="modal-section"><h4>🐴 КОНЮШНЯ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно купить, продать и ухаживать за лошадьми.</p>';
+    
+    // ТЕКУЩАЯ ЛОШАДЬ
+    html += '<h4 style="color:#6a5a48;margin-top:10px;">🐴 ВАША ЛОШАДЬ</h4>';
+    if (g.equipment && g.equipment.horse) {
+        const horse = g.equipment.horse;
+        const horseType = HORSE_TYPES[horse.horseType];
+        if (horseType) {
+            const hpPercent = Math.round((horse.hp / horse.maxHp) * 100);
+            html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:6px 0;">';
+            html += '<div style="color:#c9b694;font-size:18px;">' + horseType.emoji + ' ' + horse.name + '</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">❤️ HP: ' + horse.hp + '/' + horse.maxHp + ' (' + hpPercent + '%)</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">⚡ Скорость: +' + horseType.speedBonus + '%</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">🛡️ Защита: +' + horseType.defensePercent + '%</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">📦 Инвентарь: +' + horseType.inventorySlots + ' слотов</div>';
+            html += '<button class="btn btn-danger" onclick="sellHorse()" style="margin-top:6px;">💰 Продать лошадь</button>';
+            html += '</div>';
+        }
+    } else {
+        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🐴 У вас нет лошади.</p>';
+    }
+    
+    // ДОСТУПНЫЕ ЛОШАДИ
+    html += '<h4 style="color:#6a5a48;margin-top:14px;">📦 КУПИТЬ ЛОШАДЬ</h4>';
+    for (let key in HORSE_TYPES) {
+        const horse = HORSE_TYPES[key];
+        const market = horseMarket[key];
+        const available = market.total - market.sold;
+        const isAvailable = available > 0;
+        const isOwned = g.equipment && g.equipment.horse && g.equipment.horse.horseType === key;
+        
+        html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1410;">';
+        html += '<div style="flex:1;">';
+        html += '<span style="font-size:16px;">' + horse.emoji + '</span> <strong>' + horse.name + '</strong>';
+        html += '<br><span style="font-size:11px;color:#6a5a48;">' + horse.description + '</span>';
+        html += '<br><span style="font-size:10px;color:#6a5a48;">⚡+' + horse.speedBonus + '% | 🛡️+' + horse.defensePercent + '% | ❤️' + horse.hp + ' | 📦+' + horse.inventorySlots + '</span>';
+        html += '</div>';
+        html += '<div style="text-align:right;">';
+        if (isOwned) {
+            html += '<span style="color:#7ac98a;">✅ Ваша лошадь</span>';
+        } else if (isAvailable) {
+            html += '<span style="color:#c9b694;">' + horse.price + ' зол.</span><br>';
+            html += '<span style="font-size:10px;color:#6a5a48;">осталось: ' + available + '/' + market.total + '</span><br>';
+            html += '<button class="btn btn-small" onclick="buyHorse(\'' + key + '\')">✅ Купить</button>';
+        } else {
+            html += '<span style="color:#c96a5a;">❌ РАСПРОДАНО</span>';
+            html += '<br><span style="font-size:10px;color:#6a5a48;">на этой неделе</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    html += '<button class="btn btn-secondary" onclick="closeStable()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function buyHorse(type) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const horse = HORSE_TYPES[type];
+    if (!horse) return;
+    
+    checkHorseReset();
+    const market = horseMarket[type];
+    if (market.sold >= market.total) {
+        setMessage('❌ Все ' + horse.name + ' на этой неделе уже проданы! Ждите следующей недели.');
+        return;
+    }
+    
+    if (g.equipment && g.equipment.horse) {
+        setMessage('❌ У вас уже есть лошадь! Продайте её, чтобы купить новую.');
+        return;
+    }
+    
+    if (!spendMoney(g, horse.price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + horse.price + ' золота.');
+        return;
+    }
+    
+    g.equipment.horse = {
+        horseType: type,
+        name: horse.name,
+        hp: horse.hp,
+        maxHp: horse.hp,
+        speedBonus: horse.speedBonus,
+        defensePercent: horse.defensePercent,
+        inventorySlots: horse.inventorySlots
+    };
+    
+    market.sold++;
+    saveHorseMarket();
+    
+    setMessage('✅ Вы купили ' + horse.name + '! Осталось на этой неделе: ' + (market.total - market.sold));
+    addLog('🐴 ' + currentUser + ' купил ' + horse.name);
+    updateMenu();
+    saveData();
+    openStable();
+}
+
+function sellHorse() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.equipment || !g.equipment.horse) {
+        setMessage('❌ У вас нет лошади.');
+        return;
+    }
+    
+    const horseType = HORSE_TYPES[g.equipment.horse.horseType];
+    if (!horseType) return;
+    
+    const refund = Math.floor(horseType.price * 0.5);
+    g.copper += refund;
+    convertCurrency(g);
+    g.equipment.horse = null;
+    
+    setMessage('💰 Вы продали лошадь за ' + refund + ' золота.');
+    addLog('💰 ' + currentUser + ' продал лошадь');
+    updateMenu();
+    saveData();
+    openStable();
+}
+
+function createStableModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-stable';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeStable(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🐴 КОНЮШНЯ</h3>
+                <button class="close-btn" onclick="closeStable()">✕</button>
+            </div>
+            <div id="modal-stable-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeStable() {
+    const modal = document.getElementById('modal-stable');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
