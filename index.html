@@ -499,7 +499,6 @@ function enterGame(name) {
     user.game.lastActive = now;
     user.game.lastResourceUpdate = now;
     
-    // Пересчёт HP
     const g = user.game;
     const maxHp = 60 + g.level * 10 + (g.stamina.level || 1) * 2;
     g.maxHp = maxHp;
@@ -640,7 +639,6 @@ function updateActions() {
             ];
         }
 
-        // ПОИСК ТОЛЬКО ЗА ГОРОДОМ
         if (isOutsideCity) {
             actions = [{ id: 'search', label: '🔍 Поиск' }, ...actions];
         }
@@ -796,7 +794,6 @@ function doSearch() {
         { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human' }
     ];
 
-    // Фильтр по локации (в городе только крысы и собаки)
     if (place === 'Таверна' || place === 'Гильдия торговцев' || place === 'Рынок' || place === 'Кузница') {
         mobs = mobs.filter(m => m.name === 'Крыса' || m.name === 'Собака');
     }
@@ -966,18 +963,6 @@ function mobTurn() {
 
     battleState.turn = 'player';
     renderBattle();
-    function mobTurn() {
-    // ... расчёт урона
-    battleState.playerHp = newPlayerHp;
-    
-    if (newPlayerHp <= 0) {
-        battleState.inProgress = false;
-        endBattle(false, 'Смерть');
-        return;
-    }
-    
-    battleState.turn = 'player';
-    renderBattle(); // 
 }
 
 function endBattle(won, reason) {
@@ -987,7 +972,6 @@ function endBattle(won, reason) {
     const g = user.game;
     const { mob } = battleState;
 
-    // Сохраняем HP
     g.hp = battleState.playerHp;
     if (g.hp > g.maxHp) g.hp = g.maxHp;
 
@@ -1009,7 +993,6 @@ function endBattle(won, reason) {
         }
 
         // ===== ЛУТ =====
-        // 30% шанс выпадения оружия
         if (Math.random() < 0.3) {
             const quality = rollQuality(g.professions['Охотник'], false);
             const available = WEAPON_TYPES.filter(w => w.level <= g.level + 5);
@@ -1026,7 +1009,6 @@ function endBattle(won, reason) {
             }
         }
 
-        // ===== ЛУТ С ЖИВОТНЫХ (ШКУРЫ) =====
         if (mob.type === 'animal') {
             const hunterLevel = g.professions['Охотник'] || 1;
             const bonus = Math.min(hunterLevel * 0.5, 50);
@@ -1050,7 +1032,6 @@ function endBattle(won, reason) {
             }
         }
 
-        // ===== ЛУТ С БАНДИТОВ (ГАРАНТИРОВАННО МП) =====
         if (mob.type === 'human') {
             const coins = (mob.level * 2) + Math.floor(Math.random() * (mob.level * 2));
             g.copper += coins;
@@ -1058,7 +1039,6 @@ function endBattle(won, reason) {
             setMessage('💰 Вы нашли ' + coins + ' МП у ' + mob.name + ' (ур. ' + mob.level + ')');
         }
 
-        // Прокачка охотника
         if (mob.type === 'animal') {
             g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + 2;
             while (g.professionXp['Охотник'] >= g.professions['Охотник'] * 10) {
