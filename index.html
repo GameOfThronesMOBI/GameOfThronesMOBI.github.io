@@ -203,6 +203,7 @@ const BUILDINGS = [
     { id:'Таверна', label:'🍺 Таверна' },
     { id:'Рынок', label:'🛒 Рынок' },
     { id:'Кузница', label:'⚒️ Кузница' },
+    { id:'Оружейная лавка', label:'🗡️ Оружейная лавка' },
     { id:'Кожевник', label:'🪡 Кожевник' },
     { id:'Бронник', label:'🛡️ Бронник' },
     { id:'Плотник', label:'🪵 Плотник' },
@@ -555,6 +556,30 @@ function enterGame(name) {
     g.maxHp = maxHp;
     if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
     
+    // СТАРТОВЫЕ ДЕНЬГИ ДЛЯ ТЕСТОВ
+    if (g.gold === 0 && g.silver === 0 && g.copper === 0) {
+        g.gold = 100;
+        setMessage('💰 Вы получили 100 Золотых Драконов для старта!');
+    }
+    
+    // Восстановление боя при перезагрузке
+    const savedBattle = localStorage.getItem('got_battle');
+    if (savedBattle) {
+        try {
+            battleState = JSON.parse(savedBattle);
+            if (battleState && battleState.inProgress) {
+                setMessage('⚔️ Бой продолжается!');
+                updateMenu();
+                updateStory();
+                updateActions();
+                renderBattle();
+                return;
+            }
+        } catch(e) {
+            localStorage.removeItem('got_battle');
+        }
+    }
+    
     updateMenu();
     updateStory();
     updateActions();
@@ -595,6 +620,7 @@ function updateStory() {
         'Таверна':'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок':'Вы на рынке. Здесь можно купить и продать товары.',
         'Кузница':'Вы в кузнице. Здесь можно создать и улучшить оружие.',
+        'Оружейная лавка':'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
         'Кожевник':'Вы у кожевника. Здесь можно купить и продать кожу и кожаную броню.',
         'Бронник':'Вы у бронника. Здесь можно купить и продать железо и стальную броню.',
         'Плотник':'Вы у плотника. Здесь можно купить и продать дерево, луки и арбалеты.',
@@ -654,6 +680,7 @@ function updateActions() {
 
     const isTavern = place === 'Таверна';
     const isGuild = place === 'Гильдия торговцев';
+    const isWeaponShop = place === 'Оружейная лавка';
     const isTrader = ['Кожевник', 'Бронник', 'Плотник'].includes(place);
     const isOutsideCity = (place === 'Ворота' || place === 'Дорога' || place === 'За городом' || place === 'Лес' || place === 'Горы');
     const inBattle = battleState && battleState.inProgress;
@@ -690,6 +717,13 @@ function updateActions() {
         if (isGuild) {
             actions = [
                 { id: 'guild', label: '🏛️ Гильдия' },
+                ...actions
+            ];
+        }
+
+        if (isWeaponShop) {
+            actions = [
+                { id: 'weapon_shop', label: '🗡️ Оружейная лавка' },
                 ...actions
             ];
         }
@@ -740,6 +774,9 @@ function gameAction(action) {
             break;
         case 'guild':
             openGuild();
+            break;
+        case 'weapon_shop':
+            openWeaponShop();
             break;
         case 'trader':
             openTrader(g.location.place);
@@ -834,24 +871,49 @@ function startBusy(actionName, minutes, callback) {
 // 8. БОЙ
 // ============================================================
 
+function saveBattleState() {
+    if (battleState) {
+        localStorage.setItem('got_battle', JSON.stringify(battleState));
+    } else {
+        localStorage.removeItem('got_battle');
+    }
+}
+
 function doSearch() {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
     const place = g.location.place;
 
-    let mobs = [
-        { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2 },
-        { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3 },
-        { name: 'Лиса', hp: 15, damage: 3, defense: 0, xp: 5, level: 4, type: 'animal', agility: 5 },
-        { name: 'Волк', hp: 25, damage: 6, defense: 2, xp: 10, level: 8, type: 'animal', agility: 4 },
-        { name: 'Бандит', hp: 30, damage: 7, defense: 2, xp: 12, level: 6, type: 'human', agility: 3 },
-        { name: 'Разбойник', hp: 40, damage: 9, defense: 3, xp: 18, level: 10, type: 'human', agility: 4 },
-        { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human', agility: 5 }
-    ];
+    // В городе нельзя искать
+    const cityBuildings = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Гильдия торговцев', 'Гильдия наёмников', 'Магистрат', 'Храм', 'Порт', 'Тюрьма', 'Арена', 'Орден мейстеров', 'Квартал бедноты', 'Красный замок'];
+    if (cityBuildings.includes(place)) {
+        setMessage('⛔ В городе нельзя искать врагов.');
+        return;
+    }
 
-    if (place === 'Таверна' || place === 'Гильдия торговцев' || place === 'Рынок' || place === 'Кузница' || place === 'Кожевник' || place === 'Бронник' || place === 'Плотник') {
-        mobs = mobs.filter(m => m.name === 'Крыса' || m.name === 'Собака');
+    let mobs = [];
+
+    if (place === 'Ворота' || place === 'Дорога' || place === 'За городом') {
+        mobs = [
+            { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2, loot: null },
+            { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3, loot: null },
+            { name: 'Лиса', hp: 15, damage: 3, defense: 0, xp: 5, level: 4, type: 'animal', agility: 5, loot: null },
+            { name: 'Бродяга', hp: 12, damage: 3, defense: 0, xp: 4, level: 2, type: 'human', agility: 2, loot: { name: 'Ржавый кинжал', baseDamage: 3, level: 2, chance: 0.3 } },
+            { name: 'Нищий бандит', hp: 20, damage: 5, defense: 1, xp: 8, level: 5, type: 'human', agility: 3, loot: { name: 'Кинжал', baseDamage: 4, level: 5, chance: 0.2 } }
+        ];
+    } else if (place === 'Таверна' || place === 'Гильдия торговцев' || place === 'Рынок' || place === 'Кузница' || place === 'Оружейная лавка' || place === 'Кожевник' || place === 'Бронник' || place === 'Плотник') {
+        mobs = [
+            { name: 'Крыса', hp: 8, damage: 2, defense: 0, xp: 3, level: 1, type: 'animal', agility: 2, loot: null },
+            { name: 'Собака', hp: 18, damage: 4, defense: 1, xp: 6, level: 3, type: 'animal', agility: 3, loot: null }
+        ];
+    } else {
+        mobs = [
+            { name: 'Волк', hp: 25, damage: 6, defense: 2, xp: 10, level: 8, type: 'animal', agility: 4, loot: null },
+            { name: 'Бандит', hp: 30, damage: 7, defense: 2, xp: 12, level: 6, type: 'human', agility: 3, loot: null },
+            { name: 'Разбойник', hp: 40, damage: 9, defense: 3, xp: 18, level: 10, type: 'human', agility: 4, loot: null },
+            { name: 'Головорез', hp: 50, damage: 11, defense: 4, xp: 25, level: 15, type: 'human', agility: 5, loot: null }
+        ];
     }
 
     if (Math.random() * 100 > 45) {
@@ -868,6 +930,15 @@ function startBattle(mob) {
     const user = users[currentUser];
     if(!user) return;
     const g = user.game;
+    const place = g.location.place;
+
+    // В городе нельзя драться
+    const cityBuildings = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Гильдия торговцев', 'Гильдия наёмников', 'Магистрат', 'Храм', 'Порт', 'Тюрьма', 'Арена', 'Орден мейстеров', 'Квартал бедноты', 'Красный замок'];
+    if (cityBuildings.includes(place)) {
+        setMessage('⛔ В городе нельзя драться.');
+        return;
+    }
+
     const maxHp = 60 + g.level * 10 + (g.stamina.level || 1) * 2;
     g.maxHp = maxHp;
     if (g.hp === undefined || g.hp > maxHp) g.hp = maxHp;
@@ -888,7 +959,8 @@ function startBattle(mob) {
         weaponSkill: skillLevel,
         playerAgility: g.stats.agility || 1,
         playerDefense: g.stats.defense || 1,
-        mobAgility: mob.agility || 1
+        mobAgility: mob.agility || 1,
+        mobLevel: mob.level || 1
     };
 
     isBusy = true;
@@ -896,19 +968,34 @@ function startBattle(mob) {
     document.getElementById('busy-status').textContent = '⚔️ Бой с ' + mob.name + '!';
     updateActions();
     renderBattle();
+    saveBattleState();
 }
 
 function renderBattle() {
     if (!battleState || !battleState.inProgress) return;
-    const { mob, playerHp, mobHp, maxPlayerHp, turn, log } = battleState;
+    const { mob, playerHp, mobHp, maxPlayerHp, turn, log, mobLevel } = battleState;
 
-    let msg = '⚔️ БОЙ С ' + mob.name.toUpperCase() + '\n\n';
-    msg += '🐺 ' + mob.name + ': HP ' + Math.max(0, mobHp) + '/' + mob.hp + '\n';
-    msg += '❤️ Вы: HP ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n\n';
-    msg += '🔄 Ход: ' + (turn === 'player' ? 'ВАШ' : mob.name.toUpperCase()) + '\n\n';
+    const mobHpPercent = Math.max(0, (mobHp / mob.hp) * 100);
+    const playerHpPercent = Math.max(0, (playerHp / maxPlayerHp) * 100);
+
+    let msg = '⚔️ БОЙ С ' + mob.name.toUpperCase() + ' (уровень ' + mobLevel + ')\n\n';
+
+    msg += '🐺 ' + mob.name + ' (ур. ' + mobLevel + ')\n';
+    msg += 'HP: ' + Math.max(0, mobHp) + '/' + mob.hp + '\n';
+    msg += '█'.repeat(Math.floor(mobHpPercent / 5)) + '░'.repeat(20 - Math.floor(mobHpPercent / 5)) + '\n\n';
+
+    msg += '❤️ Вы\n';
+    msg += 'HP: ' + Math.max(0, playerHp) + '/' + maxPlayerHp + '\n';
+    msg += '█'.repeat(Math.floor(playerHpPercent / 5)) + '░'.repeat(20 - Math.floor(playerHpPercent / 5)) + '\n\n';
+
+    msg += '🔄 Ход: ' + (turn === 'player' ? 'ВАШ' : mob.name.toUpperCase());
+
+    if (turn === 'mob') {
+        msg += ' (⏳ 4 сек)';
+    }
 
     if (log.length > 0) {
-        msg += '📋 Лог боя:\n';
+        msg += '\n\n📋 Лог боя:\n';
         log.slice(-5).forEach(entry => {
             msg += '• ' + entry + '\n';
         });
@@ -916,6 +1003,7 @@ function renderBattle() {
 
     setMessage(msg);
     updateActions();
+    saveBattleState();
 }
 
 function battleAction(action) {
@@ -947,18 +1035,26 @@ function battleAction(action) {
         } else {
             result = '🏃 Побег не удался!';
             battleState.log.push('Побег не удался');
+            battleState.turn = 'mob';
+            renderBattle();
+            saveBattleState();
+            setTimeout(() => {
+                if (!battleState || !battleState.inProgress) return;
+                mobTurn();
+            }, 4000);
+            return;
         }
     }
 
     // Атака
     if (action === 'battle_attack') {
-        // Шанс промаха игрока
         const missChance = Math.max(0, (10 - weaponSkill) * 2);
         if (Math.random() * 100 < missChance) {
             result = '💨 Вы промахнулись!';
             battleState.log.push('Вы промахнулись');
             battleState.turn = 'mob';
             renderBattle();
+            saveBattleState();
             setTimeout(() => {
                 if (!battleState || !battleState.inProgress) return;
                 mobTurn();
@@ -1005,6 +1101,7 @@ function battleAction(action) {
         if (nextTurn === 'mob') {
             battleState.turn = 'mob';
             renderBattle();
+            saveBattleState();
             setTimeout(() => {
                 if (!battleState || !battleState.inProgress) return;
                 mobTurn();
@@ -1018,6 +1115,7 @@ function battleAction(action) {
         battleState.mobHp = newMobHp;
         battleState.playerHp = newPlayerHp;
         renderBattle();
+        saveBattleState();
     }
 }
 
@@ -1034,6 +1132,7 @@ function mobTurn() {
         battleState.log.push('💨 Вы увернулись от атаки!');
         battleState.turn = 'player';
         renderBattle();
+        saveBattleState();
         return;
     }
 
@@ -1055,6 +1154,7 @@ function mobTurn() {
         battleState.log.push('🐺 ' + mob.name + ' промахнулся!');
         battleState.turn = 'player';
         renderBattle();
+        saveBattleState();
         return;
     }
 
@@ -1070,6 +1170,7 @@ function mobTurn() {
 
     battleState.turn = 'player';
     renderBattle();
+    saveBattleState();
 }
 
 function endBattle(won, reason) {
@@ -1114,6 +1215,19 @@ function endBattle(won, reason) {
                 });
                 setMessage('🏆 Выпал: ' + w.name + ' (' + quality + ')');
             }
+        }
+
+        // Дополнительный лут с мобов (кинжалы и т.д.)
+        if (mob.loot && Math.random() < mob.loot.chance) {
+            const quality = rollQuality(g.professions['Охотник'] || 1, false);
+            g.inventory.push({
+                name: mob.loot.name,
+                baseDamage: mob.loot.baseDamage,
+                level: mob.loot.level,
+                quality: quality,
+                type: 'dagger'
+            });
+            setMessage('🗡️ Вы нашли ' + mob.loot.name + ' (' + quality + ')');
         }
 
         // Шкуры с животных (50% шанс)
@@ -1174,6 +1288,7 @@ function endBattle(won, reason) {
     battleState = null;
     isBusy = false;
     document.getElementById('busy-status').classList.add('hide');
+    localStorage.removeItem('got_battle');
     updateMenu(); updateActions(); saveData();
 }
 
@@ -1534,7 +1649,121 @@ function sellTradeItem(itemName, count, pricePerItem) {
 function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
 
 // ============================================================
-// 14. ТОРГОВЦЫ (Кожевник, Бронник, Плотник)
+// 14. ОРУЖЕЙНАЯ ЛАВКА
+// ============================================================
+
+function openWeaponShop() {
+    const modal = document.getElementById('modal-trade');
+    const content = document.getElementById('modal-trade-content');
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+
+    let html = '<div class="modal-section"><h4>🗡️ ОРУЖЕЙНАЯ ЛАВКА</h4>';
+    html += '<p style="color:#6a5a48;">Ваши деньги: 🪙'+g.gold+' ⚪'+g.silver+' 🟤'+g.copper+'</p>';
+    html += '</div>';
+
+    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
+    const weaponShopItems = [
+        { name: '🗡️ Короткий меч', price: 40, baseDamage: 7, level: 6 },
+        { name: '🗡️ Длинный меч', price: 80, baseDamage: 13, level: 18 },
+        { name: '🪓 Топор', price: 60, baseDamage: 12, level: 15 },
+        { name: '🔱 Копьё', price: 50, baseDamage: 10, level: 12 },
+        { name: '🔨 Булава', price: 70, baseDamage: 11, level: 14 },
+        { name: '🏹 Короткий лук', price: 50, baseDamage: 4, level: 4 },
+        { name: '🎯 Арбалет', price: 80, baseDamage: 12, level: 10 }
+    ];
+    weaponShopItems.forEach(item => {
+        html += '<div class="row" style="padding:4px 0;">';
+        html += '<span class="label">'+item.name+'</span>';
+        html += '<span class="value">'+item.price+' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="buyWeapon(\''+item.name+'\','+item.price+','+item.baseDamage+','+item.level+')">Купить</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ (×1)</h4>';
+    const weaponItems = ['Меч', 'Кинжал', 'Копьё', 'Топор', 'Булава', 'Лук', 'Арбалет'];
+    const grouped = {};
+    g.inventory.forEach((item, index) => {
+        const key = item.name;
+        if (weaponItems.some(w => key.includes(w))) {
+            if (!grouped[key]) grouped[key] = { items: [], count: 0, firstIndex: index };
+            grouped[key].items.push(index);
+            grouped[key].count++;
+        }
+    });
+    const tradeItems = Object.keys(grouped);
+    if (tradeItems.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет оружия для продажи.</p>';
+    } else {
+        tradeItems.forEach(itemName => {
+            const count = grouped[itemName].count;
+            const basePrice = 20;
+            const pricePerItem = Math.floor(basePrice * 1);
+            const totalPrice = pricePerItem * count;
+            html += '<div class="row" style="padding:4px 0;">';
+            html += '<span class="label">' + itemName + ' ×' + count + '</span>';
+            html += '<span class="value">' + totalPrice + ' МП <button class="btn" style="display:inline-block;width:auto;padding:2px 10px;margin:0;font-size:12px;" onclick="sellWeapon(\'' + itemName + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function buyWeapon(name, price, baseDamage, level) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег для покупки ' + name);
+        return;
+    }
+    let type = 'sword';
+    if (name.includes('Копьё')) type = 'spear';
+    else if (name.includes('Топор')) type = 'axe';
+    else if (name.includes('Булава')) type = 'mace';
+    else if (name.includes('Лук')) type = 'bow';
+    else if (name.includes('Арбалет')) type = 'crossbow';
+    
+    const quality = rollQuality(g.professions['Кузнец'] || 1, false);
+    g.inventory.push({
+        name: name,
+        baseDamage: baseDamage,
+        level: level,
+        quality: quality,
+        type: type
+    });
+    setMessage('✅ Вы купили ' + name + ' (' + quality + ')');
+    convertCurrency(g);
+    updateMenu(); saveData();
+    openWeaponShop();
+}
+
+function sellWeapon(itemName, count, pricePerItem) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    let removed = 0;
+    for (let i = g.inventory.length - 1; i >= 0; i--) {
+        if (g.inventory[i].name === itemName && removed < count) {
+            g.inventory.splice(i, 1);
+            removed++;
+        }
+    }
+    const totalPrice = pricePerItem * count;
+    g.copper += totalPrice;
+    convertCurrency(g);
+    setMessage('💰 Вы продали ' + itemName + ' ×' + count + ' за ' + totalPrice + ' МП');
+    updateMenu(); saveData();
+    openWeaponShop();
+}
+
+// ============================================================
+// 15. ТОРГОВЦЫ (Кожевник, Бронник, Плотник)
 // ============================================================
 
 function getTraderStock(place, itemName) {
@@ -1713,7 +1942,7 @@ function buyFromTrader(name, price, place) {
 }
 
 // ============================================================
-// 15. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
+// 16. ГИЛЬДИЯ ТОРГОВЦЕВ (АУКЦИОН)
 // ============================================================
 
 function openGuild() {
@@ -1901,7 +2130,7 @@ function removeListing(index) {
 }
 
 // ============================================================
-// 16. ОНЛАЙН
+// 17. ОНЛАЙН
 // ============================================================
 
 function updateOnline() {
@@ -1939,7 +2168,7 @@ function showOnlineList() {
 function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
 
 // ============================================================
-// 17. ВЫХОД
+// 18. ВЫХОД
 // ============================================================
 
 function handleLogout() {
@@ -1961,7 +2190,7 @@ function handleLogout() {
 }
 
 // ============================================================
-// 18. ЗАПУСК
+// 19. ЗАПУСК
 // ============================================================
 
 loadData();
