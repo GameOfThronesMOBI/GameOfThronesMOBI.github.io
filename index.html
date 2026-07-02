@@ -833,55 +833,6 @@ let horseMarket = {
 let confiscatedItems = [];
 
 // ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================================
-function hash(str) { let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h=h&h; } return h.toString(36); }
-function showPage(page) { ['login','register','game'].forEach(id => document.getElementById('page-'+id).classList.add('hide')); document.getElementById('page-'+page).classList.remove('hide'); }
-function setMessage(msg) { const el = document.getElementById('game-message'); el.textContent = msg || ''; clearTimeout(el._timer); if (msg && msg.length > 0) { el._timer = setTimeout(() => { el.textContent = ''; }, 8000); } }
-function getTimeOfDay() { const now=new Date(); const h=now.getHours(); const m=now.getMinutes(); const t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); let p='', e=''; if(h>=6&&h<12){ p='Утро'; e='☀️'; } else if(h>=12&&h<18){ p='День'; e='🌤️'; } else if(h>=18&&h<24){ p='Вечер'; e='🌆'; } else { p='Ночь'; e='🌙'; } return { timeStr:t, period:p, emoji:e }; }
-
-// ПРЯМАЯ КОНВЕРТАЦИЯ (мелкое → крупное)
-function convertCurrency(g) {
-    while (g.copper >= 56) {
-        g.silver += Math.floor(g.copper / 56);
-        g.copper = g.copper % 56;
-    }
-    while (g.silver >= 210) {
-        g.gold += Math.floor(g.silver / 210);
-        g.silver = g.silver % 210;
-    }
-    return g;
-}
-
-// ОБРАТНАЯ КОНВЕРТАЦИЯ (крупное → мелкое) + трата
-function spendMoney(g, amount) {
-    if (amount <= 0) return true;
-    let total = g.gold * 210 * 56 + g.silver * 56 + g.copper;
-    if (total < amount) return false;
-    total -= amount;
-    g.gold = Math.floor(total / (210 * 56));
-    total %= (210 * 56);
-    g.silver = Math.floor(total / 56);
-    g.copper = total % 56;
-    return true;
-}
-
-function getResourcePrice(resourceType, quality) {
-    const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 };
-    const base = basePrices[resourceType] || 5;
-    const q = QUALITIES[quality] || QUALITIES['Обычное'];
-    return Math.round(base * q.multiplier);
-}
-
-function addLog(msg) {
-    const now = new Date();
-    const time = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    gameLog.push('['+time+'] '+msg);
-    if (gameLog.length > 100) gameLog = gameLog.slice(-100);
-    saveData();
-}
-
-// ============================================================
 // ЗАГРУЗКА / СОХРАНЕНИЕ
 // ============================================================
 function loadHousingMarket() {
@@ -1016,12 +967,35 @@ function getTraderStock(place, itemKey) {
 }
 
 // ============================================================
+// ФОРМАТИРОВАНИЕ ВАЛЮТЫ
+// ============================================================
+function formatCurrency(amount) {
+    if (amount < 0) return '0 МП';
+    if (amount === 0) return '0 МП';
+    
+    const gold = Math.floor(amount / (210 * 56));
+    let remaining = amount % (210 * 56);
+    
+    const silver = Math.floor(remaining / 56);
+    const copper = remaining % 56;
+    
+    let parts = [];
+    if (gold > 0) parts.push(gold + ' ЗОЛ');
+    if (silver > 0) parts.push(silver + ' СО');
+    if (copper > 0 || parts.length === 0) parts.push(copper + ' МП');
+    
+    return parts.join(' ');
+}
+
+// ============================================================
 // ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ
 // ============================================================
 function initTraderStock() {
     const shops = ['Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Кузница'];
+    
     shops.forEach(shop => {
         if (!traderInventory[shop]) traderInventory[shop] = {};
+        
         if (shop === 'Оружейная лавка') {
             ['sword','spear','axe','mace','dagger','shield'].forEach(type => {
                 ALL_ITEMS.weapons[type].forEach(item => {
@@ -1031,6 +1005,7 @@ function initTraderStock() {
                 });
             });
         }
+        
         if (shop === 'Кожевник') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
                 traderInventory[shop]['Кожа|' + q] = 10;
@@ -1043,6 +1018,7 @@ function initTraderStock() {
                 });
             });
         }
+        
         if (shop === 'Бронник') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
                 traderInventory[shop]['Сталь|' + q] = 5;
@@ -1055,6 +1031,7 @@ function initTraderStock() {
                 });
             });
         }
+        
         if (shop === 'Плотник') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
                 traderInventory[shop]['Дерево|' + q] = 10;
@@ -1067,6 +1044,7 @@ function initTraderStock() {
                 });
             });
         }
+        
         if (shop === 'Кузница') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(q => {
                 traderInventory[shop]['Руда железная|' + q] = 15;
@@ -1085,636 +1063,77 @@ function initTraderStock() {
 }
 
 // ============================================================
-// РЕГИСТРАЦИЯ / ВХОД
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================
-function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
-    const password = document.getElementById('reg-password').value;
-    const nationality = document.getElementById('reg-nationality').value;
-    const secret = document.getElementById('reg-secret').value.trim();
-    const errEl = document.getElementById('register-error');
-    const okEl = document.getElementById('register-success');
-    const formEl = document.getElementById('register-form');
-    errEl.classList.add('hide'); okEl.classList.add('hide'); formEl.classList.remove('hide');
-    if(!name||!password||!nationality||!secret) {
-        errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return;
+function hash(str) { let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h=h&h; } return h.toString(36); }
+function showPage(page) { ['login','register','game'].forEach(id => document.getElementById('page-'+id).classList.add('hide')); document.getElementById('page-'+page).classList.remove('hide'); }
+function setMessage(msg) { const el = document.getElementById('game-message'); el.textContent = msg || ''; clearTimeout(el._timer); if (msg && msg.length > 0) { el._timer = setTimeout(() => { el.textContent = ''; }, 8000); } }
+function getTimeOfDay() { const now=new Date(); const h=now.getHours(); const m=now.getMinutes(); const t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); let p='', e=''; if(h>=6&&h<12){ p='Утро'; e='☀️'; } else if(h>=12&&h<18){ p='День'; e='🌤️'; } else if(h>=18&&h<24){ p='Вечер'; e='🌆'; } else { p='Ночь'; e='🌙'; } return { timeStr:t, period:p, emoji:e }; }
+
+// ПРЯМАЯ КОНВЕРТАЦИЯ (мелкое → крупное)
+function convertCurrency(g) {
+    while (g.copper >= 56) {
+        g.silver += Math.floor(g.copper / 56);
+        g.copper = g.copper % 56;
     }
-    if(name.length<2){ errEl.textContent='❌ Имя слишком короткое'; errEl.classList.remove('hide'); return; }
-    if(password.length<4){ errEl.textContent='❌ Пароль слишком короткий'; errEl.classList.remove('hide'); return; }
-    if(!NATIONALITIES[nationality]){ errEl.textContent='❌ Выберите национальность'; errEl.classList.remove('hide'); return; }
-    if(users[name]){ errEl.textContent='❌ Это имя уже занято'; errEl.classList.remove('hide'); return; }
-    
+    while (g.silver >= 210) {
+        g.gold += Math.floor(g.silver / 210);
+        g.silver = g.silver % 210;
+    }
+    return g;
+}
+
+// ТРАТА ДЕНЕГ (принимает цену в МЕДИ)
+function spendMoney(g, amount) {
+    if (amount <= 0) return true;
+    let total = g.copper + g.silver*56 + g.gold*210*56;
+    if (total < amount) return false;
+    total -= amount;
+    g.gold = Math.floor(total / (210*56));
+    total %= (210*56);
+    g.silver = Math.floor(total / 56);
+    g.copper = total % 56;
+    return true;
+}
+
+function getResourcePrice(resourceType, quality) {
+    const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 };
+    const base = basePrices[resourceType] || 5;
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    return Math.round(base * q.multiplier);
+}
+
+function addLog(msg) {
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    gameLog.push('['+time+'] '+msg);
+    if (gameLog.length > 100) gameLog = gameLog.slice(-100);
+    saveData();
+}
+
+// ============================================================
+// ВРЕМЯ ДО ОКОНЧАНИЯ АРЕНДЫ
+// ============================================================
+function getTimeLeft(timestamp, daysPaid) {
     const now = Date.now();
-    const skills = {};
-    ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { skills[s]={level:1,xp:0}; });
+    const dayMs = 24 * 60 * 60 * 1000;
+    const hourMs = 60 * 60 * 1000;
+    const expireTime = timestamp + (daysPaid * dayMs);
+    const timeLeft = expireTime - now;
     
-    users[name] = {
-        password: hash(password),
-        nationality: nationality,
-        secret: hash(secret),
-        created: now,
-        game: {
-            gold:100, silver:0, copper:0,
-            food:100, thirst:100, fatigue:100,
-            hp:60, maxHp:60,
-            level:1, xp:0, nextLevelXp:100,
-            attributePoints:0,
-            stats: { damage:1, defense:1, intelligence:1, agility:1 },
-            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
-            skills: skills,
-            stamina: { level:1, xp:0 },
-            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
-            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
-            activeProfession: 'Охотник',
-            lastProfessionChange: 0,
-            inventory: [],
-            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
-            outside: false,
-            death: null,
-            lastReset: null,
-            lastActive: now,
-            online: true,
-            lastResourceUpdate: now,
-            luck: 0,
-            lastHeal: null,
-            lastLuck: null,
-            blessing: null,
-            jail: null,
-            // Активные бонусы (стартовые 5%)
-            activeBonuses: {
-                crit: 5,
-                pierce: 5,
-                doubleHit: 5,
-                counter: 5,
-                points: 0 // очки для распределения
-            },
-            marketStall: {
-                owned: false,
-                stallId: null,
-                rentPaid: null,
-                rentDays: 0,
-                debt: 0
-            },
-            housing: {
-                type: null,
-                purchased: null,
-                rentPaid: null,
-                rentDays: 0,
-                debt: 0,
-                storage: [],
-                storageHold: []
-            }
-        }
-    };
-    addLog('👤 '+name+' создал персонажа ('+nationality+')');
-    saveData();
-    formEl.classList.add('hide');
-    okEl.innerHTML='✅ Поздравляем, <strong>'+name+'</strong>!<br>Вы — '+nationality;
-    okEl.classList.remove('hide');
-    currentUser = name;
-    localStorage.setItem('got_user', name);
-    setTimeout(function(){ enterGame(name); }, 1200);
-}
-
-function handleLogin() {
-    const name = document.getElementById('login-name').value.trim();
-    const password = document.getElementById('login-password').value;
-    const errEl = document.getElementById('login-error');
-    errEl.classList.add('hide');
-    if(!name||!password){ errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
-    const user = users[name];
-    if(!user || user.password !== hash(password)) {
-        errEl.textContent='❌ Неверное имя или пароль';
-        errEl.classList.remove('hide');
-        return;
-    }
-    localStorage.setItem('got_user', name);
-    currentUser = name;
-    addLog('👤 '+name+' вошёл в игру');
-    enterGame(name);
-}
-
-// ============================================================
-// ВХОД В ИГРУ
-// ============================================================
-function fixOldAccount(user) {
-    if (!user) return user;
-    if (!user.game) {
-        user.game = {
-            gold:100, silver:0, copper:0,
-            food:100, thirst:100, fatigue:100,
-            hp:60, maxHp:60,
-            level:1, xp:0, nextLevelXp:100,
-            attributePoints:0,
-            stats: { damage:1, defense:1, intelligence:1, agility:1 },
-            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
-            skills: {},
-            stamina: { level:1, xp:0 },
-            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
-            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
-            activeProfession: 'Охотник',
-            lastProfessionChange: 0,
-            inventory: [],
-            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
-            outside: false,
-            death: null,
-            lastReset: null,
-            lastActive: Date.now(),
-            online: true,
-            lastResourceUpdate: Date.now(),
-            luck: 0,
-            lastHeal: null,
-            lastLuck: null,
-            blessing: null,
-            jail: null,
-            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
-            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
-            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
-        };
-        return user;
+    if (timeLeft <= 0) {
+        return { expired: true, text: '⚠️ ПРОСРОЧЕНО!' };
     }
     
-    const g = user.game;
-    if (g.lastResourceUpdate === undefined) g.lastResourceUpdate = Date.now();
-    if (g.stamina === undefined) g.stamina = { level:1, xp:0 };
-    if (g.professions === undefined) {
-        g.professions = { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 };
-        g.professionXp = { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 };
-    }
-    if (g.activeProfession === undefined) g.activeProfession = 'Охотник';
-    if (g.lastProfessionChange === undefined) g.lastProfessionChange = 0;
-    if (g.skills === undefined) {
-        g.skills = {};
-        ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { g.skills[s]={level:1,xp:0}; });
-    }
-    if (g.equipment === undefined) {
-        g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null };
-    }
-    if (g.hp === undefined) g.hp = 60;
-    if (g.maxHp === undefined) g.maxHp = 60;
-    if (g.outside === undefined) g.outside = false;
-    if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1 };
-    if (g.attributePoints === undefined) g.attributePoints = 0;
-    if (g.lastReset === undefined) g.lastReset = null;
-    if (g.luck === undefined) g.luck = 0;
-    if (g.lastHeal === undefined) g.lastHeal = null;
-    if (g.lastLuck === undefined) g.lastLuck = null;
-    if (g.blessing === undefined) g.blessing = null;
-    if (g.jail === undefined) g.jail = null;
-    if (g.activeBonuses === undefined) {
-        g.activeBonuses = { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 };
-    }
-    if (g.marketStall === undefined) {
-        g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
-    }
-    if (g.housing === undefined) {
-        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
-    }
-    if (g.housing.storage === undefined) g.housing.storage = [];
-    if (g.housing.storageHold === undefined) g.housing.storageHold = [];
-    if (g.online === undefined) g.online = true;
-    if (g.lastActive === undefined) g.lastActive = Date.now();
-    return user;
-}
-
-function enterGame(name) {
-    const user = users[name];
-    if(!user) return;
-    
-    fixOldAccount(user);
-    
-    if (!user.game) {
-        user.game = {
-            gold:100, silver:0, copper:0,
-            food:100, thirst:100, fatigue:100,
-            hp:60, maxHp:60,
-            level:1, xp:0, nextLevelXp:100,
-            attributePoints:0,
-            stats: { damage:1, defense:1, intelligence:1, agility:1 },
-            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
-            skills: {},
-            stamina: { level:1, xp:0 },
-            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
-            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
-            activeProfession: 'Охотник',
-            lastProfessionChange: 0,
-            inventory: [],
-            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
-            outside: false,
-            death: null,
-            lastReset: null,
-            lastActive: Date.now(),
-            online: true,
-            lastResourceUpdate: Date.now(),
-            luck: 0,
-            lastHeal: null,
-            lastLuck: null,
-            blessing: null,
-            jail: null,
-            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
-            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
-            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
-        };
-    }
-    
-    checkRent();
-    checkStallRent();
-    
-    showPage('game');
-    user.game.online = true;
-    const now = Date.now();
-    const g = user.game;
-    const lastActive = g.lastActive || now;
-    const diffMinutes = lastActive ? (now - lastActive) / 60000 : 0;
-    if(diffMinutes > 1) {
-        const foodLoss = Math.floor(diffMinutes / 15);
-        const thirstLoss = Math.floor(diffMinutes / 10);
-        g.food = Math.max(0, g.food - foodLoss);
-        g.thirst = Math.max(0, g.thirst - thirstLoss);
-        if(foodLoss>0||thirstLoss>0) setMessage('⏰ За время отсутствия: еда -'+foodLoss+', жажда -'+thirstLoss);
-    }
-    g.lastActive = now;
-    g.lastResourceUpdate = now;
-    
-    g.maxHp = getMaxHp(g);
-    if (g.hp === undefined || g.hp > g.maxHp) g.hp = g.maxHp;
-    
-    const savedBattle = localStorage.getItem('got_battle');
-    if (savedBattle) {
-        try {
-            battleState = JSON.parse(savedBattle);
-            if (battleState && battleState.inProgress) {
-                if (battleState.turn === 'mob') {
-                    const timeSince = Date.now() - (battleState.lastActionTime || now);
-                    if (timeSince > 10000) { mobTurn(); saveBattleState(); }
-                }
-                setMessage('⚔️ Бой продолжается!');
-                updateMenu(); updateStory(); updateActions(); renderBattle();
-                return;
-            }
-        } catch(e) {
-            localStorage.removeItem('got_battle');
-            battleState = null;
-        }
-    }
-    
-    // Нормализовать инвентарь
-    normalizeInventory(g);
-    
-    updateMenu();
-    updateStory();
-    updateActions();
-    setMessage('');
-    isBusy = false;
-    if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
-    document.getElementById('busy-status').classList.add('hide');
-    updateOnline();
-    saveData();
-    startResourceSystem();
-    startAutoSave();
-}
-
-function startAutoSave() {
-    if (autoSaveInterval) clearInterval(autoSaveInterval);
-    autoSaveInterval = setInterval(() => {
-        if (currentUser && users[currentUser]) saveData();
-    }, 30000);
-}
-
-function startResourceSystem() {
-    if (resourceInterval) clearInterval(resourceInterval);
-    resourceInterval = setInterval(() => {
-        const user = users[currentUser];
-        if(!user || !user.game.online) return;
-        const g = user.game;
-        const now = Date.now();
-        const diff = (now - g.lastResourceUpdate) / 60000;
-        if (diff < 1) return;
-        
-        const foodLoss = Math.floor(diff / 15);
-        const thirstLoss = Math.floor(diff / 10);
-        if (foodLoss > 0) g.food = Math.max(0, g.food - foodLoss);
-        if (thirstLoss > 0) g.thirst = Math.max(0, g.thirst - thirstLoss);
-        
-        if (!isBusy) {
-            const fatigueLoss = Math.floor(diff / 30);
-            if (fatigueLoss > 0) g.fatigue = Math.max(0, g.fatigue - fatigueLoss);
-        }
-        
-        if (g.food <= 0) {
-            const hpLoss = Math.floor(diff * 2);
-            if (hpLoss > 0) {
-                g.hp = Math.max(0, g.hp - hpLoss);
-                setMessage('⚠️ Вы умираете от голода! HP -'+hpLoss);
-                if (g.hp <= 0) handleDeath('голода');
-            }
-        }
-        if (g.thirst <= 0) {
-            const hpLoss = Math.floor(diff * 3);
-            if (hpLoss > 0) {
-                g.hp = Math.max(0, g.hp - hpLoss);
-                setMessage('⚠️ Вы умираете от жажды! HP -'+hpLoss);
-                if (g.hp <= 0) handleDeath('жажды');
-            }
-        }
-        
-        g.lastResourceUpdate = now;
-        updateMenu();
-        saveData();
-    }, 30000);
-}
-
-function handleDeath(cause) {
-    const user = users[currentUser];
-    if(!user) return;
-    const g = user.game;
-    g.hp = g.maxHp;
-    g.location.place = 'Таверна';
-    g.location.location = 'Королевская Гавань';
-    g.food = 100;
-    g.thirst = 100;
-    g.fatigue = 100;
-    g.outside = false;
-    setMessage('💀 Вы умерли от ' + cause + '. Вы возродились в таверне.');
-    addLog('💀 '+currentUser+' умер от '+cause);
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
-}
-
-// ============================================================
-// СТАТЫ И БОНУСЫ
-// ============================================================
-function getLevelBonuses(level) {
-    const specialLevel = Math.min(level, 400);
-    const specialCount = Math.floor(specialLevel / 5);
-    let accuracyBonus=0, critBonus=0, pierceBonus=0, doubleBonus=0, counterBonus=0;
-    for (let i=1; i<=specialCount; i++) {
-        const type=(i-1)%5;
-        if(type===0) accuracyBonus++;
-        if(type===1) critBonus++;
-        if(type===2) pierceBonus++;
-        if(type===3) doubleBonus++;
-        if(type===4) counterBonus++;
-    }
-    return { accuracy:accuracyBonus, crit:critBonus, pierce:pierceBonus, doubleHit:doubleBonus, counter:counterBonus };
-}
-
-function getEquippedStats(g) {
-    let bonusDamage=0, bonusDefense=0, bonusAgility=0, bonusSpeedPercent=0;
-    const slots=['rightHand','leftHand','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'];
-    slots.forEach(slot => {
-        const item=g.equipment[slot];
-        if(item){
-            if(item.finalDamage) bonusDamage+=item.finalDamage;
-            if(item.finalDefense) bonusDefense+=item.finalDefense;
-            if(item.agilityBonus) bonusAgility+=item.agilityBonus;
-            if(item.speedPercent) bonusSpeedPercent+=item.speedPercent;
-        }
-    });
-    return { bonusDamage, bonusDefense, bonusAgility, bonusSpeedPercent };
-}
-
-// НОВАЯ ФУНКЦИЯ МАСТЕРСТВА ОРУЖИЯ (ПОЛНАЯ ПЕРЕРАБОТКА)
-function getWeaponMasteryBonus(g) {
-    const weapon = g.equipment.rightHand;
-    if (!weapon) {
-        return { 
-            damageBonus: 0, 
-            defenseBonus: 0,
-            agilityBonus: 0,
-            critBonus: 0,
-            pierceBonus: 0,
-            doubleHitBonus: 0,
-            counterBonus: 0,
-            skillLevel: 0
-        };
-    }
-    
-    const weaponType = weapon.type;
-    const skill = g.skills[weaponType];
-    const skillLevel = skill ? Math.min(skill.level, 999) : 1;
-    
-    // ПАССИВНЫЕ (в ЕДИНИЦАХ, до 999)
-    let damageBonus = 0;
-    let defenseBonus = 0;
-    let agilityBonus = 0;
-    
-    for (let i = 1; i <= skillLevel; i++) {
-        const cycle = i % 3;
-        if (cycle === 1) damageBonus += 1;
-        else if (cycle === 2) defenseBonus += 1;
-        else if (cycle === 0) agilityBonus += 1;
-    }
-    
-    // АКТИВНЫЕ (в ПРОЦЕНТАХ, до 65% = 325 уровней)
-    const maxActive = Math.min(skillLevel, 325);
-    const critBonus = Math.floor(maxActive / 5);
-    const pierceBonus = Math.floor(maxActive / 5);
-    const doubleHitBonus = Math.floor(maxActive / 5);
-    
-    // Контратака: после 325 уровня, каждые 5 уровней до 65%
-    let counterBonus = 0;
-    if (skillLevel > 325) {
-        const counterLevels = Math.min(skillLevel - 325, 325);
-        counterBonus = Math.floor(counterLevels / 5);
-    }
+    const days = Math.floor(timeLeft / dayMs);
+    const hours = Math.floor((timeLeft % dayMs) / hourMs);
     
     return {
-        damageBonus,      // в единицах
-        defenseBonus,     // в единицах
-        agilityBonus,     // в единицах
-        critBonus,        // в %
-        pierceBonus,      // в %
-        doubleHitBonus,   // в %
-        counterBonus,     // в %
-        skillLevel
+        expired: false,
+        days: days,
+        hours: hours,
+        text: days + ' дн. ' + hours + ' ч.'
     };
-}
-
-// ПОЛУЧИТЬ АКТИВНЫЙ БОНУС (стартовые 5% + прокачка)
-function getActiveBonus(g, type) {
-    const base = 5;
-    const bonus = g.activeBonuses[type] || 0;
-    return Math.min(37.5, base + bonus * 0.5);
-}
-
-// РАСПРЕДЕЛИТЬ ОЧКО МАСТЕРСТВА
-function distributeMasteryPoint(type) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    
-    if (g.activeBonuses.points <= 0) {
-        setMessage('❌ Нет доступных очков мастерства.');
-        return;
-    }
-    
-    const current = g.activeBonuses[type] || 0;
-    if (current >= 65) {
-        setMessage('❌ Максимум для ' + type + ' достигнут.');
-        return;
-    }
-    
-    g.activeBonuses[type] += 1;
-    g.activeBonuses.points -= 1;
-    setMessage('✅ +0.5% к ' + type + ' (всего: ' + getActiveBonus(g, type) + '%)');
-    saveData();
-    updateMenu();
-    openCharacter();
-}
-
-function getMaxHp(g) {
-    const staminaLevel = g.stamina?.level || 1;
-    let bonusHp = 0;
-    if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
-        bonusHp = HOUSING_TYPES[g.housing.type].restHp || 0;
-    }
-    return 60 + (g.level - 1) * 10 + staminaLevel * 2 + bonusHp;
-}
-
-function getXpMultiplier(g) {
-    const intelligence = Math.max(1, g.stats.intelligence || 1);
-    return 1 + (intelligence / 100);
-}
-
-function getMaxInventory(g) {
-    const baseLimit = 50;
-    let bonusSlots = 0;
-    if (g.equipment && g.equipment.horse) {
-        const horse = HORSE_TYPES[g.equipment.horse.horseType];
-        if (horse) bonusSlots = horse.inventorySlots || 0;
-    }
-    return baseLimit + bonusSlots;
-}
-
-// НОВАЯ ЗАЩИТА (формула)
-function calcDamageReduction(defense) {
-    let reduction = defense / 10.4714; // 10.47 защиты = 1%
-    return Math.min(70, Math.max(0, Math.round(reduction * 10) / 10)); // шаг 0.1%, макс 70%
-}
-
-// НОВАЯ ЛОВКОСТЬ (попадание/уворот)
-function calcChance(agility) {
-    let chance = 50 + (agility / 10.4714); // 10.47 ловкости = 1%
-    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10)); // шаг 0.1%, мин 30%, макс 70%
-}
-
-function getTotalStats(g, battleState) {
-    const equipped = getEquippedStats(g);
-    const mastery = getWeaponMasteryBonus(g);
-    const levelBonus = getLevelBonuses(g.level);
-    
-    // БАЗОВЫЕ СТАТЫ
-    let totalAgility = (g.stats.agility || 1) + equipped.bonusAgility + mastery.agilityBonus;
-    let totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + mastery.defenseBonus;
-    let totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
-    
-    // Бонусы от дома
-    let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
-    if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
-        const house = HOUSING_TYPES[g.housing.type];
-        bonusInt = house.bonusInt || 0;
-        bonusLuck = house.bonusLuck || 0;
-        bonusDef = house.bonusDef || 0;
-    }
-    
-    // Скорость
-    let speedPercent = mastery.speedBonus || 0;
-    if (g.equipment && g.equipment.boots && g.equipment.boots.speedPercent) {
-        speedPercent += g.equipment.boots.speedPercent;
-    }
-    if (g.equipment && g.equipment.horse) {
-        if (battleState && battleState.inProgress) {
-            if (battleState.horseAlive) {
-                const horse = HORSE_TYPES[g.equipment.horse.horseType];
-                if (horse) speedPercent += horse.speedBonus || 0;
-            }
-        } else {
-            const horse = HORSE_TYPES[g.equipment.horse.horseType];
-            if (horse) speedPercent += horse.speedBonus || 0;
-        }
-    }
-    
-    // Защита от лошади
-    let horseDefensePercent = 0;
-    if (g.equipment && g.equipment.horse) {
-        if (battleState && battleState.inProgress) {
-            if (battleState.horseAlive) {
-                const horse = HORSE_TYPES[g.equipment.horse.horseType];
-                if (horse) horseDefensePercent = horse.defensePercent || 0;
-            }
-        } else {
-            const horse = HORSE_TYPES[g.equipment.horse.horseType];
-            if (horse) horseDefensePercent = horse.defensePercent || 0;
-        }
-    }
-    
-    // Итоговая защита с учётом лошади
-    let finalDefense = totalDefense + bonusDef;
-    if (horseDefensePercent > 0) {
-        finalDefense = Math.round(finalDefense * (1 + horseDefensePercent / 100));
-    }
-    
-    // Активные бонусы (из очков мастерства)
-    const critBonus = getActiveBonus(g, 'crit');
-    const pierceBonus = getActiveBonus(g, 'pierce');
-    const doubleHitBonus = getActiveBonus(g, 'doubleHit');
-    const counterBonus = getActiveBonus(g, 'counter');
-    
-    const luck = Math.min(25, g.luck || 0);
-    const critFromLuck = Math.floor(luck / 10);
-    
-    return {
-        damage: totalDamage,
-        defense: finalDefense,
-        agility: totalAgility,
-        intelligence: (g.stats.intelligence || 1) + bonusInt,
-        speedPercent: speedPercent,
-        crit: critBonus + critFromLuck,
-        pierce: pierceBonus,
-        doubleHit: doubleHitBonus,
-        counter: counterBonus,
-        weaponType: mastery.weaponType,
-        skillLevel: mastery.skillLevel,
-        maxHp: getMaxHp(g),
-        luck: luck,
-        horseDefensePercent: horseDefensePercent,
-        speedDetails: {
-            boots: g.equipment && g.equipment.boots ? (g.equipment.boots.speedPercent || 0) : 0,
-            horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0,
-            mastery: mastery.speedBonus || 0
-        }
-    };
-}
-
-function getHitChance(attackerStats, defenderStats) {
-    // ВСЁ через ловкость
-    let chance = 50 + (attackerStats.agility - defenderStats.agility) * 0.1;
-    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10));
-}
-
-function getDistributedPoints(g) {
-    return (g.stats.damage||1)+(g.stats.defense||1)+(g.stats.agility||1)+(g.stats.intelligence||1)-4;
-}
-
-function resetAttributes() {
-    const user=users[currentUser];
-    if(!user) return;
-    const g=user.game;
-    const now=Date.now();
-    if(g.lastReset && (now-g.lastReset)<3*24*60*60*1000){
-        setMessage('❌ Сброс доступен раз в 3 дня.');
-        return;
-    }
-    g.attributePoints=Math.min(100, g.level);
-    g.stats={ damage:1, defense:1, intelligence:1, agility:1 };
-    g.lastReset=now;
-    setMessage('✅ Атрибуты сброшены! Доступно очков: '+g.attributePoints);
-    updateMenu();
-    saveData();
-    openCharacter();
 }
 
 // ============================================================
@@ -1946,6 +1365,632 @@ function useOneFromStack(index) {
 }
 
 // ============================================================
+// РЕГИСТРАЦИЯ / ВХОД
+// ============================================================
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const nationality = document.getElementById('reg-nationality').value;
+    const secret = document.getElementById('reg-secret').value.trim();
+    const errEl = document.getElementById('register-error');
+    const okEl = document.getElementById('register-success');
+    const formEl = document.getElementById('register-form');
+    errEl.classList.add('hide'); okEl.classList.add('hide'); formEl.classList.remove('hide');
+    if(!name||!password||!nationality||!secret) {
+        errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return;
+    }
+    if(name.length<2){ errEl.textContent='❌ Имя слишком короткое'; errEl.classList.remove('hide'); return; }
+    if(password.length<4){ errEl.textContent='❌ Пароль слишком короткий'; errEl.classList.remove('hide'); return; }
+    if(!NATIONALITIES[nationality]){ errEl.textContent='❌ Выберите национальность'; errEl.classList.remove('hide'); return; }
+    if(users[name]){ errEl.textContent='❌ Это имя уже занято'; errEl.classList.remove('hide'); return; }
+    
+    const now = Date.now();
+    const skills = {};
+    ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { skills[s]={level:1,xp:0}; });
+    
+    users[name] = {
+        password: hash(password),
+        nationality: nationality,
+        secret: hash(secret),
+        created: now,
+        game: {
+            gold:100, silver:0, copper:0,
+            food:100, thirst:100, fatigue:100,
+            hp:60, maxHp:60,
+            level:1, xp:0, nextLevelXp:100,
+            attributePoints:0,
+            stats: { damage:1, defense:1, intelligence:1, agility:1 },
+            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
+            skills: skills,
+            stamina: { level:1, xp:0 },
+            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
+            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
+            activeProfession: 'Охотник',
+            lastProfessionChange: 0,
+            inventory: [],
+            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
+            outside: false,
+            death: null,
+            lastReset: null,
+            lastActive: now,
+            online: true,
+            lastResourceUpdate: now,
+            luck: 0,
+            lastHeal: null,
+            lastPrayer: null,
+            blessing: { active: false, expires: 0 },
+            jail: null,
+            activeBonuses: {
+                crit: 5,
+                pierce: 5,
+                doubleHit: 5,
+                counter: 5,
+                points: 0
+            },
+            marketStall: {
+                owned: false,
+                stallId: null,
+                rentPaid: null,
+                rentDays: 0,
+                debt: 0
+            },
+            housing: {
+                type: null,
+                purchased: null,
+                rentPaid: null,
+                rentDays: 0,
+                debt: 0,
+                storage: [],
+                storageHold: []
+            }
+        }
+    };
+    addLog('👤 '+name+' создал персонажа ('+nationality+')');
+    saveData();
+    formEl.classList.add('hide');
+    okEl.innerHTML='✅ Поздравляем, <strong>'+name+'</strong>!<br>Вы — '+nationality;
+    okEl.classList.remove('hide');
+    currentUser = name;
+    localStorage.setItem('got_user', name);
+    setTimeout(function(){ enterGame(name); }, 1200);
+}
+
+function handleLogin() {
+    const name = document.getElementById('login-name').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('hide');
+    if(!name||!password){ errEl.textContent='❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
+    const user = users[name];
+    if(!user || user.password !== hash(password)) {
+        errEl.textContent='❌ Неверное имя или пароль';
+        errEl.classList.remove('hide');
+        return;
+    }
+    localStorage.setItem('got_user', name);
+    currentUser = name;
+    addLog('👤 '+name+' вошёл в игру');
+    enterGame(name);
+}
+
+// ============================================================
+// ВХОД В ИГРУ
+// ============================================================
+function fixOldAccount(user) {
+    if (!user) return user;
+    if (!user.game) {
+        user.game = {
+            gold:100, silver:0, copper:0,
+            food:100, thirst:100, fatigue:100,
+            hp:60, maxHp:60,
+            level:1, xp:0, nextLevelXp:100,
+            attributePoints:0,
+            stats: { damage:1, defense:1, intelligence:1, agility:1 },
+            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
+            skills: {},
+            stamina: { level:1, xp:0 },
+            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
+            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
+            activeProfession: 'Охотник',
+            lastProfessionChange: 0,
+            inventory: [],
+            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
+            outside: false,
+            death: null,
+            lastReset: null,
+            lastActive: Date.now(),
+            online: true,
+            lastResourceUpdate: Date.now(),
+            luck: 0,
+            lastHeal: null,
+            lastPrayer: null,
+            blessing: { active: false, expires: 0 },
+            jail: null,
+            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
+            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
+        };
+        return user;
+    }
+    
+    const g = user.game;
+    if (g.lastResourceUpdate === undefined) g.lastResourceUpdate = Date.now();
+    if (g.stamina === undefined) g.stamina = { level:1, xp:0 };
+    if (g.professions === undefined) {
+        g.professions = { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 };
+        g.professionXp = { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 };
+    }
+    if (g.activeProfession === undefined) g.activeProfession = 'Охотник';
+    if (g.lastProfessionChange === undefined) g.lastProfessionChange = 0;
+    if (g.skills === undefined) {
+        g.skills = {};
+        ['sword','spear','mace','axe','bow','crossbow','shield','dagger'].forEach(s => { g.skills[s]={level:1,xp:0}; });
+    }
+    if (g.equipment === undefined) {
+        g.equipment = { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null };
+    }
+    if (g.hp === undefined) g.hp = 60;
+    if (g.maxHp === undefined) g.maxHp = 60;
+    if (g.outside === undefined) g.outside = false;
+    if (g.stats === undefined) g.stats = { damage:1, defense:1, intelligence:1, agility:1 };
+    if (g.attributePoints === undefined) g.attributePoints = 0;
+    if (g.lastReset === undefined) g.lastReset = null;
+    if (g.luck === undefined) g.luck = 0;
+    if (g.lastHeal === undefined) g.lastHeal = null;
+    if (g.lastPrayer === undefined) g.lastPrayer = null;
+    if (g.blessing === undefined) g.blessing = { active: false, expires: 0 };
+    if (g.jail === undefined) g.jail = null;
+    if (g.activeBonuses === undefined) {
+        g.activeBonuses = { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 };
+    }
+    if (g.marketStall === undefined) {
+        g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
+    }
+    if (g.housing === undefined) {
+        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
+    }
+    if (g.housing.storage === undefined) g.housing.storage = [];
+    if (g.housing.storageHold === undefined) g.housing.storageHold = [];
+    if (g.online === undefined) g.online = true;
+    if (g.lastActive === undefined) g.lastActive = Date.now();
+    return user;
+}
+
+function enterGame(name) {
+    const user = users[name];
+    if(!user) return;
+    
+    fixOldAccount(user);
+    
+    if (!user.game) {
+        user.game = {
+            gold:100, silver:0, copper:0,
+            food:100, thirst:100, fatigue:100,
+            hp:60, maxHp:60,
+            level:1, xp:0, nextLevelXp:100,
+            attributePoints:0,
+            stats: { damage:1, defense:1, intelligence:1, agility:1 },
+            equipment: { rightHand:null, leftHand:null, helmet:null, chestplate:null, shoulders:null, leggings:null, boots:null, gloves:null, belt:null, cloak:null, horse:null },
+            skills: {},
+            stamina: { level:1, xp:0 },
+            professions: { 'Шахтёр':1, 'Лесоруб':1, 'Охотник':1, 'Кузнец':1 },
+            professionXp: { 'Шахтёр':0, 'Лесоруб':0, 'Охотник':0, 'Кузнец':0 },
+            activeProfession: 'Охотник',
+            lastProfessionChange: 0,
+            inventory: [],
+            location: { region:'Королевские земли', location:'Королевская Гавань', place:'Таверна' },
+            outside: false,
+            death: null,
+            lastReset: null,
+            lastActive: Date.now(),
+            online: true,
+            lastResourceUpdate: Date.now(),
+            luck: 0,
+            lastHeal: null,
+            lastPrayer: null,
+            blessing: { active: false, expires: 0 },
+            jail: null,
+            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
+            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
+        };
+    }
+    
+    checkRent();
+    checkStallRent();
+    
+    showPage('game');
+    user.game.online = true;
+    const now = Date.now();
+    const g = user.game;
+    const lastActive = g.lastActive || now;
+    const diffMinutes = lastActive ? (now - lastActive) / 60000 : 0;
+    if(diffMinutes > 1) {
+        const foodLoss = Math.floor(diffMinutes / 15);
+        const thirstLoss = Math.floor(diffMinutes / 10);
+        g.food = Math.max(0, g.food - foodLoss);
+        g.thirst = Math.max(0, g.thirst - thirstLoss);
+        if(foodLoss>0||thirstLoss>0) setMessage('⏰ За время отсутствия: еда -'+foodLoss+', жажда -'+thirstLoss);
+    }
+    g.lastActive = now;
+    g.lastResourceUpdate = now;
+    
+    g.maxHp = getMaxHp(g);
+    if (g.hp === undefined || g.hp > g.maxHp) g.hp = g.maxHp;
+    
+    const savedBattle = localStorage.getItem('got_battle');
+    if (savedBattle) {
+        try {
+            battleState = JSON.parse(savedBattle);
+            if (battleState && battleState.inProgress) {
+                if (battleState.turn === 'mob') {
+                    const timeSince = Date.now() - (battleState.lastActionTime || now);
+                    if (timeSince > 10000) { mobTurn(); saveBattleState(); }
+                }
+                setMessage('⚔️ Бой продолжается!');
+                updateMenu(); updateStory(); updateActions(); renderBattle();
+                return;
+            }
+        } catch(e) {
+            localStorage.removeItem('got_battle');
+            battleState = null;
+        }
+    }
+    
+    normalizeInventory(g);
+    
+    updateMenu();
+    updateStory();
+    updateActions();
+    setMessage('');
+    isBusy = false;
+    if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
+    document.getElementById('busy-status').classList.add('hide');
+    updateOnline();
+    saveData();
+    startResourceSystem();
+    startAutoSave();
+}
+
+function startAutoSave() {
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => {
+        if (currentUser && users[currentUser]) saveData();
+    }, 30000);
+}
+
+function startResourceSystem() {
+    if (resourceInterval) clearInterval(resourceInterval);
+    resourceInterval = setInterval(() => {
+        const user = users[currentUser];
+        if(!user || !user.game.online) return;
+        const g = user.game;
+        const now = Date.now();
+        const diff = (now - g.lastResourceUpdate) / 60000;
+        if (diff < 1) return;
+        
+        const foodLoss = Math.floor(diff / 15);
+        const thirstLoss = Math.floor(diff / 10);
+        if (foodLoss > 0) g.food = Math.max(0, g.food - foodLoss);
+        if (thirstLoss > 0) g.thirst = Math.max(0, g.thirst - thirstLoss);
+        
+        if (!isBusy) {
+            const fatigueLoss = Math.floor(diff / 30);
+            if (fatigueLoss > 0) g.fatigue = Math.max(0, g.fatigue - fatigueLoss);
+        }
+        
+        if (g.food <= 0) {
+            const hpLoss = Math.floor(diff * 2);
+            if (hpLoss > 0) {
+                g.hp = Math.max(0, g.hp - hpLoss);
+                setMessage('⚠️ Вы умираете от голода! HP -'+hpLoss);
+                if (g.hp <= 0) handleDeath('голода');
+            }
+        }
+        if (g.thirst <= 0) {
+            const hpLoss = Math.floor(diff * 3);
+            if (hpLoss > 0) {
+                g.hp = Math.max(0, g.hp - hpLoss);
+                setMessage('⚠️ Вы умираете от жажды! HP -'+hpLoss);
+                if (g.hp <= 0) handleDeath('жажды');
+            }
+        }
+        
+        g.lastResourceUpdate = now;
+        updateMenu();
+        saveData();
+    }, 30000);
+}
+
+function handleDeath(cause) {
+    const user = users[currentUser];
+    if(!user) return;
+    const g = user.game;
+    g.hp = g.maxHp;
+    g.location.place = 'Таверна';
+    g.location.location = 'Королевская Гавань';
+    g.food = 100;
+    g.thirst = 100;
+    g.fatigue = 100;
+    g.outside = false;
+    setMessage('💀 Вы умерли от ' + cause + '. Вы возродились в таверне.');
+    addLog('💀 '+currentUser+' умер от '+cause);
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+// ============================================================
+// СТАТЫ И БОНУСЫ
+// ============================================================
+function getLevelBonuses(level) {
+    const specialLevel = Math.min(level, 400);
+    const specialCount = Math.floor(specialLevel / 5);
+    let accuracyBonus=0, critBonus=0, pierceBonus=0, doubleBonus=0, counterBonus=0;
+    for (let i=1; i<=specialCount; i++) {
+        const type=(i-1)%5;
+        if(type===0) accuracyBonus++;
+        if(type===1) critBonus++;
+        if(type===2) pierceBonus++;
+        if(type===3) doubleBonus++;
+        if(type===4) counterBonus++;
+    }
+    return { accuracy:accuracyBonus, crit:critBonus, pierce:pierceBonus, doubleHit:doubleBonus, counter:counterBonus };
+}
+
+function getEquippedStats(g) {
+    let bonusDamage=0, bonusDefense=0, bonusAgility=0, bonusSpeedPercent=0;
+    const slots=['rightHand','leftHand','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'];
+    slots.forEach(slot => {
+        const item=g.equipment[slot];
+        if(item){
+            if(item.finalDamage) bonusDamage+=item.finalDamage;
+            if(item.finalDefense) bonusDefense+=item.finalDefense;
+            if(item.agilityBonus) bonusAgility+=item.agilityBonus;
+            if(item.speedPercent) bonusSpeedPercent+=item.speedPercent;
+        }
+    });
+    return { bonusDamage, bonusDefense, bonusAgility, bonusSpeedPercent };
+}
+
+function getWeaponMasteryBonus(g) {
+    const weapon = g.equipment.rightHand;
+    if (!weapon) {
+        return { 
+            damageBonus: 0, 
+            defenseBonus: 0,
+            agilityBonus: 0,
+            critBonus: 0,
+            pierceBonus: 0,
+            doubleHitBonus: 0,
+            counterBonus: 0,
+            skillLevel: 0
+        };
+    }
+    
+    const weaponType = weapon.type;
+    const skill = g.skills[weaponType];
+    const skillLevel = skill ? Math.min(skill.level, 999) : 1;
+    
+    // ПАССИВНЫЕ (в ЕДИНИЦАХ, до 999)
+    let damageBonus = 0;
+    let defenseBonus = 0;
+    let agilityBonus = 0;
+    
+    for (let i = 1; i <= skillLevel; i++) {
+        const cycle = i % 3;
+        if (cycle === 1) damageBonus += 1;
+        else if (cycle === 2) defenseBonus += 1;
+        else if (cycle === 0) agilityBonus += 1;
+    }
+    
+    // АКТИВНЫЕ (в ПРОЦЕНТАХ, до 65% = 325 уровней)
+    const maxActive = Math.min(skillLevel, 325);
+    const critBonus = Math.floor(maxActive / 5);
+    const pierceBonus = Math.floor(maxActive / 5);
+    const doubleHitBonus = Math.floor(maxActive / 5);
+    
+    // Контратака: после 325 уровня, каждые 5 уровней до 65%
+    let counterBonus = 0;
+    if (skillLevel > 325) {
+        const counterLevels = Math.min(skillLevel - 325, 325);
+        counterBonus = Math.floor(counterLevels / 5);
+    }
+    
+    return {
+        damageBonus,
+        defenseBonus,
+        agilityBonus,
+        critBonus,
+        pierceBonus,
+        doubleHitBonus,
+        counterBonus,
+        skillLevel
+    };
+}
+
+function getActiveBonus(g, type) {
+    const base = 5;
+    const bonus = g.activeBonuses[type] || 0;
+    return Math.min(37.5, base + bonus * 0.5);
+}
+
+function distributeMasteryPoint(type) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (g.activeBonuses.points <= 0) {
+        setMessage('❌ Нет доступных очков мастерства.');
+        return;
+    }
+    
+    const current = g.activeBonuses[type] || 0;
+    if (current >= 65) {
+        setMessage('❌ Максимум для ' + type + ' достигнут.');
+        return;
+    }
+    
+    g.activeBonuses[type] += 1;
+    g.activeBonuses.points -= 1;
+    setMessage('✅ +0.5% к ' + type + ' (всего: ' + getActiveBonus(g, type) + '%)');
+    saveData();
+    updateMenu();
+    openCharacter();
+}
+
+function getMaxHp(g) {
+    const staminaLevel = g.stamina?.level || 1;
+    let bonusHp = 0;
+    if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
+        bonusHp = HOUSING_TYPES[g.housing.type].restHp || 0;
+    }
+    return 60 + (g.level - 1) * 10 + staminaLevel * 2 + bonusHp;
+}
+
+function getXpMultiplier(g) {
+    const intelligence = Math.max(1, g.stats.intelligence || 1);
+    return 1 + (intelligence / 100);
+}
+
+function getMaxInventory(g) {
+    const baseLimit = 50;
+    let bonusSlots = 0;
+    if (g.equipment && g.equipment.horse) {
+        const horse = HORSE_TYPES[g.equipment.horse.horseType];
+        if (horse) bonusSlots = horse.inventorySlots || 0;
+    }
+    return baseLimit + bonusSlots;
+}
+
+function calcDamageReduction(defense) {
+    let reduction = defense / 10.4714;
+    return Math.min(70, Math.max(0, Math.round(reduction * 10) / 10));
+}
+
+function calcChance(agility) {
+    let chance = 50 + (agility / 10.4714);
+    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10));
+}
+
+function getTotalStats(g, battleState) {
+    const equipped = getEquippedStats(g);
+    const mastery = getWeaponMasteryBonus(g);
+    const levelBonus = getLevelBonuses(g.level);
+    
+    let totalAgility = (g.stats.agility || 1) + equipped.bonusAgility + mastery.agilityBonus;
+    let totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + mastery.defenseBonus;
+    let totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
+    
+    let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
+    if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
+        const house = HOUSING_TYPES[g.housing.type];
+        bonusInt = house.bonusInt || 0;
+        bonusLuck = house.bonusLuck || 0;
+        bonusDef = house.bonusDef || 0;
+    }
+    
+    let speedPercent = mastery.speedBonus || 0;
+    if (g.equipment && g.equipment.boots && g.equipment.boots.speedPercent) {
+        speedPercent += g.equipment.boots.speedPercent;
+    }
+    if (g.equipment && g.equipment.horse) {
+        if (battleState && battleState.inProgress) {
+            if (battleState.horseAlive) {
+                const horse = HORSE_TYPES[g.equipment.horse.horseType];
+                if (horse) speedPercent += horse.speedBonus || 0;
+            }
+        } else {
+            const horse = HORSE_TYPES[g.equipment.horse.horseType];
+            if (horse) speedPercent += horse.speedBonus || 0;
+        }
+    }
+    
+    let horseDefensePercent = 0;
+    if (g.equipment && g.equipment.horse) {
+        if (battleState && battleState.inProgress) {
+            if (battleState.horseAlive) {
+                const horse = HORSE_TYPES[g.equipment.horse.horseType];
+                if (horse) horseDefensePercent = horse.defensePercent || 0;
+            }
+        } else {
+            const horse = HORSE_TYPES[g.equipment.horse.horseType];
+            if (horse) horseDefensePercent = horse.defensePercent || 0;
+        }
+    }
+    
+    let finalDefense = totalDefense + bonusDef;
+    if (horseDefensePercent > 0) {
+        finalDefense = Math.round(finalDefense * (1 + horseDefensePercent / 100));
+    }
+    
+    const critBonus = getActiveBonus(g, 'crit');
+    const pierceBonus = getActiveBonus(g, 'pierce');
+    const doubleHitBonus = getActiveBonus(g, 'doubleHit');
+    const counterBonus = getActiveBonus(g, 'counter');
+    
+    const luck = Math.min(25, g.luck || 0);
+    const critFromLuck = Math.floor(luck / 10);
+    
+    // Проверяем активность благословения
+    let blessingMultiplier = 1;
+    if (g.blessing && g.blessing.active && g.blessing.expires > Date.now()) {
+        blessingMultiplier = 1.1; // +10% к опыту
+    }
+    
+    return {
+        damage: totalDamage,
+        defense: finalDefense,
+        agility: totalAgility,
+        intelligence: (g.stats.intelligence || 1) + bonusInt,
+        speedPercent: speedPercent,
+        crit: critBonus + critFromLuck,
+        pierce: pierceBonus,
+        doubleHit: doubleHitBonus,
+        counter: counterBonus,
+        weaponType: mastery.weaponType,
+        skillLevel: mastery.skillLevel,
+        maxHp: getMaxHp(g),
+        luck: luck,
+        horseDefensePercent: horseDefensePercent,
+        blessingMultiplier: blessingMultiplier,
+        speedDetails: {
+            boots: g.equipment && g.equipment.boots ? (g.equipment.boots.speedPercent || 0) : 0,
+            horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0,
+            mastery: mastery.speedBonus || 0
+        }
+    };
+}
+
+function getHitChance(attackerStats, defenderStats) {
+    let chance = 50 + (attackerStats.agility - defenderStats.agility) * 0.1;
+    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10));
+}
+
+function getDistributedPoints(g) {
+    return (g.stats.damage||1)+(g.stats.defense||1)+(g.stats.agility||1)+(g.stats.intelligence||1)-4;
+}
+
+function resetAttributes() {
+    const user=users[currentUser];
+    if(!user) return;
+    const g=user.game;
+    const now=Date.now();
+    if(g.lastReset && (now-g.lastReset)<3*24*60*60*1000){
+        setMessage('❌ Сброс доступен раз в 3 дня.');
+        return;
+    }
+    g.attributePoints=Math.min(100, g.level);
+    g.stats={ damage:1, defense:1, intelligence:1, agility:1 };
+    g.lastReset=now;
+    setMessage('✅ Атрибуты сброшены! Доступно очков: '+g.attributePoints);
+    updateMenu();
+    saveData();
+    openCharacter();
+}
+
+// ============================================================
 // МЕНЮ
 // ============================================================
 function updateMenu() {
@@ -1980,7 +2025,7 @@ function updateStory() {
     
     const texts = {
         'Таверна': 'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
-        'Рынок': '🏪 Центральный рынок Королевской Гавани. Здесь можно арендовать лавку и торговать с другими игроками.',
+        'Рынок': '🏪 Центральный рынок Королевской Гавани. Здесь можно торговать с другими игроками.',
         'Кузница': 'Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
         'Оружейная лавка': 'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
         'Кожевник': 'Вы у кожевника. Здесь можно купить и продать кожаную броню.',
@@ -2004,7 +2049,7 @@ function updateStory() {
 }
 
 // ============================================================
-// updateActions (ПОЛНЫЙ)
+// updateActions
 // ============================================================
 function updateActions() {
     const user = users[currentUser];
@@ -2505,7 +2550,6 @@ function doSearch() {
     const luck = Math.min(25, g.luck || 0);
     const luckBonus = Math.floor(luck / 10);
     
-    // КВАРТАЛ БЕДНОТЫ — ОСОБАЯ МЕХАНИКА
     if (place === 'Квартал бедноты') {
         if (Math.random() * 100 < 20) {
             findDrunkard();
@@ -2546,7 +2590,6 @@ function doSearch() {
         return;
     }
     
-    // ОСТАЛЬНЫЕ ЛОКАЦИИ
     const treasureChance = Math.min(4.5, 2 + luckBonus);
     if (Math.random() * 100 < treasureChance) {
         findTreasure();
@@ -2668,7 +2711,6 @@ function findTreasure() {
     const bonusLuck = Math.min(5, Math.floor(luck / 5));
     const typeRoll = Math.random() * 100;
     
-    // 1. ЗОЛОТО (40%)
     if (typeRoll < 40) {
         const goldAmount = 2 + Math.floor(Math.random() * 8) + bonusLuck;
         g.copper += goldAmount;
@@ -2680,7 +2722,6 @@ function findTreasure() {
         return;
     }
     
-    // 2. ОРУЖИЕ (20%)
     if (typeRoll < 60) {
         const weaponTypes = ['sword','spear','axe','mace','dagger','bow','crossbow'];
         const type = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
@@ -2708,7 +2749,6 @@ function findTreasure() {
         }
     }
     
-    // 3. БРОНЯ (20%)
     if (typeRoll < 80) {
         const armorClasses = ['leather', 'plate'];
         const armorClass = armorClasses[Math.floor(Math.random() * armorClasses.length)];
@@ -2738,7 +2778,6 @@ function findTreasure() {
         }
     }
     
-    // 4. РЕСУРСЫ (10%)
     if (typeRoll < 90) {
         const resources = [
             { name: 'Руда железная', type: 'iron' },
@@ -2766,7 +2805,6 @@ function findTreasure() {
         return;
     }
     
-    // 5. ДРАГОЦЕННЫЙ КАМЕНЬ (5%)
     if (typeRoll < 95) {
         const gemAmount = 50 + Math.floor(Math.random() * 50);
         g.copper += gemAmount;
@@ -2778,7 +2816,6 @@ function findTreasure() {
         return;
     }
     
-    // 6. РЕДКИЙ ПРЕДМЕТ (5%)
     const weaponTypes = ['sword','spear','axe','mace','dagger','bow','crossbow','shield'];
     const type = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
     const available = ALL_ITEMS.weapons[type].filter(w => w.level <= g.level + 2);
@@ -2974,7 +3011,6 @@ function battleAction(action) {
         newMobHp = Math.max(0, mobHp - damage);
         battleState.log.push('⚔️ Вы нанесли ' + damage + ' урона.');
         
-        // НАЧИСЛЯЕМ XP ЗА МАСТЕРСТВО (после попадания)
         const weaponType = totalStats.weaponType;
         if (weaponType !== 'нет' && g.skills[weaponType]) {
             const xpGain = Math.round(1 * getXpMultiplier(g));
@@ -3002,7 +3038,6 @@ function battleAction(action) {
         
         if (Math.random() * 100 < dodgeChance) {
             battleState.log.push('💨 Вы увернулись!');
-            // КОНТРАТАКА (после уворота)
             if (Math.random() * 100 < totalStats.counter) {
                 const counterDamage = Math.max(1, Math.round(totalStats.damage * 0.5));
                 newMobHp = Math.max(0, mobHp - counterDamage);
@@ -3071,8 +3106,6 @@ function mobTurn() {
     
     if (Math.random() * 100 < dodgeChance) {
         battleState.log.push('💨 Вы увернулись от атаки!');
-        
-        // КОНТРАТАКА (после уворота)
         if (Math.random() * 100 < totalStats.counter) {
             const counterDamage = Math.max(1, Math.round(totalStats.damage * 0.5));
             battleState.mobHp = Math.max(0, battleState.mobHp - counterDamage);
@@ -3083,14 +3116,12 @@ function mobTurn() {
                 return;
             }
         }
-        
         battleState.turn = 'player';
         renderBattle();
         saveBattleState();
         return;
     }
     
-    // Защита (если нажата кнопка "Защита")
     let damage = mob.damage + Math.floor(Math.random() * 3);
     if (battleState.defending) {
         const defenseBonus = totalStats.defense * 1.5;
@@ -3103,13 +3134,11 @@ function mobTurn() {
         damage = Math.round(damage * (1 - reduction / 100));
     }
     
-    // Пробитие (игнорирует защиту)
     if (mob.pierce) {
         const pierceReduction = damage * (mob.pierce / 100);
         damage = Math.max(1, damage - Math.round(pierceReduction));
     }
     
-    // Урон по лошади
     let newHorseHp = battleState.horseHp;
     if (battleState.mounted && battleState.horseAlive && battleState.horseHp > 0) {
         const horseDamage = Math.floor(damage * 0.3);
@@ -3152,7 +3181,6 @@ function endBattle(won, reason) {
     g.hp = battleState.playerHp;
     if (g.hp > g.maxHp) g.hp = g.maxHp;
     
-    // ЛОШАДЬ: ВОССТАНОВЛЕНИЕ HP ПОСЛЕ БОЯ
     if (g.equipment && g.equipment.horse) {
         const horse = g.equipment.horse;
         if (battleState.horseAlive && battleState.horseHp > 0) {
@@ -3167,7 +3195,6 @@ function endBattle(won, reason) {
         }
     }
     
-    // БОЙ С ПЬЯНЧУГОЙ
     if (isDrunkardFight) {
         if (won) {
             const copperReward = 3 + Math.floor(Math.random() * 6);
@@ -3204,9 +3231,12 @@ function endBattle(won, reason) {
         return;
     }
     
-    // ОБЫЧНЫЙ БОЙ
     if (won) {
-        const xpMultiplier = getXpMultiplier(g);
+        let xpMultiplier = getXpMultiplier(g);
+        // Проверяем благословение
+        if (g.blessing && g.blessing.active && g.blessing.expires > Date.now()) {
+            xpMultiplier *= 1.1;
+        }
         const xpGain = Math.round((mob.xp + Math.floor(Math.random() * 5)) * xpMultiplier);
         g.xp += xpGain;
         
@@ -3222,7 +3252,7 @@ function endBattle(won, reason) {
             }
         }
         
-        g.stamina.xp = (g.stamina.xp || 0) + Math.round(1 * xpMultiplier);
+        g.stamina.xp = (g.stamina.xp || 0) + Math.round(1 * getXpMultiplier(g));
         const staminaNeeded = g.stamina.level * 8 + 3;
         while (g.stamina.xp >= staminaNeeded) {
             g.stamina.xp -= staminaNeeded;
@@ -3232,7 +3262,6 @@ function endBattle(won, reason) {
             setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня! (+5 HP)');
         }
         
-        // Лут от животных
         if (mob.type === 'animal') {
             function rollSkinQ(ml) {
                 const r = Math.random() * 100;
@@ -3288,7 +3317,7 @@ function endBattle(won, reason) {
             
             setMessage('🧵 Добыто: Шкура ×' + skinCount + ' (' + skinQuality + ')\n🍖 Добыто: Мясо ×' + meatCount);
             
-            g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + Math.round(3 * xpMultiplier);
+            g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + Math.round(3 * getXpMultiplier(g));
             while (g.professionXp['Охотник'] >= g.professions['Охотник'] * 10) {
                 g.professionXp['Охотник'] -= g.professions['Охотник'] * 10;
                 g.professions['Охотник']++;
@@ -3410,7 +3439,7 @@ function openShop(shopType) {
     }
     
     let html = '<div class="modal-section"><h4>🏪 ' + shopType + '</h4>';
-    html += '<p style="color:#6a5a48;">💰 ' + g.gold + ' зол. | ' + g.silver + ' сер. | ' + g.copper + ' мед.</p>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;">📌 Профильные предметы: 100% цены | Остальные: 50% цены</p></div>';
     
     html += '<div class="modal-section"><h4>💰 ПРОДАЖА</h4>';
@@ -3446,7 +3475,7 @@ function openShop(shopType) {
             html += '<span style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + '</span>';
             html += ' <span style="font-size:10px;color:#6a5a48;">(' + quality + ')</span>';
             html += ' <span style="font-size:10px;color:' + rateColor + ';">[' + rateLabel + ']</span>';
-            html += '<br><span style="font-size:10px;color:#6a5a48;">' + stats + ' | ×' + count + ' | ' + pricePerItem + ' МП/шт = ' + totalPrice + ' МП</span>';
+            html += '<br><span style="font-size:10px;color:#6a5a48;">' + stats + ' | ×' + count + ' | ' + formatCurrency(pricePerItem) + '/шт = ' + formatCurrency(totalPrice) + '</span>';
             html += '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="sellToShop(\'' + shopType + '\',\'' + item.name + '\',\'' + quality + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
             html += '</div>';
@@ -3594,7 +3623,7 @@ function showQualitySelect(shopType, itemName, level, type, baseDamage, defense,
         }
         html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
         html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + quality + ' <span style="font-size:10px;">(' + q.short + ')</span></span>';
-        html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + price + ' МП | 📦' + displayStock + ' ';
+        html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + formatCurrency(price) + ' | 📦' + displayStock + ' ';
         if (inStock) {
             html += '<button class="btn btn-small" onclick="buyItem(\'' + shopType + '\',\'' + itemName + '\',\'' + quality + '\',' + price + ',' + level + ',\'' + type + '\',' + baseDamage + ',' + defense + ',\'' + (resourceType || '') + '\',\'' + (armorClass || '') + '\')">Купить</button>';
         } else {
@@ -3629,7 +3658,7 @@ function buyItem(shopType, itemName, quality, price, level, type, baseDamage, de
     if (isResource) { item.type = 'resource'; item.resourceType = resourceType; }
     addToInventory(g, item);
     setMessage('✅ Вы купили ' + itemName + ' (' + quality + ')');
-    addLog('🛒 ' + currentUser + ' купил ' + itemName + ' (' + quality + ') за ' + price + ' МП');
+    addLog('🛒 ' + currentUser + ' купил ' + itemName + ' (' + quality + ') за ' + formatCurrency(price));
     convertCurrency(g);
     updateMenu();
     saveData();
@@ -3676,7 +3705,7 @@ function sellToShop(shopType, itemName, quality, count, pricePerItem) {
     const stockKey = itemName + '|' + quality;
     addTraderStock(shopType, stockKey, removed);
     
-    setMessage('💰 Продано ' + itemName + ' (' + quality + ') ×' + removed + ' за ' + totalPrice + ' МП');
+    setMessage('💰 Продано ' + itemName + ' (' + quality + ') ×' + removed + ' за ' + formatCurrency(totalPrice));
     addLog('💰 ' + currentUser + ' продал ' + itemName + ' (' + quality + ') ×' + removed);
     updateMenu();
     saveData();
@@ -3688,7 +3717,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ (с продажей)
+// ТОРГОВЛЯ В ТАВЕРНЕ (С ПРОДАЖЕЙ 50%)
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -3698,26 +3727,25 @@ function openTavernTrade() {
     const g = user.game;
 
     let html = '<div class="modal-section"><h4>🍺 ТОРГОВЛЯ В ТАВЕРНЕ</h4>';
-    html += '<p style="color:#6a5a48;">💰 ' + g.gold + ' зол. | ' + g.silver + ' сер. | ' + g.copper + ' мед.</p></div>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
+    html += '<p style="color:#6a5a48;font-size:11px;">📌 Продажа: 50% от цены</p></div>';
 
-    // === ПОКУПКА ===
     html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
     const items = [
-        { name:'🍞 Хлеб', price:5, food:20 },
-        { name:'🥩 Мясо', price:10, food:30 },
-        { name:'💧 Вода', price:2, thirst:15 },
-        { name:'🍺 Эль', price:5, hp:5, thirst:10 },
-        { name:'🍷 Вино', price:8, hp:8, thirst:15 }
+        { id: 'bread', name: '🍞 Хлеб', price: 5, food: 20 },
+        { id: 'meat', name: '🥩 Мясо', price: 10, food: 30 },
+        { id: 'water', name: '💧 Вода', price: 2, thirst: 15 },
+        { id: 'ale', name: '🍺 Эль', price: 5, hp: 5, thirst: 10 },
+        { id: 'wine', name: '🍷 Вино', price: 8, hp: 8, thirst: 15 }
     ];
     items.forEach(item => {
-        html += '<div class="row" style="padding:4px 0;">';
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
         html += '<span class="label">' + item.name + '</span>';
-        html += '<span class="value">' + item.price + ' МП <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + item.price + ',' + (item.food || 0) + ',' + (item.thirst || 0) + ',' + (item.hp || 0) + ')">Купить</button></span>';
+        html += '<span class="value">' + formatCurrency(item.price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.id + '\',' + item.price + ',' + (item.food || 0) + ',' + (item.thirst || 0) + ',' + (item.hp || 0) + ')">Купить</button></span>';
         html += '</div>';
     });
     html += '</div>';
 
-    // === ПРОДАЖА ===
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     
     const foodItems = {};
@@ -3743,21 +3771,24 @@ function openTavernTrade() {
             const q = QUALITIES[quality] || QUALITIES['Обычное'];
             const count = data.count;
             
-            let basePrice = 5;
-            if (item.effect) {
-                if (item.effect.food) basePrice = item.effect.food;
-                else if (item.effect.thirst) basePrice = item.effect.thirst;
-                else if (item.effect.hp) basePrice = item.effect.hp;
-            } else if (item.name.includes('Хлеб')) basePrice = 5;
-            else if (item.name.includes('Мясо')) basePrice = 10;
-            else if (item.name.includes('Рыба')) basePrice = 8;
+            let buyPrice = 0;
+            if (item.name.includes('Хлеб')) buyPrice = 5;
+            else if (item.name.includes('Мясо')) buyPrice = 10;
+            else if (item.name.includes('Вода')) buyPrice = 2;
+            else if (item.name.includes('Эль')) buyPrice = 5;
+            else if (item.name.includes('Вино')) buyPrice = 8;
+            else if (item.effect) {
+                if (item.effect.food) buyPrice = item.effect.food;
+                else if (item.effect.thirst) buyPrice = item.effect.thirst;
+                else if (item.effect.hp) buyPrice = item.effect.hp;
+            }
             
-            const pricePerItem = Math.max(1, Math.round(basePrice * q.multiplier));
+            const pricePerItem = Math.max(1, Math.floor((buyPrice * q.multiplier) / 2));
             const totalPrice = pricePerItem * count;
             
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ') ×' + count + '</span>';
-            html += '<span class="value">' + totalPrice + ' МП <button class="btn btn-small" onclick="sellFoodToTavern(\'' + item.name + '\',\'' + quality + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
+            html += '<span class="value">' + formatCurrency(totalPrice) + ' <button class="btn btn-small" onclick="sellFoodToTavern(\'' + item.name + '\',\'' + quality + '\',' + count + ',' + pricePerItem + ')">Продать всё</button></span>';
             html += '</div>';
         });
     }
@@ -3779,21 +3810,11 @@ function sellFoodToTavern(itemName, quality, count, pricePerItem) {
     for (let i = g.inventory.length - 1; i >= 0; i--) {
         const item = g.inventory[i];
         if (item.name === itemName && (item.quality || 'Обычное') === quality) {
-            
-            let toRemove = 0;
-            if (item.count && item.count > 1) {
-                toRemove = Math.min(item.count, count - removed);
-                item.count -= toRemove;
-                if (item.count === 0) g.inventory.splice(i, 1);
-            } else {
-                toRemove = 1;
-                g.inventory.splice(i, 1);
-            }
-            
+            const toRemove = item.count || 1;
+            g.inventory.splice(i, 1);
             removed += toRemove;
             totalPrice += pricePerItem * toRemove;
-            
-            if (removed >= count) break;
+            break;
         }
     }
 
@@ -3805,32 +3826,43 @@ function sellFoodToTavern(itemName, quality, count, pricePerItem) {
     g.copper += totalPrice;
     convertCurrency(g);
     
-    setMessage('💰 Вы продали ' + itemName + ' ×' + removed + ' за ' + totalPrice + ' МП');
+    setMessage('💰 Вы продали ' + itemName + ' ×' + removed + ' за ' + formatCurrency(totalPrice));
     addLog('💰 ' + currentUser + ' продал ' + itemName + ' ×' + removed + ' в таверне');
     updateMenu();
     saveData();
     openTavernTrade();
 }
 
-function buyTavernItem(name, price, food, thirst, hp) {
+function buyTavernItem(itemId, price, food, thirst, hp) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
     if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег.'); return; }
-    let itemName = name.replace(/[🍞🥩💧🍺🍷]/g, '').trim();
-    let item = {
-        name: itemName,
+    
+    const itemNames = {
+        bread: 'Хлеб',
+        meat: 'Мясо',
+        water: 'Вода',
+        ale: 'Эль',
+        wine: 'Вино'
+    };
+    
+    const item = {
+        name: itemNames[itemId] || itemId,
         quality: 'Обычное',
         type: 'food',
         effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 },
         count: 1
     };
+    
     addToInventory(g, item);
+    
     if (food > 0) g.food = Math.min(100, g.food + food);
     if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
     if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
-    setMessage('✅ Вы купили ' + name + ' и положили в инвентарь.');
-    addLog('🛒 ' + currentUser + ' купил ' + name);
+    
+    setMessage('✅ Вы купили ' + item.name);
+    addLog('🛒 ' + currentUser + ' купил ' + item.name + ' за ' + formatCurrency(price));
     convertCurrency(g);
     updateMenu();
     saveData();
@@ -3911,7 +3943,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ
+// ПЕРСОНАЖ (ПОЛНАЯ ВЕРСИЯ)
 // ============================================================
 function openCharacter() {
     const user = users[currentUser];
@@ -3930,6 +3962,13 @@ function openCharacter() {
     html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + ' (' + g.xp + '/' + g.nextLevelXp + ')</span></div>';
     html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div>';
     html += '<div class="row"><span class="label">HP</span><span class="value">' + Math.round(g.hp) + '/' + g.maxHp + '</span></div>';
+    
+    // Благословение
+    if (g.blessing && g.blessing.active && g.blessing.expires > Date.now()) {
+        const timeLeft = Math.ceil((g.blessing.expires - Date.now()) / 60000);
+        html += '<div class="row"><span class="label">🙏 Благословение</span><span class="value" style="color:#ffd700;">✅ +10% опыта (' + timeLeft + ' мин)</span></div>';
+    }
+    
     if (g.equipment && g.equipment.horse) {
         const horse = HORSE_TYPES[g.equipment.horse.horseType];
         if (horse) {
@@ -3994,34 +4033,48 @@ function openCharacter() {
     html += '<div class="row"><span class="label">🛡️ Защита</span><span class="value">' + totalStats.defense + ' (' + reduction + '% поглощения)</span></div>';
     html += '</div>';
     
-    // АКТИВНЫЕ БОНУСЫ
-    html += '<div class="modal-section"><h4>⚡ АКТИВНЫЕ БОНУСЫ</h4>';
-    const bonusTypes = ['crit', 'pierce', 'doubleHit', 'counter'];
-    const bonusLabels = {
-        crit: '💥 Крит',
-        pierce: '🛡️ Пробитие',
-        doubleHit: '⚡ Двойной удар',
-        counter: '💫 Контратака'
-    };
-    bonusTypes.forEach(type => {
-        const value = getActiveBonus(g, type);
-        const points = g.activeBonuses[type] || 0;
-        html += '<div class="row">';
-        html += '<span class="label">' + bonusLabels[type] + '</span>';
-        html += '<span class="value">' + value + '% (очков: ' + points + '/65)';
-        if (g.activeBonuses.points > 0 && points < 65) {
-            html += ' <button class="btn btn-small" onclick="distributeMasteryPoint(\'' + type + '\')">+0.5%</button>';
-        }
-        html += '</span></div>';
-    });
-    html += '<div class="row"><span class="label">📊 Очков мастерства</span><span class="value">' + g.activeBonuses.points + '</span></div>';
-    html += '</div>';
-    
+    // ВЫНОСЛИВОСТЬ
     html += '<div class="modal-section"><h4>💪 ВЫНОСЛИВОСТЬ</h4>';
     const st = g.stamina || { level: 1, xp: 0 };
     const staminaNeeded = st.level * 8 + 3;
-    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + st.level + ' (' + st.xp + '/' + staminaNeeded + ')</span></div>';
+    const staminaProgress = Math.min(100, Math.round((st.xp / staminaNeeded) * 100));
+    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + st.level + '</span></div>';
+    html += '<div class="row"><span class="label">📊 Прогресс</span><span class="value">' + staminaProgress + '% (' + st.xp + '/' + staminaNeeded + ')</span></div>';
+    html += '<div class="row"><span class="label">❤️ Бонус HP</span><span class="value" style="color:#7ac98a;">+' + (st.level * 2) + '</span></div>';
     html += '</div>';
+    
+    // МАСТЕРСТВО ОРУЖИЯ (после выносливости)
+    html += '<div class="modal-section"><h4>🗡️ МАСТЕРСТВО ОРУЖИЯ</h4>';
+    html += '<div class="row"><span class="label">Оружие</span><span class="value">' + (g.equipment.rightHand ? g.equipment.rightHand.name : 'нет') + '</span></div>';
+    html += '<div class="row"><span class="label">Уровень</span><span class="value">' + mastery.skillLevel + '</span></div>';
+    
+    const skill = g.skills[mastery.weaponType];
+    if (skill) {
+        const currentXp = skill.xp || 0;
+        const neededXp = skill.level * 20 + 10;
+        const progress = Math.min(100, Math.round((currentXp / neededXp) * 100));
+        html += '<div class="row"><span class="label">📊 Прогресс</span><span class="value">' + progress + '% (' + currentXp + '/' + neededXp + ')</span></div>';
+    } else {
+        html += '<div class="row"><span class="label">📊 Прогресс</span><span class="value">0% (0/0)</span></div>';
+    }
+    
+    html += '<div class="row"><span class="label">⚔️ Урон</span><span class="value" style="color:#7ac98a;">+' + mastery.damageBonus + '</span></div>';
+    html += '<div class="row"><span class="label">🛡️ Защита</span><span class="value" style="color:#7ac98a;">+' + mastery.defenseBonus + '</span></div>';
+    html += '<div class="row"><span class="label">💨 Ловкость</span><span class="value" style="color:#7ac98a;">+' + mastery.agilityBonus + '</span></div>';
+    
+    // Активные бонусы
+    const critBonus = getActiveBonus(g, 'crit');
+    const pierceBonus = getActiveBonus(g, 'pierce');
+    const doubleHitBonus = getActiveBonus(g, 'doubleHit');
+    const counterBonus = getActiveBonus(g, 'counter');
+    
+    html += '<div class="row"><span class="label">💥 Крит</span><span class="value" style="color:#7ac98a;">' + critBonus + '%</span></div>';
+    html += '<div class="row"><span class="label">🛡️ Пробитие</span><span class="value" style="color:#7ac98a;">' + pierceBonus + '%</span></div>';
+    html += '<div class="row"><span class="label">⚡ Двойной удар</span><span class="value" style="color:#7ac98a;">' + doubleHitBonus + '%</span></div>';
+    html += '<div class="row"><span class="label">💫 Контратака</span><span class="value" style="color:#7ac98a;">' + counterBonus + '%</span></div>';
+    html += '<div class="row"><span class="label">📊 Очков мастерства</span><span class="value">' + g.activeBonuses.points + '</span></div>';
+    html += '</div>';
+    
     html += '<div class="modal-section"><h4>👷 ПРОФЕССИИ</h4>';
     html += '<div class="row"><span class="label">Активная</span><span class="value">' + (g.activeProfession || 'Охотник') + ' <button class="btn btn-small" onclick="changeProfession()">Сменить (24ч)</button></span></div>';
     ['Шахтёр', 'Лесоруб', 'Охотник', 'Кузнец'].forEach(p => {
@@ -4415,7 +4468,7 @@ function showGuildListings() {
             const daysLeft = Math.ceil((listing.listedAt + 7 * 24 * 60 * 60 * 1000 - Date.now()) / (24 * 60 * 60 * 1000));
             html += '<div class="row" style="padding:4px 0;">';
             html += '<span class="label">' + listing.item.name + ' (' + (listing.item.quality || 'Обычное') + ')</span>';
-            html += '<span class="value">' + listing.price + ' МП <button class="btn btn-small" onclick="buyListing(' + index + ')">Купить</button>';
+            html += '<span class="value">' + formatCurrency(listing.price) + ' <button class="btn btn-small" onclick="buyListing(' + index + ')">Купить</button>';
             html += ' <span style="font-size:11px;color:#6a5a48;">' + daysLeft + ' дн.</span></span>';
             html += '</div>';
         });
@@ -4435,7 +4488,7 @@ function showGuildMyListings() {
             const daysLeft = Math.ceil((listing.listedAt + 7 * 24 * 60 * 60 * 1000 - Date.now()) / (24 * 60 * 60 * 1000));
             html += '<div class="row" style="padding:4px 0;">';
             html += '<span class="label">' + listing.item.name + ' (' + (listing.item.quality || 'Обычное') + ')</span>';
-            html += '<span class="value">' + listing.price + ' МП <button class="btn btn-small" style="background:#3d2a1a;" onclick="removeListing(' + realIndex + ')">Снять</button>';
+            html += '<span class="value">' + formatCurrency(listing.price) + ' <button class="btn btn-small" style="background:#3d2a1a;" onclick="removeListing(' + realIndex + ')">Снять</button>';
             html += ' <span style="font-size:11px;color:#6a5a48;">' + daysLeft + ' дн.</span></span>';
             html += '</div>';
         });
@@ -4491,20 +4544,38 @@ function sellItemToMarket(itemIndex) {
     const g = user.game;
     if (itemIndex >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     const item = g.inventory[itemIndex];
-    const price = prompt('Введите цену в МП (мин. 1):');
-    const priceNum = parseInt(price);
-    if (isNaN(priceNum) || priceNum < 1) { setMessage('❌ Цена должна быть не менее 1 МП.'); return; }
-    const commission = Math.ceil(priceNum * 0.01);
-    if (!spendMoney(g, commission)) {
-        setMessage('❌ Недостаточно денег для оплаты комиссии (' + commission + ' МП).');
+    
+    const input = prompt(
+        'Введите цену:\n' +
+        'Примеры:\n' +
+        '• 100 (медь)\n' +
+        '• 5 ЗОЛ (золото)\n' +
+        '• 2 СО (серебро)\n' +
+        '• 1 ЗОЛ 50 МП'
+    );
+    
+    if (!input) {
+        setMessage('❌ Отменено.');
         return;
     }
+    
+    const price = parseCurrencyInput(input);
+    if (price === null || price < 1) {
+        setMessage('❌ Цена должна быть не менее 1 МП.');
+        return;
+    }
+    
+    const commission = Math.ceil(price * 0.01);
+    if (!spendMoney(g, commission)) {
+        setMessage('❌ Недостаточно денег для комиссии (' + formatCurrency(commission) + ').');
+        return;
+    }
+    
     if (item.count && item.count > 1) {
-        // Если стек - выставляем весь стек
         g.inventory.splice(itemIndex, 1);
         marketListings.push({
             item: item,
-            price: priceNum,
+            price: price,
             seller: currentUser,
             listedAt: Date.now()
         });
@@ -4512,13 +4583,13 @@ function sellItemToMarket(itemIndex) {
         g.inventory.splice(itemIndex, 1);
         marketListings.push({
             item: item,
-            price: priceNum,
+            price: price,
             seller: currentUser,
             listedAt: Date.now()
         });
     }
-    setMessage('✅ Вы выставили ' + item.name + ' на продажу за ' + priceNum + ' МП.');
-    addLog('💰 ' + currentUser + ' выставил ' + item.name + ' на аукцион за ' + priceNum + ' МП');
+    setMessage('✅ Вы выставили ' + item.name + ' на продажу за ' + formatCurrency(price));
+    addLog('💰 ' + currentUser + ' выставил ' + item.name + ' на аукцион за ' + formatCurrency(price));
     saveData();
     updateMenu();
     openGuild();
@@ -4543,8 +4614,8 @@ function buyListing(index) {
         saveData();
     }
     marketListings.splice(index, 1);
-    setMessage('✅ Вы купили ' + listing.item.name + ' за ' + listing.price + ' МП.');
-    addLog('💰 ' + currentUser + ' купил ' + listing.item.name + ' на аукционе за ' + listing.price + ' МП');
+    setMessage('✅ Вы купили ' + listing.item.name + ' за ' + formatCurrency(listing.price));
+    addLog('💰 ' + currentUser + ' купил ' + listing.item.name + ' на аукционе за ' + formatCurrency(listing.price));
     saveData();
     updateMenu();
     openGuild();
@@ -4562,6 +4633,40 @@ function removeListing(index) {
     saveData();
     updateMenu();
     openGuild();
+}
+
+function parseCurrencyInput(input) {
+    input = input.trim().toUpperCase();
+    if (!input) return null;
+    
+    if (/^\d+$/.test(input)) {
+        return parseInt(input);
+    }
+    
+    let total = 0;
+    let parts = input.split(' ');
+    
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const num = parseInt(part);
+        if (isNaN(num)) continue;
+        
+        const next = i + 1 < parts.length ? parts[i + 1] : '';
+        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') {
+            total += num * 210 * 56;
+            i++;
+        } else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') {
+            total += num * 56;
+            i++;
+        } else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') {
+            total += num;
+            i++;
+        } else {
+            total += num;
+        }
+    }
+    
+    return total;
 }
 
 // ============================================================
@@ -4641,28 +4746,6 @@ function closeHouses() {
 // ============================================================
 // ДОМА И МАГИСТРАТ
 // ============================================================
-function getTimeLeft(timestamp, daysPaid) {
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const hourMs = 60 * 60 * 1000;
-    const expireTime = timestamp + (daysPaid * dayMs);
-    const timeLeft = expireTime - now;
-    
-    if (timeLeft <= 0) {
-        return { expired: true, text: '⚠️ ПРОСРОЧЕНО!' };
-    }
-    
-    const days = Math.floor(timeLeft / dayMs);
-    const hours = Math.floor((timeLeft % dayMs) / hourMs);
-    
-    return {
-        expired: false,
-        days: days,
-        hours: hours,
-        text: days + ' дн. ' + hours + ' ч.'
-    };
-}
-
 function checkHouseInDistrict(district) {
     const user = users[currentUser];
     if (!user) return false;
@@ -4687,7 +4770,7 @@ function buyHouse(type) {
         setMessage('❌ Все ' + house.name + ' уже проданы! Попробуйте другой вариант.');
         return;
     }
-    if (!spendMoney(g, house.price)) {
+    if (!spendMoney(g, house.price * 210 * 56)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + house.price + ' золота.');
         return;
     }
@@ -4697,7 +4780,7 @@ function buyHouse(type) {
     g.housing.type = type;
     g.housing.purchased = Date.now();
     g.housing.rentPaid = Date.now();
-    g.housing.rentDays = 1; // 1 день бесплатно
+    g.housing.rentDays = 1;
     g.housing.debt = 0;
     if (!g.housing.storage) g.housing.storage = [];
     if (!g.housing.storageHold) g.housing.storageHold = [];
@@ -4759,7 +4842,7 @@ function payRent() {
         return;
     }
     
-    if (!spendMoney(g, house.rent)) {
+    if (!spendMoney(g, house.rent * 210 * 56)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + house.rent + ' золота.');
         return;
     }
@@ -4953,7 +5036,7 @@ function viewDistrict(district) {
 }
 
 // ============================================================
-// МАГИСТРАТ (НОВАЯ ВЕРСИЯ)
+// МАГИСТРАТ
 // ============================================================
 function openMagistrate() {
     const modal = document.getElementById('modal-magistrate') || createMagistrateModal();
@@ -5108,6 +5191,7 @@ function showMagistrateStalls() {
             }
         }
         html += '<button class="btn btn-small" onclick="enterStall(' + stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
+        html += '<button class="btn btn-danger" onclick="leaveStallFromMagistrate()" style="margin-top:6px;">🚪 Оставить лавку</button>';
         html += '</div>';
     } else {
         html += '<p style="color:#6a5a48;margin:10px 0;">У вас нет торговой лавки.</p>';
@@ -5177,14 +5261,14 @@ function buyStallFromMagistrate() {
         return;
     }
     
-    if (!spendMoney(g, 80)) {
+    if (!spendMoney(g, 80 * 210 * 56)) {
         setMessage('❌ Недостаточно денег! Нужно: 80 золота.');
         return;
     }
     
     marketStalls[freeStall].owner = currentUser;
     marketStalls[freeStall].rentPaid = Date.now();
-    marketStalls[freeStall].rentDays = 1; // 1 день бесплатно
+    marketStalls[freeStall].rentDays = 1;
     marketStalls[freeStall].inventory = [];
     marketStalls[freeStall].prices = {};
     
@@ -5232,7 +5316,7 @@ function payStallRentFromMagistrate() {
         return;
     }
     
-    if (!spendMoney(g, rentCost)) {
+    if (!spendMoney(g, rentCost * 210 * 56)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' золота.');
         return;
     }
@@ -5296,6 +5380,57 @@ function confiscateStall(stallId) {
     setMessage('🚪 Лавка #' + stallId + ' конфискована за неуплату!');
     addLog('🚪 ' + currentUser + ' потерял лавку #' + stallId + ' (конфискат)');
     updateMenu();
+}
+
+// --- ЛАВКИ: оставить лавку добровольно ---
+function leaveStallFromMagistrate() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.marketStall || !g.marketStall.owned) {
+        setMessage('❌ У вас нет лавки.');
+        return;
+    }
+    
+    const stallId = g.marketStall.stallId;
+    const stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) {
+        setMessage('❌ Это не ваша лавка.');
+        return;
+    }
+    
+    if (!confirm('Вы уверены, что хотите оставить лавку #' + stallId + '?\nВсе товары вернутся в инвентарь.')) {
+        return;
+    }
+    
+    if (stall.inventory && stall.inventory.length > 0) {
+        stall.inventory.forEach(item => {
+            addToInventory(g, item);
+        });
+        setMessage('📦 ' + stall.inventory.length + ' товаров возвращено в инвентарь.');
+    }
+    
+    stall.owner = null;
+    stall.rentPaid = null;
+    stall.rentDays = 0;
+    stall.inventory = [];
+    stall.prices = {};
+    
+    g.marketStall = {
+        owned: false,
+        stallId: null,
+        rentPaid: null,
+        rentDays: 0,
+        debt: 0
+    };
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('🚪 Вы оставили лавку #' + stallId + '.');
+    addLog('🚪 ' + currentUser + ' оставил лавку #' + stallId);
+    updateMenu();
+    showMagistrateStalls();
 }
 
 // --- ЛАВКИ: возврат из конфиската ---
@@ -5611,7 +5746,7 @@ function openStable() {
         if (isOwned) {
             html += '<span style="color:#7ac98a;">✅ Ваша лошадь</span>';
         } else if (isAvailable) {
-            html += '<span style="color:#c9b694;">' + horse.price + ' зол.</span><br>';
+            html += '<span style="color:#c9b694;">' + formatCurrency(horse.price * 210 * 56) + '</span><br>';
             html += '<span style="font-size:10px;color:#6a5a48;">осталось: ' + available + '/' + market.total + '</span><br>';
             html += '<button class="btn btn-small" onclick="buyHorse(\'' + key + '\')">✅ Купить</button>';
         } else {
@@ -5643,8 +5778,8 @@ function buyHorse(type) {
         setMessage('❌ У вас уже есть лошадь! Продайте её, чтобы купить новую.');
         return;
     }
-    if (!spendMoney(g, horse.price)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + horse.price + ' золота.');
+    if (!spendMoney(g, horse.price * 210 * 56)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(horse.price * 210 * 56));
         return;
     }
     g.equipment.horse = {
@@ -5679,7 +5814,7 @@ function sellHorse() {
     g.copper += refund;
     convertCurrency(g);
     g.equipment.horse = null;
-    setMessage('💰 Вы продали лошадь за ' + refund + ' золота.');
+    setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56));
     addLog('💰 ' + currentUser + ' продал лошадь');
     updateMenu();
     saveData();
@@ -5712,7 +5847,7 @@ function closeStable() {
 // ============================================================
 // ВЕЛИКАЯ СЕПТА
 // ============================================================
-const TEMPLE_COOLDOWNS = { heal: 2 * 60 * 60 * 1000, luck: 24 * 60 * 60 * 1000 };
+const TEMPLE_COOLDOWNS = { heal: 2 * 60 * 60 * 1000 };
 
 function openTemple() {
     const modal = document.getElementById('modal-temple') || createTempleModal();
@@ -5720,115 +5855,200 @@ function openTemple() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
+    
     let html = '<div class="modal-section"><h4>⛪ ВЕЛИКАЯ СЕПТА БЕЙЛОРА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Храм Семерых. Исцеление и удача.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Храм Семерых. Зелья, молитва и удача.</p>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '</div>';
-    html += '<div class="modal-section"><h4>💉 БЕСПЛАТНОЕ ИСЦЕЛЕНИЕ</h4>';
+    
+    // === ЗЕЛЬЯ ===
+    html += '<div class="modal-section"><h4>🧪 ЗЕЛЬЯ</h4>';
+    const potions = [
+        { id: 'health_small', name: '🧪 Малое зелье здоровья', price: 30, hp: 20, fatigue: 0 },
+        { id: 'health_medium', name: '🧪 Среднее зелье здоровья', price: 80, hp: 50, fatigue: 0 },
+        { id: 'health_large', name: '🧪 Большое зелье здоровья', price: 150, hp: 100, fatigue: 0 },
+        { id: 'restore', name: '🧪 Зелье восстановления', price: 200, hp: 50, fatigue: 30 },
+        { id: 'stamina', name: '🧪 Зелье выносливости', price: 100, hp: 10, fatigue: 20 }
+    ];
+    potions.forEach(potion => {
+        const stock = 99;
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label" style="font-size:13px;">' + potion.name + '</span>';
+        html += '<span class="value" style="font-size:11px;">';
+        html += '❤️ +' + potion.hp + ' HP';
+        if (potion.fatigue > 0) html += ' | 😴 +' + potion.fatigue + ' устал.';
+        html += ' | 💰' + formatCurrency(potion.price);
+        html += ' <button class="btn btn-small" onclick="buyPotion(\'' + potion.id + '\',' + potion.price + ',' + potion.hp + ',' + potion.fatigue + ')">Купить</button>';
+        html += '</span></div>';
+    });
+    html += '</div>';
+    
+    // === БЕСПЛАТНОЕ ИСЦЕЛЕНИЕ ===
+    const maxHp = getMaxHp(g);
     const lastHeal = g.lastHeal || 0;
     const canHeal = (Date.now() - lastHeal) >= TEMPLE_COOLDOWNS.heal;
-    if (canHeal) {
-        html += '<p style="color:#6a5a48;font-size:12px;">Восстановить здоровье полностью. Бесплатно!</p>';
-        html += '<button class="btn" onclick="healAtTemple()">💉 Исцелиться</button>';
+    
+    html += '<div class="modal-section"><h4>💉 БЕСПЛАТНОЕ ИСЦЕЛЕНИЕ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Раз в 2 часа. Полное восстановление HP.</p>';
+    if (g.hp >= maxHp) {
+        html += '<div style="color:#7ac98a;">✅ Вы полностью здоровы!</div>';
+    } else if (canHeal) {
+        html += '<button class="btn" onclick="freeHeal()">💉 Исцелиться (бесплатно)</button>';
     } else {
         const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.heal - (Date.now() - lastHeal)) / (60 * 1000));
-        html += '<p style="color:#c96a5a;font-size:12px;">⏳ Доступно через ' + timeLeft + ' мин.</p>';
+        html += '<div style="color:#c96a5a;">⏳ Доступно через ' + timeLeft + ' мин.</div>';
     }
     html += '</div>';
-    html += '<div class="modal-section"><h4>🍀 УВЕЛИЧЕНИЕ УДАЧИ</h4>';
+    
+    // === МОЛИТВА ===
+    html += '<div class="modal-section"><h4>🙏 МОЛИТВА (Благословение)</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">+10% к опыту на 1 час. Раз в сутки.</p>';
+    
+    const blessing = g.blessing || { active: false, expires: 0 };
+    if (blessing.active && blessing.expires > Date.now()) {
+        const timeLeft = Math.ceil((blessing.expires - Date.now()) / 60000);
+        html += '<div style="color:#7ac98a;">✅ Благословение активно! Осталось: ' + timeLeft + ' мин.</div>';
+    } else {
+        const lastPrayer = g.lastPrayer || 0;
+        const dayMs = 24 * 60 * 60 * 1000;
+        if (Date.now() - lastPrayer >= dayMs) {
+            html += '<button class="btn" onclick="prayForBlessing()">🙏 Помолиться (бесплатно, 1 раз в день)</button>';
+        } else {
+            const timeLeft = Math.ceil((dayMs - (Date.now() - lastPrayer)) / (60 * 60 * 1000));
+            html += '<div style="color:#c96a5a;">⏳ Молитва доступна через ' + timeLeft + ' ч.</div>';
+        }
+    }
+    html += '</div>';
+    
+    // === УДАЧА ===
+    html += '<div class="modal-section"><h4>🍀 УДАЧА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">🍀 Текущая удача: <strong>' + (g.luck || 0) + '/25</strong></p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">💰 1000 золота → +5 удачи</p>';
     if ((g.luck || 0) >= 25) {
         html += '<p style="color:#7ac98a;">✅ Максимум удачи достигнут!</p>';
     } else {
-        const lastLuck = g.lastLuck || 0;
-        const canLuck = (Date.now() - lastLuck) >= TEMPLE_COOLDOWNS.luck;
-        if (canLuck) {
-            html += '<button class="btn btn-small" style="margin:4px 0;" onclick="getFreeLuck()">🙏 Молитва (+1 удача, бесплатно, 1 раз в день)</button>';
-        } else {
-            const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.luck - (Date.now() - lastLuck)) / (60 * 60 * 1000));
-            html += '<p style="color:#c96a5a;font-size:11px;">⏳ Молитва доступна через ' + timeLeft + ' ч.</p>';
-        }
-        html += '<p style="color:#6a5a48;font-size:12px;margin-top:6px;">📜 Пожертвования:</p>';
-        const donations = [
-            { amount: 100, luck: 1, label: 'Малое' },
-            { amount: 500, luck: 2, label: 'Среднее' },
-            { amount: 1000, luck: 4, label: 'Большое' },
-            { amount: 5000, luck: 10, label: 'Щедрое' }
-        ];
-        donations.forEach(d => {
-            html += '<button class="btn btn-small" style="margin:4px 0;text-align:left;" onclick="donate(' + d.amount + ')">';
-            html += '💰 ' + d.amount + ' зол. → 🍀 +' + d.luck + ' удачи (' + d.label + ')';
-            html += '</button>';
-        });
+        const canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= 1000 * 210 * 56;
+        html += '<button class="btn" onclick="donateLuck()" ' + (canAfford ? '' : 'disabled') + '>';
+        html += '💰 Купить удачу (1000 зол.)';
+        if (!canAfford) html += ' ❌';
+        html += '</button>';
     }
     html += '</div>';
+    
     html += '<button class="btn btn-secondary" onclick="closeTemple()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
 
-function healAtTemple() {
+function buyPotion(potionId, price, hp, fatigue) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    if (g.lastHeal && (Date.now() - g.lastHeal) < TEMPLE_COOLDOWNS.heal) {
-        const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.heal - (Date.now() - g.lastHeal)) / (60 * 1000));
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
+        return;
+    }
+    
+    const potionNames = {
+        'health_small': 'Малое зелье здоровья',
+        'health_medium': 'Среднее зелье здоровья',
+        'health_large': 'Большое зелье здоровья',
+        'restore': 'Зелье восстановления',
+        'stamina': 'Зелье выносливости'
+    };
+    
+    const item = {
+        name: potionNames[potionId] || potionId,
+        quality: 'Обычное',
+        type: 'food',
+        effect: { hp: hp || 0, fatigue: fatigue || 0 },
+        count: 1
+    };
+    
+    addToInventory(g, item);
+    
+    setMessage('✅ Вы купили ' + item.name);
+    addLog('🛒 ' + currentUser + ' купил ' + item.name + ' за ' + formatCurrency(price));
+    convertCurrency(g);
+    updateMenu();
+    saveData();
+    openTemple();
+}
+
+function freeHeal() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const maxHp = getMaxHp(g);
+    if (g.hp >= maxHp) {
+        setMessage('✅ Вы уже здоровы!');
+        return;
+    }
+    
+    const now = Date.now();
+    const healCooldown = 2 * 60 * 60 * 1000;
+    
+    if (g.lastHeal && (now - g.lastHeal) < healCooldown) {
+        const timeLeft = Math.ceil((healCooldown - (now - g.lastHeal)) / (60 * 1000));
         setMessage('⏳ Исцеление доступно через ' + timeLeft + ' мин.');
         return;
     }
-    g.hp = g.maxHp;
-    g.lastHeal = Date.now();
+    
+    g.hp = maxHp;
+    g.lastHeal = now;
     setMessage('💉 Вы полностью исцелились!');
-    addLog('💉 ' + currentUser + ' исцелился в Септе');
+    addLog('💉 ' + currentUser + ' бесплатно исцелился в Септе');
     updateMenu();
     saveData();
     openTemple();
 }
 
-function getFreeLuck() {
+function prayForBlessing() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    if ((g.luck || 0) >= 25) {
-        setMessage('🍀 Ваша удача достигла максимума (25)!');
-        return;
-    }
-    if (g.lastLuck && (Date.now() - g.lastLuck) < TEMPLE_COOLDOWNS.luck) {
-        const timeLeft = Math.ceil((TEMPLE_COOLDOWNS.luck - (Date.now() - g.lastLuck)) / (60 * 60 * 1000));
+    
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    
+    if (g.lastPrayer && (now - g.lastPrayer) < dayMs) {
+        const timeLeft = Math.ceil((dayMs - (now - g.lastPrayer)) / (60 * 60 * 1000));
         setMessage('⏳ Молитва доступна через ' + timeLeft + ' ч.');
         return;
     }
-    g.luck = Math.min(25, (g.luck || 0) + 1);
-    g.lastLuck = Date.now();
-    setMessage('🙏 Вы помолились Семерым! Удача +1 (всего: ' + g.luck + '/25)');
-    addLog('🙏 ' + currentUser + ' получил +1 удачу в Септе');
+    
+    g.lastPrayer = now;
+    if (!g.blessing) g.blessing = { active: true, expires: now + 60 * 60 * 1000 };
+    g.blessing.active = true;
+    g.blessing.expires = now + 60 * 60 * 1000;
+    
+    setMessage('🙏 Вы получили благословение! +10% к опыту на 1 час.');
+    addLog('🙏 ' + currentUser + ' получил благословение (+10% опыта)');
     updateMenu();
     saveData();
     openTemple();
 }
 
-function donate(amount) {
+function donateLuck() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
+    
     if ((g.luck || 0) >= 25) {
-        setMessage('🍀 Ваша удача достигла максимума (25)!');
+        setMessage('🍀 Удача уже максимальная (25)!');
         return;
     }
-    const luckBonus = { 100: 1, 500: 2, 1000: 4, 5000: 10 }[amount];
-    if (!luckBonus) return;
-    if ((g.luck || 0) + luckBonus > 25) {
-        const maxPossible = 25 - (g.luck || 0);
-        setMessage('❌ Вы можете получить максимум ' + maxPossible + ' удачи. Сделайте меньшее пожертвование.');
+    
+    if (!spendMoney(g, 1000 * 210 * 56)) {
+        setMessage('❌ Недостаточно золота! Нужно: 1000 зол.');
         return;
     }
-    if (!spendMoney(g, amount)) {
-        setMessage('❌ Недостаточно золота! Нужно: ' + amount + ' зол.');
-        return;
-    }
-    g.luck = (g.luck || 0) + luckBonus;
-    const labels = { 100: 'Малое', 500: 'Среднее', 1000: 'Большое', 5000: 'Щедрое' };
-    setMessage('📜 Вы сделали ' + labels[amount] + ' пожертвование! Удача +' + luckBonus + ' (всего: ' + g.luck + '/25)');
-    addLog('📜 ' + currentUser + ' пожертвовал ' + amount + ' зол. в Септу');
+    
+    g.luck = Math.min(25, (g.luck || 0) + 5);
+    setMessage('🍀 Вы купили удачу! +5 (всего: ' + g.luck + '/25)');
+    addLog('🍀 ' + currentUser + ' купил удачу за 1000 зол.');
     updateMenu();
     saveData();
     openTemple();
@@ -5996,7 +6216,7 @@ function payJailFine() {
     if (!user) return;
     const g = user.game;
     const fine = getJailFine(g);
-    if (!spendMoney(g, fine)) {
+    if (!spendMoney(g, fine * 210 * 56)) {
         setMessage('❌ У вас недостаточно золота! Штраф: ' + fine + ' зол.');
         return;
     }
@@ -6116,7 +6336,7 @@ function createJailModal() {
 }
 
 // ============================================================
-// РЫНОК (без кнопки покупки лавки)
+// РЫНОК
 // ============================================================
 function openMarket() {
     const modal = document.getElementById('modal-market') || createMarketModal();
@@ -6249,7 +6469,7 @@ function enterStall(stallId) {
             
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
-            html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + price + ' МП';
+            html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + formatCurrency(price);
             if (isOwner && isActive) {
                 html += ' <button class="btn btn-small" onclick="removeFromStall(' + stallId + ',' + idx + ')">❌ Убрать</button>';
             } else if (isActive && !isOwner) {
@@ -6316,9 +6536,24 @@ function addToStall(stallId) {
     }
     
     const item = g.inventory.splice(index, 1)[0];
-    const price = prompt('Введите цену в МП (мин. 1):');
-    const priceNum = parseInt(price);
-    if (isNaN(priceNum) || priceNum < 1) {
+    
+    const input = prompt(
+        'Введите цену:\n' +
+        'Примеры:\n' +
+        '• 100 (медь)\n' +
+        '• 5 ЗОЛ (золото)\n' +
+        '• 2 СО (серебро)\n' +
+        '• 1 ЗОЛ 50 МП'
+    );
+    
+    if (!input) {
+        setMessage('❌ Отменено.');
+        addToInventory(g, item);
+        return;
+    }
+    
+    const price = parseCurrencyInput(input);
+    if (price === null || price < 1) {
         setMessage('❌ Цена должна быть не менее 1 МП.');
         addToInventory(g, item);
         return;
@@ -6328,9 +6563,9 @@ function addToStall(stallId) {
     if (!stall.prices) stall.prices = {};
     const newIdx = stall.inventory.length;
     stall.inventory.push(item);
-    stall.prices[newIdx] = priceNum;
+    stall.prices[newIdx] = price;
     saveMarketStalls();
-    setMessage('✅ Вы добавили ' + item.name + ' в лавку за ' + priceNum + ' МП.');
+    setMessage('✅ Вы добавили ' + item.name + ' в лавку за ' + formatCurrency(price));
     addLog('🏪 ' + currentUser + ' добавил ' + item.name + ' в лавку #' + stallId);
     updateMenu();
     enterStall(stallId);
@@ -6374,7 +6609,7 @@ function buyFromStall(stallId, idx) {
         return;
     }
     if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + price + ' МП.');
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
         return;
     }
     const owner = users[stall.owner];
@@ -6387,8 +6622,8 @@ function buyFromStall(stallId, idx) {
     if (stall.prices) delete stall.prices[idx];
     addToInventory(g, item);
     saveMarketStalls();
-    setMessage('✅ Вы купили ' + item.name + ' за ' + price + ' МП.');
-    addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + price + ' МП');
+    setMessage('✅ Вы купили ' + item.name + ' за ' + formatCurrency(price));
+    addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + formatCurrency(price));
     updateMenu();
     enterStall(stallId);
 }
