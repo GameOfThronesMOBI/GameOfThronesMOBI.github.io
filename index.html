@@ -829,6 +829,58 @@ let horseMarket = {
     'fire': { total: 1, sold: 0, resetTime: null }
 };
 
+// Глобальный массив конфиската
+let confiscatedItems = [];
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
+function hash(str) { let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h=h&h; } return h.toString(36); }
+function showPage(page) { ['login','register','game'].forEach(id => document.getElementById('page-'+id).classList.add('hide')); document.getElementById('page-'+page).classList.remove('hide'); }
+function setMessage(msg) { const el = document.getElementById('game-message'); el.textContent = msg || ''; clearTimeout(el._timer); if (msg && msg.length > 0) { el._timer = setTimeout(() => { el.textContent = ''; }, 8000); } }
+function getTimeOfDay() { const now=new Date(); const h=now.getHours(); const m=now.getMinutes(); const t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); let p='', e=''; if(h>=6&&h<12){ p='Утро'; e='☀️'; } else if(h>=12&&h<18){ p='День'; e='🌤️'; } else if(h>=18&&h<24){ p='Вечер'; e='🌆'; } else { p='Ночь'; e='🌙'; } return { timeStr:t, period:p, emoji:e }; }
+
+// ПРЯМАЯ КОНВЕРТАЦИЯ (мелкое → крупное)
+function convertCurrency(g) {
+    while (g.copper >= 56) {
+        g.silver += Math.floor(g.copper / 56);
+        g.copper = g.copper % 56;
+    }
+    while (g.silver >= 210) {
+        g.gold += Math.floor(g.silver / 210);
+        g.silver = g.silver % 210;
+    }
+    return g;
+}
+
+// ОБРАТНАЯ КОНВЕРТАЦИЯ (крупное → мелкое) + трата
+function spendMoney(g, amount) {
+    if (amount <= 0) return true;
+    let total = g.gold * 210 * 56 + g.silver * 56 + g.copper;
+    if (total < amount) return false;
+    total -= amount;
+    g.gold = Math.floor(total / (210 * 56));
+    total %= (210 * 56);
+    g.silver = Math.floor(total / 56);
+    g.copper = total % 56;
+    return true;
+}
+
+function getResourcePrice(resourceType, quality) {
+    const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 };
+    const base = basePrices[resourceType] || 5;
+    const q = QUALITIES[quality] || QUALITIES['Обычное'];
+    return Math.round(base * q.multiplier);
+}
+
+function addLog(msg) {
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    gameLog.push('['+time+'] '+msg);
+    if (gameLog.length > 100) gameLog = gameLog.slice(-100);
+    saveData();
+}
+
 // ============================================================
 // ЗАГРУЗКА / СОХРАНЕНИЕ
 // ============================================================
@@ -889,6 +941,7 @@ function initMarketStalls() {
             marketStalls[i] = {
                 owner: null,
                 rentPaid: null,
+                rentDays: 0,
                 inventory: [],
                 prices: {}
             };
@@ -918,6 +971,7 @@ function loadData() {
     try { const rawMarket = localStorage.getItem('got_market'); if (rawMarket) marketListings = JSON.parse(rawMarket); } catch(e) { marketListings = []; }
     try { const rawTrader = localStorage.getItem('got_trader'); if (rawTrader) traderInventory = JSON.parse(rawTrader); } catch(e) { traderInventory = {}; }
     try { const rawLog = localStorage.getItem('got_log'); if (rawLog) gameLog = JSON.parse(rawLog); } catch(e) { gameLog = []; }
+    try { const rawConfiscated = localStorage.getItem('got_confiscated'); if (rawConfiscated) confiscatedItems = JSON.parse(rawConfiscated); } catch(e) { confiscatedItems = []; }
     
     loadHousingMarket();
     loadHorseMarket();
@@ -932,6 +986,7 @@ function saveData() {
     localStorage.setItem('got_users', JSON.stringify(users));
     localStorage.setItem('got_market', JSON.stringify(marketListings));
     localStorage.setItem('got_trader', JSON.stringify(traderInventory));
+    localStorage.setItem('got_confiscated', JSON.stringify(confiscatedItems));
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
     saveHousingMarket();
@@ -939,25 +994,26 @@ function saveData() {
     saveMarketStalls();
 }
 
-function addLog(msg) {
-    const now = new Date();
-    const time = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    gameLog.push('['+time+'] '+msg);
-    if (gameLog.length > 100) gameLog = gameLog.slice(-100);
+function addTraderStock(place, itemKey, amount) {
+    if (!traderInventory) traderInventory = {};
+    if (!traderInventory[place]) traderInventory[place] = {};
+    traderInventory[place][itemKey] = (traderInventory[place][itemKey] || 0) + amount;
     saveData();
 }
 
-function hash(str) { let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h=h&h; } return h.toString(36); }
-function showPage(page) { ['login','register','game'].forEach(id => document.getElementById('page-'+id).classList.add('hide')); document.getElementById('page-'+page).classList.remove('hide'); }
-function setMessage(msg) { const el = document.getElementById('game-message'); el.textContent = msg || ''; clearTimeout(el._timer); if (msg && msg.length > 0) { el._timer = setTimeout(() => { el.textContent = ''; }, 8000); } }
-function getTimeOfDay() { const now=new Date(); const h=now.getHours(); const m=now.getMinutes(); const t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); let p='', e=''; if(h>=6&&h<12){ p='Утро'; e='☀️'; } else if(h>=12&&h<18){ p='День'; e='🌤️'; } else if(h>=18&&h<24){ p='Вечер'; e='🌆'; } else { p='Ночь'; e='🌙'; } return { timeStr:t, period:p, emoji:e }; }
-function convertCurrency(g) { 
-    while (g.copper >= 56) { g.silver += Math.floor(g.copper / 56); g.copper = g.copper % 56; }
-    while (g.silver >= 210) { g.gold += Math.floor(g.silver / 210); g.silver = g.silver % 210; }
-    return g; 
+function removeTraderStock(place, itemKey, amount) {
+    if (!traderInventory) traderInventory = {};
+    if (!traderInventory[place]) traderInventory[place] = {};
+    const current = traderInventory[place][itemKey] || 0;
+    traderInventory[place][itemKey] = Math.max(0, current - amount);
+    saveData();
 }
-function spendMoney(g, amount) { if (amount <= 0) return true; let total = g.copper + g.silver*56 + g.gold*210*56; if (total < amount) return false; total -= amount; g.gold = Math.floor(total / (210*56)); total %= (210*56); g.silver = Math.floor(total / 56); g.copper = total % 56; return true; }
-function getResourcePrice(resourceType, quality) { const basePrices = { 'leather':5, 'iron':8, 'wood':3, 'steel':20, 'coal':4, 'valyrian_ore':50000, 'valyrian_steel':100000 }; const base = basePrices[resourceType] || 5; const q = QUALITIES[quality] || QUALITIES['Обычное']; return Math.round(base * q.multiplier); }
+
+function getTraderStock(place, itemKey) {
+    if (!traderInventory) traderInventory = {};
+    if (!traderInventory[place]) traderInventory[place] = {};
+    return traderInventory[place][itemKey] || 0;
+}
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ МАГАЗИНОВ
@@ -1084,16 +1140,26 @@ function handleRegister() {
             lastLuck: null,
             blessing: null,
             jail: null,
+            // Активные бонусы (стартовые 5%)
+            activeBonuses: {
+                crit: 5,
+                pierce: 5,
+                doubleHit: 5,
+                counter: 5,
+                points: 0 // очки для распределения
+            },
             marketStall: {
                 owned: false,
                 stallId: null,
                 rentPaid: null,
+                rentDays: 0,
                 debt: 0
             },
             housing: {
                 type: null,
                 purchased: null,
-                lastPayment: null,
+                rentPaid: null,
+                rentDays: 0,
                 debt: 0,
                 storage: [],
                 storageHold: []
@@ -1129,7 +1195,7 @@ function handleLogin() {
 }
 
 // ============================================================
-// ВХОД В ИГРУ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ВХОД В ИГРУ
 // ============================================================
 function fixOldAccount(user) {
     if (!user) return user;
@@ -1161,8 +1227,9 @@ function fixOldAccount(user) {
             lastLuck: null,
             blessing: null,
             jail: null,
-            marketStall: { owned: false, stallId: null, rentPaid: null, debt: 0 },
-            housing: { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] }
+            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
+            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
         };
         return user;
     }
@@ -1194,11 +1261,14 @@ function fixOldAccount(user) {
     if (g.lastLuck === undefined) g.lastLuck = null;
     if (g.blessing === undefined) g.blessing = null;
     if (g.jail === undefined) g.jail = null;
+    if (g.activeBonuses === undefined) {
+        g.activeBonuses = { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 };
+    }
     if (g.marketStall === undefined) {
-        g.marketStall = { owned: false, stallId: null, rentPaid: null, debt: 0 };
+        g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
     }
     if (g.housing === undefined) {
-        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
     }
     if (g.housing.storage === undefined) g.housing.storage = [];
     if (g.housing.storageHold === undefined) g.housing.storageHold = [];
@@ -1241,8 +1311,9 @@ function enterGame(name) {
             lastLuck: null,
             blessing: null,
             jail: null,
-            marketStall: { owned: false, stallId: null, rentPaid: null, debt: 0 },
-            housing: { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] }
+            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
+            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
         };
     }
     
@@ -1286,6 +1357,9 @@ function enterGame(name) {
             battleState = null;
         }
     }
+    
+    // Нормализовать инвентарь
+    normalizeInventory(g);
     
     updateMenu();
     updateStory();
@@ -1402,15 +1476,93 @@ function getEquippedStats(g) {
     return { bonusDamage, bonusDefense, bonusAgility, bonusSpeedPercent };
 }
 
+// НОВАЯ ФУНКЦИЯ МАСТЕРСТВА ОРУЖИЯ (ПОЛНАЯ ПЕРЕРАБОТКА)
 function getWeaponMasteryBonus(g) {
-    const weapon=g.equipment.rightHand;
-    if(!weapon) return { damageBonus:0, accuracy:80, weaponType:'нет', skillLevel:0 };
-    const weaponType=weapon.type;
-    const skill=g.skills[weaponType];
-    const skillLevel=skill ? skill.level : 1;
-    const damageBonus=skillLevel;
-    const accuracy=80+skillLevel;
-    return { damageBonus, accuracy, weaponType, skillLevel };
+    const weapon = g.equipment.rightHand;
+    if (!weapon) {
+        return { 
+            damageBonus: 0, 
+            defenseBonus: 0,
+            agilityBonus: 0,
+            critBonus: 0,
+            pierceBonus: 0,
+            doubleHitBonus: 0,
+            counterBonus: 0,
+            skillLevel: 0
+        };
+    }
+    
+    const weaponType = weapon.type;
+    const skill = g.skills[weaponType];
+    const skillLevel = skill ? Math.min(skill.level, 999) : 1;
+    
+    // ПАССИВНЫЕ (в ЕДИНИЦАХ, до 999)
+    let damageBonus = 0;
+    let defenseBonus = 0;
+    let agilityBonus = 0;
+    
+    for (let i = 1; i <= skillLevel; i++) {
+        const cycle = i % 3;
+        if (cycle === 1) damageBonus += 1;
+        else if (cycle === 2) defenseBonus += 1;
+        else if (cycle === 0) agilityBonus += 1;
+    }
+    
+    // АКТИВНЫЕ (в ПРОЦЕНТАХ, до 65% = 325 уровней)
+    const maxActive = Math.min(skillLevel, 325);
+    const critBonus = Math.floor(maxActive / 5);
+    const pierceBonus = Math.floor(maxActive / 5);
+    const doubleHitBonus = Math.floor(maxActive / 5);
+    
+    // Контратака: после 325 уровня, каждые 5 уровней до 65%
+    let counterBonus = 0;
+    if (skillLevel > 325) {
+        const counterLevels = Math.min(skillLevel - 325, 325);
+        counterBonus = Math.floor(counterLevels / 5);
+    }
+    
+    return {
+        damageBonus,      // в единицах
+        defenseBonus,     // в единицах
+        agilityBonus,     // в единицах
+        critBonus,        // в %
+        pierceBonus,      // в %
+        doubleHitBonus,   // в %
+        counterBonus,     // в %
+        skillLevel
+    };
+}
+
+// ПОЛУЧИТЬ АКТИВНЫЙ БОНУС (стартовые 5% + прокачка)
+function getActiveBonus(g, type) {
+    const base = 5;
+    const bonus = g.activeBonuses[type] || 0;
+    return Math.min(37.5, base + bonus * 0.5);
+}
+
+// РАСПРЕДЕЛИТЬ ОЧКО МАСТЕРСТВА
+function distributeMasteryPoint(type) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (g.activeBonuses.points <= 0) {
+        setMessage('❌ Нет доступных очков мастерства.');
+        return;
+    }
+    
+    const current = g.activeBonuses[type] || 0;
+    if (current >= 65) {
+        setMessage('❌ Максимум для ' + type + ' достигнут.');
+        return;
+    }
+    
+    g.activeBonuses[type] += 1;
+    g.activeBonuses.points -= 1;
+    setMessage('✅ +0.5% к ' + type + ' (всего: ' + getActiveBonus(g, type) + '%)');
+    saveData();
+    updateMenu();
+    openCharacter();
 }
 
 function getMaxHp(g) {
@@ -1437,14 +1589,29 @@ function getMaxInventory(g) {
     return baseLimit + bonusSlots;
 }
 
+// НОВАЯ ЗАЩИТА (формула)
+function calcDamageReduction(defense) {
+    let reduction = defense / 10.4714; // 10.47 защиты = 1%
+    return Math.min(70, Math.max(0, Math.round(reduction * 10) / 10)); // шаг 0.1%, макс 70%
+}
+
+// НОВАЯ ЛОВКОСТЬ (попадание/уворот)
+function calcChance(agility) {
+    let chance = 50 + (agility / 10.4714); // 10.47 ловкости = 1%
+    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10)); // шаг 0.1%, мин 30%, макс 70%
+}
+
 function getTotalStats(g, battleState) {
     const equipped = getEquippedStats(g);
     const mastery = getWeaponMasteryBonus(g);
     const levelBonus = getLevelBonuses(g.level);
-    const totalAgility = (g.stats.agility || 1) + equipped.bonusAgility;
-    const totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + totalAgility;
-    const totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
     
+    // БАЗОВЫЕ СТАТЫ
+    let totalAgility = (g.stats.agility || 1) + equipped.bonusAgility + mastery.agilityBonus;
+    let totalDefense = (g.stats.defense || 1) + equipped.bonusDefense + mastery.defenseBonus;
+    let totalDamage = (g.stats.damage || 1) + equipped.bonusDamage + mastery.damageBonus;
+    
+    // Бонусы от дома
     let bonusInt = 0, bonusLuck = 0, bonusDef = 0;
     if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
         const house = HOUSING_TYPES[g.housing.type];
@@ -1453,7 +1620,8 @@ function getTotalStats(g, battleState) {
         bonusDef = house.bonusDef || 0;
     }
     
-    let speedPercent = 0;
+    // Скорость
+    let speedPercent = mastery.speedBonus || 0;
     if (g.equipment && g.equipment.boots && g.equipment.boots.speedPercent) {
         speedPercent += g.equipment.boots.speedPercent;
     }
@@ -1469,6 +1637,7 @@ function getTotalStats(g, battleState) {
         }
     }
     
+    // Защита от лошади
     let horseDefensePercent = 0;
     if (g.equipment && g.equipment.horse) {
         if (battleState && battleState.inProgress) {
@@ -1482,10 +1651,17 @@ function getTotalStats(g, battleState) {
         }
     }
     
+    // Итоговая защита с учётом лошади
     let finalDefense = totalDefense + bonusDef;
     if (horseDefensePercent > 0) {
         finalDefense = Math.round(finalDefense * (1 + horseDefensePercent / 100));
     }
+    
+    // Активные бонусы (из очков мастерства)
+    const critBonus = getActiveBonus(g, 'crit');
+    const pierceBonus = getActiveBonus(g, 'pierce');
+    const doubleHitBonus = getActiveBonus(g, 'doubleHit');
+    const counterBonus = getActiveBonus(g, 'counter');
     
     const luck = Math.min(25, g.luck || 0);
     const critFromLuck = Math.floor(luck / 10);
@@ -1496,11 +1672,10 @@ function getTotalStats(g, battleState) {
         agility: totalAgility,
         intelligence: (g.stats.intelligence || 1) + bonusInt,
         speedPercent: speedPercent,
-        accuracy: mastery.accuracy + levelBonus.accuracy,
-        crit: levelBonus.crit + critFromLuck,
-        pierce: levelBonus.pierce,
-        doubleHit: levelBonus.doubleHit,
-        counter: levelBonus.counter,
+        crit: critBonus + critFromLuck,
+        pierce: pierceBonus,
+        doubleHit: doubleHitBonus,
+        counter: counterBonus,
         weaponType: mastery.weaponType,
         skillLevel: mastery.skillLevel,
         maxHp: getMaxHp(g),
@@ -1508,14 +1683,16 @@ function getTotalStats(g, battleState) {
         horseDefensePercent: horseDefensePercent,
         speedDetails: {
             boots: g.equipment && g.equipment.boots ? (g.equipment.boots.speedPercent || 0) : 0,
-            horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0
+            horse: (g.equipment && g.equipment.horse) ? (HORSE_TYPES[g.equipment.horse.horseType]?.speedBonus || 0) : 0,
+            mastery: mastery.speedBonus || 0
         }
     };
 }
 
 function getHitChance(attackerStats, defenderStats) {
-    const baseChance=attackerStats.accuracy-defenderStats.agility;
-    return Math.max(5, Math.min(99, baseChance));
+    // ВСЁ через ловкость
+    let chance = 50 + (attackerStats.agility - defenderStats.agility) * 0.1;
+    return Math.min(70, Math.max(30, Math.round(chance * 10) / 10));
 }
 
 function getDistributedPoints(g) {
@@ -1538,6 +1715,234 @@ function resetAttributes() {
     updateMenu();
     saveData();
     openCharacter();
+}
+
+// ============================================================
+// СТЕКИ В ИНВЕНТАРЕ
+// ============================================================
+function isStackable(item) {
+    if (!item) return false;
+    if (item.type === 'resource') return true;
+    if (item.type === 'food' && item.effect) return true;
+    const stackableNames = ['Хлеб', 'Мясо', 'Рыба', 'Вода', 'Эль', 'Вино', 'Кожа', 'Руда', 'Уголь', 'Сталь', 'Дерево', 'Шкура'];
+    if (item.name) {
+        for (let name of stackableNames) {
+            if (item.name.includes(name)) return true;
+        }
+    }
+    return false;
+}
+
+function isConsumable(item) {
+    if (!item) return false;
+    if (item.type === 'food') return true;
+    if (item.effect) return true;
+    if (item.name && (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба') || item.name.includes('Вода') || item.name.includes('Эль') || item.name.includes('Вино'))) return true;
+    return false;
+}
+
+function addToInventory(g, item) {
+    if (!g || !g.inventory) return false;
+    
+    if (!isStackable(item)) {
+        g.inventory.push(item);
+        return true;
+    }
+    
+    const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+    for (let i = 0; i < g.inventory.length; i++) {
+        const existing = g.inventory[i];
+        if (!isStackable(existing)) continue;
+        
+        const existingKey = existing.name + '|' + (existing.quality || 'Обычное') + '|' + (existing.resourceType || '');
+        if (existingKey === key) {
+            existing.count = (existing.count || 1) + (item.count || 1);
+            return true;
+        }
+    }
+    
+    if (!item.count) item.count = 1;
+    g.inventory.push(item);
+    return true;
+}
+
+function normalizeInventory(g) {
+    if (!g || !g.inventory) return;
+    
+    const items = {};
+    for (let i = 0; i < g.inventory.length; i++) {
+        const item = g.inventory[i];
+        if (!isStackable(item)) continue;
+        
+        const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+        if (!items[key]) {
+            items[key] = { item: item, indices: [] };
+        }
+        items[key].indices.push(i);
+    }
+    
+    for (const key in items) {
+        const data = items[key];
+        if (data.indices.length <= 1) continue;
+        
+        let totalCount = 0;
+        data.indices.forEach(idx => {
+            totalCount += g.inventory[idx].count || 1;
+        });
+        
+        data.indices.sort((a, b) => b - a).forEach(idx => {
+            g.inventory.splice(idx, 1);
+        });
+        
+        const baseItem = data.item;
+        baseItem.count = totalCount;
+        g.inventory.push(baseItem);
+    }
+}
+
+function splitStack(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    if (!isStackable(item) || !item.count || item.count <= 1) {
+        setMessage('❌ Этот предмет нельзя разделить.');
+        return;
+    }
+    const count = prompt('Сколько отделить? (до ' + (item.count - 1) + ')');
+    const num = parseInt(count);
+    if (isNaN(num) || num < 1 || num >= item.count) {
+        setMessage('❌ Отменено.');
+        return;
+    }
+    const newItem = JSON.parse(JSON.stringify(item));
+    newItem.count = num;
+    item.count -= num;
+    g.inventory.push(newItem);
+    setMessage('✅ Разделено: ' + num + ' шт.');
+    updateMenu();
+    saveData();
+    openInventory();
+}
+
+function mergeStacks() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const items = {};
+    for (let i = 0; i < g.inventory.length; i++) {
+        const item = g.inventory[i];
+        if (!isStackable(item)) continue;
+        const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+        if (!items[key]) {
+            items[key] = { item: item, indices: [] };
+        }
+        items[key].indices.push(i);
+    }
+    let merged = false;
+    for (const key in items) {
+        const data = items[key];
+        if (data.indices.length <= 1) continue;
+        let totalCount = 0;
+        data.indices.forEach(idx => {
+            totalCount += g.inventory[idx].count || 1;
+        });
+        data.indices.sort((a, b) => b - a).forEach(idx => {
+            g.inventory.splice(idx, 1);
+        });
+        const baseItem = data.item;
+        baseItem.count = totalCount;
+        g.inventory.push(baseItem);
+        merged = true;
+    }
+    if (merged) {
+        setMessage('✅ Стеки объединены.');
+    } else {
+        setMessage('ℹ️ Нет стеков для объединения.');
+    }
+    updateMenu();
+    saveData();
+    openInventory();
+}
+
+function mergeSpecificStack(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    if (!isStackable(item)) {
+        setMessage('❌ Этот предмет нельзя стакать.');
+        return;
+    }
+    const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+    let totalCount = item.count || 1;
+    const indices = [index];
+    for (let i = 0; i < g.inventory.length; i++) {
+        if (i === index) continue;
+        const other = g.inventory[i];
+        if (!isStackable(other)) continue;
+        const otherKey = other.name + '|' + (other.quality || 'Обычное') + '|' + (other.resourceType || '');
+        if (otherKey === key) {
+            totalCount += other.count || 1;
+            indices.push(i);
+        }
+    }
+    if (indices.length <= 1) {
+        setMessage('ℹ️ Нет других стеков для объединения.');
+        return;
+    }
+    indices.sort((a, b) => b - a).forEach(idx => {
+        g.inventory.splice(idx, 1);
+    });
+    const newItem = JSON.parse(JSON.stringify(item));
+    newItem.count = totalCount;
+    g.inventory.push(newItem);
+    setMessage('✅ Объединено: ' + totalCount + ' шт.');
+    updateMenu();
+    saveData();
+    openInventory();
+}
+
+function useOneFromStack(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    const item = g.inventory[index];
+    if (!isConsumable(item)) {
+        setMessage('❌ Этот предмет нельзя использовать.');
+        return;
+    }
+    if (isStackable(item) && item.count) {
+        if (item.count <= 1) {
+            useItem(index);
+            return;
+        }
+        const newItem = JSON.parse(JSON.stringify(item));
+        newItem.count = 1;
+        item.count--;
+        if (item.effect) {
+            if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
+            if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
+            if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
+        } else if (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба')) {
+            g.food = Math.min(100, g.food + 20);
+        } else if (item.name.includes('Вода')) {
+            g.thirst = Math.min(100, g.thirst + 15);
+        } else if (item.name.includes('Эль')) {
+            g.hp = Math.min(g.maxHp, g.hp + 5);
+            g.thirst = Math.min(100, g.thirst + 10);
+        } else if (item.name.includes('Вино')) {
+            g.hp = Math.min(g.maxHp, g.hp + 8);
+            g.thirst = Math.min(100, g.thirst + 15);
+        }
+        setMessage('✅ Использовано: ' + item.name);
+        updateMenu();
+        saveData();
+        openInventory();
+    }
 }
 
 // ============================================================
@@ -1930,11 +2335,12 @@ function gatherResource(type) {
         
         const count=1+Math.floor(level/10);
         for(let i=0;i<count;i++){
-            g.inventory.push({
+            addToInventory(g, {
                 name:type==='wood'?'Дерево':'Руда железная',
                 quality:quality,
                 type:'resource',
-                resourceType:type
+                resourceType:type,
+                count:1
             });
         }
         
@@ -1960,9 +2366,9 @@ function openCraftMenu() {
     
     let ironCount=0, coalCount=0, steelCount=0;
     g.inventory.forEach(item=>{
-        if(item.resourceType==='iron') ironCount++;
-        if(item.resourceType==='coal') coalCount++;
-        if(item.resourceType==='steel') steelCount++;
+        if(item.resourceType==='iron') ironCount += (item.count || 1);
+        if(item.resourceType==='coal') coalCount += (item.count || 1);
+        if(item.resourceType==='steel') steelCount += (item.count || 1);
     });
     
     let html='<div class="modal-section"><h4>🔨 КРАФТ</h4>';
@@ -1996,9 +2402,9 @@ function openCraftTab() {
     const g = user.game;
     let ironCount = 0, coalCount = 0, steelCount = 0;
     g.inventory.forEach(item => {
-        if (item.resourceType === 'iron') ironCount++;
-        if (item.resourceType === 'coal') coalCount++;
-        if (item.resourceType === 'steel') steelCount++;
+        if (item.resourceType === 'iron') ironCount += (item.count || 1);
+        if (item.resourceType === 'coal') coalCount += (item.count || 1);
+        if (item.resourceType === 'steel') steelCount += (item.count || 1);
     });
     let html = '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'Кузница\')">⬅️ Назад к разделам</button>';
     html += '<h4 style="color:#c9b694;">🔨 КРАФТ</h4>';
@@ -2022,14 +2428,25 @@ function craftSteel() {
     
     let removed=0;
     for(let i=g.inventory.length-1;i>=0;i--){
-        if(g.inventory[i].resourceType==='iron'&&removed<2){
-            g.inventory.splice(i,1);
-            removed++;
+        if(g.inventory[i].resourceType==='iron' && removed<2){
+            if(g.inventory[i].count && g.inventory[i].count > 1) {
+                g.inventory[i].count--;
+                removed++;
+                if(g.inventory[i].count === 0) g.inventory.splice(i,1);
+            } else {
+                g.inventory.splice(i,1);
+                removed++;
+            }
         }
     }
     for(let i=g.inventory.length-1;i>=0;i--){
         if(g.inventory[i].resourceType==='coal'){
-            g.inventory.splice(i,1);
+            if(g.inventory[i].count && g.inventory[i].count > 1) {
+                g.inventory[i].count--;
+                if(g.inventory[i].count === 0) g.inventory.splice(i,1);
+            } else {
+                g.inventory.splice(i,1);
+            }
             break;
         }
     }
@@ -2045,11 +2462,12 @@ function craftSteel() {
     else if(roll<80) quality='Обычное';
     else quality='Плохое';
     
-    g.inventory.push({
+    addToInventory(g, {
         name:'Сталь',
         quality:quality,
         type:'resource',
-        resourceType:'steel'
+        resourceType:'steel',
+        count:1
     });
     
     g.professionXp['Кузнец']=(g.professionXp['Кузнец']||0)+Math.round(3*getXpMultiplier(g));
@@ -2281,7 +2699,7 @@ function findTreasure() {
                 defense: baseItem.defense || 0,
                 finalDefense: baseItem.defense ? Math.round(baseItem.defense * q.multiplier) : 0
             };
-            g.inventory.push(item);
+            addToInventory(g, item);
             setMessage('⚔️ Вы нашли клад: ' + item.name + ' (' + quality + ')!');
             addLog('⚔️ ' + currentUser + ' нашёл клад: ' + item.name + ' (' + quality + ')');
             updateMenu();
@@ -2311,7 +2729,7 @@ function findTreasure() {
                 finalDefense: baseItem.baseDefense ? Math.round(baseItem.baseDefense * q.multiplier) : 0
             };
             if (baseItem.speed) item.speedBonus = baseItem.speed;
-            g.inventory.push(item);
+            addToInventory(g, item);
             setMessage('🛡️ Вы нашли клад: ' + item.name + ' (' + quality + ')!');
             addLog('🛡️ ' + currentUser + ' нашёл клад: ' + item.name + ' (' + quality + ')');
             updateMenu();
@@ -2333,11 +2751,12 @@ function findTreasure() {
         const count = 3 + Math.floor(Math.random() * 3);
         const quality = rollTreasureQuality(g.level, luck);
         for (let i = 0; i < count; i++) {
-            g.inventory.push({
+            addToInventory(g, {
                 name: res.name,
                 quality: quality,
                 type: 'resource',
-                resourceType: res.type
+                resourceType: res.type,
+                count: 1
             });
         }
         setMessage('📦 Вы нашли клад: ' + res.name + ' ×' + count + ' (' + quality + ')!');
@@ -2378,7 +2797,7 @@ function findTreasure() {
             defense: baseItem.defense || 0,
             finalDefense: baseItem.defense ? Math.round(baseItem.defense * q.multiplier) : 0
         };
-        g.inventory.push(item);
+        addToInventory(g, item);
         setMessage('✨ Вы нашли редкий клад: ' + item.name + ' (' + quality + ')!');
         addLog('✨ ' + currentUser + ' нашёл редкий клад: ' + item.name + ' (' + quality + ')');
         updateMenu();
@@ -2555,11 +2974,14 @@ function battleAction(action) {
         newMobHp = Math.max(0, mobHp - damage);
         battleState.log.push('⚔️ Вы нанесли ' + damage + ' урона.');
         
+        // НАЧИСЛЯЕМ XP ЗА МАСТЕРСТВО (после попадания)
         const weaponType = totalStats.weaponType;
         if (weaponType !== 'нет' && g.skills[weaponType]) {
-            g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + Math.round(1 * getXpMultiplier(g));
+            const xpGain = Math.round(1 * getXpMultiplier(g));
+            g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
+            
             const needed = g.skills[weaponType].level * 20 + 10;
-            if (g.skills[weaponType].xp >= needed) {
+            while (g.skills[weaponType].xp >= needed) {
                 g.skills[weaponType].xp -= needed;
                 g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
                 setMessage('⚔️ Мастерство «' +
@@ -2576,16 +2998,15 @@ function battleAction(action) {
     
     if (action === 'battle_dodge') {
         const totalStats = getTotalStats(g, battleState);
-        const mobAgility = mob.agility || 1;
-        let dodgeChance = 15;
-        if (totalStats.agility > mobAgility) dodgeChance += 25;
+        const dodgeChance = calcChance(totalStats.agility);
         
         if (Math.random() * 100 < dodgeChance) {
             battleState.log.push('💨 Вы увернулись!');
-            if (Math.random() * 100 < 33 + totalStats.counter) {
-                const counterDamage = Math.max(1, totalStats.damage + Math.floor(Math.random() * 2));
+            // КОНТРАТАКА (после уворота)
+            if (Math.random() * 100 < totalStats.counter) {
+                const counterDamage = Math.max(1, Math.round(totalStats.damage * 0.5));
                 newMobHp = Math.max(0, mobHp - counterDamage);
-                battleState.log.push('⚡ Контратака! Урон: ' + counterDamage);
+                battleState.log.push('⚡ КОНТРАТАКА! Урон: ' + counterDamage);
                 if (newMobHp <= 0) {
                     battleState.mobHp = newMobHp;
                     battleOver = true;
@@ -2646,80 +3067,49 @@ function mobTurn() {
     const g = user.game;
     const { mob, playerHp, horseAlive, horseHp, horseMaxHp, mounted } = battleState;
     const totalStats = getTotalStats(g, battleState);
-    const mobAgility = mob.agility || 1;
-    
-    let dodgeChance = 10;
-    if (totalStats.agility > mobAgility) {
-        dodgeChance += 25;
-        battleState.log.push('💨 Ваша ловкость выше! Шанс уворота увеличен.');
-    }
+    const dodgeChance = calcChance(totalStats.agility);
     
     if (Math.random() * 100 < dodgeChance) {
         battleState.log.push('💨 Вы увернулись от атаки!');
-        if (Math.random() * 100 < 33 + totalStats.counter) {
-            const counterDamage = Math.max(1, totalStats.damage + Math.floor(Math.random() * 2));
-            battleState.mobHp = Math.max(0, battleState.mobHp - counterDamage);
-            battleState.log.push('⚡ Контратака! Урон: ' + counterDamage);
-            if (battleState.mobHp <= 0) {
-                battleState.inProgress = false;
-                endBattle(true, 'Победа');
-                return;
-            }
-        }
-        battleState.turn = 'player';
-        renderBattle();
-        saveBattleState();
-        return;
-    }
-    
-    let blocked = false;
-    if (battleState.defending) {
-        blocked = true;
-    } else if (totalStats.defense > mob.damage && Math.random() * 100 < 25) {
-        blocked = true;
-        battleState.log.push('🛡️ Вы блокировали удар! (защита выше урона)');
-    }
-    
-    if (blocked) {
-        let damage = mob.damage + Math.floor(Math.random() * 3);
-        damage = Math.max(0, damage - totalStats.defense);
-        damage = Math.floor(damage / 2);
-        const newPlayerHp = Math.max(0, playerHp - damage);
-        battleState.log.push('🛡️ Заблокировано! Урон снижен до ' + damage);
-        battleState.playerHp = newPlayerHp;
-        battleState.defending = false;
         
-        if (Math.random() * 100 < 33 + totalStats.counter) {
-            const counterDamage = Math.max(1, totalStats.damage + Math.floor(Math.random() * 2));
+        // КОНТРАТАКА (после уворота)
+        if (Math.random() * 100 < totalStats.counter) {
+            const counterDamage = Math.max(1, Math.round(totalStats.damage * 0.5));
             battleState.mobHp = Math.max(0, battleState.mobHp - counterDamage);
-            battleState.log.push('⚡ Контратака! Урон: ' + counterDamage);
+            battleState.log.push('⚡ КОНТРАТАКА! Урон: ' + counterDamage);
             if (battleState.mobHp <= 0) {
                 battleState.inProgress = false;
                 endBattle(true, 'Победа');
                 return;
             }
         }
-        if (newPlayerHp <= 0) {
-            battleState.inProgress = false;
-            endBattle(false, 'Смерть');
-            return;
-        }
+        
         battleState.turn = 'player';
         renderBattle();
         saveBattleState();
         return;
     }
     
-    let penetrateChance = 100;
-    if (mob.defense > totalStats.defense) {
-        penetrateChance -= 20;
-        battleState.log.push('🛡️ Защита противника выше! Урон снижен на 20%.');
+    // Защита (если нажата кнопка "Защита")
+    let damage = mob.damage + Math.floor(Math.random() * 3);
+    if (battleState.defending) {
+        const defenseBonus = totalStats.defense * 1.5;
+        const reduction = calcDamageReduction(defenseBonus);
+        damage = Math.round(damage * (1 - reduction / 100));
+        battleState.log.push('🛡️ Вы заблокировали удар!');
+        battleState.defending = false;
+    } else {
+        const reduction = calcDamageReduction(totalStats.defense);
+        damage = Math.round(damage * (1 - reduction / 100));
     }
     
-    let damage = mob.damage + Math.floor(Math.random() * 3);
-    damage = Math.max(1, damage - totalStats.defense);
-    damage = Math.round(damage * (penetrateChance / 100));
+    // Пробитие (игнорирует защиту)
+    if (mob.pierce) {
+        const pierceReduction = damage * (mob.pierce / 100);
+        damage = Math.max(1, damage - Math.round(pierceReduction));
+    }
     
+    // Урон по лошади
     let newHorseHp = battleState.horseHp;
     if (battleState.mounted && battleState.horseAlive && battleState.horseHp > 0) {
         const horseDamage = Math.floor(damage * 0.3);
@@ -2730,23 +3120,13 @@ function mobTurn() {
             battleState.horseAlive = false;
             battleState.mounted = false;
             battleState.horseDefensePercent = 0;
-            battleState.log.push('💀 Ваша лошадь пала в бою! Бонусы защиты потеряны.');
+            battleState.log.push('💀 Ваша лошадь пала в бою!');
             setMessage('💀 Ваша лошадь пала в бою!');
         }
         battleState.horseHp = newHorseHp;
-    } else {
-        damage = Math.max(1, damage - totalStats.defense);
     }
     
-    const mobMissChance = Math.max(0, totalStats.agility - mobAgility);
-    if (Math.random() * 100 < mobMissChance) {
-        battleState.log.push('🐺 ' + mob.name + ' промахнулся!');
-        battleState.turn = 'player';
-        renderBattle();
-        saveBattleState();
-        return;
-    }
-    
+    damage = Math.max(1, damage);
     const newPlayerHp = Math.max(0, playerHp - damage);
     battleState.log.push('🐺 ' + mob.name + ' нанёс ' + damage + ' урона');
     battleState.playerHp = newPlayerHp;
@@ -2886,21 +3266,23 @@ function endBattle(won, reason) {
             const skinCount = getSkinC(mob.level) + hunterBonus;
             
             for (let i = 0; i < skinCount; i++) {
-                g.inventory.push({
+                addToInventory(g, {
                     name: 'Шкура',
                     quality: skinQuality,
                     type: 'resource',
-                    resourceType: 'leather'
+                    resourceType: 'leather',
+                    count: 1
                 });
             }
             
             const meatCount = getMeatC(mob.level);
             for (let i = 0; i < meatCount; i++) {
-                g.inventory.push({
+                addToInventory(g, {
                     name: '🥩 Мясо',
                     quality: 'Обычное',
                     type: 'food',
-                    effect: { type: 'food', value: 30 }
+                    effect: { type: 'food', value: 30 },
+                    count: 1
                 });
             }
             
@@ -2951,27 +3333,6 @@ function endBattle(won, reason) {
 // ============================================================
 // ТОРГОВЛЯ
 // ============================================================
-function getTraderStock(place, itemKey) {
-    if (!traderInventory) traderInventory = {};
-    if (!traderInventory[place]) traderInventory[place] = {};
-    return traderInventory[place][itemKey] || 0;
-}
-
-function addTraderStock(place, itemKey, amount) {
-    if (!traderInventory) traderInventory = {};
-    if (!traderInventory[place]) traderInventory[place] = {};
-    traderInventory[place][itemKey] = (traderInventory[place][itemKey] || 0) + amount;
-    saveData();
-}
-
-function removeTraderStock(place, itemKey, amount) {
-    if (!traderInventory) traderInventory = {};
-    if (!traderInventory[place]) traderInventory[place] = {};
-    const current = traderInventory[place][itemKey] || 0;
-    traderInventory[place][itemKey] = Math.max(0, current - amount);
-    saveData();
-}
-
 function getShopCategories(shopType) {
     if (shopType === 'Оружейная лавка') return [
         { id: 'sword', label: '🗡️ Мечи' }, { id: 'spear', label: '🔱 Копья' },
@@ -3061,7 +3422,7 @@ function openShop(shopType) {
             const key = item.name + '|' + (item.quality || 'Обычное');
             if (!sellGrouped[key]) sellGrouped[key] = { item: item, indices: [], count: 0 };
             sellGrouped[key].indices.push(index);
-            sellGrouped[key].count++;
+            sellGrouped[key].count += (item.count || 1);
         });
         const sellKeys = Object.keys(sellGrouped);
         sellKeys.forEach(key => {
@@ -3266,7 +3627,7 @@ function buyItem(shopType, itemName, quality, price, level, type, baseDamage, de
         item.armorClass = armorClass || 'plate';
     }
     if (isResource) { item.type = 'resource'; item.resourceType = resourceType; }
-    g.inventory.push(item);
+    addToInventory(g, item);
     setMessage('✅ Вы купили ' + itemName + ' (' + quality + ')');
     addLog('🛒 ' + currentUser + ' купил ' + itemName + ' (' + quality + ') за ' + price + ' МП');
     convertCurrency(g);
@@ -3284,18 +3645,38 @@ function sellToShop(shopType, itemName, quality, count, pricePerItem) {
     if (!user) return;
     const g = user.game;
     let removed = 0;
+    let totalPrice = 0;
+    
     for (let i = g.inventory.length - 1; i >= 0; i--) {
-        if (g.inventory[i].name === itemName && g.inventory[i].quality === quality && removed < count) {
-            g.inventory.splice(i, 1);
-            removed++;
+        const item = g.inventory[i];
+        if (item.name === itemName && item.quality === quality) {
+            let toRemove = 0;
+            if (item.count && item.count > 1) {
+                toRemove = Math.min(item.count, count - removed);
+                item.count -= toRemove;
+                if (item.count === 0) g.inventory.splice(i, 1);
+            } else {
+                toRemove = 1;
+                g.inventory.splice(i, 1);
+            }
+            removed += toRemove;
+            totalPrice += pricePerItem * toRemove;
+            if (removed >= count) break;
         }
     }
-    const totalPrice = pricePerItem * removed;
+    
+    if (removed === 0) {
+        setMessage('❌ Предметы не найдены.');
+        return;
+    }
+    
     g.copper += totalPrice;
     convertCurrency(g);
+    
     const stockKey = itemName + '|' + quality;
     addTraderStock(shopType, stockKey, removed);
-    setMessage('💰 Вы продали ' + itemName + ' (' + quality + ') ×' + removed + ' за ' + totalPrice + ' МП');
+    
+    setMessage('💰 Продано ' + itemName + ' (' + quality + ') ×' + removed + ' за ' + totalPrice + ' МП');
     addLog('💰 ' + currentUser + ' продал ' + itemName + ' (' + quality + ') ×' + removed);
     updateMenu();
     saveData();
@@ -3307,7 +3688,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ
+// ТОРГОВЛЯ В ТАВЕРНЕ (с продажей)
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -3315,8 +3696,11 @@ function openTavernTrade() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
+
     let html = '<div class="modal-section"><h4>🍺 ТОРГОВЛЯ В ТАВЕРНЕ</h4>';
     html += '<p style="color:#6a5a48;">💰 ' + g.gold + ' зол. | ' + g.silver + ' сер. | ' + g.copper + ' мед.</p></div>';
+
+    // === ПОКУПКА ===
     html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
     const items = [
         { name:'🍞 Хлеб', price:5, food:20 },
@@ -3331,9 +3715,101 @@ function openTavernTrade() {
         html += '<span class="value">' + item.price + ' МП <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + item.price + ',' + (item.food || 0) + ',' + (item.thirst || 0) + ',' + (item.hp || 0) + ')">Купить</button></span>';
         html += '</div>';
     });
-    html += '</div><button class="btn" onclick="closeTrade()">Закрыть</button>';
+    html += '</div>';
+
+    // === ПРОДАЖА ===
+    html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
+    
+    const foodItems = {};
+    g.inventory.forEach((item, index) => {
+        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst || item.effect.hp))) {
+            const key = item.name + '|' + (item.quality || 'Обычное');
+            if (!foodItems[key]) {
+                foodItems[key] = { item: item, indices: [], count: 0 };
+            }
+            foodItems[key].indices.push(index);
+            foodItems[key].count += (item.count || 1);
+        }
+    });
+
+    const foodKeys = Object.keys(foodItems);
+    if (foodKeys.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет еды для продажи.</p>';
+    } else {
+        foodKeys.forEach(key => {
+            const data = foodItems[key];
+            const item = data.item;
+            const quality = item.quality || 'Обычное';
+            const q = QUALITIES[quality] || QUALITIES['Обычное'];
+            const count = data.count;
+            
+            let basePrice = 5;
+            if (item.effect) {
+                if (item.effect.food) basePrice = item.effect.food;
+                else if (item.effect.thirst) basePrice = item.effect.thirst;
+                else if (item.effect.hp) basePrice = item.effect.hp;
+            } else if (item.name.includes('Хлеб')) basePrice = 5;
+            else if (item.name.includes('Мясо')) basePrice = 10;
+            else if (item.name.includes('Рыба')) basePrice = 8;
+            
+            const pricePerItem = Math.max(1, Math.round(basePrice * q.multiplier));
+            const totalPrice = pricePerItem * count;
+            
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ') ×' + count + '</span>';
+            html += '<span class="value">' + totalPrice + ' МП <button class="btn btn-small" onclick="sellFoodToTavern(\'' + item.name + '\',\'' + quality + '\',' + count + ',' + pricePerItem + ')">Продать</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
+}
+
+function sellFoodToTavern(itemName, quality, count, pricePerItem) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+
+    let removed = 0;
+    let totalPrice = 0;
+
+    for (let i = g.inventory.length - 1; i >= 0; i--) {
+        const item = g.inventory[i];
+        if (item.name === itemName && (item.quality || 'Обычное') === quality) {
+            
+            let toRemove = 0;
+            if (item.count && item.count > 1) {
+                toRemove = Math.min(item.count, count - removed);
+                item.count -= toRemove;
+                if (item.count === 0) g.inventory.splice(i, 1);
+            } else {
+                toRemove = 1;
+                g.inventory.splice(i, 1);
+            }
+            
+            removed += toRemove;
+            totalPrice += pricePerItem * toRemove;
+            
+            if (removed >= count) break;
+        }
+    }
+
+    if (removed === 0) {
+        setMessage('❌ Еда не найдена.');
+        return;
+    }
+
+    g.copper += totalPrice;
+    convertCurrency(g);
+    
+    setMessage('💰 Вы продали ' + itemName + ' ×' + removed + ' за ' + totalPrice + ' МП');
+    addLog('💰 ' + currentUser + ' продал ' + itemName + ' ×' + removed + ' в таверне');
+    updateMenu();
+    saveData();
+    openTavernTrade();
 }
 
 function buyTavernItem(name, price, food, thirst, hp) {
@@ -3346,11 +3822,10 @@ function buyTavernItem(name, price, food, thirst, hp) {
         name: itemName,
         quality: 'Обычное',
         type: 'food',
-        effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 }
+        effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 },
+        count: 1
     };
-    if (food > 0 || thirst > 0 || hp > 0) {
-        g.inventory.push(item);
-    }
+    addToInventory(g, item);
     if (food > 0) g.food = Math.min(100, g.food + food);
     if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
     if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
@@ -3436,7 +3911,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ (ПОЛНАЯ ВЕРСИЯ)
+// ПЕРСОНАЖ
 // ============================================================
 function openCharacter() {
     const user = users[currentUser];
@@ -3478,10 +3953,13 @@ function openCharacter() {
             bonusText = ' (оружие: +' + equipped.bonusDamage + ' | мастерство: +' + mastery.damageBonus + ')';
         }
         if (s === 'defense') {
-            bonus = equipped.bonusDefense + totalStats.agility;
-            bonusText = ' (броня: +' + equipped.bonusDefense + ' | ловкость: +' + totalStats.agility + ')';
+            bonus = equipped.bonusDefense + mastery.defenseBonus;
+            bonusText = ' (броня: +' + equipped.bonusDefense + ' | мастерство: +' + mastery.defenseBonus + ')';
         }
-        if (s === 'agility') bonus = equipped.bonusAgility;
+        if (s === 'agility') {
+            bonus = equipped.bonusAgility + mastery.agilityBonus;
+            bonusText = ' (экипировка: +' + equipped.bonusAgility + ' | мастерство: +' + mastery.agilityBonus + ')';
+        }
         const total = base + bonus;
         html += '<div class="row"><span class="label">' + statLabels[s] + '</span>';
         html += '<span class="value">' + base;
@@ -3498,18 +3976,47 @@ function openCharacter() {
     html += '<div class="modal-section"><h4>🏃 СКОРОСТЬ</h4>';
     html += '<div class="row"><span class="label">👢 Ботинки</span><span class="value">+' + totalStats.speedDetails.boots + '%</span></div>';
     html += '<div class="row"><span class="label">🐴 Лошадь</span><span class="value">+' + totalStats.speedDetails.horse + '%</span></div>';
+    html += '<div class="row"><span class="label">🗡️ Мастерство</span><span class="value">+' + (totalStats.speedDetails.mastery || 0) + '%</span></div>';
     html += '<div class="row" style="border-top:1px solid #3d3026;padding-top:6px;"><span class="label" style="color:#c9b694;">✅ ИТОГО</span><span class="value" style="color:#7ac98a;font-size:16px;">+' + totalStats.speedPercent + '%</span></div>';
     html += '</div>';
     
-    html += '<div class="row"><span class="label">🎯 Меткость</span><span class="value">' + totalStats.accuracy + '% (мастерство: +' + mastery.skillLevel + ')</span></div>';
-    html += '<div class="row"><span class="label">💥 Крит</span><span class="value">' + totalStats.crit + '%</span></div>';
-    html += '<div class="row"><span class="label">🛡️ Пробитие</span><span class="value">' + totalStats.pierce + '%</span></div>';
-    html += '<div class="row"><span class="label">⚡ Двойной удар</span><span class="value">' + totalStats.doubleHit + '%</span></div>';
-    html += '<div class="row"><span class="label">💨 Контратака</span><span class="value">' + (33 + totalStats.counter) + '%</span></div>';
-    html += '<div class="row"><span class="label">🗡️ Оружие</span><span class="value">' + (g.equipment.rightHand ? g.equipment.rightHand.name + ' (ур.владения: ' + mastery.skillLevel + ')' : 'нет') + '</span></div>';
-    html += '<div class="row"><span class="label">🛡️ Броня</span><span class="value">' + equipped.bonusDefense + ' защиты</span></div>';
-    html += '<div class="row"><span class="label">🍀 Удача</span><span class="value">' + totalStats.luck + '/25</span></div>';
+    // ЛОВКОСТЬ (шансы)
+    const hitChance = calcChance(totalStats.agility);
+    const dodgeChance = calcChance(totalStats.agility);
+    html += '<div class="modal-section"><h4>💨 ЛОВКОСТЬ</h4>';
+    html += '<div class="row"><span class="label">🎯 Попадание</span><span class="value">' + hitChance + '%</span></div>';
+    html += '<div class="row"><span class="label">💨 Уворот</span><span class="value">' + dodgeChance + '%</span></div>';
     html += '</div>';
+    
+    // ЗАЩИТА
+    const reduction = calcDamageReduction(totalStats.defense);
+    html += '<div class="modal-section"><h4>🛡️ ЗАЩИТА</h4>';
+    html += '<div class="row"><span class="label">🛡️ Защита</span><span class="value">' + totalStats.defense + ' (' + reduction + '% поглощения)</span></div>';
+    html += '</div>';
+    
+    // АКТИВНЫЕ БОНУСЫ
+    html += '<div class="modal-section"><h4>⚡ АКТИВНЫЕ БОНУСЫ</h4>';
+    const bonusTypes = ['crit', 'pierce', 'doubleHit', 'counter'];
+    const bonusLabels = {
+        crit: '💥 Крит',
+        pierce: '🛡️ Пробитие',
+        doubleHit: '⚡ Двойной удар',
+        counter: '💫 Контратака'
+    };
+    bonusTypes.forEach(type => {
+        const value = getActiveBonus(g, type);
+        const points = g.activeBonuses[type] || 0;
+        html += '<div class="row">';
+        html += '<span class="label">' + bonusLabels[type] + '</span>';
+        html += '<span class="value">' + value + '% (очков: ' + points + '/65)';
+        if (g.activeBonuses.points > 0 && points < 65) {
+            html += ' <button class="btn btn-small" onclick="distributeMasteryPoint(\'' + type + '\')">+0.5%</button>';
+        }
+        html += '</span></div>';
+    });
+    html += '<div class="row"><span class="label">📊 Очков мастерства</span><span class="value">' + g.activeBonuses.points + '</span></div>';
+    html += '</div>';
+    
     html += '<div class="modal-section"><h4>💪 ВЫНОСЛИВОСТЬ</h4>';
     const st = g.stamina || { level: 1, xp: 0 };
     const staminaNeeded = st.level * 8 + 3;
@@ -3602,7 +4109,7 @@ function changeProfession() {
 }
 
 // ============================================================
-// ИНВЕНТАРЬ (С КНОПКАМИ)
+// ИНВЕНТАРЬ
 // ============================================================
 function openInventory() {
     const user = users[currentUser];
@@ -3759,7 +4266,7 @@ function equipItem(index) {
         return;
     }
     if (g.equipment[slot]) {
-        g.inventory.push(g.equipment[slot]);
+        addToInventory(g, g.equipment[slot]);
     }
     g.equipment[slot] = item;
     g.inventory.splice(index, 1);
@@ -3775,7 +4282,7 @@ function unequipItem(slot) {
     if (!user) return;
     const g = user.game;
     if (!g.equipment[slot]) { setMessage('❌ Слот пуст.'); return; }
-    g.inventory.push(g.equipment[slot]);
+    addToInventory(g, g.equipment[slot]);
     setMessage('✅ Вы сняли ' + g.equipment[slot].name);
     g.equipment[slot] = null;
     updateMenu();
@@ -3794,7 +4301,12 @@ function useItem(index) {
         if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
         if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
         if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
-        g.inventory.splice(index, 1);
+        if (item.count && item.count > 1) {
+            item.count--;
+            if (item.count === 0) g.inventory.splice(index, 1);
+        } else {
+            g.inventory.splice(index, 1);
+        }
         setMessage('✅ Использовано: ' + item.name);
         updateMenu();
         saveData();
@@ -3804,21 +4316,41 @@ function useItem(index) {
     
     if (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба')) {
         g.food = Math.min(100, g.food + 20);
-        g.inventory.splice(index, 1);
+        if (item.count && item.count > 1) {
+            item.count--;
+            if (item.count === 0) g.inventory.splice(index, 1);
+        } else {
+            g.inventory.splice(index, 1);
+        }
         setMessage('🍞 Вы съели ' + item.name + '. Еда +20.');
     } else if (item.name.includes('Вода')) {
         g.thirst = Math.min(100, g.thirst + 15);
-        g.inventory.splice(index, 1);
+        if (item.count && item.count > 1) {
+            item.count--;
+            if (item.count === 0) g.inventory.splice(index, 1);
+        } else {
+            g.inventory.splice(index, 1);
+        }
         setMessage('💧 Вы выпили воду. Жажда +15.');
     } else if (item.name.includes('Эль')) {
         g.hp = Math.min(g.maxHp, g.hp + 5);
         g.thirst = Math.min(100, g.thirst + 10);
-        g.inventory.splice(index, 1);
+        if (item.count && item.count > 1) {
+            item.count--;
+            if (item.count === 0) g.inventory.splice(index, 1);
+        } else {
+            g.inventory.splice(index, 1);
+        }
         setMessage('🍺 Вы выпили эль. HP +5, жажда +10.');
     } else if (item.name.includes('Вино')) {
         g.hp = Math.min(g.maxHp, g.hp + 8);
         g.thirst = Math.min(100, g.thirst + 15);
-        g.inventory.splice(index, 1);
+        if (item.count && item.count > 1) {
+            item.count--;
+            if (item.count === 0) g.inventory.splice(index, 1);
+        } else {
+            g.inventory.splice(index, 1);
+        }
         setMessage('🍷 Вы выпили вино. HP +8, жажда +15.');
     } else {
         setMessage('❌ Этот предмет нельзя использовать.');
@@ -3862,7 +4394,7 @@ function checkExpiredListings() {
         if (l.seller === currentUser && (now - l.listedAt) >= sevenDays) {
             const user = users[currentUser];
             if (user) {
-                user.game.inventory.push(l.item);
+                addToInventory(user.game, l.item);
                 saveData();
                 setMessage('⏳ Предмет ' + l.item.name + ' вернулся в инвентарь (не продался за 7 дней).');
             }
@@ -3942,8 +4474,10 @@ function showGuildSell() {
     } else {
         html += '<p style="color:#6a5a48;">Выберите предмет:</p>';
         g.inventory.forEach((item, index) => {
+            let countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
             html += '<div class="row" style="padding:4px 0;">';
-            html += '<span class="label">' + item.name + ' (' + (item.quality || 'Обычное') + ')</span>';
+            html += '<span class="label">' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="sellItemToMarket(' + index + ')">Выставить</button></span>';
             html += '</div>';
         });
@@ -3965,13 +4499,24 @@ function sellItemToMarket(itemIndex) {
         setMessage('❌ Недостаточно денег для оплаты комиссии (' + commission + ' МП).');
         return;
     }
-    g.inventory.splice(itemIndex, 1);
-    marketListings.push({
-        item: item,
-        price: priceNum,
-        seller: currentUser,
-        listedAt: Date.now()
-    });
+    if (item.count && item.count > 1) {
+        // Если стек - выставляем весь стек
+        g.inventory.splice(itemIndex, 1);
+        marketListings.push({
+            item: item,
+            price: priceNum,
+            seller: currentUser,
+            listedAt: Date.now()
+        });
+    } else {
+        g.inventory.splice(itemIndex, 1);
+        marketListings.push({
+            item: item,
+            price: priceNum,
+            seller: currentUser,
+            listedAt: Date.now()
+        });
+    }
     setMessage('✅ Вы выставили ' + item.name + ' на продажу за ' + priceNum + ' МП.');
     addLog('💰 ' + currentUser + ' выставил ' + item.name + ' на аукцион за ' + priceNum + ' МП');
     saveData();
@@ -3990,7 +4535,7 @@ function buyListing(index) {
         setMessage('❌ Недостаточно денег для покупки.');
         return;
     }
-    g.inventory.push(listing.item);
+    addToInventory(g, listing.item);
     const seller = users[listing.seller];
     if (seller) {
         seller.game.copper += listing.price;
@@ -4011,7 +4556,7 @@ function removeListing(index) {
     if (listing.seller !== currentUser) { setMessage('❌ Это не ваш лот.'); return; }
     const user = users[currentUser];
     if (!user) return;
-    user.game.inventory.push(listing.item);
+    addToInventory(user.game, listing.item);
     marketListings.splice(index, 1);
     setMessage('✅ Вы сняли лот.');
     saveData();
@@ -4096,6 +4641,28 @@ function closeHouses() {
 // ============================================================
 // ДОМА И МАГИСТРАТ
 // ============================================================
+function getTimeLeft(timestamp, daysPaid) {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const hourMs = 60 * 60 * 1000;
+    const expireTime = timestamp + (daysPaid * dayMs);
+    const timeLeft = expireTime - now;
+    
+    if (timeLeft <= 0) {
+        return { expired: true, text: '⚠️ ПРОСРОЧЕНО!' };
+    }
+    
+    const days = Math.floor(timeLeft / dayMs);
+    const hours = Math.floor((timeLeft % dayMs) / hourMs);
+    
+    return {
+        expired: false,
+        days: days,
+        hours: hours,
+        text: days + ' дн. ' + hours + ' ч.'
+    };
+}
+
 function checkHouseInDistrict(district) {
     const user = users[currentUser];
     if (!user) return false;
@@ -4125,11 +4692,12 @@ function buyHouse(type) {
         return;
     }
     if (!g.housing) {
-        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
     }
     g.housing.type = type;
     g.housing.purchased = Date.now();
-    g.housing.lastPayment = Date.now();
+    g.housing.rentPaid = Date.now();
+    g.housing.rentDays = 1; // 1 день бесплатно
     g.housing.debt = 0;
     if (!g.housing.storage) g.housing.storage = [];
     if (!g.housing.storageHold) g.housing.storageHold = [];
@@ -4162,7 +4730,8 @@ function sellHouse() {
     saveHousingMarket();
     g.housing.type = null;
     g.housing.debt = 0;
-    g.housing.lastPayment = null;
+    g.housing.rentPaid = null;
+    g.housing.rentDays = 0;
     setMessage('🏚️ Вы продали ' + house.name + ' за ' + refund + ' золота.');
     addLog('💰 ' + currentUser + ' продал ' + house.name);
     updateMenu();
@@ -4174,86 +4743,35 @@ function payRent() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
+    
     if (!g.housing || !g.housing.type) {
         setMessage('❌ У вас нет жилья!');
         return;
     }
+    
     const house = HOUSING_TYPES[g.housing.type];
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
     const maxWeeks = 4;
-    if (g.housing.debt > 0) {
-        setMessage('⚠️ Сначала оплатите долг (' + g.housing.debt + ' зол.)');
+    const currentDays = g.housing.rentDays || 0;
+    const totalDays = currentDays + 7;
+    
+    if (totalDays > 28) {
+        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
         return;
     }
-    const lastPayment = g.housing.lastPayment || now;
-    const weeksPaidAhead = Math.floor((lastPayment - now) / weekMs);
-    if (weeksPaidAhead >= maxWeeks) {
-        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд. Приходите позже.');
-        return;
-    }
+    
     if (!spendMoney(g, house.rent)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + house.rent + ' золота.');
         return;
     }
-    g.housing.lastPayment = Math.max(lastPayment, now) + weekMs;
-    setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю вперёд!');
+    
+    g.housing.rentDays = (g.housing.rentDays || 0) + 7;
+    g.housing.rentPaid = Date.now();
+    
+    setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю!');
     addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
     updateMenu();
     saveData();
     if (typeof openMagistrate === 'function') openMagistrate();
-}
-
-function payDebt() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (!g.housing || !g.housing.type) {
-        setMessage('❌ У вас нет жилья!');
-        return;
-    }
-    if (g.housing.debt === 0) {
-        setMessage('✅ У вас нет долгов.');
-        return;
-    }
-    if (!spendMoney(g, g.housing.debt)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + g.housing.debt + ' золота.');
-        return;
-    }
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    g.housing.lastPayment = Math.max(g.housing.lastPayment || now, now) + weekMs;
-    g.housing.debt = 0;
-    setMessage('✅ Вы оплатили долг и продлили аренду на неделю!');
-    addLog('💰 ' + currentUser + ' оплатил долг за ' + g.housing.type);
-    updateMenu();
-    saveData();
-    if (typeof openMagistrate === 'function') openMagistrate();
-}
-
-function evictFromHousing() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (!g.housing || !g.housing.type) return;
-    const house = HOUSING_TYPES[g.housing.type];
-    const market = housingMarket[g.housing.type];
-    if (market) market.occupied = Math.max(0, market.occupied - 1);
-    saveHousingMarket();
-    if (g.housing.storage && g.housing.storage.length > 0) {
-        if (!g.housing.storageHold) g.housing.storageHold = [];
-        g.housing.storageHold = g.housing.storageHold.concat(g.housing.storage);
-        g.housing.storage = [];
-        setMessage('📦 ' + g.housing.storageHold.length + ' предметов перемещены в камеру хранения Магистрата.');
-    }
-    const oldType = g.housing.type;
-    g.housing.type = null;
-    g.housing.debt = 0;
-    g.housing.lastPayment = null;
-    setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
-    addLog('💀 ' + currentUser + ' выселен из ' + oldType);
-    updateMenu();
-    saveData();
 }
 
 function checkRent() {
@@ -4261,24 +4779,47 @@ function checkRent() {
     if (!user) return;
     const g = user.game;
     if (!g.housing || !g.housing.type) return;
-    const house = HOUSING_TYPES[g.housing.type];
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const weeksPassed = Math.floor((now - (g.housing.lastPayment || now)) / weekMs);
-    if (weeksPassed === 0) return;
-    const totalRent = house.rent * weeksPassed;
-    if (spendMoney(g, totalRent)) {
-        g.housing.lastPayment = now;
-        setMessage('🏠 Аренда за ' + weeksPassed + ' недель оплачена (' + totalRent + ' зол.).');
-        return;
-    }
-    g.housing.debt = (g.housing.debt || 0) + totalRent;
-    g.housing.lastPayment = now;
-    if (g.housing.debt > house.rent * 3) {
+    
+    const timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+    
+    if (timeLeft.expired) {
         evictFromHousing();
-    } else {
-        setMessage('⚠️ У вас долг за аренду: ' + g.housing.debt + ' зол. Оплатите в ближайшее время!');
+        setMessage('🚪 Ваш дом конфискован за неуплату!');
     }
+}
+
+function evictFromHousing() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (!g.housing || !g.housing.type) return;
+    
+    const house = HOUSING_TYPES[g.housing.type];
+    const market = housingMarket[g.housing.type];
+    if (market) market.occupied = Math.max(0, market.occupied - 1);
+    saveHousingMarket();
+    
+    if (g.housing.storage && g.housing.storage.length > 0) {
+        confiscatedItems.push({
+            owner: currentUser,
+            items: g.housing.storage,
+            confiscatedAt: Date.now(),
+            type: 'house'
+        });
+        g.housing.storage = [];
+        setMessage('📦 Предметы со склада перемещены в конфискат.');
+    }
+    
+    const oldType = g.housing.type;
+    g.housing.type = null;
+    g.housing.rentDays = 0;
+    g.housing.rentPaid = null;
+    g.housing.debt = 0;
+    
+    setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
+    addLog('💀 ' + currentUser + ' выселен из ' + oldType);
+    updateMenu();
+    saveData();
 }
 
 function enterHome() {
@@ -4300,8 +4841,9 @@ function enterHome() {
         setMessage('❌ Ваш дом находится в районе: ' + house.district + '. Идите туда.');
         return;
     }
-    if (g.housing.debt > house.rent * 3) {
-        setMessage('❌ Вас выселили из дома за неуплату! Обратитесь в Магистрат.');
+    const timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+    if (timeLeft.expired) {
+        setMessage('❌ Аренда дома истекла! Оплатите или вас выселят.');
         return;
     }
     g.location.place = 'Дом';
@@ -4323,8 +4865,9 @@ function restAtHome() {
         return;
     }
     const house = HOUSING_TYPES[g.housing.type];
-    if (g.housing.debt > house.rent * 2) {
-        setMessage('❌ У вас слишком большой долг! Оплатите аренду, чтобы отдохнуть.');
+    const timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+    if (timeLeft.expired) {
+        setMessage('❌ Аренда дома истекла! Оплатите или вас выселят.');
         return;
     }
     g.hp = Math.min(g.hp + house.restHp, g.maxHp || 60);
@@ -4409,6 +4952,9 @@ function viewDistrict(district) {
     }
 }
 
+// ============================================================
+// МАГИСТРАТ (НОВАЯ ВЕРСИЯ)
+// ============================================================
 function openMagistrate() {
     const modal = document.getElementById('modal-magistrate') || createMagistrateModal();
     const content = document.getElementById('modal-magistrate-content');
@@ -4416,58 +4962,91 @@ function openMagistrate() {
     if (!user) return;
     const g = user.game;
     if (!g.housing) {
-        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
     }
     let html = '<div class="modal-section"><h4>📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Управление недвижимостью и городскими записями.</p></div>';
-    html += '<div class="modal-section"><h4>🏠 ВАШЕ ЖИЛЬЁ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Управление недвижимостью и торговыми лавками.</p></div>';
+    html += '<div class="tabs">';
+    html += '<button class="tab-btn" onclick="showMagistrateHousing()">🏠 Недвижимость</button>';
+    html += '<button class="tab-btn" onclick="showMagistrateStalls()">🏪 Торг. лавки</button>';
+    html += '<button class="tab-btn" onclick="showMagistrateConfiscated()">📦 Конфискат</button>';
+    html += '</div>';
+    html += '<div id="magistrate-content"></div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+    showMagistrateHousing();
+}
+
+function createMagistrateModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-magistrate';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeMagistrate(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📜 МАГИСТРАТ</h3>
+                <button class="close-btn" onclick="closeMagistrate()">✕</button>
+            </div>
+            <div id="modal-magistrate-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeMagistrate() {
+    const modal = document.getElementById('modal-magistrate');
+    if (modal) modal.classList.add('hide');
+}
+
+// --- ВКЛАДКА: Недвижимость ---
+function showMagistrateHousing() {
+    const container = document.getElementById('magistrate-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    let html = '<h4>🏠 НЕДВИЖИМОСТЬ</h4>';
+    
     if (g.housing && g.housing.type) {
         const house = HOUSING_TYPES[g.housing.type];
-        const market = housingMarket[g.housing.type];
-        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:6px 0;">';
+        const timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+        
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
         html += '<div style="color:#c9b694;font-size:18px;">' + house.emoji + ' ' + house.name + '</div>';
         html += '<div style="color:#6a5a48;font-size:12px;">📍 ' + house.district + '</div>';
         html += '<div style="color:#b8a890;font-size:13px;margin:6px 0;">' + house.description + '</div>';
         html += '<div class="row"><span class="label">📦 Склад</span><span class="value">' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + ' слотов</span></div>';
         html += '<div class="row"><span class="label">💰 Аренда</span><span class="value">' + house.rent + ' зол./неделя</span></div>';
-        const now = Date.now();
-        const weekMs = 7 * 24 * 60 * 60 * 1000;
-        const weeksLeft = Math.floor(((g.housing.lastPayment || now) - now) / weekMs);
-        if (g.housing.debt > 0) {
-            html += '<div class="row" style="border-color:#4a2a20;"><span class="label" style="color:#c96a5a;">⚠️ Долг</span><span class="value" style="color:#c96a5a;">' + g.housing.debt + ' зол.</span></div>';
-            html += '<button class="btn" onclick="payDebt()" style="margin-top:6px;">💰 Оплатить долг (' + g.housing.debt + ' зол.)</button>';
-        } else if (weeksLeft <= 0) {
-            html += '<div class="row" style="border-color:#4a2a20;"><span class="label" style="color:#c96a5a;">⏰ Аренда истекла</span><span class="value" style="color:#c96a5a;">Оплатите сейчас!</span></div>';
-            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+        
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;font-size:16px;margin:10px 0;">⚠️ АРЕНДА ПРОСРОЧЕНА!</div>';
+            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Срочно оплатить аренду (' + house.rent + ' зол.)</button>';
         } else {
-            html += '<div class="row"><span class="label" style="color:#7ac98a;">✅ Аренда оплачена</span><span class="value" style="color:#7ac98a;">на ' + weeksLeft + ' нед.</span></div>';
-            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Продлить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+            html += '<div class="row"><span class="label">⏳ Осталось</span><span class="value" style="color:#7ac98a;">' + timeLeft.text + '</span></div>';
+            const maxWeeks = 4;
+            const currentWeeks = Math.floor((g.housing.rentDays || 1) / 7);
+            if (currentWeeks < maxWeeks) {
+                html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+            } else {
+                html += '<div style="color:#6a5a48;">✅ Оплачено на 4 недели вперёд</div>';
+            }
         }
         html += '<button class="btn btn-danger" onclick="sellHouse()" style="margin-top:6px;">🏚️ Продать жильё</button>';
         html += '</div>';
     } else {
         html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🏚️ У вас нет жилья. Выберите вариант ниже.</p>';
     }
-    html += '</div>';
-    html += '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ</h4>';
-    const hold = (g.housing && g.housing.storageHold) || [];
-    html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались.</p>';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">';
-    html += '<span style="color:#b8a890;">📊 Всего предметов: ' + hold.length + '</span>';
-    if (hold.length > 0) {
-        html += '<button class="btn btn-small" onclick="openStorageHold()">📤 Посмотреть и забрать</button>';
-    } else {
-        html += '<span style="color:#6a5a48;">📭 Пусто</span>';
-    }
-    html += '</div></div>';
-    html += '<div class="modal-section"><h4>🏘️ ДОСТУПНОЕ ЖИЛЬЁ</h4>';
+    
+    html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;font-weight:bold;">🏘️ ДОСТУПНОЕ ЖИЛЬЁ</p>';
     const districts = {
         'Королевский квартал': ['mansion', 'townhouse'],
         'Торговый квартал': ['house', 'room'],
         'Квартал бедноты': ['night']
     };
     for (const [districtName, types] of Object.entries(districts)) {
-        html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;font-weight:bold;">📍 ' + districtName + '</p>';
+        html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;">📍 ' + districtName + '</p>';
         types.forEach(type => {
             const house = HOUSING_TYPES[type];
             const market = housingMarket[type];
@@ -4494,34 +5073,261 @@ function openMagistrate() {
         html += '</div>';
     }
     html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeMagistrate()" style="margin-top:10px;">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
+    container.innerHTML = html;
 }
 
-function closeMagistrate() {
-    const modal = document.getElementById('modal-magistrate');
-    if (modal) modal.classList.add('hide');
+// --- ВКЛАДКА: Торговые лавки ---
+function showMagistrateStalls() {
+    const container = document.getElementById('magistrate-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    let html = '<h4>🏪 ТОРГОВЫЕ ЛАВКИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Стоимость лавки: 80 золота. Аренда: 10 золота/неделя.</p>';
+    
+    if (g.marketStall && g.marketStall.owned) {
+        const stallId = g.marketStall.stallId;
+        const stall = marketStalls[stallId];
+        const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+        
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
+        html += '<div style="color:#c9b694;font-size:16px;">🏪 Ваша лавка #' + stallId + '</div>';
+        
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;font-size:16px;margin:10px 0;">⚠️ АРЕНДА ПРОСРОЧЕНА!</div>';
+            html += '<button class="btn" onclick="payStallRentFromMagistrate()" style="margin-top:6px;">💰 Срочно оплатить аренду (10 зол.)</button>';
+        } else {
+            html += '<div class="row"><span class="label">⏳ Осталось</span><span class="value" style="color:#7ac98a;">' + timeLeft.text + '</span></div>';
+            const maxWeeks = 4;
+            const currentWeeks = Math.floor((stall.rentDays || 1) / 7);
+            if (currentWeeks < maxWeeks) {
+                html += '<button class="btn" onclick="payStallRentFromMagistrate()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, 10 зол.)</button>';
+            } else {
+                html += '<div style="color:#6a5a48;">✅ Оплачено на 4 недели вперёд</div>';
+            }
+        }
+        html += '<button class="btn btn-small" onclick="enterStall(' + stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
+        html += '</div>';
+    } else {
+        html += '<p style="color:#6a5a48;margin:10px 0;">У вас нет торговой лавки.</p>';
+        
+        let freeStalls = 0;
+        for (let i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+            if (!marketStalls[i].owner) freeStalls++;
+        }
+        
+        if (freeStalls > 0) {
+            html += '<p style="color:#6a5a48;">Свободных лавок: ' + freeStalls + '</p>';
+            html += '<button class="btn" onclick="buyStallFromMagistrate()">🏪 Купить лавку (80 зол.)</button>';
+        } else {
+            html += '<p style="color:#c96a5a;">❌ Все лавки заняты!</p>';
+        }
+    }
+    container.innerHTML = html;
 }
 
-function createMagistrateModal() {
-    const overlay = document.createElement('div');
-    overlay.id = 'modal-magistrate';
-    overlay.className = 'modal-overlay hide';
-    overlay.onclick = function(e) { if (e.target === this) closeMagistrate(); };
-    overlay.innerHTML = `
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>📜 МАГИСТРАТ</h3>
-                <button class="close-btn" onclick="closeMagistrate()">✕</button>
-            </div>
-            <div id="modal-magistrate-content"></div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    return overlay;
+// --- ВКЛАДКА: Конфискат ---
+function showMagistrateConfiscated() {
+    const container = document.getElementById('magistrate-content');
+    let html = '<h4>📦 КОНФИСКАТ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Вещи из просроченных лавок и домов.</p>';
+    
+    const userItems = confiscatedItems.filter(item => item.owner === currentUser);
+    if (userItems.length === 0) {
+        html += '<p style="color:#6a5a48;">У вас нет вещей в конфискате.</p>';
+    } else {
+        userItems.forEach((entry, idx) => {
+            html += '<div style="border:1px solid #3d3026;border-radius:10px;padding:10px;margin:6px 0;">';
+            html += '<p style="color:#6a5a48;">📅 Конфисковано: ' + new Date(entry.confiscatedAt).toLocaleString() + '</p>';
+            entry.items.forEach((item, i) => {
+                const q = QUALITIES[item.quality] || QUALITIES['Обычное'];
+                let countDisplay = item.count && item.count > 1 ? ' ×' + item.count : '';
+                html += '<div class="row">';
+                html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '</span>';
+                html += '<span class="value"><button class="btn btn-small" onclick="returnFromConfiscate(' + idx + ',' + i + ')">📤 Забрать</button></span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        });
+    }
+    container.innerHTML = html;
 }
 
+// --- ЛАВКИ: покупка через магистрат ---
+function buyStallFromMagistrate() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (g.marketStall && g.marketStall.owned) {
+        setMessage('❌ У вас уже есть лавка!');
+        return;
+    }
+    
+    let freeStall = null;
+    for (let i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+        if (!marketStalls[i].owner) {
+            freeStall = i;
+            break;
+        }
+    }
+    if (!freeStall) {
+        setMessage('❌ Все лавки заняты!');
+        return;
+    }
+    
+    if (!spendMoney(g, 80)) {
+        setMessage('❌ Недостаточно денег! Нужно: 80 золота.');
+        return;
+    }
+    
+    marketStalls[freeStall].owner = currentUser;
+    marketStalls[freeStall].rentPaid = Date.now();
+    marketStalls[freeStall].rentDays = 1; // 1 день бесплатно
+    marketStalls[freeStall].inventory = [];
+    marketStalls[freeStall].prices = {};
+    
+    g.marketStall = {
+        owned: true,
+        stallId: freeStall,
+        rentPaid: Date.now(),
+        rentDays: 1,
+        debt: 0
+    };
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('✅ Вы купили лавку #' + freeStall + ' за 80 золота!');
+    addLog('🏪 ' + currentUser + ' купил лавку #' + freeStall + ' за 80 золота');
+    updateMenu();
+    showMagistrateStalls();
+}
+
+// --- ЛАВКИ: аренда через магистрат ---
+function payStallRentFromMagistrate() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.marketStall || !g.marketStall.owned) {
+        setMessage('❌ У вас нет лавки!');
+        return;
+    }
+    
+    const stallId = g.marketStall.stallId;
+    const stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) {
+        setMessage('❌ Это не ваша лавка.');
+        return;
+    }
+    
+    const rentCost = 10;
+    const maxWeeks = 4;
+    const currentDays = stall.rentDays || 0;
+    const totalDays = currentDays + 7;
+    
+    if (totalDays > 28) {
+        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
+        return;
+    }
+    
+    if (!spendMoney(g, rentCost)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' золота.');
+        return;
+    }
+    
+    stall.rentDays = (stall.rentDays || 0) + 7;
+    stall.rentPaid = Date.now();
+    g.marketStall.rentDays = stall.rentDays;
+    g.marketStall.rentPaid = Date.now();
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('✅ Вы оплатили аренду лавки на неделю!');
+    addLog('💰 ' + currentUser + ' оплатил аренду лавки #' + stallId);
+    updateMenu();
+    showMagistrateStalls();
+}
+
+// --- ЛАВКИ: проверка аренды ---
+function checkStallRent() {
+    const user = users[currentUser];
+    if (!user || !user.game.marketStall || !user.game.marketStall.owned) return;
+    const g = user.game;
+    const stall = marketStalls[g.marketStall.stallId];
+    if (!stall) return;
+    
+    const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+    
+    if (timeLeft.expired) {
+        confiscateStall(g.marketStall.stallId);
+        setMessage('🚪 Ваша лавка конфискована за неуплату!');
+    }
+}
+
+// --- ЛАВКИ: конфискат ---
+function confiscateStall(stallId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) return;
+    
+    if (stall.inventory && stall.inventory.length > 0) {
+        confiscatedItems.push({
+            owner: currentUser,
+            items: stall.inventory,
+            confiscatedAt: Date.now(),
+            type: 'stall'
+        });
+        setMessage('📦 Товары из лавки #' + stallId + ' перемещены в конфискат.');
+    }
+    
+    stall.owner = null;
+    stall.rentPaid = null;
+    stall.rentDays = 0;
+    stall.inventory = [];
+    stall.prices = {};
+    g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('🚪 Лавка #' + stallId + ' конфискована за неуплату!');
+    addLog('🚪 ' + currentUser + ' потерял лавку #' + stallId + ' (конфискат)');
+    updateMenu();
+}
+
+// --- ЛАВКИ: возврат из конфиската ---
+function returnFromConfiscate(entryIdx, itemIdx) {
+    const entry = confiscatedItems[entryIdx];
+    if (!entry || entry.owner !== currentUser) return;
+    
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const item = entry.items.splice(itemIdx, 1)[0];
+    addToInventory(g, item);
+    
+    if (entry.items.length === 0) {
+        confiscatedItems.splice(entryIdx, 1);
+    }
+    
+    saveData();
+    setMessage('✅ Вы забрали ' + item.name + ' из конфиската.');
+    updateMenu();
+    showMagistrateConfiscated();
+}
+
+// --- ЛАВКИ: вход в лавку через магистрат ---
+function openStallFromMagistrate(stallId) {
+    enterStall(stallId);
+}
+
+// ============================================================
+// СКЛАД
+// ============================================================
 function openStorage() {
     const user = users[currentUser];
     if (!user) return;
@@ -4544,10 +5350,12 @@ function openStorage() {
             const quality = item.quality || 'Обычное';
             const q = QUALITIES[quality] || QUALITIES['Обычное'];
             let stats = '';
+            let countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
             html += '<span class="value" style="font-size:11px;">' + stats;
             html += ' <button class="btn btn-small" onclick="takeFromStorage(' + i + ')">📤 Забрать</button>';
             html += '</span></div>';
@@ -4604,7 +5412,9 @@ function moveToStorage() {
     }
     let choices = 'Выберите предмет для склада:\n';
     g.inventory.forEach((item, i) => {
-        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')\n';
+        let countDisplay = '';
+        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
     });
     const choice = prompt(choices + '\nВведите номер предмета:');
     const index = parseInt(choice) - 1;
@@ -4634,7 +5444,7 @@ function takeFromStorage(index) {
         return;
     }
     const item = g.housing.storage.splice(index, 1)[0];
-    g.inventory.push(item);
+    addToInventory(g, item);
     setMessage('✅ Вы забрали ' + item.name + ' со склада.');
     updateMenu();
     saveData();
@@ -4660,7 +5470,7 @@ function openStorageHold() {
             const key = item.name + '|' + (item.quality || 'Обычное');
             if (!grouped[key]) grouped[key] = { item: item, indices: [], count: 0 };
             grouped[key].indices.push(idx);
-            grouped[key].count++;
+            grouped[key].count += (item.count || 1);
         });
         for (const key in grouped) {
             const data = grouped[key];
@@ -4669,11 +5479,12 @@ function openStorageHold() {
             const q = QUALITIES[quality] || QUALITIES['Обычное'];
             const count = data.count;
             let stats = '';
+            let countDisplay = count > 1 ? ' ×' + count : '';
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
-            html += '<span class="value" style="font-size:11px;">' + stats + ' | ×' + count;
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
+            html += '<span class="value" style="font-size:11px;">' + stats;
             html += ' <button class="btn btn-small" onclick="takeFromStorageHold(\'' + key + '\')">📤 Забрать все</button>';
             html += '</span></div>';
         }
@@ -4711,7 +5522,7 @@ function takeFromStorageHold(key) {
     if (!user) return;
     const g = user.game;
     if (!g.housing) {
-        g.housing = { type: null, purchased: null, lastPayment: null, debt: 0, storage: [], storageHold: [] };
+        g.housing = { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] };
     }
     if (!g.housing.storageHold) g.housing.storageHold = [];
     const hold = g.housing.storageHold;
@@ -4726,15 +5537,22 @@ function takeFromStorageHold(key) {
         setMessage('❌ Предметы не найдены.');
         return;
     }
-    if (g.inventory.length + indices.length > 50) {
+    
+    let totalItems = 0;
+    indices.forEach(i => {
+        totalItems += hold[i].count || 1;
+    });
+    
+    if (g.inventory.length + totalItems > 50) {
         setMessage('❌ В инвентаре недостаточно места! (макс. 50)');
         return;
     }
+    
     const items = [];
     indices.sort((a, b) => b - a).forEach(i => {
         items.push(hold.splice(i, 1)[0]);
     });
-    g.inventory = g.inventory.concat(items);
+    items.forEach(item => addToInventory(g, item));
     setMessage('✅ Вы забрали ' + items.length + ' ' + name + ' из камеры хранения.');
     addLog('📤 ' + currentUser + ' забрал ' + items.length + ' ' + name + ' из хранилища');
     updateMenu();
@@ -4743,7 +5561,7 @@ function takeFromStorageHold(key) {
 }
 
 // ============================================================
-// КОНЮШНЯ (ПОЛНАЯ ВЕРСИЯ)
+// КОНЮШНЯ
 // ============================================================
 function openStable() {
     const modal = document.getElementById('modal-stable') || createStableModal();
@@ -5040,7 +5858,7 @@ function createTempleModal() {
 }
 
 // ============================================================
-// ПОРТ (ЗАГЛУШКА)
+// ПОРТ
 // ============================================================
 function openPort() {
     const modal = document.getElementById('modal-port') || createPortModal();
@@ -5298,7 +6116,7 @@ function createJailModal() {
 }
 
 // ============================================================
-// РЫНОК (ТОРГОВЫЕ ЛАВКИ) — ПОЛНАЯ ВЕРСИЯ
+// РЫНОК (без кнопки покупки лавки)
 // ============================================================
 function openMarket() {
     const modal = document.getElementById('modal-market') || createMarketModal();
@@ -5308,26 +6126,28 @@ function openMarket() {
     const g = user.game;
     
     let html = '<div class="modal-section"><h4>🏪 РЫНОК КОРОЛЕВСКОЙ ГАВАНИ</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно арендовать торговую лавку и торговать с другими игроками.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно торговать с другими игроками.</p>';
     
     const myStall = g.marketStall && g.marketStall.owned ? g.marketStall : null;
     if (myStall) {
         const stall = marketStalls[myStall.stallId];
-        const rentPaid = myStall.rentPaid;
-        const now = Date.now();
-        const weekMs = 7 * 24 * 60 * 60 * 1000;
-        const isActive = rentPaid && (now - rentPaid) < weekMs;
+        const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
         html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
         html += '<div style="color:#c9b694;font-size:16px;">🏪 Ваша лавка #' + myStall.stallId + '</div>';
-        html += '<div style="color:#6a5a48;font-size:12px;">' + (isActive ? '✅ Аренда активна' : '⛔ Аренда истекла!') + '</div>';
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;">⛔ Аренда истекла! Оплатите в Магистрате.</div>';
+        } else {
+            html += '<div style="color:#7ac98a;">✅ Аренда активна</div>';
+            html += '<div style="color:#6a5a48;font-size:11px;">⏳ Осталось: ' + timeLeft.text + '</div>';
+        }
         html += '<button class="btn btn-small" onclick="enterStall(' + myStall.stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
-        if (!isActive) {
-            html += '<button class="btn btn-small" onclick="payStallRent(' + myStall.stallId + ')" style="margin-top:4px;">💰 Оплатить аренду (7 дней, 10 МП)</button>';
+        if (timeLeft.expired) {
+            html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:4px;">🏛️ Перейти в Магистрат</button>';
         }
         html += '</div>';
     } else {
-        html += '<p style="color:#6a5a48;font-size:12px;">У вас нет лавки. Арендуйте бесплатную лавку на рынке.</p>';
-        html += '<button class="btn" onclick="buyStall()">🏪 Арендовать лавку (бесплатно)</button>';
+        html += '<p style="color:#6a5a48;font-size:12px;">У вас нет лавки. Приобретите её в Магистрате.</p>';
+        html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:6px;">🏛️ Перейти в Магистрат</button>';
     }
     html += '</div>';
     
@@ -5338,7 +6158,8 @@ function openMarket() {
         const stall = marketStalls[i];
         if (stall && stall.owner) {
             hasStalls = true;
-            const isActive = stall.rentPaid && (Date.now() - stall.rentPaid) < 7 * 24 * 60 * 60 * 1000;
+            const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+            const isActive = !timeLeft.expired;
             html += '<div class="stall-card" onclick="enterStall(' + i + ')">';
             html += '<div class="stall-number">🏪 #' + i + '</div>';
             html += '<div class="stall-owner">' + stall.owner + '</div>';
@@ -5381,49 +6202,7 @@ function closeMarket() {
     if (modal) modal.classList.add('hide');
 }
 
-function buyStall() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    
-    if (g.marketStall && g.marketStall.owned) {
-        setMessage('❌ У вас уже есть лавка!');
-        return;
-    }
-    
-    let freeStall = null;
-    for (let i = 1; i <= MARKET_STALLS_TOTAL; i++) {
-        if (!marketStalls[i].owner) {
-            freeStall = i;
-            break;
-        }
-    }
-    
-    if (!freeStall) {
-        setMessage('❌ Все лавки заняты!');
-        return;
-    }
-    
-    marketStalls[freeStall].owner = currentUser;
-    marketStalls[freeStall].rentPaid = Date.now();
-    marketStalls[freeStall].inventory = [];
-    marketStalls[freeStall].prices = {};
-    
-    g.marketStall = {
-        owned: true,
-        stallId: freeStall,
-        rentPaid: Date.now(),
-        debt: 0
-    };
-    
-    saveMarketStalls();
-    saveData();
-    setMessage('✅ Вы арендовали лавку #' + freeStall + '!');
-    addLog('🏪 ' + currentUser + ' арендовал лавку #' + freeStall);
-    updateMenu();
-    openMarket();
-}
-
+// --- ЛАВКИ: вход в лавку (полная версия) ---
 function enterStall(stallId) {
     const user = users[currentUser];
     if (!user) return;
@@ -5435,20 +6214,22 @@ function enterStall(stallId) {
     }
     
     const isOwner = stall.owner === currentUser;
-    const isActive = stall.rentPaid && (Date.now() - stall.rentPaid) < 7 * 24 * 60 * 60 * 1000;
+    const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+    const isActive = !timeLeft.expired;
     const modal = document.getElementById('modal-stall') || createStallModal();
     const content = document.getElementById('modal-stall-content');
     
     let html = '<div class="modal-section"><h4>🏪 ЛАВКА #' + stallId + '</h4>';
     html += '<p style="color:#6a5a48;">👤 Владелец: <strong>' + stall.owner + '</strong></p>';
     html += '<p style="color:#6a5a48;">' + (isActive ? '✅ Активна' : '⛔ Аренда истекла') + '</p>';
+    if (!isActive && isOwner) {
+        html += '<p style="color:#c96a5a;">⚠️ Оплатите аренду в Магистрате!</p>';
+    }
     html += '</div>';
     
     if (isOwner && isActive) {
         html += '<div class="modal-section"><h4>📦 УПРАВЛЕНИЕ ЛАВКОЙ</h4>';
         html += '<button class="btn btn-small" onclick="addToStall(' + stallId + ')" style="margin:4px 0;">📥 Добавить товар из инвентаря</button>';
-        html += '<button class="btn btn-small" onclick="payStallRent(' + stallId + ')" style="margin:4px 0;">💰 Продлить аренду (7 дней, 10 МП)</button>';
-        html += '<button class="btn btn-small btn-danger" onclick="evictFromStall(' + stallId + ')" style="margin:4px 0;">🚪 Закрыть лавку</button>';
         html += '</div>';
     }
     
@@ -5461,11 +6242,13 @@ function enterStall(stallId) {
             const q = QUALITIES[quality] || QUALITIES['Обычное'];
             const price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
             let stats = '';
+            let countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
             
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')</span>';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
             html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + price + ' МП';
             if (isOwner && isActive) {
                 html += ' <button class="btn btn-small" onclick="removeFromStall(' + stallId + ',' + idx + ')">❌ Убрать</button>';
@@ -5518,9 +6301,11 @@ function addToStall(stallId) {
         return;
     }
     
-    let choices = 'Выберите предмет для лавки:\n';
+    let choices = 'Выберите предмет для лавки (можно целый стек):\n';
     g.inventory.forEach((item, i) => {
-        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')\n';
+        let countDisplay = '';
+        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
     });
     choices += '0. Отмена';
     const choice = prompt(choices);
@@ -5535,7 +6320,7 @@ function addToStall(stallId) {
     const priceNum = parseInt(price);
     if (isNaN(priceNum) || priceNum < 1) {
         setMessage('❌ Цена должна быть не менее 1 МП.');
-        g.inventory.push(item);
+        addToInventory(g, item);
         return;
     }
     
@@ -5566,7 +6351,7 @@ function removeFromStall(stallId, idx) {
     }
     const item = stall.inventory.splice(idx, 1)[0];
     if (stall.prices) delete stall.prices[idx];
-    g.inventory.push(item);
+    addToInventory(g, item);
     saveMarketStalls();
     setMessage('✅ Вы убрали ' + item.name + ' из лавки.');
     updateMenu();
@@ -5600,243 +6385,12 @@ function buyFromStall(stallId, idx) {
     }
     stall.inventory.splice(idx, 1);
     if (stall.prices) delete stall.prices[idx];
-    g.inventory.push(item);
+    addToInventory(g, item);
     saveMarketStalls();
     setMessage('✅ Вы купили ' + item.name + ' за ' + price + ' МП.');
     addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + price + ' МП');
     updateMenu();
     enterStall(stallId);
-}
-
-function payStallRent(stallId) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    const stall = marketStalls[stallId];
-    if (!stall || stall.owner !== currentUser) {
-        setMessage('❌ Это не ваша лавка.');
-        return;
-    }
-    const rentCost = 10;
-    if (!spendMoney(g, rentCost)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' МП.');
-        return;
-    }
-    stall.rentPaid = Date.now();
-    g.marketStall.rentPaid = Date.now();
-    saveMarketStalls();
-    saveData();
-    setMessage('✅ Вы оплатили аренду лавки на 7 дней!');
-    addLog('💰 ' + currentUser + ' оплатил аренду лавки #' + stallId);
-    updateMenu();
-    enterStall(stallId);
-}
-
-function checkStallRent() {
-    const user = users[currentUser];
-    if (!user || !user.game.marketStall || !user.game.marketStall.owned) return;
-    const g = user.game;
-    const stall = marketStalls[g.marketStall.stallId];
-    if (!stall) return;
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    if (!stall.rentPaid || (now - stall.rentPaid) >= weekMs) {
-        g.marketStall.debt = (g.marketStall.debt || 0) + 10;
-        if (g.marketStall.debt >= 30) {
-            evictFromStall(g.marketStall.stallId);
-        } else {
-            setMessage('⚠️ Аренда лавки истекла! Оплатите 10 МП, иначе лавка будет закрыта.');
-        }
-    }
-}
-
-function evictFromStall(stallId) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    const stall = marketStalls[stallId];
-    if (!stall || stall.owner !== currentUser) return;
-    
-    if (stall.inventory && stall.inventory.length > 0) {
-        stall.inventory.forEach(item => {
-            g.inventory.push(item);
-        });
-        setMessage('📦 ' + stall.inventory.length + ' предметов возвращены в инвентарь.');
-    }
-    stall.owner = null;
-    stall.rentPaid = null;
-    stall.inventory = [];
-    stall.prices = {};
-    g.marketStall = { owned: false, stallId: null, rentPaid: null, debt: 0 };
-    saveMarketStalls();
-    saveData();
-    setMessage('🚪 Лавка #' + stallId + ' закрыта.');
-    addLog('🚪 ' + currentUser + ' закрыл лавку #' + stallId);
-    updateMenu();
-    openMarket();
-}
-
-// ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ИНВЕНТАРЯ
-// ============================================================
-function isStackable(item) {
-    if (!item) return false;
-    if (item.type === 'resource') return true;
-    if (item.type === 'food' && item.name && !item.name.includes('Хлеб') && !item.name.includes('Мясо') && !item.name.includes('Рыба')) return true;
-    return false;
-}
-
-function isConsumable(item) {
-    if (!item) return false;
-    if (item.type === 'food') return true;
-    if (item.effect) return true;
-    if (item.name && (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба') || item.name.includes('Вода') || item.name.includes('Эль') || item.name.includes('Вино'))) return true;
-    return false;
-}
-
-function splitStack(index) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    const item = g.inventory[index];
-    if (!isStackable(item) || !item.count || item.count <= 1) {
-        setMessage('❌ Этот предмет нельзя разделить.');
-        return;
-    }
-    const count = prompt('Сколько отделить? (до ' + (item.count - 1) + ')');
-    const num = parseInt(count);
-    if (isNaN(num) || num < 1 || num >= item.count) {
-        setMessage('❌ Отменено.');
-        return;
-    }
-    const newItem = JSON.parse(JSON.stringify(item));
-    newItem.count = num;
-    item.count -= num;
-    g.inventory.push(newItem);
-    setMessage('✅ Разделено: ' + num + ' шт.');
-    updateMenu();
-    saveData();
-    openInventory();
-}
-
-function mergeStacks() {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    const items = {};
-    for (let i = 0; i < g.inventory.length; i++) {
-        const item = g.inventory[i];
-        if (!isStackable(item)) continue;
-        const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-        if (!items[key]) {
-            items[key] = { item: item, indices: [] };
-        }
-        items[key].indices.push(i);
-    }
-    let merged = false;
-    for (const key in items) {
-        const data = items[key];
-        if (data.indices.length <= 1) continue;
-        let totalCount = 0;
-        data.indices.forEach(idx => {
-            totalCount += g.inventory[idx].count || 1;
-        });
-        data.indices.sort((a, b) => b - a).forEach(idx => {
-            g.inventory.splice(idx, 1);
-        });
-        const baseItem = data.item;
-        baseItem.count = totalCount;
-        g.inventory.push(baseItem);
-        merged = true;
-    }
-    if (merged) {
-        setMessage('✅ Стеки объединены.');
-    } else {
-        setMessage('ℹ️ Нет стеков для объединения.');
-    }
-    updateMenu();
-    saveData();
-    openInventory();
-}
-
-function mergeSpecificStack(index) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    const item = g.inventory[index];
-    if (!isStackable(item)) {
-        setMessage('❌ Этот предмет нельзя стакать.');
-        return;
-    }
-    const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-    let totalCount = item.count || 1;
-    const indices = [index];
-    for (let i = 0; i < g.inventory.length; i++) {
-        if (i === index) continue;
-        const other = g.inventory[i];
-        if (!isStackable(other)) continue;
-        const otherKey = other.name + '|' + (other.quality || 'Обычное') + '|' + (other.resourceType || '');
-        if (otherKey === key) {
-            totalCount += other.count || 1;
-            indices.push(i);
-        }
-    }
-    if (indices.length <= 1) {
-        setMessage('ℹ️ Нет других стеков для объединения.');
-        return;
-    }
-    indices.sort((a, b) => b - a).forEach(idx => {
-        g.inventory.splice(idx, 1);
-    });
-    const newItem = JSON.parse(JSON.stringify(item));
-    newItem.count = totalCount;
-    g.inventory.push(newItem);
-    setMessage('✅ Объединено: ' + totalCount + ' шт.');
-    updateMenu();
-    saveData();
-    openInventory();
-}
-
-function useOneFromStack(index) {
-    const user = users[currentUser];
-    if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    const item = g.inventory[index];
-    if (!isConsumable(item)) {
-        setMessage('❌ Этот предмет нельзя использовать.');
-        return;
-    }
-    if (isStackable(item) && item.count) {
-        if (item.count <= 1) {
-            useItem(index);
-            return;
-        }
-        const newItem = JSON.parse(JSON.stringify(item));
-        newItem.count = 1;
-        item.count--;
-        if (item.effect) {
-            if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
-            if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
-            if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
-        } else if (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба')) {
-            g.food = Math.min(100, g.food + 20);
-        } else if (item.name.includes('Вода')) {
-            g.thirst = Math.min(100, g.thirst + 15);
-        } else if (item.name.includes('Эль')) {
-            g.hp = Math.min(g.maxHp, g.hp + 5);
-            g.thirst = Math.min(100, g.thirst + 10);
-        } else if (item.name.includes('Вино')) {
-            g.hp = Math.min(g.maxHp, g.hp + 8);
-            g.thirst = Math.min(100, g.thirst + 15);
-        }
-        setMessage('✅ Использовано: ' + item.name);
-        updateMenu();
-        saveData();
-        openInventory();
-    }
 }
 
 // ============================================================
