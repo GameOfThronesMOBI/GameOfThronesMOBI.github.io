@@ -138,6 +138,9 @@
 <div id="modal-jail" class="modal-overlay hide" onclick="if(event.target===this) closeJail()"><div class="modal-box"><div class="modal-header"><h3>⛓️ ТЮРЬМА</h3><button class="close-btn" onclick="closeJail()">✕</button></div><div id="modal-jail-content"></div></div></div>
 <div id="modal-market" class="modal-overlay hide" onclick="if(event.target===this) closeMarket()"><div class="modal-box"><div class="modal-header"><h3>🏪 РЫНОК</h3><button class="close-btn" onclick="closeMarket()">✕</button></div><div id="modal-market-content"></div></div></div>
 <div id="modal-stall" class="modal-overlay hide" onclick="if(event.target===this) closeStall()"><div class="modal-box"><div class="modal-header"><h3>🏪 ЛАВКА</h3><button class="close-btn" onclick="closeStall()">✕</button></div><div id="modal-stall-content"></div></div></div>
+<div id="modal-library" class="modal-overlay hide" onclick="if(event.target===this) closeLibrary()"><div class="modal-box"><div class="modal-header"><h3>📚 БИБЛИОТЕКА</h3><button class="close-btn" onclick="closeLibrary()">✕</button></div><div id="modal-library-content"></div></div></div>
+<div id="modal-guildhall" class="modal-overlay hide" onclick="if(event.target===this) closeGuildHall()"><div class="modal-box"><div class="modal-header"><h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3><button class="close-btn" onclick="closeGuildHall()">✕</button></div><div id="modal-guildhall-content"></div></div></div>
+<div id="modal-brothel" class="modal-overlay hide" onclick="if(event.target===this) closeBrothel()"><div class="modal-box"><div class="modal-header"><h3>💃 БОРДЕЛЬ</h3><button class="close-btn" onclick="closeBrothel()">✕</button></div><div id="modal-brothel-content"></div></div></div>
 
 <script>
 // ============================================================
@@ -182,7 +185,10 @@ const BUILDINGS = [
     { id:'Дом', label:'🏠 Дом' },
     { id:'Великая септа', label:'⛪ Великая септа' },
     { id:'Порт', label:'⛵ Порт' },
-    { id:'Тюрьма', label:'⛓️ Тюрьма' }
+    { id:'Тюрьма', label:'⛓️ Тюрьма' },
+    { id:'Библиотека мейстеров', label:'📚 Библиотека мейстеров' },
+    { id:'Гильдия наёмников', label:'🗡️ Гильдия наёмников' },
+    { id:'Бордель', label:'💃 Бордель' }
 ];
 
 const LOCATION_LEVELS = {
@@ -191,7 +197,10 @@ const LOCATION_LEVELS = {
     'Ворота':1,
     'Королевский квартал':1,'Торговый квартал':1,'Квартал бедноты':1,'Дом':1,
     'Великая септа':1,'Порт':1,'Тюрьма':1,
-    'Дорога':5
+    'Дорога':5,
+    'Библиотека мейстеров':1,
+    'Гильдия наёмников':1,
+    'Бордель':1
 };
 
 const HOUSING_TYPES = {
@@ -210,7 +219,7 @@ const HOUSES_DATA = {
 };
 
 // ============================================================
-// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК)
+// ВСЕ ПРЕДМЕТЫ (ПОЛНЫЙ СПИСОК) - БЕЗ ИЗМЕНЕНИЙ
 // ============================================================
 const ALL_ITEMS = {
     weapons: {
@@ -833,6 +842,12 @@ let horseMarket = {
 let confiscatedItems = [];
 
 // ============================================================
+// ПЕРЕМЕННЫЕ ДЛЯ КОСТЕЙ (PvP)
+// ============================================================
+let diceGames = {};
+let diceGameIdCounter = 0;
+
+// ============================================================
 // ЗАГРУЗКА / СОХРАНЕНИЕ
 // ============================================================
 function loadHousingMarket() {
@@ -923,6 +938,7 @@ function loadData() {
     try { const rawTrader = localStorage.getItem('got_trader'); if (rawTrader) traderInventory = JSON.parse(rawTrader); } catch(e) { traderInventory = {}; }
     try { const rawLog = localStorage.getItem('got_log'); if (rawLog) gameLog = JSON.parse(rawLog); } catch(e) { gameLog = []; }
     try { const rawConfiscated = localStorage.getItem('got_confiscated'); if (rawConfiscated) confiscatedItems = JSON.parse(rawConfiscated); } catch(e) { confiscatedItems = []; }
+    try { const rawDice = localStorage.getItem('got_dice_games'); if (rawDice) { const parsed = JSON.parse(rawDice); diceGames = parsed; } } catch(e) { diceGames = {}; }
     
     loadHousingMarket();
     loadHorseMarket();
@@ -938,6 +954,7 @@ function saveData() {
     localStorage.setItem('got_market', JSON.stringify(marketListings));
     localStorage.setItem('got_trader', JSON.stringify(traderInventory));
     localStorage.setItem('got_confiscated', JSON.stringify(confiscatedItems));
+    localStorage.setItem('got_dice_games', JSON.stringify(diceGames));
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
     saveHousingMarket();
@@ -1442,7 +1459,17 @@ function handleRegister() {
                 debt: 0,
                 storage: [],
                 storageHold: []
-            }
+            },
+            booksBoughtToday: 0,
+            lastBookReset: now,
+            quests: {
+                completed: [],
+                lastReset: 0,
+                active: null,
+                progress: {}
+            },
+            brothelBuffs: [],
+            brothelRoom: false
         }
     };
     addLog('👤 '+name+' создал персонажа ('+nationality+')');
@@ -1508,7 +1535,12 @@ function fixOldAccount(user) {
             jail: null,
             activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
             marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
-            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] },
+            booksBoughtToday: 0,
+            lastBookReset: Date.now(),
+            quests: { completed: [], lastReset: 0, active: null, progress: {} },
+            brothelBuffs: [],
+            brothelRoom: false
         };
         return user;
     }
@@ -1553,6 +1585,13 @@ function fixOldAccount(user) {
     if (g.housing.storageHold === undefined) g.housing.storageHold = [];
     if (g.online === undefined) g.online = true;
     if (g.lastActive === undefined) g.lastActive = Date.now();
+    if (g.booksBoughtToday === undefined) g.booksBoughtToday = 0;
+    if (g.lastBookReset === undefined) g.lastBookReset = Date.now();
+    if (g.quests === undefined) {
+        g.quests = { completed: [], lastReset: 0, active: null, progress: {} };
+    }
+    if (g.brothelBuffs === undefined) g.brothelBuffs = [];
+    if (g.brothelRoom === undefined) g.brothelRoom = false;
     return user;
 }
 
@@ -1592,12 +1631,18 @@ function enterGame(name) {
             jail: null,
             activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
             marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
-            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] }
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] },
+            booksBoughtToday: 0,
+            lastBookReset: Date.now(),
+            quests: { completed: [], lastReset: 0, active: null, progress: {} },
+            brothelBuffs: [],
+            brothelRoom: false
         };
     }
     
     checkRent();
     checkStallRent();
+    getActiveDiceGames(); // очистка старых игр в кости
     
     showPage('game');
     user.game.online = true;
@@ -1850,8 +1895,20 @@ function getMaxHp(g) {
 }
 
 function getXpMultiplier(g) {
-    const intelligence = Math.max(1, g.stats.intelligence || 1);
-    return 1 + (intelligence / 100);
+    let multiplier = 1 + (g.stats.intelligence / 100);
+    
+    // Баффы из борделя
+    if (g.brothelBuffs) {
+        const now = Date.now();
+        g.brothelBuffs = g.brothelBuffs.filter(b => b.expires > now);
+        g.brothelBuffs.forEach(buff => {
+            if (buff.type === 'xp') {
+                multiplier += buff.value / 100;
+            }
+        });
+    }
+    
+    return multiplier;
 }
 
 function getMaxInventory(g) {
@@ -1936,11 +1993,23 @@ function getTotalStats(g, battleState) {
     // Проверяем активность благословения
     let blessingMultiplier = 1;
     if (g.blessing && g.blessing.active && g.blessing.expires > Date.now()) {
-        blessingMultiplier = 1.1; // +10% к опыту
+        blessingMultiplier = 1.1;
+    }
+    
+    // Бонусы от борделя (урон)
+    let damageBuff = 0;
+    if (g.brothelBuffs) {
+        const now = Date.now();
+        g.brothelBuffs = g.brothelBuffs.filter(b => b.expires > now);
+        g.brothelBuffs.forEach(buff => {
+            if (buff.type === 'damage') {
+                damageBuff += buff.value;
+            }
+        });
     }
     
     return {
-        damage: totalDamage,
+        damage: totalDamage + damageBuff,
         defense: finalDefense,
         agility: totalAgility,
         intelligence: (g.stats.intelligence || 1) + bonusInt,
@@ -2042,7 +2111,10 @@ function updateStory() {
         'Великая септа': '⛪ Великая Септа Бейлора — главный храм Семерых в Вестеросе. Здесь можно исцелиться и получить благословение удачи.',
         'Порт': '⛵ Порт Королевской Гавани. Скоро здесь можно будет путешествовать между городами Вестероса.',
         'Тюрьма': '⛓️ Вы в тюрьме. Заплатите штраф или ждите освобождения.',
-        'Дорога': '🛤️ Дорога у ворот Королевской Гавани.'
+        'Дорога': '🛤️ Дорога у ворот Королевской Гавани.',
+        'Библиотека мейстеров': '📚 Библиотека мейстеров. Здесь можно купить и читать книги.',
+        'Гильдия наёмников': '🗡️ Гильдия наёмников. Ежедневные задания и контракты.',
+        'Бордель': '💃 Бордель Королевской Гавани. Отдых, развлечения и игра в кости.'
     };
     
     document.getElementById('story-text').textContent = texts[place] || 'Вы находитесь в ' + place + '.';
@@ -2169,6 +2241,21 @@ function updateActions() {
                 { id:'leave_home', label:'🚪 Выйти из дома' },
                 ...actions
             ];
+        }
+        
+        if (place === 'Библиотека мейстеров') {
+            actions.unshift({ id:'open_library', label:'📚 Библиотека' });
+        }
+        
+        if (place === 'Гильдия наёмников') {
+            actions.unshift({ id:'open_guildhall', label:'🗡️ Гильдия наёмников' });
+        }
+        
+        if (place === 'Бордель') {
+            actions.unshift({ id:'open_brothel', label:'💃 Бордель' });
+            if (user.game.brothelRoom) {
+                actions.unshift({ id:'rest_brothel', label:'🛏️ Отдохнуть (бесплатно)' });
+            }
         }
         
         actions.push({ id:'refresh', label:'🔄 Обновить' });
@@ -2335,6 +2422,26 @@ function gameAction(action) {
         case 'battle_dodge':
         case 'battle_flee':
             battleAction(action);
+            break;
+        case 'open_library':
+            openLibrary();
+            break;
+        case 'open_guildhall':
+            openGuildHall();
+            break;
+        case 'open_brothel':
+            openBrothel();
+            break;
+        case 'rest_brothel':
+            if (g.brothelRoom) {
+                g.fatigue = Math.min(100, g.fatigue + 30);
+                g.hp = Math.min(g.maxHp, g.hp + 10);
+                setMessage('🛏️ Вы отдохнули в своей комнате. +30 усталости, +10 HP');
+                updateMenu();
+                saveData();
+            } else {
+                setMessage('❌ У вас нет комнаты. Арендуйте её.');
+            }
             break;
     }
 }
@@ -3717,7 +3824,7 @@ function closeTrade() {
 }
 
 // ============================================================
-// ТОРГОВЛЯ В ТАВЕРНЕ (С ПРОДАЖЕЙ 50%)
+// ТОРГОВЛЯ В ТАВЕРНЕ
 // ============================================================
 function openTavernTrade() {
     const modal = document.getElementById('modal-trade');
@@ -3877,7 +3984,7 @@ function openMap() {
     if (!user) return;
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
-    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма','Дорога'];
+    const cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма','Дорога','Библиотека мейстеров','Гильдия наёмников','Бордель'];
     let html = '<div class="modal-section"><h4>📍 ' + user.game.location.place + ' (ур. ' + (LOCATION_LEVELS[user.game.location.place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
     BUILDINGS.forEach(b => {
@@ -3943,7 +4050,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// ПЕРСОНАЖ (ПОЛНАЯ ВЕРСИЯ)
+// ПЕРСОНАЖ
 // ============================================================
 function openCharacter() {
     const user = users[currentUser];
@@ -3963,7 +4070,6 @@ function openCharacter() {
     html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div>';
     html += '<div class="row"><span class="label">HP</span><span class="value">' + Math.round(g.hp) + '/' + g.maxHp + '</span></div>';
     
-    // Благословение
     if (g.blessing && g.blessing.active && g.blessing.expires > Date.now()) {
         const timeLeft = Math.ceil((g.blessing.expires - Date.now()) / 60000);
         html += '<div class="row"><span class="label">🙏 Благословение</span><span class="value" style="color:#ffd700;">✅ +10% опыта (' + timeLeft + ' мин)</span></div>';
@@ -4043,7 +4149,7 @@ function openCharacter() {
     html += '<div class="row"><span class="label">❤️ Бонус HP</span><span class="value" style="color:#7ac98a;">+' + (st.level * 2) + '</span></div>';
     html += '</div>';
     
-    // МАСТЕРСТВО ОРУЖИЯ (после выносливости)
+    // МАСТЕРСТВО ОРУЖИЯ
     html += '<div class="modal-section"><h4>🗡️ МАСТЕРСТВО ОРУЖИЯ</h4>';
     html += '<div class="row"><span class="label">Оружие</span><span class="value">' + (g.equipment.rightHand ? g.equipment.rightHand.name : 'нет') + '</span></div>';
     html += '<div class="row"><span class="label">Уровень</span><span class="value">' + mastery.skillLevel + '</span></div>';
@@ -4219,6 +4325,7 @@ function openInventory() {
             const equippableTypes = ['sword','spear','axe','mace','bow','crossbow','dagger','shield','helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak','horse'];
             if (equippableTypes.includes(item.type)) isEquippable = true;
             const isConsumableItem = isConsumable(item);
+            const isBook = item.isBook;
             
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410; flex-wrap:wrap;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
@@ -4245,6 +4352,10 @@ function openInventory() {
                 if (isConsumableItem) {
                     html += ' <button class="btn btn-small" onclick="useOneFromStack(' + i + ')">🍽️ Использовать 1</button>';
                 }
+            }
+            
+            if (isBook) {
+                html += ' <button class="btn btn-small" onclick="readBook(' + i + ')">📖 Читать</button>';
             }
             
             if (isEquippable) {
@@ -6422,7 +6533,7 @@ function closeMarket() {
     if (modal) modal.classList.add('hide');
 }
 
-// --- ЛАВКИ: вход в лавку (полная версия) ---
+// --- ЛАВКИ: вход в лавку ---
 function enterStall(stallId) {
     const user = users[currentUser];
     if (!user) return;
@@ -6626,6 +6737,838 @@ function buyFromStall(stallId, idx) {
     addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + formatCurrency(price));
     updateMenu();
     enterStall(stallId);
+}
+
+// ============================================================
+// БИБЛИОТЕКА МЕЙСТЕРОВ
+// ============================================================
+function openLibrary() {
+    const modal = document.getElementById('modal-library') || createLibraryModal();
+    const content = document.getElementById('modal-library-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const available = getBooksAvailable(g);
+    
+    let html = '<div class="modal-section"><h4>📚 БИБЛИОТЕКА МЕЙСТЕРОВ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Мейстеры хранят древние знания. Читайте книги, чтобы стать сильнее.</p>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
+    html += '<p style="color:#ffd700;">📖 Осталось покупок сегодня: ' + available + '/3</p>';
+    html += '</div>';
+    
+    // === КУПИТЬ КНИГИ ===
+    html += '<div class="modal-section"><h4>📖 КУПИТЬ КНИГИ</h4>';
+    const books = [
+        { level: 1, xp: 50, price: 100 },
+        { level: 5, xp: 100, price: 200 },
+        { level: 10, xp: 150, price: 350 },
+        { level: 15, xp: 200, price: 500 },
+        { level: 20, xp: 300, price: 700 },
+        { level: 25, xp: 400, price: 1000 }
+    ];
+    books.forEach(book => {
+        const canBuy = available > 0 && g.gold * 210 * 56 + g.silver * 56 + g.copper >= book.price;
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">📖 Искусство войны (ур.' + book.level + ')</span>';
+        html += '<span class="value">' + formatCurrency(book.price) + ' <button class="btn btn-small" onclick="buyBook(' + book.level + ',' + book.xp + ',' + book.price + ')" ' + (canBuy ? '' : 'disabled') + '>' + (canBuy ? '✅ Купить' : '❌') + '</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    // === КНИГИ В ИНВЕНТАРЕ ===
+    html += '<div class="modal-section"><h4>📚 ВАШИ КНИГИ</h4>';
+    const userBooks = g.inventory.filter(item => item.isBook);
+    if (userBooks.length === 0) {
+        html += '<p style="color:#6a5a48;">У вас нет книг.</p>';
+    } else {
+        userBooks.forEach((item, idx) => {
+            const realIndex = g.inventory.indexOf(item);
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">📖 ' + item.name + ' (ур.' + item.level + ')</span>';
+            html += '<span class="value">';
+            html += '<button class="btn btn-small" onclick="readBook(' + realIndex + ')">📖 Читать</button>';
+            html += ' <button class="btn btn-small" onclick="sellBook(' + realIndex + ')">💰 Продать</button>';
+            html += '</span></div>';
+        });
+    }
+    html += '</div>';
+    
+    html += '<button class="btn btn-secondary" onclick="closeLibrary()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function getBooksAvailable(g) {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    
+    if (now - g.lastBookReset >= dayMs) {
+        g.booksBoughtToday = 0;
+        g.lastBookReset = now;
+        saveData();
+    }
+    
+    return 3 - g.booksBoughtToday;
+}
+
+function buyBook(level, xp, price) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const available = getBooksAvailable(g);
+    if (available <= 0) {
+        setMessage('❌ Вы уже купили 3 книги сегодня. Приходите завтра.');
+        return;
+    }
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
+        return;
+    }
+    
+    const book = {
+        name: '📖 Искусство войны',
+        level: level,
+        xp: xp,
+        isBook: true,
+        type: 'book',
+        count: 1
+    };
+    
+    addToInventory(g, book);
+    g.booksBoughtToday = (g.booksBoughtToday || 0) + 1;
+    
+    setMessage('✅ Вы купили книгу (ур.' + level + '). Осталось покупок: ' + (available - 1));
+    addLog('📖 ' + currentUser + ' купил книгу (ур.' + level + ')');
+    updateMenu();
+    saveData();
+    openLibrary();
+}
+
+function sellBook(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Книга не найдена.'); return; }
+    
+    const item = g.inventory[index];
+    if (!item.isBook) {
+        setMessage('❌ Это не книга.');
+        return;
+    }
+    
+    const price = Math.round(item.xp * 2);
+    g.copper += price;
+    convertCurrency(g);
+    g.inventory.splice(index, 1);
+    setMessage('💰 Вы продали книгу за ' + formatCurrency(price));
+    addLog('💰 ' + currentUser + ' продал книгу за ' + formatCurrency(price));
+    updateMenu();
+    saveData();
+    openLibrary();
+}
+
+function readBook(index) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (index >= g.inventory.length) { setMessage('❌ Книга не найдена.'); return; }
+    
+    const item = g.inventory[index];
+    if (!item.isBook) {
+        setMessage('❌ Это не книга.');
+        return;
+    }
+    
+    const weapon = g.equipment.rightHand;
+    let weaponType = null;
+    if (weapon) {
+        weaponType = weapon.type;
+    }
+    
+    if (!weaponType) {
+        setMessage('❌ Наденьте оружие для чтения книги.');
+        return;
+    }
+    
+    const baseTime = 30;
+    const intelligence = Math.min(30, g.stats.intelligence || 1);
+    const readTimeMinutes = Math.max(5, baseTime - intelligence);
+    const readTimeMs = readTimeMinutes * 60 * 1000;
+    
+    setMessage('⏳ Чтение книги займёт ' + readTimeMinutes + ' мин.');
+    
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '📖 Чтение книги... (' + readTimeMinutes + ' мин)';
+    updateActions();
+    
+    if (busyTimer) clearTimeout(busyTimer);
+    busyTimer = setTimeout(function() {
+        const xpMultiplier = getXpMultiplier(g);
+        const xpGain = Math.round(item.xp * xpMultiplier);
+        
+        // 1. ОБЩИЙ ОПЫТ
+        g.xp += xpGain;
+        while (g.xp >= g.nextLevelXp) {
+            g.xp -= g.nextLevelXp;
+            g.level++;
+            g.nextLevelXp = 100 + g.level * 10;
+            if (g.level <= 100) {
+                g.attributePoints++;
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
+            } else {
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
+            }
+        }
+        
+        // 2. МАСТЕРСТВО (текущее оружие)
+        if (g.skills[weaponType]) {
+            g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
+            const needed = g.skills[weaponType].level * 20 + 10;
+            while (g.skills[weaponType].xp >= needed) {
+                g.skills[weaponType].xp -= needed;
+                g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
+                setMessage('⚔️ Мастерство «' +
+                    ({sword:'Мечи', spear:'Копья', axe:'Топоры', mace:'Булавы', bow:'Луки', crossbow:'Арбалеты', dagger:'Кинжалы', shield:'Щиты'}[weaponType] || weaponType) +
+                    '» повышено до ' + g.skills[weaponType].level + '!');
+            }
+        }
+        
+        // ВЫНОСЛИВОСТЬ НЕ ТРОГАЕМ! (качается только в бою)
+        
+        g.inventory.splice(index, 1);
+        setMessage('📖 Вы прочитали книгу! +' + xpGain + ' XP (общий + мастерство)');
+        updateMenu();
+        saveData();
+        openLibrary();
+        
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        updateActions();
+    }, readTimeMs);
+}
+
+function createLibraryModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-library';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeLibrary(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📚 БИБЛИОТЕКА</h3>
+                <button class="close-btn" onclick="closeLibrary()">✕</button>
+            </div>
+            <div id="modal-library-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeLibrary() {
+    const modal = document.getElementById('modal-library');
+    if (modal) modal.classList.add('hide');
+}
+
+// ============================================================
+// ГИЛЬДИЯ НАЁМНИКОВ
+// ============================================================
+function generateDailyQuests() {
+    const easy = [
+        { id: 'easy_kill_rats', name: '🐀 Крысиная охота', desc: 'Убить 5 крыс', type: 'kill', target: 'Крыса', count: 5, rewardGold: 50, rewardXp: 20, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_skins', name: '🧵 Сбор шкур', desc: 'Принести 10 шкур', type: 'gather', target: 'Шкура', count: 10, rewardGold: 40, rewardXp: 15, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_herbs', name: '🌿 Лекарственные травы', desc: 'Принести 5 лекарств', type: 'gather', target: 'Лекарство', count: 5, rewardGold: 30, rewardXp: 10, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_wood', name: '🪵 Дрова для таверны', desc: 'Принести 15 дерева', type: 'gather', target: 'Дерево', count: 15, rewardGold: 35, rewardXp: 12, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_meat', name: '🥩 Охотник', desc: 'Принести 5 мяса', type: 'gather', target: 'Мясо', count: 5, rewardGold: 45, rewardXp: 18, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_water', name: '💧 Чистая вода', desc: 'Принести 10 воды', type: 'gather', target: 'Вода', count: 10, rewardGold: 25, rewardXp: 8, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_leather', name: '🪡 Починка одежды', desc: 'Принести 5 кожи', type: 'gather', target: 'Кожа', count: 5, rewardGold: 40, rewardXp: 14, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_bread', name: '🥖 Хлеб для бедных', desc: 'Принести 10 хлеба', type: 'gather', target: 'Хлеб', count: 10, rewardGold: 30, rewardXp: 10, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_wood2', name: '🔥 Сбор хвороста', desc: 'Принести 20 дерева', type: 'gather', target: 'Дерево', count: 20, rewardGold: 45, rewardXp: 16, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_eggs', name: '🥚 Сбор яиц', desc: 'Принести 5 яиц', type: 'gather', target: 'Яйцо', count: 5, rewardGold: 25, rewardXp: 8, difficulty: '🟢 Лёгкий' }
+    ];
+    
+    const medium = [
+        { id: 'medium_kill_bandits', name: '🗡️ Очистка дорог', desc: 'Убить 5 бандитов', type: 'kill', target: 'Бандит', count: 5, rewardGold: 150, rewardXp: 50, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_ore', name: '⛏️ Поставка руды', desc: 'Принести 20 руды', type: 'gather', target: 'Руда железная', count: 20, rewardGold: 100, rewardXp: 40, difficulty: '🟡 Средний' },
+        { id: 'medium_kill_wolves', name: '🐺 Волчий бич', desc: 'Убить 3 волков', type: 'kill', target: 'Волк', count: 3, rewardGold: 120, rewardXp: 45, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_coal', name: '🔥 Уголь для кузни', desc: 'Принести 15 угля', type: 'gather', target: 'Уголь', count: 15, rewardGold: 90, rewardXp: 35, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_leather', name: '🛡️ Кожа для брони', desc: 'Принести 15 кожи', type: 'gather', target: 'Кожа', count: 15, rewardGold: 110, rewardXp: 42, difficulty: '🟡 Средний' },
+        { id: 'medium_kill_boars', name: '🐗 Опасный кабан', desc: 'Убить 2 кабанов', type: 'kill', target: 'Кабан', count: 2, rewardGold: 130, rewardXp: 48, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_steel', name: '⚒️ Стальные болванки', desc: 'Принести 8 стали', type: 'gather', target: 'Сталь', count: 8, rewardGold: 140, rewardXp: 50, difficulty: '🟡 Средний' },
+        { id: 'medium_kill_brigands', name: '🌙 Ночной патруль', desc: 'Убить 4 разбойников', type: 'kill', target: 'Разбойник', count: 4, rewardGold: 160, rewardXp: 55, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_wood', name: '🌲 Лесной пожар', desc: 'Принести 30 дерева', type: 'gather', target: 'Дерево', count: 30, rewardGold: 100, rewardXp: 38, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_ore2', name: '🪙 Медный рудник', desc: 'Принести 25 руды', type: 'gather', target: 'Руда железная', count: 25, rewardGold: 110, rewardXp: 40, difficulty: '🟡 Средний' },
+        { id: 'medium_kill_bear', name: '🐻 Разъярённый медведь', desc: 'Убить 1 медведя', type: 'kill', target: 'Медведь', count: 1, rewardGold: 160, rewardXp: 55, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_steel2', name: '⚒️ Кузнечный заказ', desc: 'Принести 10 стали', type: 'gather', target: 'Сталь', count: 10, rewardGold: 150, rewardXp: 52, difficulty: '🟡 Средний' }
+    ];
+    
+    const hard = [
+        { id: 'hard_kill_thugs', name: '⚔️ Уничтожение банды', desc: 'Убить 3 головорезов', type: 'kill', target: 'Головорез', count: 3, rewardGold: 300, rewardXp: 100, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_bears', name: '🐻 Медвежья угроза', desc: 'Убить 2 медведей', type: 'kill', target: 'Медведь', count: 2, rewardGold: 350, rewardXp: 120, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_elite', name: '🗡️ Элитный отряд', desc: 'Убить 5 опытных бандитов', type: 'kill', target: 'Опытный бандит', count: 5, rewardGold: 400, rewardXp: 130, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_alpha', name: '🐺 Вожак стаи', desc: 'Убить вожака волков', type: 'kill', target: 'Вожак волков', count: 1, rewardGold: 380, rewardXp: 125, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_alpha2', name: '🐺 Стая вожаков', desc: 'Убить 2 вожаков волков', type: 'kill', target: 'Вожак волков', count: 2, rewardGold: 420, rewardXp: 135, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_bandits10', name: '🗡️ Зачистка банды', desc: 'Убить 10 бандитов', type: 'kill', target: 'Бандит', count: 10, rewardGold: 380, rewardXp: 120, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_brigands5', name: '⚔️ Очистка тракта', desc: 'Убить 5 разбойников', type: 'kill', target: 'Разбойник', count: 5, rewardGold: 350, rewardXp: 115, difficulty: '🔴 Сложный' },
+        { id: 'hard_kill_boars3', name: '🐗 Стадо кабанов', desc: 'Убить 3 кабанов', type: 'kill', target: 'Кабан', count: 3, rewardGold: 300, rewardXp: 100, difficulty: '🔴 Сложный' },
+        { id: 'hard_gather_steel15', name: '⚒️ Стальной резерв', desc: 'Принести 15 стали', type: 'gather', target: 'Сталь', count: 15, rewardGold: 320, rewardXp: 110, difficulty: '🔴 Сложный' },
+        { id: 'hard_gather_leather20', name: '🛡️ Лучшая броня', desc: 'Принести 20 кожи (качественной)', type: 'gather', target: 'Кожа', count: 20, rewardGold: 340, rewardXp: 115, difficulty: '🔴 Сложный' }
+    ];
+    
+    const shuffledEasy = easy.sort(() => Math.random() - 0.5).slice(0, 2);
+    const shuffledMedium = medium.sort(() => Math.random() - 0.5).slice(0, 2);
+    const shuffledHard = hard.sort(() => Math.random() - 0.5).slice(0, 2);
+    
+    return [...shuffledEasy, ...shuffledMedium, ...shuffledHard];
+}
+
+function openGuildHall() {
+    const modal = document.getElementById('modal-guildhall') || createGuildHallModal();
+    const content = document.getElementById('modal-guildhall-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.quests) {
+        g.quests = { completed: [], lastReset: 0, active: null, progress: {} };
+    }
+    
+    const now = Date.now();
+    const resetInterval = 5 * 60 * 60 * 1000;
+    
+    if (!g.quests.lastReset || (now - g.quests.lastReset) >= resetInterval) {
+        g.quests.completed = [];
+        g.quests.lastReset = now;
+        g.quests.active = null;
+        g.quests.progress = {};
+        saveData();
+    }
+    
+    const nextReset = g.quests.lastReset + resetInterval;
+    const timeLeft = nextReset - now;
+    const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+    const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+    
+    const quests = generateDailyQuests();
+    
+    let html = '<div class="modal-section"><h4>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Задания обновляются каждые 5 часов.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">⏳ Следующее обновление через: ' + hoursLeft + ' ч ' + minutesLeft + ' мин</p>';
+    
+    // Активное задание
+    if (g.quests.active) {
+        const activeQuest = quests.find(q => q.id === g.quests.active);
+        if (activeQuest) {
+            const progress = g.quests.progress[activeQuest.id] || 0;
+            const percent = Math.min(100, Math.round((progress / activeQuest.count) * 100));
+            html += '<div style="background:#2a201a;border:1px solid #ffd700;border-radius:12px;padding:14px;margin:10px 0;">';
+            html += '<div style="color:#ffd700;">📌 АКТИВНОЕ ЗАДАНИЕ</div>';
+            html += '<div style="font-size:16px;color:#c9b694;">' + activeQuest.name + '</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">' + activeQuest.desc + '</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">📊 Прогресс: ' + progress + '/' + activeQuest.count + ' (' + percent + '%)</div>';
+            html += '<div style="color:#6a5a48;font-size:12px;">Награда: ' + formatCurrency(activeQuest.rewardGold) + ', ' + activeQuest.rewardXp + ' XP</div>';
+            html += '<button class="btn btn-small" onclick="abandonQuest()" style="margin-top:6px;">❌ Отказаться</button>';
+            html += '</div>';
+        }
+    }
+    
+    // Список заданий
+    html += '<h4 style="margin-top:10px;">📜 ДОСТУПНЫЕ ЗАДАНИЯ</h4>';
+    quests.forEach(quest => {
+        const isCompleted = g.quests.completed.includes(quest.id);
+        const isActive = g.quests.active === quest.id;
+        const canTake = !isCompleted && !isActive && !g.quests.active;
+        
+        html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:12px;margin:6px 0;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div>';
+        html += '<div style="font-size:14px;color:#c9b694;">' + quest.name + ' <span style="font-size:11px;color:#6a5a48;">' + quest.difficulty + '</span></div>';
+        html += '<div style="font-size:12px;color:#6a5a48;">' + quest.desc + '</div>';
+        html += '<div style="font-size:11px;color:#6a5a48;">💰 ' + formatCurrency(quest.rewardGold) + ' | ⭐ ' + quest.rewardXp + ' XP</div>';
+        html += '</div>';
+        html += '<div>';
+        if (isCompleted) {
+            html += '<span style="color:#7ac98a;">✅ Выполнено</span>';
+        } else if (isActive) {
+            html += '<span style="color:#ffd700;">⏳ В процессе</span>';
+        } else if (canTake) {
+            html += '<button class="btn btn-small" onclick="takeQuest(\'' + quest.id + '\')">📋 Взять</button>';
+        } else {
+            html += '<span style="color:#6a5a48;">🔒 Занято</span>';
+        }
+        html += '</div></div></div>';
+    });
+    
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeGuildHall()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function takeQuest(questId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (g.quests.active) {
+        setMessage('❌ У вас уже есть активное задание!');
+        return;
+    }
+    
+    g.quests.active = questId;
+    if (!g.quests.progress) g.quests.progress = {};
+    g.quests.progress[questId] = 0;
+    setMessage('📋 Вы взяли задание!');
+    addLog('📋 ' + currentUser + ' взял задание ' + questId);
+    saveData();
+    openGuildHall();
+}
+
+function abandonQuest() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.quests.active) {
+        setMessage('❌ У вас нет активного задания.');
+        return;
+    }
+    
+    g.quests.active = null;
+    setMessage('❌ Вы отказались от задания.');
+    addLog('❌ ' + currentUser + ' отказался от задания');
+    saveData();
+    openGuildHall();
+}
+
+function checkQuestProgress(type, target, count) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!g.quests || !g.quests.active) return;
+    
+    const quests = generateDailyQuests();
+    const quest = quests.find(q => q.id === g.quests.active);
+    if (!quest) return;
+    if (quest.type !== type || quest.target !== target) return;
+    if (g.quests.completed.includes(quest.id)) return;
+    
+    if (!g.quests.progress) g.quests.progress = {};
+    g.quests.progress[quest.id] = (g.quests.progress[quest.id] || 0) + count;
+    
+    if (g.quests.progress[quest.id] >= quest.count) {
+        g.quests.completed.push(quest.id);
+        g.quests.active = null;
+        
+        const xpMultiplier = getXpMultiplier(g);
+        const xpGain = Math.round(quest.rewardXp * xpMultiplier);
+        g.copper += quest.rewardGold;
+        convertCurrency(g);
+        g.xp += xpGain;
+        
+        while (g.xp >= g.nextLevelXp) {
+            g.xp -= g.nextLevelXp;
+            g.level++;
+            g.nextLevelXp = 100 + g.level * 10;
+            if (g.level <= 100) {
+                g.attributePoints++;
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
+            } else {
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
+            }
+        }
+        
+        setMessage('✅ Задание выполнено! +' + formatCurrency(quest.rewardGold) + ', +' + xpGain + ' XP');
+        addLog('✅ ' + currentUser + ' выполнил задание ' + quest.name);
+        saveData();
+        updateMenu();
+    }
+}
+
+function createGuildHallModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-guildhall';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeGuildHall(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3>
+                <button class="close-btn" onclick="closeGuildHall()">✕</button>
+            </div>
+            <div id="modal-guildhall-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeGuildHall() {
+    const modal = document.getElementById('modal-guildhall');
+    if (modal) modal.classList.add('hide');
+}
+
+// ============================================================
+// БОРДЕЛЬ
+// ============================================================
+function openBrothel() {
+    const modal = document.getElementById('modal-brothel') || createBrothelModal();
+    const content = document.getElementById('modal-brothel-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    let html = '<div class="modal-section"><h4>💃 БОРДЕЛЬ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Тёплый приём, вино и отдых для уставших путников.</p>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
+    html += '<p style="color:#6a5a48;">😴 Усталость: ' + g.fatigue + '/100</p>';
+    html += '</div>';
+    
+    // === УСЛУГИ ===
+    html += '<div class="modal-section"><h4>🛏️ УСЛУГИ</h4>';
+    
+    const services = [
+        { id: 'rest', name: '🛏️ Отдых с девушкой', desc: '+50 усталости, +10 HP', price: 20, fatigue: 50, hp: 10, buff: null },
+        { id: 'wine', name: '🍷 Вино с компанией', desc: '+30 усталости, +5 HP, бафф "Веселье" (+5% XP 30 мин)', price: 50, fatigue: 30, hp: 5, buff: { type: 'xp', value: 5, duration: 30 } },
+        { id: 'dance', name: '💃 Танец', desc: '+20 усталости, бафф "Вдохновение" (+10% урон 15 мин)', price: 100, fatigue: 20, hp: 0, buff: { type: 'damage', value: 10, duration: 15 } },
+        { id: 'vip', name: '👑 VIP-комната', desc: '+80 усталости, +20 HP, бафф "+15% XP 1 час"', price: 200, fatigue: 80, hp: 20, buff: { type: 'xp', value: 15, duration: 60 } }
+    ];
+    
+    services.forEach(service => {
+        const canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= service.price;
+        html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
+        html += '<div style="flex:1;">';
+        html += '<div style="color:#c9b694;">' + service.name + '</div>';
+        html += '<div style="font-size:11px;color:#6a5a48;">' + service.desc + '</div>';
+        html += '</div>';
+        html += '<div style="text-align:right;">';
+        html += '<span style="color:#6a5a48;">' + formatCurrency(service.price) + '</span><br>';
+        html += '<button class="btn btn-small" onclick="useBrothelService(\'' + service.id + '\',' + service.price + ',' + service.fatigue + ',' + service.hp + ',\'' + (service.buff ? JSON.stringify(service.buff) : 'null') + '\')" ' + (canAfford ? '' : 'disabled') + '>' + (canAfford ? '✅ Взять' : '❌') + '</button>';
+        html += '</div></div>';
+    });
+    html += '</div>';
+    
+    // === ИГРА В КОСТИ (PvP) ===
+    html += '<div class="modal-section"><h4>🎲 ИГРА В КОСТИ (PvP)</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Сыграйте с другим игроком. Победитель забирает банк!</p>';
+    
+    const activeGames = getActiveDiceGames();
+    if (activeGames.length > 0) {
+        html += '<p style="color:#6a5a48;font-size:12px;">📋 Активные игры:</p>';
+        activeGames.forEach(game => {
+            if (game.creator !== currentUser) {
+                const timeLeft = Math.ceil((game.createdAt + 5 * 60 * 1000 - Date.now()) / 60000);
+                html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+                html += '<span class="label">🎲 ' + game.creator + ' (ставка: ' + formatCurrency(game.bet) + ')</span>';
+                html += '<span class="value">';
+                html += '<span style="font-size:11px;color:#6a5a48;">⏳ ' + timeLeft + ' мин</span> ';
+                html += '<button class="btn btn-small" onclick="joinDiceGame(\'' + game.id + '\')">📥 Присоединиться</button>';
+                html += '</span></div>';
+            }
+        });
+    } else {
+        html += '<p style="color:#6a5a48;font-size:11px;">Нет активных игр. Создайте свою!</p>';
+    }
+    
+    // Создать игру
+    html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">';
+    const betOptions = [10, 25, 50, 100, 200];
+    betOptions.forEach(bet => {
+        const canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= bet;
+        html += '<button class="btn btn-small" onclick="createDiceGame(' + bet + ')" ' + (canAfford ? '' : 'disabled') + ' style="flex:1;min-width:60px;">🎲 ' + formatCurrency(bet) + '</button>';
+    });
+    html += '</div>';
+    html += '</div>';
+    
+    // === АКТИВНЫЕ БАФФЫ ===
+    if (g.brothelBuffs && g.brothelBuffs.length > 0) {
+        html += '<div class="modal-section"><h4>✨ АКТИВНЫЕ БАФФЫ</h4>';
+        const now = Date.now();
+        g.brothelBuffs.forEach((buff) => {
+            if (buff.expires > now) {
+                const timeLeft = Math.ceil((buff.expires - now) / 60000);
+                html += '<div class="row">';
+                html += '<span class="label" style="color:#ffd700;">' + buff.name + '</span>';
+                html += '<span class="value">' + buff.desc + ' (' + timeLeft + ' мин)</span>';
+                html += '</div>';
+            }
+        });
+        html += '</div>';
+    }
+    
+    html += '<button class="btn btn-secondary" onclick="closeBrothel()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function useBrothelService(serviceId, price, fatigue, hp, buffData) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег!');
+        return;
+    }
+    
+    // Восстановление
+    g.fatigue = Math.min(100, g.fatigue + fatigue);
+    if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
+    
+    // Бафф
+    if (buffData && buffData !== 'null') {
+        const buff = JSON.parse(buffData);
+        if (!g.brothelBuffs) g.brothelBuffs = [];
+        
+        const buffNames = {
+            'xp': '🎯 Благословение опыта',
+            'damage': '⚔️ Вдохновение'
+        };
+        
+        g.brothelBuffs.push({
+            name: buffNames[buff.type] || 'Бафф',
+            desc: '+' + buff.value + '% ' + (buff.type === 'xp' ? 'опыта' : 'урона'),
+            type: buff.type,
+            value: buff.value,
+            expires: Date.now() + buff.duration * 60 * 1000
+        });
+    }
+    
+    const serviceNames = {
+        'rest': 'Отдых с девушкой',
+        'wine': 'Вино с компанией',
+        'dance': 'Танец',
+        'vip': 'VIP-комната'
+    };
+    
+    setMessage('✅ ' + serviceNames[serviceId] + '! +' + fatigue + ' усталости' + (hp > 0 ? ', +' + hp + ' HP' : ''));
+    addLog('💃 ' + currentUser + ' посетил бордель (' + serviceNames[serviceId] + ')');
+    updateMenu();
+    saveData();
+    openBrothel();
+}
+
+// ============================================================
+// КОСТИ (PvP)
+// ============================================================
+function getActiveDiceGames() {
+    const now = Date.now();
+    const timeout = 5 * 60 * 1000;
+    const active = [];
+    
+    for (let id in diceGames) {
+        const game = diceGames[id];
+        if (now - game.createdAt > timeout && game.status === 'waiting') {
+            const creator = users[game.creator];
+            if (creator) {
+                creator.game.copper += game.bet;
+                convertCurrency(creator.game);
+                saveData();
+            }
+            delete diceGames[id];
+            continue;
+        }
+        if (game.status === 'waiting' || game.status === 'playing') {
+            active.push(game);
+        }
+    }
+    
+    return active;
+}
+
+function createDiceGame(bet) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    for (let id in diceGames) {
+        if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') {
+            setMessage('❌ У вас уже есть активная игра! Дождитесь соперника.');
+            return;
+        }
+    }
+    
+    if (!spendMoney(g, bet)) {
+        setMessage('❌ Недостаточно денег для ставки!');
+        return;
+    }
+    
+    const gameId = 'dice_' + (++diceGameIdCounter);
+    diceGames[gameId] = {
+        id: gameId,
+        creator: currentUser,
+        bet: bet,
+        createdAt: Date.now(),
+        status: 'waiting',
+        player2: null,
+        creatorRoll: null,
+        player2Roll: null
+    };
+    
+    saveData();
+    setMessage('✅ Вы создали игру в кости на ' + formatCurrency(bet) + '! Ждите соперника.');
+    addLog('🎲 ' + currentUser + ' создал игру в кости на ' + formatCurrency(bet));
+    updateMenu();
+    openBrothel();
+}
+
+function joinDiceGame(gameId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const game = diceGames[gameId];
+    if (!game) {
+        setMessage('❌ Игра не найдена.');
+        return;
+    }
+    
+    if (game.creator === currentUser) {
+        setMessage('❌ Вы не можете присоединиться к своей игре.');
+        return;
+    }
+    
+    if (game.status !== 'waiting') {
+        setMessage('❌ Игра уже началась или завершена.');
+        return;
+    }
+    
+    if (!spendMoney(g, game.bet)) {
+        setMessage('❌ Недостаточно денег для ставки!');
+        return;
+    }
+    
+    game.player2 = currentUser;
+    game.status = 'playing';
+    
+    saveData();
+    setMessage('✅ Вы присоединились к игре! Бросайте кости.');
+    addLog('🎲 ' + currentUser + ' присоединился к игре ' + gameId);
+    updateMenu();
+    playDicePvP(gameId);
+}
+
+function playDicePvP(gameId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    const game = diceGames[gameId];
+    if (!game) {
+        setMessage('❌ Игра не найдена.');
+        return;
+    }
+    
+    if (game.creator !== currentUser && game.player2 !== currentUser) {
+        setMessage('❌ Вы не участник этой игры.');
+        return;
+    }
+    
+    const dice1 = Math.floor(Math.random() * 6) + 1;
+    const dice2 = Math.floor(Math.random() * 6) + 1;
+    const total = dice1 + dice2;
+    
+    if (game.creator === currentUser) {
+        if (game.creatorRoll !== null) {
+            setMessage('❌ Вы уже бросили кости! Ждите соперника.');
+            return;
+        }
+        game.creatorRoll = total;
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
+    } else if (game.player2 === currentUser) {
+        if (game.player2Roll !== null) {
+            setMessage('❌ Вы уже бросили кости! Ждите соперника.');
+            return;
+        }
+        game.player2Roll = total;
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
+    }
+    
+    saveData();
+    updateMenu();
+    
+    if (game.creatorRoll !== null && game.player2Roll !== null) {
+        finishDiceGame(gameId);
+    } else {
+        openBrothel();
+    }
+}
+
+function finishDiceGame(gameId) {
+    const game = diceGames[gameId];
+    if (!game) return;
+    
+    const creator = users[game.creator];
+    const player2 = users[game.player2];
+    const totalBet = game.bet * 2;
+    
+    let winner = null;
+    let winnerName = '';
+    
+    if (game.creatorRoll > game.player2Roll) {
+        winner = creator;
+        winnerName = game.creator;
+        setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')');
+    } else if (game.player2Roll > game.creatorRoll) {
+        winner = player2;
+        winnerName = game.player2;
+        setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')');
+    } else {
+        creator.game.copper += game.bet;
+        player2.game.copper += game.bet;
+        convertCurrency(creator.game);
+        convertCurrency(player2.game);
+        setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.');
+        addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2);
+        game.status = 'finished';
+        delete diceGames[gameId];
+        saveData();
+        updateMenu();
+        openBrothel();
+        return;
+    }
+    
+    if (winner) {
+        winner.game.copper += totalBet;
+        convertCurrency(winner.game);
+        setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!');
+        addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator));
+    }
+    
+    game.status = 'finished';
+    delete diceGames[gameId];
+    saveData();
+    updateMenu();
+    openBrothel();
+}
+
+function createBrothelModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-brothel';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeBrothel(); };
+    overlay.innerHTML = `
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>💃 БОРДЕЛЬ</h3>
+                <button class="close-btn" onclick="closeBrothel()">✕</button>
+            </div>
+            <div id="modal-brothel-content"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeBrothel() {
+    const modal = document.getElementById('modal-brothel');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
