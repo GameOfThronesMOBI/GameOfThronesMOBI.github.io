@@ -142,6 +142,12 @@
 <div id="modal-guildhall" class="modal-overlay hide" onclick="if(event.target===this) closeGuildHall()"><div class="modal-box"><div class="modal-header"><h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3><button class="close-btn" onclick="closeGuildHall()">✕</button></div><div id="modal-guildhall-content"></div></div></div>
 <div id="modal-brothel" class="modal-overlay hide" onclick="if(event.target===this) closeBrothel()"><div class="modal-box"><div class="modal-header"><h3>💃 БОРДЕЛЬ</h3><button class="close-btn" onclick="closeBrothel()">✕</button></div><div id="modal-brothel-content"></div></div></div>
 
+<!-- НОВЫЕ МОДАЛЬНЫЕ ОКНА -->
+<div id="modal-redkeep" class="modal-overlay hide" onclick="if(event.target===this) closeRedKeep()"><div class="modal-box"><div class="modal-header"><h3>🏰 КРАСНЫЙ ЗАМОК</h3><button class="close-btn" onclick="closeRedKeep()">✕</button></div><div id="modal-redkeep-content"></div></div></div>
+<div id="modal-treasury" class="modal-overlay hide" onclick="if(event.target===this) closeTreasury()"><div class="modal-box"><div class="modal-header"><h3>💰 КОРОЛЕВСКАЯ КАЗНА</h3><button class="close-btn" onclick="closeTreasury()">✕</button></div><div id="modal-treasury-content"></div></div></div>
+<div id="modal-archives" class="modal-overlay hide" onclick="if(event.target===this) closeArchives()"><div class="modal-box"><div class="modal-header"><h3>📜 АРХИВЫ</h3><button class="close-btn" onclick="closeArchives()">✕</button></div><div id="modal-archives-content"></div></div></div>
+<div id="modal-armory" class="modal-overlay hide" onclick="if(event.target===this) closeArmory()"><div class="modal-box"><div class="modal-header"><h3>🗡️ ОРУЖЕЙНАЯ</h3><button class="close-btn" onclick="closeArmory()">✕</button></div><div id="modal-armory-content"></div></div></div>
+
 <script>
 // ============================================================
 // КОНСТАНТЫ
@@ -209,13 +215,6 @@ const HOUSING_TYPES = {
     'house': { name: 'Дом', district: 'Торговый квартал', price: 400, rent: 20, storageSlots: 40, restHp: 35, restFatigue: 35, bonusInt: 2, bonusLuck: 0, bonusDef: 1, emoji: '🏡', description: 'Собственный дом с садом, подвалом и чердаком.' },
     'townhouse': { name: 'Таунхаус', district: 'Королевский квартал', price: 800, rent: 35, storageSlots: 60, restHp: 50, restFatigue: 50, bonusInt: 3, bonusLuck: 1, bonusDef: 2, emoji: '🏘️', description: 'Двухэтажный дом в престижном районе.' },
     'mansion': { name: 'Особняк', district: 'Королевский квартал', price: 2000, rent: 80, storageSlots: 100, restHp: 70, restFatigue: 70, bonusInt: 5, bonusLuck: 2, bonusDef: 3, emoji: '🏛️', description: 'Роскошный особняк. Огромные залы и подвалы.' }
-};
-
-const HOUSES_DATA = {
-    'Север': { capital:'Винтерфелл', totalAcres:1000000, houses:[
-        { id:'stark',name:'Старки',sigil:'🐺',castle:'Винтерфелл',liege:'Старки',status:'Великий Дом',acres:500000 },
-        { id:'bolton',name:'Болтоны',sigil:'🩸',castle:'Дредфорт',liege:'Старки',status:'Вассал',acres:200000 }
-    ]}
 };
 
 // ============================================================
@@ -6740,7 +6739,11 @@ function buyFromStall(stallId, idx) {
 }
 
 // ============================================================
-// БИБЛИОТЕКА МЕЙСТЕРОВ
+// НОВЫЕ МЕХАНИКИ ДЛЯ ИГРЫ ПРЕСТОЛОВ
+// ============================================================
+
+// ============================================================
+// 1. БИБЛИОТЕКА МЕЙСТЕРОВ (КНИГИ)
 // ============================================================
 function openLibrary() {
     const modal = document.getElementById('modal-library') || createLibraryModal();
@@ -6757,7 +6760,6 @@ function openLibrary() {
     html += '<p style="color:#ffd700;">📖 Осталось покупок сегодня: ' + available + '/3</p>';
     html += '</div>';
     
-    // === КУПИТЬ КНИГИ ===
     html += '<div class="modal-section"><h4>📖 КУПИТЬ КНИГИ</h4>';
     const books = [
         { level: 1, xp: 50, price: 100 },
@@ -6776,21 +6778,22 @@ function openLibrary() {
     });
     html += '</div>';
     
-    // === КНИГИ В ИНВЕНТАРЕ ===
     html += '<div class="modal-section"><h4>📚 ВАШИ КНИГИ</h4>';
-    const userBooks = g.inventory.filter(item => item.isBook);
-    if (userBooks.length === 0) {
-        html += '<p style="color:#6a5a48;">У вас нет книг.</p>';
-    } else {
-        userBooks.forEach((item, idx) => {
-            const realIndex = g.inventory.indexOf(item);
+    // ИСПРАВЛЕННЫЙ БЛОК: используем forEach с индексом напрямую
+    let hasBooks = false;
+    g.inventory.forEach((item, index) => {
+        if (item.isBook) {
+            hasBooks = true;
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">📖 ' + item.name + ' (ур.' + item.level + ')</span>';
             html += '<span class="value">';
-            html += '<button class="btn btn-small" onclick="readBook(' + realIndex + ')">📖 Читать</button>';
-            html += ' <button class="btn btn-small" onclick="sellBook(' + realIndex + ')">💰 Продать</button>';
+            html += '<button class="btn btn-small" onclick="readBook(' + index + ')">📖 Читать</button>';
+            html += ' <button class="btn btn-small" onclick="sellBook(' + index + ')">💰 Продать</button>';
             html += '</span></div>';
-        });
+        }
+    });
+    if (!hasBooks) {
+        html += '<p style="color:#6a5a48;">У вас нет книг.</p>';
     }
     html += '</div>';
     
@@ -6802,13 +6805,11 @@ function openLibrary() {
 function getBooksAvailable(g) {
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
-    
     if (now - g.lastBookReset >= dayMs) {
         g.booksBoughtToday = 0;
         g.lastBookReset = now;
         saveData();
     }
-    
     return 3 - g.booksBoughtToday;
 }
 
@@ -6816,18 +6817,15 @@ function buyBook(level, xp, price) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     const available = getBooksAvailable(g);
     if (available <= 0) {
         setMessage('❌ Вы уже купили 3 книги сегодня. Приходите завтра.');
         return;
     }
-    
     if (!spendMoney(g, price)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
         return;
     }
-    
     const book = {
         name: '📖 Искусство войны',
         level: level,
@@ -6836,10 +6834,8 @@ function buyBook(level, xp, price) {
         type: 'book',
         count: 1
     };
-    
     addToInventory(g, book);
     g.booksBoughtToday = (g.booksBoughtToday || 0) + 1;
-    
     setMessage('✅ Вы купили книгу (ур.' + level + '). Осталось покупок: ' + (available - 1));
     addLog('📖 ' + currentUser + ' купил книгу (ур.' + level + ')');
     updateMenu();
@@ -6852,13 +6848,8 @@ function sellBook(index) {
     if (!user) return;
     const g = user.game;
     if (index >= g.inventory.length) { setMessage('❌ Книга не найдена.'); return; }
-    
     const item = g.inventory[index];
-    if (!item.isBook) {
-        setMessage('❌ Это не книга.');
-        return;
-    }
-    
+    if (!item.isBook) { setMessage('❌ Это не книга.'); return; }
     const price = Math.round(item.xp * 2);
     g.copper += price;
     convertCurrency(g);
@@ -6875,79 +6866,52 @@ function readBook(index) {
     if (!user) return;
     const g = user.game;
     if (index >= g.inventory.length) { setMessage('❌ Книга не найдена.'); return; }
-    
     const item = g.inventory[index];
-    if (!item.isBook) {
-        setMessage('❌ Это не книга.');
-        return;
-    }
-    
+    if (!item.isBook) { setMessage('❌ Это не книга.'); return; }
     const weapon = g.equipment.rightHand;
     let weaponType = null;
-    if (weapon) {
-        weaponType = weapon.type;
-    }
-    
+    if (weapon) { weaponType = weapon.type; }
     if (!weaponType) {
         setMessage('❌ Наденьте оружие для чтения книги.');
         return;
     }
-    
     const baseTime = 30;
     const intelligence = Math.min(30, g.stats.intelligence || 1);
     const readTimeMinutes = Math.max(5, baseTime - intelligence);
     const readTimeMs = readTimeMinutes * 60 * 1000;
-    
     setMessage('⏳ Чтение книги займёт ' + readTimeMinutes + ' мин.');
-    
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '📖 Чтение книги... (' + readTimeMinutes + ' мин)';
     updateActions();
-    
     if (busyTimer) clearTimeout(busyTimer);
     busyTimer = setTimeout(function() {
         const xpMultiplier = getXpMultiplier(g);
         const xpGain = Math.round(item.xp * xpMultiplier);
-        
-        // 1. ОБЩИЙ ОПЫТ
         g.xp += xpGain;
         while (g.xp >= g.nextLevelXp) {
             g.xp -= g.nextLevelXp;
             g.level++;
             g.nextLevelXp = 100 + g.level * 10;
-            if (g.level <= 100) {
-                g.attributePoints++;
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
-            } else {
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
-            }
+            if (g.level <= 100) { g.attributePoints++; setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.'); }
+            else { setMessage('🎉 Вы достигли ' + g.level + ' уровня!'); }
         }
-        
-        // 2. МАСТЕРСТВО (текущее оружие)
         if (g.skills[weaponType]) {
             g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
             const needed = g.skills[weaponType].level * 20 + 10;
             while (g.skills[weaponType].xp >= needed) {
                 g.skills[weaponType].xp -= needed;
                 g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
-                setMessage('⚔️ Мастерство «' +
-                    ({sword:'Мечи', spear:'Копья', axe:'Топоры', mace:'Булавы', bow:'Луки', crossbow:'Арбалеты', dagger:'Кинжалы', shield:'Щиты'}[weaponType] || weaponType) +
-                    '» повышено до ' + g.skills[weaponType].level + '!');
+                setMessage('⚔️ Мастерство «' + ({sword:'Мечи', spear:'Копья', axe:'Топоры', mace:'Булавы', bow:'Луки', crossbow:'Арбалеты', dagger:'Кинжалы', shield:'Щиты'}[weaponType] || weaponType) + '» повышено до ' + g.skills[weaponType].level + '!');
             }
         }
-        
-        // ВЫНОСЛИВОСТЬ НЕ ТРОГАЕМ! (качается только в бою)
-        
         g.inventory.splice(index, 1);
         setMessage('📖 Вы прочитали книгу! +' + xpGain + ' XP (общий + мастерство)');
-        updateMenu();
-        saveData();
-        openLibrary();
-        
         isBusy = false;
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
+        updateMenu();
+        saveData();
         updateActions();
     }, readTimeMs);
 }
@@ -6957,26 +6921,15 @@ function createLibraryModal() {
     overlay.id = 'modal-library';
     overlay.className = 'modal-overlay hide';
     overlay.onclick = function(e) { if (e.target === this) closeLibrary(); };
-    overlay.innerHTML = `
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>📚 БИБЛИОТЕКА</h3>
-                <button class="close-btn" onclick="closeLibrary()">✕</button>
-            </div>
-            <div id="modal-library-content"></div>
-        </div>
-    `;
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📚 БИБЛИОТЕКА</h3><button class="close-btn" onclick="closeLibrary()">✕</button></div><div id="modal-library-content"></div></div>';
     document.body.appendChild(overlay);
     return overlay;
 }
 
-function closeLibrary() {
-    const modal = document.getElementById('modal-library');
-    if (modal) modal.classList.add('hide');
-}
+function closeLibrary() { const modal = document.getElementById('modal-library'); if (modal) modal.classList.add('hide'); }
 
 // ============================================================
-// ГИЛЬДИЯ НАЁМНИКОВ
+// 2. ГИЛЬДИЯ НАЁМНИКОВ (ЗАДАНИЯ)
 // ============================================================
 function generateDailyQuests() {
     const easy = [
@@ -6991,7 +6944,6 @@ function generateDailyQuests() {
         { id: 'easy_gather_wood2', name: '🔥 Сбор хвороста', desc: 'Принести 20 дерева', type: 'gather', target: 'Дерево', count: 20, rewardGold: 45, rewardXp: 16, difficulty: '🟢 Лёгкий' },
         { id: 'easy_gather_eggs', name: '🥚 Сбор яиц', desc: 'Принести 5 яиц', type: 'gather', target: 'Яйцо', count: 5, rewardGold: 25, rewardXp: 8, difficulty: '🟢 Лёгкий' }
     ];
-    
     const medium = [
         { id: 'medium_kill_bandits', name: '🗡️ Очистка дорог', desc: 'Убить 5 бандитов', type: 'kill', target: 'Бандит', count: 5, rewardGold: 150, rewardXp: 50, difficulty: '🟡 Средний' },
         { id: 'medium_gather_ore', name: '⛏️ Поставка руды', desc: 'Принести 20 руды', type: 'gather', target: 'Руда железная', count: 20, rewardGold: 100, rewardXp: 40, difficulty: '🟡 Средний' },
@@ -7006,7 +6958,6 @@ function generateDailyQuests() {
         { id: 'medium_kill_bear', name: '🐻 Разъярённый медведь', desc: 'Убить 1 медведя', type: 'kill', target: 'Медведь', count: 1, rewardGold: 160, rewardXp: 55, difficulty: '🟡 Средний' },
         { id: 'medium_gather_steel2', name: '⚒️ Кузнечный заказ', desc: 'Принести 10 стали', type: 'gather', target: 'Сталь', count: 10, rewardGold: 150, rewardXp: 52, difficulty: '🟡 Средний' }
     ];
-    
     const hard = [
         { id: 'hard_kill_thugs', name: '⚔️ Уничтожение банды', desc: 'Убить 3 головорезов', type: 'kill', target: 'Головорез', count: 3, rewardGold: 300, rewardXp: 100, difficulty: '🔴 Сложный' },
         { id: 'hard_kill_bears', name: '🐻 Медвежья угроза', desc: 'Убить 2 медведей', type: 'kill', target: 'Медведь', count: 2, rewardGold: 350, rewardXp: 120, difficulty: '🔴 Сложный' },
@@ -7019,11 +6970,9 @@ function generateDailyQuests() {
         { id: 'hard_gather_steel15', name: '⚒️ Стальной резерв', desc: 'Принести 15 стали', type: 'gather', target: 'Сталь', count: 15, rewardGold: 320, rewardXp: 110, difficulty: '🔴 Сложный' },
         { id: 'hard_gather_leather20', name: '🛡️ Лучшая броня', desc: 'Принести 20 кожи (качественной)', type: 'gather', target: 'Кожа', count: 20, rewardGold: 340, rewardXp: 115, difficulty: '🔴 Сложный' }
     ];
-    
     const shuffledEasy = easy.sort(() => Math.random() - 0.5).slice(0, 2);
     const shuffledMedium = medium.sort(() => Math.random() - 0.5).slice(0, 2);
     const shuffledHard = hard.sort(() => Math.random() - 0.5).slice(0, 2);
-    
     return [...shuffledEasy, ...shuffledMedium, ...shuffledHard];
 }
 
@@ -7033,14 +6982,9 @@ function openGuildHall() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
-    if (!g.quests) {
-        g.quests = { completed: [], lastReset: 0, active: null, progress: {} };
-    }
-    
+    if (!g.quests) { g.quests = { completed: [], lastReset: 0, active: null, progress: {} }; }
     const now = Date.now();
     const resetInterval = 5 * 60 * 60 * 1000;
-    
     if (!g.quests.lastReset || (now - g.quests.lastReset) >= resetInterval) {
         g.quests.completed = [];
         g.quests.lastReset = now;
@@ -7048,19 +6992,14 @@ function openGuildHall() {
         g.quests.progress = {};
         saveData();
     }
-    
     const nextReset = g.quests.lastReset + resetInterval;
     const timeLeft = nextReset - now;
     const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
     const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-    
     const quests = generateDailyQuests();
-    
     let html = '<div class="modal-section"><h4>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Задания обновляются каждые 5 часов.</p>';
     html += '<p style="color:#6a5a48;font-size:12px;">⏳ Следующее обновление через: ' + hoursLeft + ' ч ' + minutesLeft + ' мин</p>';
-    
-    // Активное задание
     if (g.quests.active) {
         const activeQuest = quests.find(q => q.id === g.quests.active);
         if (activeQuest) {
@@ -7076,14 +7015,11 @@ function openGuildHall() {
             html += '</div>';
         }
     }
-    
-    // Список заданий
     html += '<h4 style="margin-top:10px;">📜 ДОСТУПНЫЕ ЗАДАНИЯ</h4>';
     quests.forEach(quest => {
         const isCompleted = g.quests.completed.includes(quest.id);
         const isActive = g.quests.active === quest.id;
         const canTake = !isCompleted && !isActive && !g.quests.active;
-        
         html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:12px;margin:6px 0;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
         html += '<div>';
@@ -7092,20 +7028,13 @@ function openGuildHall() {
         html += '<div style="font-size:11px;color:#6a5a48;">💰 ' + formatCurrency(quest.rewardGold) + ' | ⭐ ' + quest.rewardXp + ' XP</div>';
         html += '</div>';
         html += '<div>';
-        if (isCompleted) {
-            html += '<span style="color:#7ac98a;">✅ Выполнено</span>';
-        } else if (isActive) {
-            html += '<span style="color:#ffd700;">⏳ В процессе</span>';
-        } else if (canTake) {
-            html += '<button class="btn btn-small" onclick="takeQuest(\'' + quest.id + '\')">📋 Взять</button>';
-        } else {
-            html += '<span style="color:#6a5a48;">🔒 Занято</span>';
-        }
+        if (isCompleted) { html += '<span style="color:#7ac98a;">✅ Выполнено</span>'; }
+        else if (isActive) { html += '<span style="color:#ffd700;">⏳ В процессе</span>'; }
+        else if (canTake) { html += '<button class="btn btn-small" onclick="takeQuest(\'' + quest.id + '\')">📋 Взять</button>'; }
+        else { html += '<span style="color:#6a5a48;">🔒 Занято</span>'; }
         html += '</div></div></div>';
     });
-    
-    html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeGuildHall()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div><button class="btn btn-secondary" onclick="closeGuildHall()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -7114,12 +7043,7 @@ function takeQuest(questId) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
-    if (g.quests.active) {
-        setMessage('❌ У вас уже есть активное задание!');
-        return;
-    }
-    
+    if (g.quests.active) { setMessage('❌ У вас уже есть активное задание!'); return; }
     g.quests.active = questId;
     if (!g.quests.progress) g.quests.progress = {};
     g.quests.progress[questId] = 0;
@@ -7133,12 +7057,7 @@ function abandonQuest() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
-    if (!g.quests.active) {
-        setMessage('❌ У вас нет активного задания.');
-        return;
-    }
-    
+    if (!g.quests.active) { setMessage('❌ У вас нет активного задания.'); return; }
     g.quests.active = null;
     setMessage('❌ Вы отказались от задания.');
     addLog('❌ ' + currentUser + ' отказался от задания');
@@ -7150,40 +7069,29 @@ function checkQuestProgress(type, target, count) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     if (!g.quests || !g.quests.active) return;
-    
     const quests = generateDailyQuests();
     const quest = quests.find(q => q.id === g.quests.active);
     if (!quest) return;
     if (quest.type !== type || quest.target !== target) return;
     if (g.quests.completed.includes(quest.id)) return;
-    
     if (!g.quests.progress) g.quests.progress = {};
     g.quests.progress[quest.id] = (g.quests.progress[quest.id] || 0) + count;
-    
     if (g.quests.progress[quest.id] >= quest.count) {
         g.quests.completed.push(quest.id);
         g.quests.active = null;
-        
         const xpMultiplier = getXpMultiplier(g);
         const xpGain = Math.round(quest.rewardXp * xpMultiplier);
         g.copper += quest.rewardGold;
         convertCurrency(g);
         g.xp += xpGain;
-        
         while (g.xp >= g.nextLevelXp) {
             g.xp -= g.nextLevelXp;
             g.level++;
             g.nextLevelXp = 100 + g.level * 10;
-            if (g.level <= 100) {
-                g.attributePoints++;
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
-            } else {
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
-            }
+            if (g.level <= 100) { g.attributePoints++; setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.'); }
+            else { setMessage('🎉 Вы достигли ' + g.level + ' уровня!'); }
         }
-        
         setMessage('✅ Задание выполнено! +' + formatCurrency(quest.rewardGold) + ', +' + xpGain + ' XP');
         addLog('✅ ' + currentUser + ' выполнил задание ' + quest.name);
         saveData();
@@ -7196,26 +7104,15 @@ function createGuildHallModal() {
     overlay.id = 'modal-guildhall';
     overlay.className = 'modal-overlay hide';
     overlay.onclick = function(e) { if (e.target === this) closeGuildHall(); };
-    overlay.innerHTML = `
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3>
-                <button class="close-btn" onclick="closeGuildHall()">✕</button>
-            </div>
-            <div id="modal-guildhall-content"></div>
-        </div>
-    `;
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3><button class="close-btn" onclick="closeGuildHall()">✕</button></div><div id="modal-guildhall-content"></div></div>';
     document.body.appendChild(overlay);
     return overlay;
 }
 
-function closeGuildHall() {
-    const modal = document.getElementById('modal-guildhall');
-    if (modal) modal.classList.add('hide');
-}
+function closeGuildHall() { const modal = document.getElementById('modal-guildhall'); if (modal) modal.classList.add('hide'); }
 
 // ============================================================
-// БОРДЕЛЬ
+// 3. БОРДЕЛЬ (ОТДЫХ, БАФФЫ, КОСТИ)
 // ============================================================
 function openBrothel() {
     const modal = document.getElementById('modal-brothel') || createBrothelModal();
@@ -7223,23 +7120,18 @@ function openBrothel() {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     let html = '<div class="modal-section"><h4>💃 БОРДЕЛЬ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Тёплый приём, вино и отдых для уставших путников.</p>';
     html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '<p style="color:#6a5a48;">😴 Усталость: ' + g.fatigue + '/100</p>';
     html += '</div>';
-    
-    // === УСЛУГИ ===
     html += '<div class="modal-section"><h4>🛏️ УСЛУГИ</h4>';
-    
     const services = [
         { id: 'rest', name: '🛏️ Отдых с девушкой', desc: '+50 усталости, +10 HP', price: 20, fatigue: 50, hp: 10, buff: null },
         { id: 'wine', name: '🍷 Вино с компанией', desc: '+30 усталости, +5 HP, бафф "Веселье" (+5% XP 30 мин)', price: 50, fatigue: 30, hp: 5, buff: { type: 'xp', value: 5, duration: 30 } },
         { id: 'dance', name: '💃 Танец', desc: '+20 усталости, бафф "Вдохновение" (+10% урон 15 мин)', price: 100, fatigue: 20, hp: 0, buff: { type: 'damage', value: 10, duration: 15 } },
         { id: 'vip', name: '👑 VIP-комната', desc: '+80 усталости, +20 HP, бафф "+15% XP 1 час"', price: 200, fatigue: 80, hp: 20, buff: { type: 'xp', value: 15, duration: 60 } }
     ];
-    
     services.forEach(service => {
         const canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= service.price;
         html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
@@ -7253,11 +7145,8 @@ function openBrothel() {
         html += '</div></div>';
     });
     html += '</div>';
-    
-    // === ИГРА В КОСТИ (PvP) ===
     html += '<div class="modal-section"><h4>🎲 ИГРА В КОСТИ (PvP)</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Сыграйте с другим игроком. Победитель забирает банк!</p>';
-    
     const activeGames = getActiveDiceGames();
     if (activeGames.length > 0) {
         html += '<p style="color:#6a5a48;font-size:12px;">📋 Активные игры:</p>';
@@ -7275,18 +7164,13 @@ function openBrothel() {
     } else {
         html += '<p style="color:#6a5a48;font-size:11px;">Нет активных игр. Создайте свою!</p>';
     }
-    
-    // Создать игру
     html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">';
     const betOptions = [10, 25, 50, 100, 200];
     betOptions.forEach(bet => {
         const canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= bet;
         html += '<button class="btn btn-small" onclick="createDiceGame(' + bet + ')" ' + (canAfford ? '' : 'disabled') + ' style="flex:1;min-width:60px;">🎲 ' + formatCurrency(bet) + '</button>';
     });
-    html += '</div>';
-    html += '</div>';
-    
-    // === АКТИВНЫЕ БАФФЫ ===
+    html += '</div></div>';
     if (g.brothelBuffs && g.brothelBuffs.length > 0) {
         html += '<div class="modal-section"><h4>✨ АКТИВНЫЕ БАФФЫ</h4>';
         const now = Date.now();
@@ -7301,7 +7185,6 @@ function openBrothel() {
         });
         html += '</div>';
     }
-    
     html += '<button class="btn btn-secondary" onclick="closeBrothel()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
@@ -7311,26 +7194,13 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег!');
-        return;
-    }
-    
-    // Восстановление
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег!'); return; }
     g.fatigue = Math.min(100, g.fatigue + fatigue);
     if (hp > 0) g.hp = Math.min(g.maxHp, g.hp + hp);
-    
-    // Бафф
     if (buffData && buffData !== 'null') {
         const buff = JSON.parse(buffData);
         if (!g.brothelBuffs) g.brothelBuffs = [];
-        
-        const buffNames = {
-            'xp': '🎯 Благословение опыта',
-            'damage': '⚔️ Вдохновение'
-        };
-        
+        const buffNames = { 'xp': '🎯 Благословение опыта', 'damage': '⚔️ Вдохновение' };
         g.brothelBuffs.push({
             name: buffNames[buff.type] || 'Бафф',
             desc: '+' + buff.value + '% ' + (buff.type === 'xp' ? 'опыта' : 'урона'),
@@ -7339,14 +7209,7 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
             expires: Date.now() + buff.duration * 60 * 1000
         });
     }
-    
-    const serviceNames = {
-        'rest': 'Отдых с девушкой',
-        'wine': 'Вино с компанией',
-        'dance': 'Танец',
-        'vip': 'VIP-комната'
-    };
-    
+    const serviceNames = { 'rest': 'Отдых с девушкой', 'wine': 'Вино с компанией', 'dance': 'Танец', 'vip': 'VIP-комната' };
     setMessage('✅ ' + serviceNames[serviceId] + '! +' + fatigue + ' усталости' + (hp > 0 ? ', +' + hp + ' HP' : ''));
     addLog('💃 ' + currentUser + ' посетил бордель (' + serviceNames[serviceId] + ')');
     updateMenu();
@@ -7354,31 +7217,35 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
     openBrothel();
 }
 
+function createBrothelModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-brothel';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeBrothel(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>💃 БОРДЕЛЬ</h3><button class="close-btn" onclick="closeBrothel()">✕</button></div><div id="modal-brothel-content"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeBrothel() { const modal = document.getElementById('modal-brothel'); if (modal) modal.classList.add('hide'); }
+
 // ============================================================
-// КОСТИ (PvP)
+// 4. КОСТИ (PvP)
 // ============================================================
 function getActiveDiceGames() {
     const now = Date.now();
     const timeout = 5 * 60 * 1000;
     const active = [];
-    
     for (let id in diceGames) {
         const game = diceGames[id];
         if (now - game.createdAt > timeout && game.status === 'waiting') {
             const creator = users[game.creator];
-            if (creator) {
-                creator.game.copper += game.bet;
-                convertCurrency(creator.game);
-                saveData();
-            }
+            if (creator) { creator.game.copper += game.bet; convertCurrency(creator.game); saveData(); }
             delete diceGames[id];
             continue;
         }
-        if (game.status === 'waiting' || game.status === 'playing') {
-            active.push(game);
-        }
+        if (game.status === 'waiting' || game.status === 'playing') { active.push(game); }
     }
-    
     return active;
 }
 
@@ -7386,31 +7253,10 @@ function createDiceGame(bet) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
-    for (let id in diceGames) {
-        if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') {
-            setMessage('❌ У вас уже есть активная игра! Дождитесь соперника.');
-            return;
-        }
-    }
-    
-    if (!spendMoney(g, bet)) {
-        setMessage('❌ Недостаточно денег для ставки!');
-        return;
-    }
-    
+    for (let id in diceGames) { if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') { setMessage('❌ У вас уже есть активная игра! Дождитесь соперника.'); return; } }
+    if (!spendMoney(g, bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
     const gameId = 'dice_' + (++diceGameIdCounter);
-    diceGames[gameId] = {
-        id: gameId,
-        creator: currentUser,
-        bet: bet,
-        createdAt: Date.now(),
-        status: 'waiting',
-        player2: null,
-        creatorRoll: null,
-        player2Roll: null
-    };
-    
+    diceGames[gameId] = { id: gameId, creator: currentUser, bet: bet, createdAt: Date.now(), status: 'waiting', player2: null, creatorRoll: null, player2Roll: null };
     saveData();
     setMessage('✅ Вы создали игру в кости на ' + formatCurrency(bet) + '! Ждите соперника.');
     addLog('🎲 ' + currentUser + ' создал игру в кости на ' + formatCurrency(bet));
@@ -7422,31 +7268,13 @@ function joinDiceGame(gameId) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     const game = diceGames[gameId];
-    if (!game) {
-        setMessage('❌ Игра не найдена.');
-        return;
-    }
-    
-    if (game.creator === currentUser) {
-        setMessage('❌ Вы не можете присоединиться к своей игре.');
-        return;
-    }
-    
-    if (game.status !== 'waiting') {
-        setMessage('❌ Игра уже началась или завершена.');
-        return;
-    }
-    
-    if (!spendMoney(g, game.bet)) {
-        setMessage('❌ Недостаточно денег для ставки!');
-        return;
-    }
-    
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator === currentUser) { setMessage('❌ Вы не можете присоединиться к своей игре.'); return; }
+    if (game.status !== 'waiting') { setMessage('❌ Игра уже началась или завершена.'); return; }
+    if (!spendMoney(g, game.bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
     game.player2 = currentUser;
     game.status = 'playing';
-    
     saveData();
     setMessage('✅ Вы присоединились к игре! Бросайте кости.');
     addLog('🎲 ' + currentUser + ' присоединился к игре ' + gameId);
@@ -7458,89 +7286,39 @@ function playDicePvP(gameId) {
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
-    
     const game = diceGames[gameId];
-    if (!game) {
-        setMessage('❌ Игра не найдена.');
-        return;
-    }
-    
-    if (game.creator !== currentUser && game.player2 !== currentUser) {
-        setMessage('❌ Вы не участник этой игры.');
-        return;
-    }
-    
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator !== currentUser && game.player2 !== currentUser) { setMessage('❌ Вы не участник этой игры.'); return; }
     const dice1 = Math.floor(Math.random() * 6) + 1;
     const dice2 = Math.floor(Math.random() * 6) + 1;
     const total = dice1 + dice2;
-    
     if (game.creator === currentUser) {
-        if (game.creatorRoll !== null) {
-            setMessage('❌ Вы уже бросили кости! Ждите соперника.');
-            return;
-        }
+        if (game.creatorRoll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
         game.creatorRoll = total;
         setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
     } else if (game.player2 === currentUser) {
-        if (game.player2Roll !== null) {
-            setMessage('❌ Вы уже бросили кости! Ждите соперника.');
-            return;
-        }
+        if (game.player2Roll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
         game.player2Roll = total;
         setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
     }
-    
     saveData();
     updateMenu();
-    
-    if (game.creatorRoll !== null && game.player2Roll !== null) {
-        finishDiceGame(gameId);
-    } else {
-        openBrothel();
-    }
+    if (game.creatorRoll !== null && game.player2Roll !== null) { finishDiceGame(gameId); }
+    else { openBrothel(); }
 }
 
 function finishDiceGame(gameId) {
     const game = diceGames[gameId];
     if (!game) return;
-    
     const creator = users[game.creator];
     const player2 = users[game.player2];
     const totalBet = game.bet * 2;
-    
     let winner = null;
     let winnerName = '';
-    
-    if (game.creatorRoll > game.player2Roll) {
-        winner = creator;
-        winnerName = game.creator;
-        setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')');
-    } else if (game.player2Roll > game.creatorRoll) {
-        winner = player2;
-        winnerName = game.player2;
-        setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')');
-    } else {
-        creator.game.copper += game.bet;
-        player2.game.copper += game.bet;
-        convertCurrency(creator.game);
-        convertCurrency(player2.game);
-        setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.');
-        addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2);
-        game.status = 'finished';
-        delete diceGames[gameId];
-        saveData();
-        updateMenu();
-        openBrothel();
-        return;
-    }
-    
-    if (winner) {
-        winner.game.copper += totalBet;
-        convertCurrency(winner.game);
-        setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!');
-        addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator));
-    }
-    
+    if (game.creatorRoll > game.player2Roll) { winner = creator; winnerName = game.creator; setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')'); }
+    else if (game.player2Roll > game.creatorRoll) { winner = player2; winnerName = game.player2; setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')'); }
+    else { creator.game.copper += game.bet; player2.game.copper += game.bet; convertCurrency(creator.game); convertCurrency(player2.game); setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.'); addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2); game.status = 'finished'; delete diceGames[gameId]; saveData(); updateMenu(); openBrothel(); return; }
+    if (winner) { winner.game.copper += totalBet; convertCurrency(winner.game); setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!'); addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator)); }
     game.status = 'finished';
     delete diceGames[gameId];
     saveData();
@@ -7548,51 +7326,398 @@ function finishDiceGame(gameId) {
     openBrothel();
 }
 
-function createBrothelModal() {
-    const overlay = document.createElement('div');
-    overlay.id = 'modal-brothel';
-    overlay.className = 'modal-overlay hide';
-    overlay.onclick = function(e) { if (e.target === this) closeBrothel(); };
-    overlay.innerHTML = `
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>💃 БОРДЕЛЬ</h3>
-                <button class="close-btn" onclick="closeBrothel()">✕</button>
-            </div>
-            <div id="modal-brothel-content"></div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    return overlay;
-}
-
-function closeBrothel() {
-    const modal = document.getElementById('modal-brothel');
-    if (modal) modal.classList.add('hide');
-}
-
 // ============================================================
-// ЛОГ
+// 5. КРАСНЫЙ ЗАМОК
 // ============================================================
-function openLog() {
-    const modal = document.getElementById('modal-log');
-    const content = document.getElementById('modal-log-content');
-    let html = '<div class="modal-section"><h4>📜 ПОСЛЕДНИЕ СОБЫТИЯ</h4>';
-    if (gameLog.length === 0) {
-        html += '<p style="color:#6a5a48;">Пусто</p>';
-    } else {
-        gameLog.slice(-20).reverse().forEach(entry => {
-            html += '<p style="color:#b8a890;font-size:12px;padding:2px 0;">' + entry + '</p>';
-        });
-    }
-    html += '</div><button class="btn" onclick="closeLog()">Закрыть</button>';
+function openRedKeep() {
+    const modal = document.getElementById('modal-redkeep') || createRedKeepModal();
+    const content = document.getElementById('modal-redkeep-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    let html = '<div class="modal-section"><h4>🏰 КРАСНЫЙ ЗАМОК</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Резиденция короля Семи Королевств.</p>';
+    html += '</div>';
+    html += '<div class="modal-section"><h4>📍 МЕСТА</h4>';
+    const places = [
+        { id: 'throne_room', label: '👑 Тронный зал', desc: 'Зал Железного Трона.' },
+        { id: 'royal_council', label: '🏛️ Королевский совет', desc: 'Зал заседаний Малого совета.' },
+        { id: 'royal_treasury', label: '💰 Королевская казна', desc: 'Хранилище королевского золота.' },
+        { id: 'archives', label: '📜 Архивы', desc: 'Древние свитки и записи.' },
+        { id: 'barracks', label: '⚔️ Казармы', desc: 'Солдатские казармы.' },
+        { id: 'training_ground', label: '🏋️ Тренировочная площадка', desc: 'Место для тренировок рыцарей.' },
+        { id: 'garden', label: '🌿 Сад', desc: 'Королевский сад.' }
+    ];
+    places.forEach(place => {
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + place.label + '</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + place.id + '\')">🚶 Идти</button></span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeRedKeep()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
 
-function closeLog() {
-    document.getElementById('modal-log').classList.add('hide');
+function goToPlace(placeId) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.location.place = placeId;
+    setMessage('🚶 Вы прибыли в ' + ({throne_room:'Тронный зал', royal_council:'Королевский совет', royal_treasury:'Королевская казна', archives:'Архивы', barracks:'Казармы', training_ground:'Тренировочная площадка', garden:'Сад'}[placeId] || placeId));
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+    closeRedKeep();
 }
+
+function createRedKeepModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-redkeep';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeRedKeep(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏰 КРАСНЫЙ ЗАМОК</h3><button class="close-btn" onclick="closeRedKeep()">✕</button></div><div id="modal-redkeep-content"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeRedKeep() { const modal = document.getElementById('modal-redkeep'); if (modal) modal.classList.add('hide'); }
+
+// ============================================================
+// 6. КОРОЛЕВСКАЯ КАЗНА (НАЛОГИ)
+// ============================================================
+function openRoyalTreasury() {
+    const modal = document.getElementById('modal-treasury') || createTreasuryModal();
+    const content = document.getElementById('modal-treasury-content');
+    const user = users[currentUser];
+    if (!user) return;
+    let html = '<div class="modal-section"><h4>💰 КОРОЛЕВСКАЯ КАЗНА</h4>';
+    html += '<p style="color:#6a5a48;">💰 Всего в казне: ' + formatCurrency(KINGDOM.treasury) + '</p>';
+    html += '<p style="color:#6a5a48;">👑 Король: ' + (KINGDOM.ruler || 'Нет') + '</p>';
+    if (KINGDOM.ruler === currentUser) {
+        html += '<button class="btn" onclick="collectKingdomTaxes()">💰 Собрать налоги</button>';
+        html += '<button class="btn" onclick="setTaxRate()">📜 Изменить налог</button>';
+    }
+    html += '</div><button class="btn btn-secondary" onclick="closeTreasury()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function collectKingdomTaxes() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (KINGDOM.ruler !== currentUser) { setMessage('❌ Только король может собирать налоги.'); return; }
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    if (now - KINGDOM.lastTaxCollection < dayMs) { setMessage('⏳ Налоги уже собраны сегодня. Приходите завтра.'); return; }
+    let totalTax = 0;
+    let rebelHouses = [];
+    let paidHouses = [];
+    for (let houseId in HOUSES_DATA) {
+        const house = HOUSES_DATA[houseId];
+        if (KINGDOM.rebels.includes(houseId)) { rebelHouses.push(houseId); continue; }
+        const houseIncome = getHouseIncome(houseId);
+        const tax = Math.floor(houseIncome * KINGDOM.taxRate);
+        if (house.treasury < tax) { house.debt = (house.debt || 0) + tax; paidHouses.push(houseId + ' (долг: ' + tax + ')'); }
+        else { house.treasury -= tax; totalTax += tax; paidHouses.push(houseId + ' (+' + tax + ')'); }
+    }
+    KINGDOM.treasury += totalTax;
+    KINGDOM.lastTaxCollection = now;
+    let logMsg = '💰 Собрано налогов: ' + formatCurrency(totalTax) + '\n';
+    logMsg += '✅ Заплатили: ' + paidHouses.join(', ') + '\n';
+    if (rebelHouses.length > 0) { logMsg += '⚔️ Восстали против короны: ' + rebelHouses.join(', '); }
+    setMessage(logMsg);
+    addLog('💰 Король ' + currentUser + ' собрал налоги: ' + formatCurrency(totalTax));
+    updateMenu();
+    saveData();
+    openRoyalTreasury();
+}
+
+function getHouseIncome(houseId) {
+    const house = HOUSES_DATA[houseId];
+    if (!house) return 0;
+    let income = 0;
+    income += house.totalAcres * 0.1;
+    if (house.army) { income += (house.army.infantry || 0) * 0.01; income += (house.army.cavalry || 0) * 0.02; }
+    if (house.vassals) {
+        house.vassals.forEach(vassalId => {
+            const vassal = HOUSES_DATA[vassalId];
+            if (vassal) { income += vassal.totalAcres * 0.05; }
+        });
+    }
+    return Math.floor(income);
+}
+
+function setTaxRate() {
+    const rate = prompt('Введите новую ставку налога (в % от 1 до 30):');
+    if (!rate) { setMessage('❌ Отменено.'); return; }
+    const num = parseFloat(rate);
+    if (isNaN(num) || num < 1 || num > 30) { setMessage('❌ Введите число от 1 до 30.'); return; }
+    KINGDOM.taxRate = num / 100;
+    setMessage('📜 Налог установлен: ' + num + '%');
+    addLog('📜 Король ' + currentUser + ' установил налог ' + num + '%');
+    saveData();
+    openRoyalTreasury();
+}
+
+function createTreasuryModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-treasury';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeTreasury(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>💰 КОРОЛЕВСКАЯ КАЗНА</h3><button class="close-btn" onclick="closeTreasury()">✕</button></div><div id="modal-treasury-content"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeTreasury() { const modal = document.getElementById('modal-treasury'); if (modal) modal.classList.add('hide'); }
+
+// ============================================================
+// 7. АРХИВЫ (ИНТЕЛЛЕКТ)
+// ============================================================
+function openArchives() {
+    const modal = document.getElementById('modal-archives') || createArchivesModal();
+    const content = document.getElementById('modal-archives-content');
+    let html = '<div class="modal-section"><h4>📜 АРХИВЫ</h4>';
+    html += '<p style="color:#6a5a48;">Здесь хранятся древние свитки и записи.</p>';
+    html += '<button class="btn" onclick="readHistory()">📖 Изучить историю (+интеллект)</button>';
+    html += '</div><button class="btn btn-secondary" onclick="closeArchives()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function readHistory() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.stats.intelligence = (g.stats.intelligence || 1) + 1;
+    setMessage('📜 Вы изучили древние свитки! Интеллект +1');
+    addLog('📜 ' + currentUser + ' изучил архивы (+1 интеллект)');
+    updateMenu();
+    saveData();
+    closeArchives();
+}
+
+function createArchivesModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-archives';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeArchives(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📜 АРХИВЫ</h3><button class="close-btn" onclick="closeArchives()">✕</button></div><div id="modal-archives-content"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeArchives() { const modal = document.getElementById('modal-archives'); if (modal) modal.classList.add('hide'); }
+
+// ============================================================
+// 8. КАЗАРМЫ И ТРЕНИРОВКИ
+// ============================================================
+function openBarracks() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.location.place = 'barracks';
+    setMessage('⚔️ Вы вошли в казармы.');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function restAtBarracks() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.fatigue = Math.min(100, g.fatigue + 20);
+    g.hp = Math.min(g.maxHp, g.hp + 10);
+    setMessage('🛏️ Вы отдохнули в казармах. +20 усталости, +10 HP');
+    updateMenu();
+    saveData();
+}
+
+function openArmory() {
+    const modal = document.getElementById('modal-armory') || createArmoryModal();
+    const content = document.getElementById('modal-armory-content');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    let html = '<div class="modal-section"><h4>🗡️ ОРУЖЕЙНАЯ</h4>';
+    html += '<p style="color:#6a5a48;">Здесь можно взять оружие для тренировки.</p>';
+    const weapons = [
+        { name: 'Тренировочный меч', type: 'sword', level: 1, damage: 2 },
+        { name: 'Тренировочное копьё', type: 'spear', level: 1, damage: 2 },
+        { name: 'Тренировочный лук', type: 'bow', level: 1, damage: 2 },
+        { name: 'Тренировочный щит', type: 'shield', level: 1, defense: 2 }
+    ];
+    weapons.forEach(w => {
+        html += '<div class="row" style="padding:4px 0;">';
+        html += '<span class="label">' + w.name + '</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="takeTrainingWeapon(\'' + w.type + '\')">Взять</button></span>';
+        html += '</div>';
+    });
+    html += '</div><button class="btn btn-secondary" onclick="closeArmory()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function takeTrainingWeapon(type) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    if (g.equipment.rightHand) { setMessage('❌ У вас уже есть оружие. Сначала снимите его.'); return; }
+    const weapon = {
+        name: 'Тренировочный ' + ({sword:'меч', spear:'копьё', bow:'лук', shield:'щит'}[type] || type),
+        type: type,
+        level: 1,
+        quality: 'Обычное',
+        finalDamage: type === 'shield' ? 0 : 2,
+        finalDefense: type === 'shield' ? 2 : 0,
+        isTraining: true
+    };
+    g.equipment.rightHand = weapon;
+    setMessage('✅ Вы взяли ' + weapon.name + ' для тренировки');
+    updateMenu();
+    saveData();
+    openArmory();
+}
+
+function createArmoryModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-armory';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeArmory(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ОРУЖЕЙНАЯ</h3><button class="close-btn" onclick="closeArmory()">✕</button></div><div id="modal-armory-content"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeArmory() { const modal = document.getElementById('modal-armory'); if (modal) modal.classList.add('hide'); }
+
+function openTrainingGround() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.location.place = 'training_ground';
+    setMessage('🏋️ Вы на тренировочной площадке.');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function trainWeapon(weaponType) {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    startBusy('Тренировка ' + weaponType, 3, function() {
+        const xpMultiplier = getXpMultiplier(g);
+        const xpGain = Math.round(10 * xpMultiplier);
+        if (g.skills[weaponType]) {
+            g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
+            const needed = g.skills[weaponType].level * 20 + 10;
+            while (g.skills[weaponType].xp >= needed) {
+                g.skills[weaponType].xp -= needed;
+                g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
+                setMessage('⚔️ Мастерство «' + ({sword:'Мечи', spear:'Копья', axe:'Топоры', mace:'Булавы', bow:'Луки', crossbow:'Арбалеты', dagger:'Кинжалы', shield:'Щиты'}[weaponType] || weaponType) + '» повышено до ' + g.skills[weaponType].level + '!');
+            }
+        }
+        g.fatigue = Math.max(0, g.fatigue - 10);
+        setMessage('🏋️ Тренировка завершена! +' + xpGain + ' XP к ' + weaponType);
+        updateMenu();
+        saveData();
+    });
+}
+
+function openGarden() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    g.location.place = 'garden';
+    setMessage('🌿 Вы в королевском саду.');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+// ============================================================
+// 9. ОТМЕНА ДЕЙСТВИЯ
+// ============================================================
+function cancelAction() {
+    if (!isBusy) { setMessage('❌ Вы не заняты.'); return; }
+    if (battleState && battleState.inProgress) { setMessage('⚔️ Для выхода из боя используйте кнопку "Отступить".'); return; }
+    if (!confirm('Вы уверены, что хотите прервать текущее действие?\nПрогресс будет потерян.')) { return; }
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    setMessage('❌ Действие прервано.');
+    addLog('❌ ' + currentUser + ' прервал действие');
+    updateActions();
+    updateMenu();
+    saveData();
+}
+
+// ============================================================
+// 10. ФОРМАТ ВАЛЮТЫ
+// ============================================================
+function formatCurrency(amount) {
+    if (amount < 0) return '0 МП';
+    if (amount === 0) return '0 МП';
+    const gold = Math.floor(amount / (210 * 56));
+    let remaining = amount % (210 * 56);
+    const silver = Math.floor(remaining / 56);
+    const copper = remaining % 56;
+    let parts = [];
+    if (gold > 0) parts.push(gold + ' ЗОЛ');
+    if (silver > 0) parts.push(silver + ' СО');
+    if (copper > 0 || parts.length === 0) parts.push(copper + ' МП');
+    return parts.join(' ');
+}
+
+// ============================================================
+// 11. ДОМА И РЕГИОНЫ (ДАННЫЕ)
+// ============================================================
+const HOUSES_DATA = {
+    targaryen: { id: 'targaryen', name: 'Таргариены', sigil: '🐉', isRoyal: true, liege: null, vassals: ['lannister', 'stark', 'tyrell', 'martell', 'baratheon', 'tully', 'greyjoy'], capital: 'Королевская Гавань', secondCastle: 'Драконий Камень', totalAcres: 100000, treasury: 10000, army: { infantry: 2000, cavalry: 1000 } },
+    stark: { id: 'stark', name: 'Старки', sigil: '🐺', isGreatHouse: true, liege: 'targaryen', vassals: ['bolton', 'karstark', 'mormont'], capital: 'Винтерфелл', secondCastle: null, totalAcres: 80000, treasury: 3000, army: { infantry: 1200, cavalry: 500 }, loyalty: 85 },
+    bolton: { id: 'bolton', name: 'Болтоны', sigil: '🩸', liege: 'stark', capital: 'Дредфорт', totalAcres: 20000, treasury: 1000, army: { infantry: 300, cavalry: 100 }, loyalty: 70 },
+    karstark: { id: 'karstark', name: 'Карстарки', sigil: '⭐', liege: 'stark', capital: 'Кархолд', totalAcres: 15000, treasury: 800, army: { infantry: 200, cavalry: 80 }, loyalty: 85 },
+    mormont: { id: 'mormont', name: 'Мормонты', sigil: '🐻', liege: 'stark', capital: 'Медвежий Остров', totalAcres: 8000, treasury: 500, army: { infantry: 150, cavalry: 50 }, loyalty: 95 },
+    lannister: { id: 'lannister', name: 'Ланнистеры', sigil: '🦁', isGreatHouse: true, liege: 'targaryen', vassals: ['reyne', 'marbrand'], capital: 'Кастерли Рок', secondCastle: 'Золотой Зуб', totalAcres: 90000, treasury: 5000, army: { infantry: 1500, cavalry: 800 } },
+    reyne: { id: 'reyne', name: 'Рейны', sigil: '🦀', liege: 'lannister', capital: 'Кастамир', totalAcres: 12000, treasury: 600, army: { infantry: 200, cavalry: 60 }, loyalty: 75 },
+    marbrand: { id: 'marbrand', name: 'Марбранды', sigil: '🔥', liege: 'lannister', capital: 'Асмарк', totalAcres: 10000, treasury: 500, army: { infantry: 180, cavalry: 50 }, loyalty: 80 },
+    tyrell: { id: 'tyrell', name: 'Тиреллы', sigil: '🌹', isGreatHouse: true, liege: 'targaryen', vassals: ['hightower', 'tarly'], capital: 'Хайгарден', secondCastle: null, totalAcres: 70000, treasury: 4000, army: { infantry: 1000, cavalry: 600 } },
+    hightower: { id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', liege: 'tyrell', capital: 'Старомест', totalAcres: 12000, treasury: 1200, army: { infantry: 250, cavalry: 100 }, loyalty: 80 },
+    tarly: { id: 'tarly', name: 'Тарли', sigil: '🏹', liege: 'tyrell', capital: 'Хорн-Хилл', totalAcres: 10000, treasury: 800, army: { infantry: 200, cavalry: 70 }, loyalty: 90 },
+    tully: { id: 'tully', name: 'Талли', sigil: '🐟', isGreatHouse: true, liege: 'targaryen', vassals: ['mallister', 'frey'], capital: 'Риверран', secondCastle: null, totalAcres: 50000, treasury: 2500, army: { infantry: 800, cavalry: 400 } },
+    mallister: { id: 'mallister', name: 'Маллистеры', sigil: '🦅', liege: 'tully', capital: 'Сидр-Холл', totalAcres: 8000, treasury: 400, army: { infantry: 150, cavalry: 40 }, loyalty: 90 },
+    frey: { id: 'frey', name: 'Фреи', sigil: '🌉', liege: 'tully', capital: 'Близнецы', totalAcres: 10000, treasury: 600, army: { infantry: 180, cavalry: 50 }, loyalty: 60 },
+    baratheon: { id: 'baratheon', name: 'Баратеоны', sigil: '🦌', isGreatHouse: true, liege: 'targaryen', vassals: ['connington', 'swann'], capital: 'Штормовой Предел', secondCastle: null, totalAcres: 60000, treasury: 3000, army: { infantry: 900, cavalry: 500 } },
+    connington: { id: 'connington', name: 'Коннингтоны', sigil: '🦅', liege: 'baratheon', capital: 'Гнездо Грифона', totalAcres: 9000, treasury: 500, army: { infantry: 160, cavalry: 45 }, loyalty: 85 },
+    swann: { id: 'swann', name: 'Сванны', sigil: '🦢', liege: 'baratheon', capital: 'Каменный Дом', totalAcres: 7000, treasury: 400, army: { infantry: 140, cavalry: 35 }, loyalty: 80 },
+    martell: { id: 'martell', name: 'Мартеллы', sigil: '☀️', isGreatHouse: true, liege: 'targaryen', vassals: ['dayne', 'yronwood'], capital: 'Солнечное Копьё', secondCastle: null, totalAcres: 50000, treasury: 3500, army: { infantry: 800, cavalry: 400 } },
+    dayne: { id: 'dayne', name: 'Дейны', sigil: '⭐', liege: 'martell', capital: 'Звездопад', totalAcres: 8000, treasury: 500, army: { infantry: 150, cavalry: 40 }, loyalty: 90 },
+    yronwood: { id: 'yronwood', name: 'Йронвуды', sigil: '🦂', liege: 'martell', capital: 'Йронвуд', totalAcres: 9000, treasury: 450, army: { infantry: 160, cavalry: 45 }, loyalty: 75 },
+    greyjoy: { id: 'greyjoy', name: 'Грейджои', sigil: '🐙', isGreatHouse: true, liege: 'targaryen', vassals: ['harlaw'], capital: 'Пайк', secondCastle: null, totalAcres: 30000, treasury: 2000, army: { infantry: 700, cavalry: 300 } },
+    harlaw: { id: 'harlaw', name: 'Харлоу', sigil: '📖', liege: 'greyjoy', capital: 'Десять Башен', totalAcres: 5000, treasury: 300, army: { infantry: 120, cavalry: 30 }, loyalty: 85 }
+};
+
+const REGIONS = {
+    'Королевские земли': { capital: 'Королевская Гавань', house: 'targaryen', secondCastle: 'Драконий Камень', level: 1, description: 'Сердце Семи Королевств.' },
+    'Север': { capital: 'Винтерфелл', house: 'stark', secondCastle: 'Дредфорт', level: 10, description: 'Холодные земли, где правят Старки.' },
+    'Западные земли': { capital: 'Кастерли Рок', house: 'lannister', secondCastle: 'Золотой Зуб', level: 15, description: 'Богатейшие земли, полные золота.' },
+    'Простор': { capital: 'Хайгарден', house: 'tyrell', secondCastle: 'Старомест', level: 12, description: 'Житница Вестероса. Цветущие земли.' },
+    'Речные земли': { capital: 'Риверран', house: 'tully', secondCastle: 'Близнецы', level: 10, description: 'Земли, изрезанные реками.' },
+    'Штормовые земли': { capital: 'Штормовой Предел', house: 'baratheon', secondCastle: 'Гнездо Грифона', level: 14, description: 'Суровые земли, где бушуют шторма.' },
+    'Дорн': { capital: 'Солнечное Копьё', house: 'martell', secondCastle: 'Звездопад', level: 16, description: 'Жаркие земли с песчаными пустынями.' },
+    'Железные острова': { capital: 'Пайк', house: 'greyjoy', secondCastle: 'Десять Башен', level: 12, description: 'Скалистые острова, где живут железнорождённые.' }
+};
+
+const KINGDOM = { ruler: null, treasury: 0, taxRate: 0.10, lastTaxCollection: 0, rebels: [] };
 
 // ============================================================
 // ОНЛАЙН
