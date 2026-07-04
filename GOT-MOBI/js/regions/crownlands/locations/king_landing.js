@@ -1,5 +1,5 @@
 // ============================================================
-// КОРОЛЕВСКАЯ ГАВАНЬ — ВСЕ ЗДАНИЯ
+// КОРОЛЕВСКАЯ ГАВАНЬ — ГОРОД
 // ============================================================
 
 function getLocationText(place) {
@@ -7,17 +7,17 @@ function getLocationText(place) {
         'Таверна': 'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок': '🏪 Центральный рынок Королевской Гавани.',
         'Кузница': 'Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
-        'Оружейная лавка': 'Вы в оружейной лавке. Здесь можно купить и продать оружие.',
-        'Кожевник': 'Вы у кожевника. Здесь можно купить и продать кожаную броню.',
-        'Бронник': 'Вы у бронника. Здесь можно купить и продать латную броню.',
-        'Плотник': 'Вы у плотника. Здесь можно купить и продать луки и арбалеты.',
+        'Оружейная лавка': 'Вы в оружейной лавке.',
+        'Кожевник': 'Вы у кожевника. Здесь можно купить кожаную броню.',
+        'Бронник': 'Вы у бронника. Здесь можно купить латную броню.',
+        'Плотник': 'Вы у плотника. Здесь можно купить луки и арбалеты.',
         'Конюшня': '🐴 Королевская конюшня.',
-        'Гильдия торговцев': 'Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
+        'Гильдия торговцев': 'Вы в гильдии торговцев.',
         'Магистрат': '📜 Магистрат — центр управления городом.',
         'Ворота': 'Вы у городских ворот.',
         'Королевский квартал': '👑 Элитный район.',
         'Торговый квартал': '🏙️ Центр торговли.',
-        'Квартал бедноты': '🏚️ Окраина города. Можно встретить пьянчуг.',
+        'Квартал бедноты': '🏚️ Окраина города.',
         'Дом': '🏠 Ваш дом.',
         'Великая септа': '⛪ Великая Септа Бейлора.',
         'Порт': '⛵ Порт Королевской Гавани.',
@@ -30,7 +30,7 @@ function getLocationText(place) {
     return texts[place] || 'Вы находитесь в ' + place + '.';
 }
 
-function getExits(place, outside) {
+function getExits(place) {
     const allExits = {
         'Таверна': ['Рынок', 'Ворота'],
         'Рынок': ['Таверна', 'Кузница', 'Кожевник', 'Гильдия торговцев', 'Магистрат', 'Королевский квартал', 'Торговый квартал', 'Квартал бедноты', 'Гильдия наёмников'],
@@ -50,18 +50,12 @@ function getExits(place, outside) {
         'Великая септа': ['Ворота', 'Королевский квартал'],
         'Порт': ['Ворота'],
         'Тюрьма': ['Квартал бедноты'],
-        'Дорога': [],
+        'Дорога': ['Ворота'],
         'Библиотека мейстеров': ['Королевский квартал'],
         'Гильдия наёмников': ['Рынок'],
         'Бордель': ['Квартал бедноты']
     };
-    
-    let exits = allExits[place] || [];
-    
-    if (place === 'Ворота') exits.push('Дорога');
-    if (place === 'Дорога') exits = ['Ворота'];
-    
-    return exits;
+    return allExits[place] || [];
 }
 
 function updateStory() {
@@ -79,7 +73,6 @@ function updateActions() {
     const container = document.getElementById('actions-container');
     container.innerHTML = '';
     
-    const g = user.game;
     let actions = [];
     
     if (place === 'Таверна') {
@@ -93,25 +86,28 @@ function updateActions() {
         ];
     }
     
+    if (place === 'Ворота') {
+        actions.push({ id: 'leave_city', label: '🚪 Выйти на Дорогу' });
+    }
+    
     if (place === 'Дорога') {
         actions.push({ id: 'search', label: '🔍 Поиск' });
         actions.push({ id: 'enter_city', label: '🚪 Войти в Королевскую Гавань' });
     }
     
-    if (place === 'Ворота' && !g.outside) {
-        actions.unshift({ id: 'leave_city', label: '🚪 Выйти на Дорогу' });
-    }
-    
     actions.push({ id: 'map', label: '🗺️ Карта' });
     actions.push({ id: 'refresh', label: '🔄 Обновить' });
     
-    actions.forEach(a => {
+    for (let i = 0; i < actions.length; i++) {
+        const a = actions[i];
         const btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        btn.onclick = function() { gameAction(a.id); };
+        (function(actionId) {
+            btn.onclick = function() { gameAction(actionId); };
+        })(a.id);
         container.appendChild(btn);
-    });
+    }
 }
 
 function openMap() {
@@ -120,7 +116,7 @@ function openMap() {
     const modal = document.getElementById('modal-map');
     const content = document.getElementById('modal-map-content');
     const place = user.game.location.place;
-    const exits = getExits(place, user.game.outside);
+    const exits = getExits(place);
     
     let html = '<div class="modal-section"><h4>📍 ' + place + ' (ур. ' + (LOCATION_LEVELS[place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
@@ -128,12 +124,13 @@ function openMap() {
     if (exits.length === 0) {
         html += '<p style="color:#6a5a48;">Нет доступных переходов.</p>';
     } else {
-        exits.forEach(function(exitId) {
+        for (let i = 0; i < exits.length; i++) {
+            const exitId = exits[i];
             html += '<div class="row">';
             html += '<span class="label">📍 ' + exitId + '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="moveToLocation(\'' + exitId + '\')">🚶 Идти</button></span>';
             html += '</div>';
-        });
+        }
     }
     
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
@@ -152,12 +149,14 @@ function moveToLocation(target) {
     
     if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
     
+    closeMap();
+    
     if (target === 'Дорога') {
         g.location.place = 'Дорога';
         g.location.location = 'Дорога';
         g.outside = true;
         setMessage('🛤️ Вы вышли на Королевский тракт.');
-    } else if (g.location.place === 'Дорога' && target === 'Ворота') {
+    } else if (target === 'Ворота' && g.outside) {
         g.location.place = 'Ворота';
         g.location.location = 'Королевская Гавань';
         g.outside = false;
@@ -165,10 +164,10 @@ function moveToLocation(target) {
     } else {
         g.location.place = target;
         g.location.location = 'Королевская Гавань';
+        g.outside = false;
         setMessage('✅ Вы прибыли в ' + target + '.');
     }
     
-    closeMap();
     updateMenu();
     updateStory();
     updateActions();
