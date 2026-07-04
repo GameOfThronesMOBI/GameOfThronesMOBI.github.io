@@ -1,23 +1,23 @@
 // ============================================================
-// MAIN.JS — ТОЧКА ВХОДА
+// MAIN.JS — ТОЧКА ВХОДА (БЕЗ ЗАГЛУШЕК)
 // ============================================================
 
 function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
-    const password = document.getElementById('reg-password').value;
-    const nationality = document.getElementById('reg-nationality').value;
-    const secret = document.getElementById('reg-secret').value.trim();
-    const errEl = document.getElementById('register-error');
-    const okEl = document.getElementById('register-success');
-    const formEl = document.getElementById('register-form');
+    var name = document.getElementById('reg-name').value.trim();
+    var password = document.getElementById('reg-password').value;
+    var nationality = document.getElementById('reg-nationality').value;
+    var secret = document.getElementById('reg-secret').value.trim();
+    var errEl = document.getElementById('register-error');
+    var okEl = document.getElementById('register-success');
+    var formEl = document.getElementById('register-form');
     
-    errEl.classList.add('hide'); 
-    okEl.classList.add('hide'); 
+    errEl.classList.add('hide');
+    okEl.classList.add('hide');
     formEl.classList.remove('hide');
     
     if (!name || !password || !nationality || !secret) {
-        errEl.textContent = '❌ Заполните все поля'; 
-        errEl.classList.remove('hide'); 
+        errEl.textContent = '❌ Заполните все поля';
+        errEl.classList.remove('hide');
         return;
     }
     if (name.length < 2) { errEl.textContent = '❌ Имя слишком короткое'; errEl.classList.remove('hide'); return; }
@@ -25,9 +25,9 @@ function handleRegister() {
     if (!NATIONALITIES[nationality]) { errEl.textContent = '❌ Выберите национальность'; errEl.classList.remove('hide'); return; }
     if (users[name]) { errEl.textContent = '❌ Это имя уже занято'; errEl.classList.remove('hide'); return; }
     
-    const now = Date.now();
-    const skills = {};
-    ['sword', 'spear', 'mace', 'axe', 'bow', 'crossbow', 'shield', 'dagger'].forEach(s => { skills[s] = { level: 1, xp: 0 }; });
+    var now = Date.now();
+    var skills = {};
+    ['sword', 'spear', 'mace', 'axe', 'bow', 'crossbow', 'shield', 'dagger'].forEach(function(s) { skills[s] = { level: 1, xp: 0 }; });
     
     users[name] = {
         password: hash(password),
@@ -85,14 +85,14 @@ function handleRegister() {
 }
 
 function handleLogin() {
-    const name = document.getElementById('login-name').value.trim();
-    const password = document.getElementById('login-password').value;
-    const errEl = document.getElementById('login-error');
+    var name = document.getElementById('login-name').value.trim();
+    var password = document.getElementById('login-password').value;
+    var errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
     
     if (!name || !password) { errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
     
-    const user = users[name];
+    var user = users[name];
     if (!user || user.password !== hash(password)) {
         errEl.textContent = '❌ Неверное имя или пароль';
         errEl.classList.remove('hide');
@@ -134,8 +134,8 @@ function fixOldAccount(user) {
 }
 
 function getMaxHp(g) {
-    const staminaLevel = g.stamina?.level || 1;
-    let bonusHp = 0;
+    var staminaLevel = g.stamina ? g.stamina.level : 1;
+    var bonusHp = 0;
     if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
         bonusHp = HOUSING_TYPES[g.housing.type].restHp || 0;
     }
@@ -143,10 +143,10 @@ function getMaxHp(g) {
 }
 
 function enterGame(name) {
-    const user = users[name];
+    var user = users[name];
     if (!user) return;
     fixOldAccount(user);
-    const g = user.game;
+    var g = user.game;
     if (!g) return;
     
     showPage('game');
@@ -156,10 +156,11 @@ function enterGame(name) {
     g.maxHp = getMaxHp(g);
     if (g.hp > g.maxHp) g.hp = g.maxHp;
     
+    if (typeof normalizeInventory === 'function') normalizeInventory(g);
+    
     updateMenu();
-    // updateStory и updateActions из kings_landing.js
-    if (typeof updateStory === 'function') updateStory();
-    if (typeof updateActions === 'function') updateActions();
+    updateStory();
+    updateActions();
     setMessage('');
     
     isBusy = false;
@@ -173,10 +174,10 @@ function enterGame(name) {
 }
 
 function updateMenu() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    const g = user.game;
-    const time = getTimeOfDay();
+    var g = user.game;
+    var time = getTimeOfDay();
     
     g.maxHp = getMaxHp(g);
     if (g.hp > g.maxHp) g.hp = g.maxHp;
@@ -197,37 +198,51 @@ function updateMenu() {
     document.getElementById('menu-fatigue').textContent = Math.round(g.fatigue);
 }
 
-// updateStory и updateActions берутся из kings_landing.js
-
 function gameAction(action) {
     setMessage('');
-    const user = users[currentUser];
+    
+    if (isBusy && action !== 'refresh') {
+        setMessage('⏳ Вы заняты. Завершите текущее действие.');
+        return;
+    }
+    
+    var user = users[currentUser];
     if (!user) return;
-    const g = user.game;
+    var g = user.game;
     
-    // Карта
-    if (action === 'map') { if (typeof openMap === 'function') openMap(); else setMessage('🚧 Карта в разработке.'); return; }
+    // КАРТА
+    if (action === 'map') { openMap(); return; }
     
-    // Вход/выход из города
+    // ВХОД/ВЫХОД ИЗ ГОРОДА
     if (action === 'leave_city') {
         g.location.place = 'Дорога'; g.location.location = 'Дорога'; g.outside = true;
         setMessage('🛤️ Вы вышли на Королевский тракт.');
-        updateMenu(); if (typeof updateStory === 'function') updateStory(); if (typeof updateActions === 'function') updateActions(); saveData();
+        updateMenu(); updateStory(); updateActions(); saveData();
         return;
     }
     if (action === 'enter_city') {
         g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
         setMessage('🚪 Вы вошли в Королевскую Гавань.');
-        updateMenu(); if (typeof updateStory === 'function') updateStory(); if (typeof updateActions === 'function') updateActions(); saveData();
+        updateMenu(); updateStory(); updateActions(); saveData();
         return;
     }
     
-    // Таверна
-    if (action === 'eat') {
+    // КРАСНЫЙ ЗАМОК
+    if (action === 'enter_red_keep') {
+        if (typeof enterRedKeep === 'function') { enterRedKeep(); return; }
+        return;
+    }
+    
+    // ТАВЕРНА
+    if (action === 'tavern_eat') {
         if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
         g.food = Math.min(g.food + 25, 100);
         setMessage('🍞 Вы поели. Еда +25.');
         updateMenu(); saveData();
+        return;
+    }
+    if (action === 'tavern_buy') {
+        if (typeof openTavernTrade === 'function') { openTavernTrade(); return; }
         return;
     }
     if (action === 'wash') {
@@ -247,21 +262,103 @@ function gameAction(action) {
         return;
     }
     if (action === 'talk') {
-        setMessage(['🍺 Трактирщик: «Добро пожаловать!»','🍺 Трактирщик: «Заработай — помой посуду.»','🍺 Трактирщик: «Будь осторожен за воротами.»'][Math.floor(Math.random()*3)]);
+        var msgs = ['🍺 Трактирщик: «Добро пожаловать!»', '🍺 Трактирщик: «Заработай — помой посуду.»', '🍺 Трактирщик: «Будь осторожен за воротами.»'];
+        setMessage(msgs[Math.floor(Math.random() * 3)]);
         return;
     }
     
-    // Перемещение (из карты)
-    if (action.startsWith('move_')) {
-        const place = action.replace('move_', '');
-        if (typeof moveToLocation === 'function') moveToLocation(place);
-        else setMessage('🚧 Перемещение в разработке.');
+    // МАГАЗИНЫ
+    if (action === 'shop_weapons') { if (typeof openShop === 'function') openShop('Оружейная лавка'); return; }
+    if (action === 'shop_leather') { if (typeof openShop === 'function') openShop('Кожевник'); return; }
+    if (action === 'shop_plate') { if (typeof openShop === 'function') openShop('Бронник'); return; }
+    if (action === 'shop_bows') { if (typeof openShop === 'function') openShop('Плотник'); return; }
+    if (action === 'shop_resources') { if (typeof openShop === 'function') openShop('Кузница'); return; }
+    if (action === 'shop_sell') { if (typeof openShop === 'function') openShop(g.location.place); return; }
+    if (action === 'craft') { if (typeof openCraftMenu === 'function') openCraftMenu(); return; }
+    
+    // КОНЮШНЯ
+    if (action === 'stable_buy' || action === 'stable_sell') {
+        if (typeof openStable === 'function') { openStable(); return; }
         return;
     }
     
+    // СЕПТА
+    if (action === 'temple_heal' || action === 'temple_bless' || action === 'temple_luck') {
+        if (typeof openTemple === 'function') { openTemple(); return; }
+        return;
+    }
+    
+    // РЫНОК
+    if (action === 'market_stalls') { if (typeof openMarket === 'function') { openMarket(); return; } return; }
+    if (action === 'market_my_stall') { if (typeof enterStall === 'function') { enterStall(g.marketStall ? g.marketStall.stallId : null); return; } return; }
+    
+    // АУКЦИОН
+    if (action === 'auction_list' || action === 'auction_my' || action === 'auction_sell') {
+        if (typeof openGuild === 'function') { openGuild(); return; }
+        return;
+    }
+    
+    // МАГИСТРАТ
+    if (action === 'magistrate_housing' || action === 'magistrate_stall_buy' || action === 'magistrate_stall_pay' || action === 'magistrate_rent_pay' || action === 'magistrate_confiscated') {
+        if (typeof openMagistrate === 'function') { openMagistrate(); return; }
+        return;
+    }
+    
+    // ЖИЛЬЁ
+    if (action === 'housing_view') { if (typeof viewDistrict === 'function') { viewDistrict(g.location.place); return; } return; }
+    if (action === 'housing_enter') { if (typeof enterHome === 'function') { enterHome(); return; } return; }
+    
+    // ДОМ
+    if (action === 'home_rest') { if (typeof restAtHome === 'function') { restAtHome(); return; } return; }
+    if (action === 'home_storage') { if (typeof openStorage === 'function') { openStorage(); return; } return; }
+    if (action === 'home_leave') {
+        if (g.housing && g.housing.type) {
+            g.location.place = HOUSING_TYPES[g.housing.type].district;
+            g.location.location = 'Королевская Гавань';
+        } else {
+            g.location.place = 'Таверна';
+            g.location.location = 'Королевская Гавань';
+        }
+        updateMenu(); updateStory(); updateActions(); saveData();
+        return;
+    }
+    
+    // БИБЛИОТЕКА
+    if (action === 'library_buy' || action === 'library_read') {
+        if (typeof openLibrary === 'function') { openLibrary(); return; }
+        return;
+    }
+    
+    // ГИЛЬДИЯ НАЁМНИКОВ
+    if (action === 'quest_take' || action === 'quest_abandon' || action === 'quest_progress') {
+        if (typeof openGuildHall === 'function') { openGuildHall(); return; }
+        return;
+    }
+    
+    // БОРДЕЛЬ
+    if (action === 'brothel_rest' || action === 'brothel_dice') {
+        if (typeof openBrothel === 'function') { openBrothel(); return; }
+        return;
+    }
+    
+    // ТЮРЬМА
+    if (action === 'jail_pay') { if (typeof payJailFine === 'function') { payJailFine(); return; } return; }
+    if (action === 'jail_wait') { if (typeof waitJailTime === 'function') { waitJailTime(); return; } return; }
+    if (action === 'jail_escape') { if (typeof attemptEscape === 'function') { attemptEscape(); return; } return; }
+    
+    // ПОРТ
+    if (action === 'port_travel') { if (typeof openPort === 'function') { openPort(); return; } return; }
+    
+    // ПОИСК
+    if (action === 'search') { if (typeof doSearch === 'function') { doSearch(); return; } return; }
+    
+    // ИНВЕНТАРЬ И ПЕРСОНАЖ
+    if (action === 'inventory') { if (typeof openInventory === 'function') { openInventory(); return; } return; }
+    if (action === 'character') { if (typeof openCharacter === 'function') { openCharacter(); return; } return; }
+    if (action === 'menu') { if (typeof openMainMenu === 'function') { openMainMenu(); return; } return; }
+    
+    // ОБНОВЛЕНИЕ
     if (action === 'refresh') { location.reload(); return; }
-    
-    setMessage('🚧 В разработке.');
 }
 
 function startBusy(actionName, minutes, callback) {
@@ -269,30 +366,30 @@ function startBusy(actionName, minutes, callback) {
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⏳ ' + actionName + '... (' + minutes + ' мин)';
-    if (typeof updateActions === 'function') updateActions();
+    updateActions();
     if (busyTimer) clearTimeout(busyTimer);
     busyTimer = setTimeout(function() {
         isBusy = false;
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
         if (callback) callback();
-        if (typeof updateActions === 'function') updateActions();
+        updateActions();
     }, minutes * 60 * 1000);
 }
 
 function startAutoSave() {
     if (autoSaveInterval) clearInterval(autoSaveInterval);
-    autoSaveInterval = setInterval(() => { if (currentUser && users[currentUser]) saveData(); }, 30000);
+    autoSaveInterval = setInterval(function() { if (currentUser && users[currentUser]) saveData(); }, 30000);
 }
 
 function startResourceSystem() {
     if (resourceInterval) clearInterval(resourceInterval);
-    resourceInterval = setInterval(() => {
-        const user = users[currentUser];
+    resourceInterval = setInterval(function() {
+        var user = users[currentUser];
         if (!user || !user.game.online) return;
-        const g = user.game;
-        const now = Date.now();
-        const diff = (now - g.lastResourceUpdate) / 60000;
+        var g = user.game;
+        var now = Date.now();
+        var diff = (now - g.lastResourceUpdate) / 60000;
         if (diff < 1) return;
         g.food = Math.max(0, g.food - Math.floor(diff / 15));
         g.thirst = Math.max(0, g.thirst - Math.floor(diff / 10));
@@ -303,10 +400,10 @@ function startResourceSystem() {
 }
 
 function updateOnline() {
-    const online = { global: 0, region: 0, location: 0 };
+    var online = { global: 0, region: 0, location: 0 };
     if (!currentUser || !users[currentUser]) return;
-    const cur = users[currentUser];
-    for (const name in users) {
+    var cur = users[currentUser];
+    for (var name in users) {
         if (users[name].game.online) {
             online.global++;
             if (users[name].game.location.region === cur.game.location.region) online.region++;
@@ -335,26 +432,11 @@ function handleLogout() {
     if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
 }
 
-// Заглушки для кнопок меню-бара
-function openCharacter() { setMessage('🚧 Персонаж в разработке.'); }
-function openInventory() { setMessage('🚧 Инвентарь в разработке.'); }
-function openLog() { setMessage('🚧 Лог в разработке.'); }
-function openMainMenu() { setMessage('🚧 Меню в разработке.'); }
-function showOnlineList() { setMessage('🚧 Список онлайн в разработке.'); }
-function closeMap() { document.getElementById('modal-map').classList.add('hide'); }
-function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
-function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
-function closeMenu() { document.getElementById('modal-menu').classList.add('hide'); }
-function closeLog() { document.getElementById('modal-log').classList.add('hide'); }
-function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
-function closeGuild() { document.getElementById('modal-guild').classList.add('hide'); }
-function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
-
 // ============================================================
 // ЗАПУСК
 // ============================================================
 loadData();
-const savedUser = localStorage.getItem('got_user');
+var savedUser = localStorage.getItem('got_user');
 if (savedUser && users[savedUser]) {
     currentUser = savedUser;
     enterGame(savedUser);
