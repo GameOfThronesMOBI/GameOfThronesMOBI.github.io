@@ -220,6 +220,7 @@ function initKingsLanding() {
     
     console.log('🦁 Королевская Гавань загружена. 21 здание, 10 товаров в таверне, 5 работ, 4 пьянчужки, 17 мобов, 5 зелий, 9 книг, 4 услуги борделя, 9 портов.');
 }
+
 // ============================================================
 // ОБНОВЛЕНИЕ ОПИСАНИЯ ЛОКАЦИИ
 // ============================================================
@@ -405,6 +406,80 @@ function handleKingsLandingAction(action) {
     
     if (action === 'trade') {
         openTavernTrade();
+        return true;
+    }
+    
+    if (action === 'open_market') {
+        openMarket();
+        return true;
+    }
+    
+    if (action === 'shop') {
+        openShop(g.location.place);
+        return true;
+    }
+    
+    if (action === 'craft') {
+        openCraftMenu();
+        return true;
+    }
+    
+    if (action === 'open_stable') {
+        openStable();
+        return true;
+    }
+    
+    if (action === 'guild') {
+        openGuild();
+        return true;
+    }
+    
+    if (action === 'open_magistrate') {
+        if (typeof openMagistrate === 'function') {
+            openMagistrate();
+        } else {
+            setMessage('❌ Магистрат временно недоступен.');
+        }
+        return true;
+    }
+    
+    if (action === 'open_temple') {
+        openTemple();
+        return true;
+    }
+    
+    if (action === 'open_port') {
+        openPort();
+        return true;
+    }
+    
+    if (action === 'jail_pay') {
+        payJailFine();
+        return true;
+    }
+    
+    if (action === 'jail_wait') {
+        waitJailTime();
+        return true;
+    }
+    
+    if (action === 'jail_escape') {
+        attemptEscape();
+        return true;
+    }
+    
+    if (action === 'open_library') {
+        openLibrary();
+        return true;
+    }
+    
+    if (action === 'open_guildhall') {
+        openGuildHall();
+        return true;
+    }
+    
+    if (action === 'open_brothel') {
+        openBrothel();
         return true;
     }
     
@@ -665,7 +740,8 @@ function updateKingsLandingActions() {
                     battleAction(actionId);
                     return;
                 }
-                if (!handleKingsLandingAction(actionId)) {
+                var handled = handleKingsLandingAction(actionId);
+                if (!handled) {
                     if (typeof gameAction === 'function') {
                         gameAction(actionId);
                     }
@@ -742,18 +818,11 @@ function openKingsLandingMap() {
     var isOutside = user.game.outside;
     var currentLevel = KINGS_LANDING_LEVELS[currentPlace] || 1;
     
-    var cityBuildings = [];
-    for (var i = 0; i < KINGS_LANDING_BUILDINGS.length; i++) {
-        cityBuildings.push(KINGS_LANDING_BUILDINGS[i].id);
-    }
-    
     var html = '';
     html += '<div class="modal-section"><h4>📍 ' + currentPlace + ' (ур.' + currentLevel + ')</h4></div>';
     html += '<div class="modal-section">';
     
-    // Если игрок снаружи (на Дороге)
     if (isOutside) {
-        // Дорога
         html += '<div class="row">';
         html += '<span class="label">🛤️ Дорога' + (currentPlace === 'Дорога' ? ' ⭐' : '') + '</span>';
         if (currentPlace !== 'Дорога') {
@@ -763,15 +832,11 @@ function openKingsLandingMap() {
         }
         html += '</div>';
         
-        // Ворота (вход в город)
         html += '<div class="row">';
         html += '<span class="label">🚪 Ворота (вход в город)</span>';
         html += '<span class="value"><button class="btn btn-small" onclick="goToKingsLandingBuilding(\'Ворота\')">🚶 Идти</button></span>';
         html += '</div>';
-    }
-    // Если игрок внутри города
-    else {
-        // Все городские здания
+    } else {
         for (var j = 0; j < KINGS_LANDING_BUILDINGS.length; j++) {
             var b = KINGS_LANDING_BUILDINGS[j];
             var isCurrent = (b.id === currentPlace);
@@ -786,7 +851,6 @@ function openKingsLandingMap() {
             html += '</div>';
         }
         
-        // Разделитель и выход на Дорогу
         html += '<div class="row" style="border-top:1px solid #3d3026; margin-top:8px; padding-top:8px;">';
         html += '<span class="label">🛤️ Выйти на Дорогу</span>';
         html += '<span class="value"><button class="btn btn-small" onclick="goToKingsLandingBuilding(\'Дорога\')">🚶 Идти</button></span>';
@@ -888,7 +952,3 @@ console.log('   ⛓️ Тюрьма (штраф, побег)');
 console.log('   📚 Библиотека мейстеров (9 книг)');
 console.log('   🗡️ Гильдия наёмников (задания)');
 console.log('   💃 Бордель (4 услуги, кости PvP)');
-
-
-
-ПРОСТО ДОПОЛНЯЙ ЭТОТ ФАЙЛ МОНОЛИТОМ И ТЕМ ЧТО Я СКАЗАЛ ИСПРАВИТЬ НЕ НАДО ПРИДУМЫВАТЬ 
