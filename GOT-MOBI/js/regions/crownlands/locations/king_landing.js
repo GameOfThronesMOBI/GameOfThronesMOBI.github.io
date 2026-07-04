@@ -1,9 +1,34 @@
 // ============================================================
+// ДИАГНОСТИКА ЗАГРУЗКИ
+// ============================================================
+(function() {
+    var errors = [];
+    
+    if (typeof users === 'undefined') errors.push('users');
+    if (typeof LOCATION_LEVELS === 'undefined') errors.push('LOCATION_LEVELS');
+    if (typeof updateMenu === 'undefined') errors.push('updateMenu');
+    if (typeof gameAction === 'undefined') errors.push('gameAction');
+    if (typeof saveData === 'undefined') errors.push('saveData');
+    if (typeof setMessage === 'undefined') errors.push('setMessage');
+    
+    var gameMsg = document.getElementById('game-message');
+    if (gameMsg) {
+        if (errors.length === 0) {
+            gameMsg.textContent = '✅ ГОРОД ЗАГРУЖЕН!';
+            gameMsg.style.color = '#7ac98a';
+        } else {
+            gameMsg.textContent = '❌ Ошибки: ' + errors.join(', ');
+            gameMsg.style.color = '#c96a5a';
+        }
+    }
+})();
+
+// ============================================================
 // КОРОЛЕВСКАЯ ГАВАНЬ — ГОРОД
 // ============================================================
 
 function getLocationText(place) {
-    const texts = {
+    var texts = {
         'Таверна': 'Добро пожаловать в таверну. Здесь можно поесть, поработать и поговорить с трактирщиком.',
         'Рынок': '🏪 Центральный рынок Королевской Гавани.',
         'Кузница': 'Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
@@ -31,7 +56,7 @@ function getLocationText(place) {
 }
 
 function getExits(place) {
-    const allExits = {
+    var allExits = {
         'Таверна': ['Рынок', 'Ворота'],
         'Рынок': ['Таверна', 'Кузница', 'Кожевник', 'Гильдия торговцев', 'Магистрат', 'Королевский квартал', 'Торговый квартал', 'Квартал бедноты', 'Гильдия наёмников'],
         'Кузница': ['Рынок', 'Оружейная лавка'],
@@ -59,21 +84,21 @@ function getExits(place) {
 }
 
 function updateStory() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    const place = user.game.location.place;
+    var place = user.game.location.place;
     document.getElementById('story-title').textContent = '📍 ' + place + ' (ур.' + (LOCATION_LEVELS[place] || 1) + ')';
     document.getElementById('story-text').textContent = getLocationText(place);
 }
 
 function updateActions() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    const place = user.game.location.place;
-    const container = document.getElementById('actions-container');
+    var place = user.game.location.place;
+    var container = document.getElementById('actions-container');
     container.innerHTML = '';
     
-    let actions = [];
+    var actions = [];
     
     if (place === 'Таверна') {
         actions = [
@@ -98,34 +123,41 @@ function updateActions() {
     actions.push({ id: 'map', label: '🗺️ Карта' });
     actions.push({ id: 'refresh', label: '🔄 Обновить' });
     
-    for (let i = 0; i < actions.length; i++) {
-        const a = actions[i];
-        const btn = document.createElement('button');
+    for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        (function(actionId) {
-            btn.onclick = function() { gameAction(actionId); };
-        })(a.id);
+        btn.setAttribute('data-action', a.id);
+        btn.onclick = function() {
+            var actionId = this.getAttribute('data-action');
+            if (typeof gameAction === 'function') {
+                gameAction(actionId);
+            } else {
+                var msg = document.getElementById('game-message');
+                if (msg) msg.textContent = '❌ gameAction не найдена!';
+            }
+        };
         container.appendChild(btn);
     }
 }
 
 function openMap() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    const modal = document.getElementById('modal-map');
-    const content = document.getElementById('modal-map-content');
-    const place = user.game.location.place;
-    const exits = getExits(place);
+    var modal = document.getElementById('modal-map');
+    var content = document.getElementById('modal-map-content');
+    var place = user.game.location.place;
+    var exits = getExits(place);
     
-    let html = '<div class="modal-section"><h4>📍 ' + place + ' (ур. ' + (LOCATION_LEVELS[place] || 1) + ')</h4></div>';
+    var html = '<div class="modal-section"><h4>📍 ' + place + ' (ур. ' + (LOCATION_LEVELS[place] || 1) + ')</h4></div>';
     html += '<div class="modal-section">';
     
     if (exits.length === 0) {
         html += '<p style="color:#6a5a48;">Нет доступных переходов.</p>';
     } else {
-        for (let i = 0; i < exits.length; i++) {
-            const exitId = exits[i];
+        for (var i = 0; i < exits.length; i++) {
+            var exitId = exits[i];
             html += '<div class="row">';
             html += '<span class="label">📍 ' + exitId + '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="moveToLocation(\'' + exitId + '\')">🚶 Идти</button></span>';
@@ -143,9 +175,9 @@ function closeMap() {
 }
 
 function moveToLocation(target) {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    const g = user.game;
+    var g = user.game;
     
     if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
     
