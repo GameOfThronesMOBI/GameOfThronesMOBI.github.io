@@ -1,385 +1,714 @@
 // ============================================================
-// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНЫЙ ГОРОД
-// ВСЕ здания, ВСЕ предметы, ВСЕ цены, ВСЕ эмодзи
+// КОРОЛЕВСКАЯ ГАВАНЬ — ВСЕ ЗДАНИЯ, ПЕРЕХОДЫ, ЦЕНЫ, ТОВАРЫ
+// ПОЛНАЯ ЛОГИКА
 // ============================================================
 
-// ============================================================
-// ЦЕНЫ И АССОРТИМЕНТ КОРОЛЕВСКОЙ ГАВАНИ
-// ============================================================
-var KL_PRICES = {
-    // ТАВЕРНА
-    tavern: [
-        { name: '🍞 Хлеб', price: 5, food: 20, quality: 'Обычное', type: 'food', emoji: '🍞' },
-        { name: '🥩 Мясо', price: 10, food: 30, quality: 'Обычное', type: 'food', emoji: '🥩' },
-        { name: '💧 Вода', price: 2, thirst: 15, quality: 'Обычное', type: 'food', emoji: '💧' },
-        { name: '🍺 Эль', price: 5, thirst: 10, hp: 5, quality: 'Обычное', type: 'food', emoji: '🍺' },
-        { name: '🍷 Вино', price: 8, thirst: 15, hp: 8, quality: 'Обычное', type: 'food', emoji: '🍷' }
+// --- СПИСОК ЗДАНИЙ ---
+const KINGS_LANDING_BUILDINGS = [
+    { id:'Таверна', label:'🍺 Таверна' },
+    { id:'Рынок', label:'🏪 Рынок' },
+    { id:'Кузница', label:'⚒️ Кузница' },
+    { id:'Оружейная лавка', label:'🗡️ Оружейная лавка' },
+    { id:'Кожевник', label:'🪡 Кожевник' },
+    { id:'Бронник', label:'🛡️ Бронник' },
+    { id:'Плотник', label:'🪵 Плотник' },
+    { id:'Конюшня', label:'🐴 Конюшня' },
+    { id:'Гильдия торговцев', label:'🏛️ Гильдия торговцев' },
+    { id:'Магистрат', label:'📜 Магистрат' },
+    { id:'Ворота', label:'🚪 Ворота' },
+    { id:'Королевский квартал', label:'👑 Королевский квартал' },
+    { id:'Торговый квартал', label:'🏙️ Торговый квартал' },
+    { id:'Квартал бедноты', label:'🏚️ Квартал бедноты' },
+    { id:'Дом', label:'🏠 Дом' },
+    { id:'Великая септа', label:'⛪ Великая септа' },
+    { id:'Порт', label:'⛵ Порт' },
+    { id:'Тюрьма', label:'⛓️ Тюрьма' },
+    { id:'Библиотека мейстеров', label:'📚 Библиотека мейстеров' },
+    { id:'Гильдия наёмников', label:'🗡️ Гильдия наёмников' },
+    { id:'Бордель', label:'💃 Бордель' }
+];
+
+// --- УРОВНИ ЗДАНИЙ ---
+const KINGS_LANDING_LEVELS = {
+    'Таверна':1, 'Рынок':1, 'Кузница':1, 'Оружейная лавка':1,
+    'Кожевник':1, 'Бронник':1, 'Плотник':1, 'Конюшня':1,
+    'Гильдия торговцев':1, 'Магистрат':1, 'Ворота':1,
+    'Королевский квартал':1, 'Торговый квартал':1, 'Квартал бедноты':1,
+    'Дом':1, 'Великая септа':1, 'Порт':1, 'Тюрьма':1,
+    'Библиотека мейстеров':1, 'Гильдия наёмников':1, 'Бордель':1,
+    'Дорога':5
+};
+
+// --- ОПИСАНИЯ ЗДАНИЙ (для updateStory) ---
+const KINGS_LANDING_TEXTS = {
+    'Таверна': '🍺 Добро пожаловать в таверну «Пьяный Лев». Здесь можно поесть, поработать и поговорить с трактирщиком. Лучший эль в городе!',
+    'Рынок': '🏪 Центральный рынок Королевской Гавани. Десятки торговых лавок, крики зазывал, запах специй и рыбы. Здесь можно торговать с другими игроками.',
+    'Кузница': '⚒️ Вы в кузнице Тобхо Мотта. Жар от горна, звон молотов. Здесь можно купить ресурсы и скрафтить предметы.',
+    'Оружейная лавка': '🗡️ Оружейная лавка. Стены увешаны мечами, копьями, топорами. Здесь можно купить и продать оружие.',
+    'Кожевник': '🪡 Вы у кожевника. Запах дублёной кожи. Здесь можно купить и продать кожаную броню.',
+    'Бронник': '🛡️ Вы у бронника. На стойках сияют стальные доспехи. Здесь можно купить и продать латную броню.',
+    'Плотник': '🪵 Вы у плотника. Пахнет свежей древесиной. Здесь можно купить и продать луки и арбалеты.',
+    'Конюшня': '🐴 Королевская конюшня. Здесь можно купить лошадь, продать или просто полюбоваться на скакунов.',
+    'Гильдия торговцев': '🏛️ Гильдия торговцев Королевской Гавани. Здесь можно торговать на аукционе с другими игроками.',
+    'Магистрат': '📜 Магистрат — центр управления городом. Здесь можно купить жильё, оплатить аренду и уладить городские дела.',
+    'Ворота': '🚪 Вы у городских ворот Королевской Гавани. Отсюда можно выйти на Дорогу.',
+    'Королевский квартал': '👑 Элитный район Королевской Гавани. Здесь живут самые богатые и влиятельные люди. Особняки, сады, фонтаны.',
+    'Торговый квартал': '🏙️ Центр торговли. Здесь селятся ремесленники и купцы. Уютные дома и комнаты.',
+    'Квартал бедноты': '🏚️ Окраина города. Жильё здесь дёшево, но опасно. Можно встретить пьянчуг, нищих и разбойников.',
+    'Дом': '🏠 Ваш дом. Здесь можно отдохнуть, хранить вещи и чувствовать себя в безопасности.',
+    'Великая септа': '⛪ Великая Септа Бейлора — главный храм Семерых в Вестеросе. Здесь можно исцелиться и получить благословение удачи.',
+    'Порт': '⛵ Порт Королевской Гавани. Корабли со всего света. Скоро здесь можно будет путешествовать между городами Вестероса.',
+    'Тюрьма': '⛓️ Вы в тюрьме Королевской Гавани. Сырые стены, крысы, цепи. Заплатите штраф или ждите освобождения.',
+    'Библиотека мейстеров': '📚 Библиотека мейстеров. Пыльные фолианты, свечи, тишина. Здесь можно купить и читать книги.',
+    'Гильдия наёмников': '🗡️ Гильдия наёмников. Здесь дают ежедневные задания и контракты. Пахнет потом и сталью.',
+    'Бордель': '💃 Бордель Королевской Гавани. Бархат, вино, музыка. Отдых, развлечения и игра в кости.',
+    'Дорога': '🛤️ Вы на дороге у ворот Королевской Гавани. Куда направитесь?'
+};
+
+// --- ТОВАРЫ В ТАВЕРНЕ (цены в меди) ---
+const TAVERN_ITEMS = [
+    { id:'bread', name:'🍞 Хлеб', price:5, food:20, thirst:0, hp:0 },
+    { id:'meat', name:'🥩 Мясо', price:10, food:30, thirst:0, hp:0 },
+    { id:'water', name:'💧 Вода', price:2, food:0, thirst:15, hp:0 },
+    { id:'ale', name:'🍺 Эль', price:5, food:0, thirst:10, hp:5 },
+    { id:'wine', name:'🍷 Вино', price:8, food:0, thirst:15, hp:8 },
+    { id:'fish', name:'🐟 Жареная рыба', price:12, food:35, thirst:0, hp:3 },
+    { id:'stew', name:'🥘 Похлёбка', price:7, food:25, thirst:5, hp:5 },
+    { id:'cheese', name:'🧀 Сыр', price:4, food:15, thirst:0, hp:2 },
+    { id:'pie', name:'🥧 Пирог с мясом', price:15, food:40, thirst:0, hp:8 },
+    { id:'honey', name:'🍯 Мёд', price:6, food:10, thirst:0, hp:10 }
+];
+
+// --- РЕПЛИКИ ТРАКТИРЩИКА ---
+const BARKEEP_QUOTES = [
+    '🍺 Трактирщик: «Добро пожаловать, путник! Лучший эль в городе!»',
+    '🍺 Трактирщик: «Хочешь заработать? Помой посуду.»',
+    '🍺 Трактирщик: «Будь осторожен за воротами. Разбойники совсем обнаглели.»',
+    '🍺 Трактирщик: «Слыхал, в Квартале бедноты клад нашли. А может, враки.»',
+    '🍺 Трактирщик: «Ланнистеры всегда платят свои долги. А ты свои заплатил?»',
+    '🍺 Трактирщик: «Зима близко. Запасайся едой.»',
+    '🍺 Трактирщик: «Эль сегодня особенно хорош!»',
+    '🍺 Трактирщик: «Не лезь в драку с пьяными — до добра не доведёт.»',
+    '🍺 Трактирщик: «В порту новый корабль. Говорят, из-за Узкого моря.»',
+    '🍺 Трактирщик: «Если нужны деньги — иди в Гильдию наёмников.»'
+];
+
+// --- РАБОТЫ В ТАВЕРНЕ ---
+const TAVERN_JOBS = [
+    { id:'wash', name:'🧼 Помыть посуду', duration:1, reward:1 },
+    { id:'sweep', name:'🧹 Подмести пол', duration:5, reward:5 },
+    { id:'serve', name:'🍺 Подавать эль', duration:10, reward:12 },
+    { id:'kitchen', name:'🔪 Помочь на кухне', duration:15, reward:20 },
+    { id:'cellar', name:'📦 Разгрузить погреб', duration:20, reward:30 }
+];
+
+// --- ПЬЯНЧУЖКИ ---
+const DRUNKARDS = [
+    { name:'Пьяный рыбак', hp:15, damage:2, defense:0, xp:2, level:1, emoji:'🎣' },
+    { name:'Пьяный грузчик', hp:20, damage:3, defense:1, xp:3, level:2, emoji:'📦' },
+    { name:'Пьяный матрос', hp:25, damage:4, defense:1, xp:4, level:3, emoji:'⛵' },
+    { name:'Пьяный стражник', hp:30, damage:5, defense:2, xp:5, level:4, emoji:'🛡️' }
+];
+
+// --- МОБЫ ДЛЯ ПОИСКА ---
+const KINGS_LANDING_MOBS = {
+    1: [
+        { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+        { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' }
     ],
-    
-    // ОРУЖЕЙНАЯ ЛАВКА
-    weapons: [
-        { name: '🗡️ Деревянный меч', price: 15, type: 'sword', level: 1, baseDamage: 3, quality: 'Рваное', emoji: '🗡️' },
-        { name: '🗡️ Ржавый меч', price: 30, type: 'sword', level: 5, baseDamage: 5, quality: 'Плохое', emoji: '🗡️' },
-        { name: '🗡️ Короткий меч', price: 60, type: 'sword', level: 10, baseDamage: 7, quality: 'Обычное', emoji: '🗡️' },
-        { name: '🗡️ Длинный меч', price: 150, type: 'sword', level: 25, baseDamage: 16, quality: 'Хорошее', emoji: '⚔️' },
-        { name: '🗡️ Стальной меч', price: 400, type: 'sword', level: 35, baseDamage: 22, quality: 'Качественное', emoji: '⚔️' },
-        { name: '🔱 Копьё охотника', price: 45, type: 'spear', level: 15, baseDamage: 9, quality: 'Обычное', emoji: '🔱' },
-        { name: '🔱 Стальное копьё', price: 250, type: 'spear', level: 40, baseDamage: 22, quality: 'Качественное', emoji: '🔱' },
-        { name: '🪓 Боевой топор', price: 80, type: 'axe', level: 10, baseDamage: 8, quality: 'Обычное', emoji: '🪓' },
-        { name: '🪓 Стальной топор', price: 300, type: 'axe', level: 30, baseDamage: 19, quality: 'Качественное', emoji: '🪓' },
-        { name: '🔨 Булава разбойника', price: 55, type: 'mace', level: 10, baseDamage: 8, quality: 'Обычное', emoji: '🔨' },
-        { name: '🏹 Короткий лук', price: 40, type: 'bow', level: 1, baseDamage: 3, quality: 'Обычное', emoji: '🏹' },
-        { name: '🏹 Охотничий лук', price: 100, type: 'bow', level: 5, baseDamage: 5, quality: 'Обычное', emoji: '🏹' },
-        { name: '🎯 Лёгкий арбалет', price: 120, type: 'crossbow', level: 5, baseDamage: 5, quality: 'Обычное', emoji: '🎯' },
-        { name: '🔪 Ржавый кинжал', price: 10, type: 'dagger', level: 1, baseDamage: 2, quality: 'Рваное', emoji: '🔪' },
-        { name: '🔪 Стальной кинжал', price: 80, type: 'dagger', level: 20, baseDamage: 10, quality: 'Обычное', emoji: '🔪' },
-        { name: '🛡️ Деревянный щит', price: 25, type: 'shield', level: 1, defense: 2, quality: 'Рваное', emoji: '🛡️' },
-        { name: '🛡️ Стальной щит', price: 200, type: 'shield', level: 25, defense: 12, quality: 'Обычное', emoji: '🛡️' }
+    5: [
+        { name:'Крыса', hp:8, damage:2, defense:0, xp:3, level:1, type:'animal', agility:2, loot:null },
+        { name:'Бродяга', hp:12, damage:3, defense:0, xp:4, level:2, type:'human', agility:2, loot:'vagabond' },
+        { name:'Собака', hp:18, damage:4, defense:1, xp:6, level:3, type:'animal', agility:3, loot:null },
+        { name:'Нищий бандит', hp:20, damage:5, defense:1, xp:8, level:5, type:'human', agility:3, loot:null }
     ],
-    
-    // КОЖЕВНИК
-    leather: [
-        { name: '🪖 Кожаный шлем', price: 40, type: 'helmet', level: 10, baseDefense: 3, quality: 'Обычное', armorClass: 'leather', emoji: '🪖' },
-        { name: '🪖 Кожаный шлем разбойника', price: 90, type: 'helmet', level: 15, baseDefense: 5, quality: 'Хорошее', armorClass: 'leather', emoji: '🪖' },
-        { name: '🦺 Кожаный нагрудник', price: 70, type: 'chestplate', level: 10, baseDefense: 5, quality: 'Обычное', armorClass: 'leather', emoji: '🦺' },
-        { name: '🦺 Кожаный нагрудник наёмника', price: 160, type: 'chestplate', level: 20, baseDefense: 11, quality: 'Хорошее', armorClass: 'leather', emoji: '🦺' },
-        { name: '👢 Кожаные сапоги', price: 35, type: 'boots', level: 10, baseDefense: 2, speedPercent: 3, quality: 'Обычное', armorClass: 'leather', emoji: '👢' },
-        { name: '🧤 Кожаные перчатки', price: 25, type: 'gloves', level: 10, baseDefense: 2, quality: 'Обычное', armorClass: 'leather', emoji: '🧤' },
-        { name: '🎗️ Кожаный пояс', price: 30, type: 'belt', level: 10, baseDefense: 2, quality: 'Обычное', armorClass: 'leather', emoji: '🎗️' },
-        { name: '🧥 Кожаный плащ', price: 45, type: 'cloak', level: 10, baseDefense: 2, quality: 'Обычное', armorClass: 'leather', emoji: '🧥' },
-        { name: '💪 Кожаные наплечники', price: 50, type: 'shoulders', level: 10, baseDefense: 2, quality: 'Обычное', armorClass: 'leather', emoji: '💪' },
-        { name: '👖 Кожаные поножи', price: 55, type: 'leggings', level: 10, baseDefense: 2, quality: 'Обычное', armorClass: 'leather', emoji: '👖' }
+    15: [
+        { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null },
+        { name:'Бандит', hp:30, damage:7, defense:2, xp:12, level:6, type:'human', agility:3, loot:null },
+        { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null }
     ],
-    
-    // БРОННИК
-    plate: [
-        { name: '🪖 Латный шлем', price: 100, type: 'helmet', level: 10, baseDefense: 5, quality: 'Обычное', armorClass: 'plate', emoji: '🪖' },
-        { name: '🪖 Латный шлем рыцаря', price: 250, type: 'helmet', level: 30, baseDefense: 13, quality: 'Хорошее', armorClass: 'plate', emoji: '🪖' },
-        { name: '🦺 Латный нагрудник', price: 200, type: 'chestplate', level: 10, baseDefense: 8, quality: 'Обычное', armorClass: 'plate', emoji: '🦺' },
-        { name: '🦺 Латный нагрудник рыцаря', price: 500, type: 'chestplate', level: 30, baseDefense: 24, quality: 'Хорошее', armorClass: 'plate', emoji: '🦺' },
-        { name: '👢 Латные сапоги', price: 80, type: 'boots', level: 10, baseDefense: 4, speedPercent: 2, quality: 'Обычное', armorClass: 'plate', emoji: '👢' },
-        { name: '🧤 Латные перчатки', price: 60, type: 'gloves', level: 10, baseDefense: 4, quality: 'Обычное', armorClass: 'plate', emoji: '🧤' },
-        { name: '🎗️ Латный пояс', price: 70, type: 'belt', level: 10, baseDefense: 4, quality: 'Обычное', armorClass: 'plate', emoji: '🎗️' },
-        { name: '🧥 Латный плащ', price: 120, type: 'cloak', level: 10, baseDefense: 4, quality: 'Обычное', armorClass: 'plate', emoji: '🧥' },
-        { name: '💪 Латные наплечники', price: 110, type: 'shoulders', level: 10, baseDefense: 4, quality: 'Обычное', armorClass: 'plate', emoji: '💪' },
-        { name: '👖 Латные поножи', price: 130, type: 'leggings', level: 10, baseDefense: 4, quality: 'Обычное', armorClass: 'plate', emoji: '👖' }
+    30: [
+        { name:'Разбойник', hp:40, damage:9, defense:3, xp:18, level:10, type:'human', agility:4, loot:null },
+        { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
+        { name:'Волк', hp:25, damage:6, defense:2, xp:10, level:8, type:'animal', agility:4, loot:null }
     ],
-    
-    // ПЛОТНИК
-    bows: [
-        { name: '🏹 Короткий лук', price: 40, type: 'bow', level: 1, baseDamage: 3, quality: 'Обычное', emoji: '🏹' },
-        { name: '🏹 Длинный лук', price: 150, type: 'bow', level: 25, baseDamage: 13, quality: 'Хорошее', emoji: '🏹' },
-        { name: '🏹 Лук рыцаря', price: 350, type: 'bow', level: 35, baseDamage: 18, quality: 'Качественное', emoji: '🏹' },
-        { name: '🎯 Лёгкий арбалет', price: 120, type: 'crossbow', level: 5, baseDamage: 5, quality: 'Обычное', emoji: '🎯' },
-        { name: '🎯 Арбалет стражи', price: 280, type: 'crossbow', level: 20, baseDamage: 12, quality: 'Хорошее', emoji: '🎯' },
-        { name: '🎯 Тяжёлый арбалет', price: 500, type: 'crossbow', level: 35, baseDamage: 21, quality: 'Качественное', emoji: '🎯' }
+    50: [
+        { name:'Головорез', hp:50, damage:11, defense:4, xp:25, level:15, type:'human', agility:5, loot:null },
+        { name:'Пещерный волк', hp:60, damage:14, defense:5, xp:35, level:20, type:'animal', agility:6, loot:null },
+        { name:'Опытный бандит', hp:70, damage:16, defense:6, xp:40, level:25, type:'human', agility:5, loot:null }
     ],
-    
-    // КУЗНИЦА
-    resources: [
-        { name: '⛏️ Руда железная', price: 8, type: 'resource', resourceType: 'iron', quality: 'Обычное', emoji: '⛏️' },
-        { name: '🔥 Уголь', price: 4, type: 'resource', resourceType: 'coal', quality: 'Обычное', emoji: '🔥' },
-        { name: '⚒️ Сталь', price: 50, type: 'resource', resourceType: 'steel', quality: 'Обычное', emoji: '⚒️' },
-        { name: '⛏️ Руда железная (хор.)', price: 20, type: 'resource', resourceType: 'iron', quality: 'Хорошее', emoji: '⛏️' },
-        { name: '⚒️ Сталь (кач.)', price: 150, type: 'resource', resourceType: 'steel', quality: 'Качественное', emoji: '⚒️' }
-    ],
-    
-    // КОНЮШНЯ
-    horses: [
-        { name: '🐴 Рабочая лошадь', price: 50, type: 'work', speed: 10, defense: 0, hp: 80, slots: 5, emoji: '🐴' },
-        { name: '🏇 Верховая лошадь', price: 150, type: 'riding', speed: 25, defense: 2, hp: 100, slots: 10, emoji: '🏇' },
-        { name: '⚔️🐴 Боевой конь', price: 400, type: 'war', speed: 20, defense: 5, hp: 150, slots: 8, emoji: '⚔️🐴' },
-        { name: '🏃🐴 Скакун', price: 600, type: 'racer', speed: 50, defense: 0, hp: 70, slots: 3, emoji: '🏃🐴' },
-        { name: '🛡️🐴 Тяжелый скакун', price: 800, type: 'heavy', speed: 15, defense: 8, hp: 200, slots: 15, emoji: '🛡️🐴' },
-        { name: '👑🐴 Королевский скакун', price: 1500, type: 'royal', speed: 40, defense: 6, hp: 180, slots: 12, emoji: '👑🐴' },
-        { name: '🔥🐴 Огненный жеребец', price: 3000, type: 'fire', speed: 60, defense: 10, hp: 250, slots: 10, emoji: '🔥🐴' }
-    ],
-    
-    // СЕПТА
-    temple: [
-        { name: '🧪 Малое зелье здоровья', price: 30, hp: 20, emoji: '🧪' },
-        { name: '🧪 Среднее зелье здоровья', price: 80, hp: 50, emoji: '🧪' },
-        { name: '🧪 Большое зелье здоровья', price: 150, hp: 100, emoji: '🧪' },
-        { name: '🧪 Зелье восстановления', price: 200, hp: 50, fatigue: 30, emoji: '🧪' }
-    ],
-    
-    // БОРДЕЛЬ
-    brothel: [
-        { name: '🛏️ Отдых с девушкой', price: 20, fatigue: 50, hp: 10, emoji: '💃' },
-        { name: '🍷 Вино с компанией', price: 50, fatigue: 30, hp: 5, xpBuff: 5, emoji: '🍷' },
-        { name: '💃 Танец', price: 100, fatigue: 20, damageBuff: 10, emoji: '💃' },
-        { name: '👑 VIP-комната', price: 200, fatigue: 80, hp: 20, xpBuff: 15, emoji: '👑' }
-    ],
-    
-    // БИБЛИОТЕКА
-    books: [
-        { name: '📖 Искусство войны (ур.1)', price: 100, xp: 50, level: 1, emoji: '📖' },
-        { name: '📖 Искусство войны (ур.5)', price: 200, xp: 100, level: 5, emoji: '📖' },
-        { name: '📖 Искусство войны (ур.10)', price: 350, xp: 150, level: 10, emoji: '📖' },
-        { name: '📖 Искусство войны (ур.15)', price: 500, xp: 200, level: 15, emoji: '📖' },
-        { name: '📖 Искусство войны (ур.20)', price: 700, xp: 300, level: 20, emoji: '📖' },
-        { name: '📖 Искусство войны (ур.25)', price: 1000, xp: 400, level: 25, emoji: '📖' }
+    100: [
+        { name:'Медведь', hp:80, damage:18, defense:8, xp:50, level:30, type:'animal', agility:4, loot:null },
+        { name:'Вожак волков', hp:90, damage:20, defense:7, xp:60, level:35, type:'animal', agility:7, loot:null },
+        { name:'Элитный разбойник', hp:100, damage:22, defense:9, xp:70, level:40, type:'human', agility:6, loot:null }
     ]
 };
 
 // ============================================================
-// ТЕКСТЫ ЛОКАЦИЙ
+// ИНИЦИАЛИЗАЦИЯ КОРОЛЕВСКОЙ ГАВАНИ
 // ============================================================
-function getLocationText(place) {
-    var texts = {
-        'Таверна': '🍺 Таверна «У Золотого Дракона». Здесь можно поесть, поработать и поговорить с трактирщиком.',
-        'Рынок': '🏪 Центральный рынок Королевской Гавани. Торговые лавки игроков.',
-        'Кузница': '⚒️ Кузница. Покупка ресурсов и крафт предметов.',
-        'Оружейная лавка': '🗡️ Оружейная лавка. Покупка и продажа оружия.',
-        'Кожевник': '🪡 Кожевник. Покупка и продажа кожаной брони.',
-        'Бронник': '🛡️ Бронник. Покупка и продажа латной брони.',
-        'Плотник': '🪵 Плотник. Покупка и продажа луков и арбалетов.',
-        'Конюшня': '🐴 Королевская конюшня. Покупка и продажа лошадей.',
-        'Гильдия торговцев': '🏛️ Гильдия торговцев. Аукцион редких предметов.',
-        'Магистрат': '📜 Магистрат. Управление недвижимостью и торговыми лавками.',
-        'Ворота': '🚪 Главные ворота Королевской Гавани. Выход на Дорогу и вход в Красный Замок.',
-        'Красный Замок': '🏰 Вход в Красный Замок — резиденцию короля.',
-        'Королевский квартал': '👑 Королевский квартал. Элитное жильё.',
-        'Торговый квартал': '🏙️ Торговый квартал. Среднее жильё.',
-        'Квартал бедноты': '🏚️ Квартал бедноты. Дешёвое жильё.',
-        'Дом': '🏠 Ваш дом. Отдых и хранение вещей.',
-        'Великая септа': '⛪ Великая Септа Бейлора. Исцеление, благословение и удача.',
-        'Порт': '⛵ Порт Королевской Гавани. Морские путешествия.',
-        'Тюрьма': '⛓️ Тюрьма. Штраф, ожидание или побег.',
-        'Дорога': '🛤️ Королевский тракт. Поиск приключений.',
-        'Библиотека мейстеров': '📚 Библиотека мейстеров. Покупка и чтение книг.',
-        'Гильдия наёмников': '🗡️ Гильдия наёмников. Ежедневные задания и контракты.',
-        'Бордель': '💃 Бордель. Отдых, развлечения и игра в кости.'
-    };
-    return texts[place] || 'Вы находитесь в ' + place + '.';
+function initKingsLanding() {
+    // Расширяем глобальный BUILDINGS
+    BUILDINGS.length = 0;
+    KINGS_LANDING_BUILDINGS.forEach(b => BUILDINGS.push(b));
+    
+    // Расширяем LOCATION_LEVELS
+    Object.assign(LOCATION_LEVELS, KINGS_LANDING_LEVELS);
+    
+    // Расширяем тексты
+    if (!window.LOCATION_TEXTS) window.LOCATION_TEXTS = {};
+    Object.assign(window.LOCATION_TEXTS, KINGS_LANDING_TEXTS);
+    
+    console.log('🦁 Королевская Гавань загружена. 21 здание.');
 }
 
 // ============================================================
-// ПЕРЕХОДЫ
+// ОБНОВЛЕНИЕ ОПИСАНИЯ ЛОКАЦИИ
 // ============================================================
-function getExits(place) {
-    var allExits = {
-        'Таверна': ['Рынок', 'Ворота'],
-        'Рынок': ['Таверна', 'Кузница', 'Кожевник', 'Гильдия торговцев', 'Магистрат', 'Королевский квартал', 'Торговый квартал', 'Квартал бедноты', 'Гильдия наёмников'],
-        'Кузница': ['Рынок', 'Оружейная лавка'],
-        'Оружейная лавка': ['Кузница', 'Бронник'],
-        'Кожевник': ['Рынок', 'Плотник'],
-        'Бронник': ['Оружейная лавка', 'Плотник'],
-        'Плотник': ['Кожевник', 'Бронник'],
-        'Конюшня': ['Ворота', 'Рынок'],
-        'Гильдия торговцев': ['Рынок', 'Торговый квартал'],
-        'Магистрат': ['Рынок', 'Королевский квартал'],
-        'Ворота': ['Красный Замок', 'Таверна', 'Конюшня', 'Великая септа', 'Порт', 'Дорога'],
-        'Красный Замок': ['Ворота'],
-        'Королевский квартал': ['Рынок', 'Магистрат', 'Великая септа', 'Библиотека мейстеров'],
-        'Торговый квартал': ['Рынок', 'Гильдия торговцев'],
-        'Квартал бедноты': ['Рынок', 'Тюрьма', 'Бордель'],
-        'Дом': ['Королевский квартал', 'Торговый квартал', 'Квартал бедноты'],
-        'Великая септа': ['Ворота', 'Королевский квартал'],
-        'Порт': ['Ворота'],
-        'Тюрьма': ['Квартал бедноты'],
-        'Дорога': ['Ворота'],
-        'Библиотека мейстеров': ['Королевский квартал'],
-        'Гильдия наёмников': ['Рынок'],
-        'Бордель': ['Квартал бедноты']
-    };
-    return allExits[place] || [];
-}
-
-// ============================================================
-// ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
-// ============================================================
-function updateStory() {
-    var user = users[currentUser];
+function updateKingsLandingStory() {
+    const user = users[currentUser];
     if (!user) return;
-    var place = user.game.location.place;
-    document.getElementById('story-title').textContent = '📍 ' + place;
-    document.getElementById('story-text').textContent = getLocationText(place);
+    if (user.game.location.location !== 'Королевская Гавань') return;
+    
+    const place = user.game.location.place;
+    const text = KINGS_LANDING_TEXTS[place] || 'Вы находитесь в ' + place + '.';
+    document.getElementById('story-title').textContent = '📍 ' + place + ' (ур.' + (KINGS_LANDING_LEVELS[place] || 1) + ')';
+    document.getElementById('story-text').textContent = text;
 }
 
-function updateActions() {
-    var user = users[currentUser];
+// ============================================================
+// ДЕЙСТВИЯ ДЛЯ КАЖДОГО ЗДАНИЯ
+// ============================================================
+function getKingsLandingActions(place) {
+    const user = users[currentUser];
+    if (!user) return [];
+    const g = user.game;
+    let actions = [];
+    
+    // Базовые действия (есть везде)
+    const baseActions = [
+        { id:'inventory', label:'🎒 Инвентарь' },
+        { id:'character', label:'👤 Персонаж' },
+        { id:'menu', label:'📋 Меню' },
+        { id:'map', label:'🗺️ Карта' }
+    ];
+    
+    switch(place) {
+        case 'Таверна':
+            actions = [
+                { id:'eat', label:'🍞 Попросить еды (+25)' },
+                { id:'trade', label:'🛒 Торговля в таверне' },
+                { id:'wash', label:'🧼 Помыть посуду (1 мин → 1 МП)' },
+                { id:'sweep', label:'🧹 Подмести пол (5 мин → 5 МП)' },
+                { id:'rest', label:'🛏️ Отдохнуть (10 МП → +30 уст., +15 HP)' },
+                { id:'talk', label:'🗣️ Поговорить с трактирщиком' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Рынок':
+            actions = [
+                { id:'open_market', label:'🏪 Рынок' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Кузница':
+            actions = [
+                { id:'shop', label:'⚒️ Кузница' },
+                { id:'craft', label:'🔨 Крафт' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Оружейная лавка':
+            actions = [
+                { id:'shop', label:'🗡️ Оружейная лавка' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Кожевник':
+            actions = [
+                { id:'shop', label:'🪡 Кожевник' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Бронник':
+            actions = [
+                { id:'shop', label:'🛡️ Бронник' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Плотник':
+            actions = [
+                { id:'shop', label:'🪵 Плотник' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Конюшня':
+            actions = [
+                { id:'open_stable', label:'🐴 Конюшня' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Гильдия торговцев':
+            actions = [
+                { id:'guild', label:'🏛️ Аукцион' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Магистрат':
+            actions = [
+                { id:'open_magistrate', label:'📜 Недвижимость' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Ворота':
+            if (!g.outside) {
+                actions = [
+                    { id:'leave_city', label:'🚪 Выйти на Дорогу' },
+                    ...baseActions
+                ];
+            } else {
+                actions = [...baseActions];
+            }
+            break;
+            
+        case 'Дорога':
+            actions = [
+                { id:'enter_city', label:'🚶 Войти в Королевскую Гавань' },
+                { id:'search', label:'🔍 Поиск' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Королевский квартал':
+        case 'Торговый квартал':
+        case 'Квартал бедноты':
+            const hasHouse = checkHouseInDistrict(place);
+            if (hasHouse) {
+                actions = [
+                    { id:'enter_home', label:'🏠 Зайти домой' },
+                    { id:'search', label:'🔍 Поиск' },
+                    ...baseActions
+                ];
+            } else {
+                actions = [
+                    { id:'buy_housing', label:'🏠 Купить жильё в этом районе' },
+                    { id:'search', label:'🔍 Поиск' },
+                    ...baseActions
+                ];
+            }
+            break;
+            
+        case 'Дом':
+            actions = [
+                { id:'rest_at_home', label:'🛏️ Отдохнуть (бесплатно)' },
+                { id:'storage', label:'📦 Склад' },
+                { id:'leave_home', label:'🚪 Выйти из дома' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Великая септа':
+            actions = [
+                { id:'open_temple', label:'⛪ Септа' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Порт':
+            actions = [
+                { id:'open_port', label:'⛵ Порт' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Тюрьма':
+            actions = [
+                { id:'jail_pay', label:'💰 Заплатить штраф' },
+                { id:'jail_wait', label:'⏳ Ждать освобождения (5 мин)' },
+                { id:'jail_escape', label:'🏃 Попытаться сбежать' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Библиотека мейстеров':
+            actions = [
+                { id:'open_library', label:'📚 Библиотека' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Гильдия наёмников':
+            actions = [
+                { id:'open_guildhall', label:'🗡️ Гильдия наёмников' },
+                ...baseActions
+            ];
+            break;
+            
+        case 'Бордель':
+            actions = [
+                { id:'open_brothel', label:'💃 Бордель' },
+                ...baseActions
+            ];
+            if (g.brothelRoom) {
+                actions.unshift({ id:'rest_brothel', label:'🛏️ Отдохнуть (бесплатно)' });
+            }
+            break;
+            
+        default:
+            actions = [...baseActions];
+    }
+    
+    // Добавляем обновление
+    if (!actions.find(a => a.id === 'refresh')) {
+        actions.push({ id:'refresh', label:'🔄 Обновить' });
+    }
+    
+    return actions;
+}
+
+// ============================================================
+// ОБРАБОТЧИК ДЕЙСТВИЙ КОРОЛЕВСКОЙ ГАВАНИ
+// ============================================================
+function handleKingsLandingAction(action) {
+    const user = users[currentUser];
+    if (!user) return false;
+    const g = user.game;
+    
+    // Проверяем, не в бою ли мы
+    if (battleState && battleState.inProgress) {
+        if (['character','inventory','refresh','map','menu'].includes(action)) {
+            return false; // разрешаем базовые действия даже в бою
+        }
+        if (action.startsWith('battle_')) {
+            return false; // боевые действия обрабатываются отдельно
+        }
+        setMessage('⚔️ Вы в бою! Завершите бой.');
+        return true;
+    }
+    
+    switch(action) {
+        case 'eat':
+            if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return true; }
+            g.food = Math.min(g.food + 25, 100);
+            setMessage('🍞 Вы поели. Еда +25.');
+            updateMenu(); saveData();
+            return true;
+            
+        case 'trade':
+            openTavernTrade();
+            return true;
+            
+        case 'wash':
+            startBusy('Моете посуду', 1, function(){
+                g.copper += 1;
+                convertCurrency(g);
+                setMessage('🧼 Вы помыли посуду. +1 МП.');
+                updateMenu(); saveData();
+            });
+            return true;
+            
+        case 'sweep':
+            startBusy('Подметаете пол', 5, function(){
+                g.copper += 5;
+                convertCurrency(g);
+                setMessage('🧹 Вы подмели пол. +5 МП.');
+                updateMenu(); saveData();
+            });
+            return true;
+            
+        case 'rest':
+            if (!spendMoney(g, 10)) {
+                setMessage('❌ Недостаточно денег для отдыха (10 МП).');
+                return true;
+            }
+            g.fatigue = Math.min(100, g.fatigue + 30);
+            g.hp = Math.min(g.maxHp, g.hp + 15);
+            setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.');
+            updateMenu(); saveData();
+            return true;
+            
+        case 'talk':
+            const msg = BARKEEP_QUOTES[Math.floor(Math.random() * BARKEEP_QUOTES.length)];
+            setMessage(msg);
+            return true;
+            
+        case 'search':
+            if (searchCooldown) { setMessage('⏳ Подождите 5 секунд.'); return true; }
+            searchCooldown = true;
+            setTimeout(() => { searchCooldown = false; }, 5000);
+            doKingsLandingSearch();
+            return true;
+            
+        case 'leave_city':
+            g.location.place = 'Дорога';
+            g.location.location = 'Дорога';
+            g.outside = true;
+            setMessage('🛤️ Вы вышли на Дорогу.');
+            updateMenu(); updateKingsLandingStory(); updateKingsLandingActions(); saveData();
+            return true;
+            
+        case 'enter_city':
+            g.location.place = 'Ворота';
+            g.location.location = 'Королевская Гавань';
+            g.outside = false;
+            setMessage('🚪 Вы вошли в город через Ворота.');
+            updateMenu(); updateKingsLandingStory(); updateKingsLandingActions(); saveData();
+            return true;
+            
+        case 'buy_housing':
+            viewDistrict(g.location.place);
+            return true;
+            
+        case 'enter_home':
+            enterHome();
+            return true;
+            
+        case 'rest_at_home':
+            restAtHome();
+            return true;
+            
+        case 'storage':
+            openStorage();
+            return true;
+            
+        case 'leave_home':
+            if (g.housing && g.housing.type) {
+                const house = HOUSING_TYPES[g.housing.type];
+                g.location.place = house.district;
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вышли из дома в ' + house.district + '.');
+            } else {
+                g.location.place = 'Таверна';
+                g.location.location = 'Королевская Гавань';
+                setMessage('🚪 Вы вышли из дома.');
+            }
+            updateMenu(); updateKingsLandingStory(); updateKingsLandingActions(); saveData();
+            return true;
+            
+        case 'rest_brothel':
+            if (g.brothelRoom) {
+                g.fatigue = Math.min(100, g.fatigue + 30);
+                g.hp = Math.min(g.maxHp, g.hp + 10);
+                setMessage('🛏️ Вы отдохнули в своей комнате. +30 усталости, +10 HP');
+                updateMenu(); saveData();
+            } else {
+                setMessage('❌ У вас нет комнаты. Арендуйте её.');
+            }
+            return true;
+    }
+    
+    // Если действие не обработано здесь, возвращаем false для глобального обработчика
+    return false;
+}
+
+// ============================================================
+// ПОИСК В КОРОЛЕВСКОЙ ГАВАНИ
+// ============================================================
+function doKingsLandingSearch() {
+    const user = users[currentUser];
     if (!user) return;
-    var place = user.game.location.place;
-    var container = document.getElementById('actions-container');
+    const g = user.game;
+    const place = g.location.place;
+    const locationLevel = KINGS_LANDING_LEVELS[place] || 1;
+    const luck = Math.min(25, g.luck || 0);
+    const luckBonus = Math.floor(luck / 10);
+    
+    // Поиск в Квартале бедноты (особый)
+    if (place === 'Квартал бедноты') {
+        if (Math.random() * 100 < 20) {
+            findDrunkard();
+            return;
+        }
+        const treasureChance = Math.min(4.5, 2 + luckBonus);
+        if (Math.random() * 100 < treasureChance) {
+            findTreasure();
+            return;
+        }
+        const monsterChance = Math.min(47.5, 45 + luckBonus);
+        if (Math.random() * 100 < monsterChance) {
+            const mobs = getMobsForLevel(locationLevel);
+            const mob = mobs[Math.floor(Math.random() * mobs.length)];
+            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
+            startBattle(mob);
+            return;
+        }
+        setMessage('🔍 В Квартале бедноты тихо... Пока.');
+        return;
+    }
+    
+    // Обычный поиск
+    const treasureChance = Math.min(4.5, 2 + luckBonus);
+    if (Math.random() * 100 < treasureChance) {
+        findTreasure();
+        return;
+    }
+    
+    const monsterChance = Math.min(47.5, 45 + luckBonus);
+    if (Math.random() * 100 < monsterChance) {
+        const mobs = getMobsForLevel(locationLevel);
+        const mob = mobs[Math.floor(Math.random() * mobs.length)];
+        setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+        addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
+        startBattle(mob);
+        return;
+    }
+    
+    setMessage('🔍 Вы никого не нашли. Тишина...');
+}
+
+function getMobsForLevel(level) {
+    const thresholds = Object.keys(KINGS_LANDING_MOBS).map(Number).sort((a,b) => a-b);
+    let selectedKey = thresholds[0];
+    for (let key of thresholds) {
+        if (level <= key) {
+            selectedKey = key;
+            break;
+        }
+        selectedKey = key;
+    }
+    return KINGS_LANDING_MOBS[selectedKey] || KINGS_LANDING_MOBS[1];
+}
+
+// ============================================================
+// ОБНОВЛЕНИЕ КНОПОК ДЕЙСТВИЙ
+// ============================================================
+function updateKingsLandingActions() {
+    const user = users[currentUser];
+    if (!user) return;
+    if (user.game.location.location !== 'Королевская Гавань' && 
+        user.game.location.location !== 'Дорога') return;
+    
+    const place = user.game.location.place;
+    const container = document.getElementById('actions-container');
+    if (!container) return;
     container.innerHTML = '';
     
-    var actions = [];
+    const inBattle = battleState && battleState.inProgress;
+    let actions = [];
     
-    // ТАВЕРНА
-    if (place === 'Таверна') {
-        actions.push({ id: 'tavern_eat', label: '🍞 Попросить еды (+25)' });
-        actions.push({ id: 'tavern_buy', label: '🛒 Купить еду и напитки' });
-        actions.push({ id: 'wash', label: '🧹 Помыть посуду (1 мин → +1 МП)' });
-        actions.push({ id: 'sweep', label: '🧹 Подмести пол (5 мин → +5 МП)' });
-        actions.push({ id: 'rest', label: '🛏️ Отдохнуть (10 МП → +30 уст., +15 HP)' });
-        actions.push({ id: 'talk', label: '🗣️ Поговорить с трактирщиком' });
-    }
-    
-    // МАГАЗИНЫ
-    if (place === 'Оружейная лавка') {
-        actions.push({ id: 'shop_weapons', label: '🗡️ Купить оружие' });
-        actions.push({ id: 'shop_sell', label: '💰 Продать оружие' });
-    }
-    if (place === 'Кожевник') {
-        actions.push({ id: 'shop_leather', label: '🪡 Купить кожаную броню' });
-        actions.push({ id: 'shop_sell', label: '💰 Продать броню' });
-    }
-    if (place === 'Бронник') {
-        actions.push({ id: 'shop_plate', label: '🛡️ Купить латную броню' });
-        actions.push({ id: 'shop_sell', label: '💰 Продать броню' });
-    }
-    if (place === 'Плотник') {
-        actions.push({ id: 'shop_bows', label: '🏹 Купить луки и арбалеты' });
-        actions.push({ id: 'shop_sell', label: '💰 Продать оружие' });
-    }
-    if (place === 'Кузница') {
-        actions.push({ id: 'shop_resources', label: '⛏️ Купить ресурсы' });
-        actions.push({ id: 'shop_sell', label: '💰 Продать ресурсы' });
-        actions.push({ id: 'craft', label: '🔨 Крафт' });
+    if (inBattle) {
+        actions = [
+            { id:'battle_attack', label:'⚔️ Атака' },
+            { id:'battle_defend', label:'🛡️ Защита' },
+            { id:'battle_dodge', label:'💨 Уклонение' },
+            { id:'battle_flee', label:'🏃 Побег' }
+        ];
+        if (battleState.horseAlive && battleState.horseHp > 0) {
+            if (battleState.mounted) {
+                actions.unshift({ id:'battle_dismount', label:'🐴 Слезть с лошади' });
+            } else {
+                actions.unshift({ id:'battle_mount', label:'🐴 Сесть на лошадь' });
+            }
+        }
+    } else {
+        actions = getKingsLandingActions(place);
     }
     
-    // КОНЮШНЯ
-    if (place === 'Конюшня') {
-        actions.push({ id: 'stable_buy', label: '🐴 Купить лошадь' });
-        actions.push({ id: 'stable_sell', label: '💰 Продать лошадь' });
-    }
-    
-    // СЕПТА
-    if (place === 'Великая септа') {
-        actions.push({ id: 'temple_heal', label: '💉 Бесплатное исцеление (раз в 2ч)' });
-        actions.push({ id: 'temple_bless', label: '🙏 Благословение (+10% XP, раз в день)' });
-        actions.push({ id: 'temple_luck', label: '🍀 Купить удачу (1000 зол → +5)' });
-        actions.push({ id: 'temple_potions', label: '🧪 Купить зелья' });
-    }
-    
-    // РЫНОК
-    if (place === 'Рынок') {
-        actions.push({ id: 'market_stalls', label: '🏪 Смотреть все лавки' });
-        actions.push({ id: 'market_my_stall', label: '📦 Моя лавка' });
-    }
-    
-    // АУКЦИОН
-    if (place === 'Гильдия торговцев') {
-        actions.push({ id: 'auction_list', label: '📋 Все лоты' });
-        actions.push({ id: 'auction_my', label: '📦 Мои лоты' });
-        actions.push({ id: 'auction_sell', label: '💼 Выставить лот' });
-    }
-    
-    // МАГИСТРАТ
-    if (place === 'Магистрат') {
-        actions.push({ id: 'magistrate_housing', label: '🏠 Купить жильё' });
-        actions.push({ id: 'magistrate_stall_buy', label: '🏪 Купить лавку (80 зол)' });
-        actions.push({ id: 'magistrate_stall_pay', label: '💰 Оплатить аренду лавки' });
-        actions.push({ id: 'magistrate_rent_pay', label: '💳 Оплатить аренду жилья' });
-        actions.push({ id: 'magistrate_confiscated', label: '📦 Конфискат' });
-    }
-    
-    // ЖИЛЫЕ КВАРТАЛЫ
-    if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
-        actions.push({ id: 'housing_view', label: '🏠 Смотреть жильё' });
-        actions.push({ id: 'housing_enter', label: '🔑 Войти в свой дом' });
-    }
-    
-    // ДОМ
-    if (place === 'Дом') {
-        actions.push({ id: 'home_rest', label: '🛏️ Отдохнуть (бесплатно)' });
-        actions.push({ id: 'home_storage', label: '📦 Открыть склад' });
-        actions.push({ id: 'home_leave', label: '🚪 Выйти из дома' });
-    }
-    
-    // БИБЛИОТЕКА
-    if (place === 'Библиотека мейстеров') {
-        actions.push({ id: 'library_buy', label: '📖 Купить книгу' });
-        actions.push({ id: 'library_read', label: '📚 Читать книгу' });
-    }
-    
-    // ГИЛЬДИЯ НАЁМНИКОВ
-    if (place === 'Гильдия наёмников') {
-        actions.push({ id: 'quest_take', label: '📋 Взять задание' });
-        actions.push({ id: 'quest_abandon', label: '❌ Отказаться от задания' });
-        actions.push({ id: 'quest_progress', label: '📊 Прогресс задания' });
-    }
-    
-    // БОРДЕЛЬ
-    if (place === 'Бордель') {
-        actions.push({ id: 'brothel_rest', label: '🛏️ Отдых с девушкой (+50 уст, 20 зол)' });
-        actions.push({ id: 'brothel_dice', label: '🎲 Игра в кости (PvP)' });
-    }
-    
-    // ТЮРЬМА
-    if (place === 'Тюрьма') {
-        actions.push({ id: 'jail_pay', label: '💰 Заплатить штраф' });
-        actions.push({ id: 'jail_wait', label: '⏳ Ждать освобождения' });
-        actions.push({ id: 'jail_escape', label: '🏃 Попытаться сбежать (10%)' });
-    }
-    
-    // ПОРТ
-    if (place === 'Порт') {
-        actions.push({ id: 'port_travel', label: '⛵ Путешествовать' });
-    }
-    
-    // ВОРОТА
-    if (place === 'Ворота') {
-        actions.push({ id: 'enter_red_keep', label: '🏰 Войти в Красный Замок' });
-        actions.push({ id: 'leave_city', label: '🚪 Выйти на Дорогу' });
-    }
-    
-    // КРАСНЫЙ ЗАМОК
-    if (place === 'Красный Замок') {
-        actions.push({ id: 'enter_red_keep', label: '🏰 Войти в Красный Замок' });
-    }
-    
-    // ДОРОГА
-    if (place === 'Дорога') {
-        actions.push({ id: 'search', label: '🔍 Поиск' });
-        actions.push({ id: 'enter_city', label: '🚪 Войти в Королевскую Гавань' });
-    }
-    
-    // ОБЩИЕ
-    actions.push({ id: 'map', label: '🗺️ Карта' });
-    actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
-    actions.push({ id: 'character', label: '👤 Персонаж' });
-    actions.push({ id: 'refresh', label: '🔄 Обновить' });
-    
-    for (var i = 0; i < actions.length; i++) {
-        var a = actions[i];
-        var btn = document.createElement('button');
+    actions.forEach(a => {
+        const btn = document.createElement('button');
         btn.className = 'btn-game';
         btn.textContent = a.label;
-        btn.setAttribute('data-action', a.id);
+        if (isBusy && !['character','inventory','refresh','map','menu','enter_city','leave_city'].includes(a.id) && !a.id.startsWith('battle_')) {
+            btn.disabled = true;
+        }
         btn.onclick = function() {
-            var actionId = this.getAttribute('data-action');
-            gameAction(actionId);
+            setMessage('');
+            // Сначала пробуем обработать локально
+            if (a.id.startsWith('battle_')) {
+                battleAction(a.id);
+                return;
+            }
+            if (!handleKingsLandingAction(a.id)) {
+                // Если не обработано, пробуем глобальный обработчик
+                if (typeof gameAction === 'function') {
+                    gameAction(a.id);
+                }
+            }
         };
         container.appendChild(btn);
-    }
+    });
 }
 
 // ============================================================
-// КАРТА
+// ПЕРЕХОД МЕЖДУ ЗДАНИЯМИ
 // ============================================================
-function openMap() {
-    var user = users[currentUser];
+function goToKingsLandingBuilding(building) {
+    const user = users[currentUser];
     if (!user) return;
-    var modal = document.getElementById('modal-map');
-    var content = document.getElementById('modal-map-content');
-    var place = user.game.location.place;
-    var exits = getExits(place);
+    const g = user.game;
     
-    var html = '<div class="modal-section"><h4>📍 ' + place + '</h4></div>';
-    html += '<div class="modal-section"><p style="color:#6a5a48;">Куда идти?</p>';
+    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
+    if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
     
-    if (exits.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет доступных переходов.</p>';
-    } else {
-        for (var i = 0; i < exits.length; i++) {
-            var exitId = exits[i];
+    const cityBuildings = KINGS_LANDING_BUILDINGS.map(b => b.id);
+    const targetIsCity = cityBuildings.includes(building);
+    
+    if (targetIsCity && g.outside) g.outside = false;
+    else if (!targetIsCity && !g.outside) g.outside = true;
+    
+    g.location.place = building;
+    if (targetIsCity) g.location.location = 'Королевская Гавань';
+    else g.location.location = building;
+    
+    setMessage('✅ Вы прибыли в ' + building + '.');
+    addLog('🚶 ' + currentUser + ' перешёл в ' + building);
+    
+    closeMap();
+    updateMenu();
+    updateKingsLandingStory();
+    updateKingsLandingActions();
+    saveData();
+}
+
+// ============================================================
+// ОТКРЫТИЕ КАРТЫ ГОРОДА// ============================================================
+function openKingsLandingMap() {
+    const user = users[currentUser];
+    if (!user) return;
+    const modal = document.getElementById('modal-map');
+    const content = document.getElementById('modal-map-content');
+    
+    let html = '<div class="modal-section"><h4>📍 ' + user.game.location.place + ' (ур. ' + (KINGS_LANDING_LEVELS[user.game.location.place] || 1) + ')</h4></div>';
+    html += '<div class="modal-section">';
+    
+    KINGS_LANDING_BUILDINGS.forEach(b => {
+        const isCurrent = b.id === user.game.location.place;
+        const showBuilding = user.game.outside ? !cityBuildings.includes(b.id) : cityBuildings.includes(b.id);
+        
+        if ((user.game.outside && b.id === 'Дорога') || (!user.game.outside && b.id !== 'Дорога')) {
             html += '<div class="row">';
-            html += '<span class="label">📍 ' + exitId + '</span>';
-            html += '<span class="value"><button class="btn btn-small" onclick="moveToLocation(\'' + exitId + '\')">🚶 Идти</button></span>';
+            html += '<span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+            if (!isCurrent) {
+                html += '<span class="value"><button class="btn btn-small" onclick="goToKingsLandingBuilding(\'' + b.id + '\')">🚶 Идти</button></span>';
+            } else {
+                html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+            }
             html += '</div>';
         }
+    });
+    
+    // Дорога (всегда показываем)
+    if (user.game.outside) {
+        html += '<div class="row">';
+        html += '<span class="label">🚪 Ворота</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="goToKingsLandingBuilding(\'Ворота\')">🚶 Идти</button></span>';
+        html += '</div>';
+    } else {
+        html += '<div class="row">';
+        html += '<span class="label">🛤️ Дорога</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="goToKingsLandingBuilding(\'Дорога\')">🚶 Идти</button></span>';
+        html += '</div>';
     }
     
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
@@ -387,131 +716,92 @@ function openMap() {
     modal.classList.remove('hide');
 }
 
-function closeMap() {
-    document.getElementById('modal-map').classList.add('hide');
-}
+// ============================================================
+// ПЕРЕОПРЕДЕЛЯЕМ ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ КОРОЛЕВСКОЙ ГАВАНИ
+// ============================================================
 
-function moveToLocation(target) {
-    var user = users[currentUser];
+// Сохраняем оригинальные функции
+const _originalUpdateStory = typeof updateStory === 'function' ? updateStory : null;
+const _originalUpdateActions = typeof updateActions === 'function' ? updateActions : null;
+const _originalOpenMap = typeof openMap === 'function' ? openMap : null;
+const _originalGoToBuilding = typeof goToBuilding === 'function' ? goToBuilding : null;
+const _originalDoSearch = typeof doSearch === 'function' ? doSearch : null;
+
+// Переопределяем
+updateStory = function() {
+    const user = users[currentUser];
     if (!user) return;
-    var g = user.game;
-    
-    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
-    
-    closeMap();
-    
-    if (target === 'Красный Замок' && typeof enterRedKeep === 'function') {
-        enterRedKeep();
-        return;
+    if (user.game.location.location === 'Королевская Гавань' || user.game.location.location === 'Дорога') {
+        updateKingsLandingStory();
+    } else if (_originalUpdateStory) {
+        _originalUpdateStory();
     }
-    
-    if (target === 'Дорога') {
-        g.location.place = 'Дорога';
-        g.location.location = 'Дорога';
-        g.outside = true;
-        setMessage('🛤️ Вы вышли на Королевский тракт.');
-    } else if (target === 'Ворота' && g.outside) {
-        g.location.place = 'Ворота';
-        g.location.location = 'Королевская Гавань';
-        g.outside = false;
-        setMessage('🚪 Вы вошли в Королевскую Гавань.');
-    } else {
-        g.location.place = target;
-        g.location.location = 'Королевская Гавань';
-        g.outside = false;
-        setMessage('✅ Вы прибыли в ' + target + '.');
-    }
-    
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
-}
+};
 
-// ============================================================
-// ПОКУПКА ПРЕДМЕТОВ
-// ============================================================
-function buyItem(item, price) {
-    var user = users[currentUser];
+updateActions = function() {
+    const user = users[currentUser];
     if (!user) return;
-    var g = user.game;
-    
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
-        return;
+    if (user.game.location.location === 'Королевская Гавань' || user.game.location.location === 'Дорога') {
+        updateKingsLandingActions();
+    } else if (_originalUpdateActions) {
+        _originalUpdateActions();
     }
-    
-    var newItem = {
-        name: item.name,
-        quality: item.quality || 'Обычное',
-        type: item.type || 'item',
-        count: 1
-    };
-    
-    if (item.baseDamage) { newItem.baseDamage = item.baseDamage; newItem.finalDamage = item.baseDamage; }
-    if (item.baseDefense) { newItem.baseDefense = item.baseDefense; newItem.finalDefense = item.baseDefense; }
-    if (item.armorClass) newItem.armorClass = item.armorClass;
-    if (item.resourceType) newItem.resourceType = item.resourceType;
-    if (item.food) { if (!newItem.effect) newItem.effect = {}; newItem.effect.food = item.food; }
-    if (item.thirst) { if (!newItem.effect) newItem.effect = {}; newItem.effect.thirst = item.thirst; }
-    if (item.hp) { if (!newItem.effect) newItem.effect = {}; newItem.effect.hp = item.hp; }
-    if (item.fatigue) { if (!newItem.effect) newItem.effect = {}; newItem.effect.fatigue = item.fatigue; }
-    
-    addToInventory(g, newItem);
-    convertCurrency(g);
-    setMessage('✅ Вы купили ' + item.name + ' за ' + formatCurrency(price) + '.');
-    updateMenu();
-    saveData();
-}
+};
+
+openMap = function() {
+    const user = users[currentUser];
+    if (!user) return;
+    if (user.game.location.location === 'Королевская Гавань' || user.game.location.location === 'Дорога') {
+        openKingsLandingMap();
+    } else if (_originalOpenMap) {
+        _originalOpenMap();
+    }
+};
+
+goToBuilding = function(building) {
+    const user = users[currentUser];
+    if (!user) return;
+    if (user.game.location.location === 'Королевская Гавань' || user.game.location.location === 'Дорога') {
+        goToKingsLandingBuilding(building);
+    } else if (_originalGoToBuilding) {
+        _originalGoToBuilding(building);
+    }
+};
+
+doSearch = function() {
+    const user = users[currentUser];
+    if (!user) return;
+    if (user.game.location.location === 'Королевская Гавань' || user.game.location.location === 'Дорога') {
+        doKingsLandingSearch();
+    } else if (_originalDoSearch) {
+        _originalDoSearch();
+    }
+};
 
 // ============================================================
-// ПОКАЗ АССОРТИМЕНТА
+// ЗАПУСК ИНИЦИАЛИЗАЦИИ
 // ============================================================
-function showShopItems(shopType) {
-    var modal = document.getElementById('modal-trade');
-    var content = document.getElementById('modal-trade-content');
-    var items = [];
-    
-    if (shopType === 'weapons') items = KL_PRICES.weapons;
-    else if (shopType === 'leather') items = KL_PRICES.leather;
-    else if (shopType === 'plate') items = KL_PRICES.plate;
-    else if (shopType === 'bows') items = KL_PRICES.bows;
-    else if (shopType === 'resources') items = KL_PRICES.resources;
-    else if (shopType === 'tavern') items = KL_PRICES.tavern;
-    else if (shopType === 'horses') items = KL_PRICES.horses;
-    else if (shopType === 'temple') items = KL_PRICES.temple;
-    else if (shopType === 'brothel') items = KL_PRICES.brothel;
-    else if (shopType === 'books') items = KL_PRICES.books;
-    
-    var titleMap = {
-        'weapons': '🗡️ ОРУЖИЕ',
-        'leather': '🪡 КОЖАНАЯ БРОНЯ',
-        'plate': '🛡️ ЛАТНАЯ БРОНЯ',
-        'bows': '🏹 ЛУКИ И АРБАЛЕТЫ',
-        'resources': '⛏️ РЕСУРСЫ',
-        'tavern': '🍺 ТАВЕРНА',
-        'horses': '🐴 КОНЮШНЯ',
-        'temple': '⛪ СЕПТА',
-        'brothel': '💃 БОРДЕЛЬ',
-        'books': '📚 БИБЛИОТЕКА'
-    };
-    
-    var html = '<div class="modal-section"><h4>' + (titleMap[shopType] || 'ТОВАРЫ') + '</h4>';
-    
-    if (items.length === 0) {
-        html += '<p style="color:#6a5a48;">Товаров нет.</p>';
-    } else {
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i];
-            var q = QUALITIES[item.quality] || QUALITIES['Обычное'];
-            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="color:' + q.color + ';">' + (item.emoji || '📦') + ' ' + item.name + '</span>';
-            html += '<span class="value">' + formatCurrency(item.price) + ' <button class="btn btn-small" onclick="buyItem(KL_PRICES.' + shopType + '[' + i + '], ' + item.price + '); showShopItems(\'' + shopType + '\');">Купить</button></span>';
-            html += '</div>';
-        }
-    }
-    
-    html += '</div><button class="btn" onclick="document.getElementById(\'modal-trade\').classList.add(\'hide\')">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
+initKingsLanding();
+
+console.log('🦁 Королевская Гавань: все здания активны.');
+console.log('   🍺 Таверна (еда, работа, отдых, трактирщик)');
+console.log('   🏪 Рынок (торговые лавки)');
+console.log('   ⚒️ Кузница (ресурсы, крафт)');
+console.log('   🗡️ Оружейная лавка (оружие)');
+console.log('   🪡 Кожевник (кожаная броня)');
+console.log('   🛡️ Бронник (латная броня)');
+console.log('   🪵 Плотник (луки, арбалеты)');
+console.log('   🐴 Конюшня (лошади)');
+console.log('   🏛️ Гильдия торговцев (аукцион)');
+console.log('   📜 Магистрат (недвижимость)');
+console.log('   🚪 Ворота (выход на Дорогу)');
+console.log('   👑 Королевский квартал (элитное жильё)');
+console.log('   🏙️ Торговый квартал (среднее жильё)');
+console.log('   🏚️ Квартал бедноты (дешёвое жильё, пьянчужки)');
+console.log('   🏠 Дом (отдых, склад)');
+console.log('   ⛪ Великая септа (зелья, исцеление, молитва)');
+console.log('   ⛵ Порт (путешествия — скоро)');
+console.log('   ⛓️ Тюрьма (штраф, побег)');
+console.log('   📚 Библиотека мейстеров (книги)');
+console.log('   🗡️ Гильдия наёмников (задания)');
+console.log('   💃 Бордель (отдых, баффы, кости)');
