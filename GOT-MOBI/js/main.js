@@ -156,10 +156,10 @@ function enterGame(name) {
     g.maxHp = getMaxHp(g);
     if (g.hp > g.maxHp) g.hp = g.maxHp;
     
-    // updateStory и updateActions берутся из kings_landing.js!
     updateMenu();
-    updateStory();
-    updateActions();
+    // updateStory и updateActions из kings_landing.js
+    if (typeof updateStory === 'function') updateStory();
+    if (typeof updateActions === 'function') updateActions();
     setMessage('');
     
     isBusy = false;
@@ -197,49 +197,71 @@ function updateMenu() {
     document.getElementById('menu-fatigue').textContent = Math.round(g.fatigue);
 }
 
+// updateStory и updateActions берутся из kings_landing.js
+
 function gameAction(action) {
     setMessage('');
     const user = users[currentUser];
     if (!user) return;
     const g = user.game;
     
-    switch(action) {
-        case 'map': openMap(); break;
-        case 'leave_city':
-            g.location.place = 'Дорога'; g.location.location = 'Дорога'; g.outside = true;
-            setMessage('🛤️ Вы вышли на Королевский тракт.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-            break;
-        case 'enter_city':
-            g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
-            setMessage('🚪 Вы вошли в Королевскую Гавань.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-            break;
-        case 'eat':
-            if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
-            g.food = Math.min(g.food + 25, 100);
-            setMessage('🍞 Вы поели. Еда +25.');
-            updateMenu(); saveData();
-            break;
-        case 'wash':
-            startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); });
-            break;
-        case 'sweep':
-            startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); });
-            break;
-        case 'rest':
-            if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
-            g.fatigue = Math.min(100, g.fatigue + 30);
-            g.hp = Math.min(g.maxHp, g.hp + 15);
-            setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.');
-            updateMenu(); saveData();
-            break;
-        case 'talk':
-            setMessage(['🍺 Трактирщик: «Добро пожаловать!»','🍺 Трактирщик: «Заработай — помой посуду.»','🍺 Трактирщик: «Будь осторожен за воротами.»'][Math.floor(Math.random()*3)]);
-            break;
-        case 'refresh': location.reload(); break;
-        default: setMessage('🚧 В разработке.');
+    // Карта
+    if (action === 'map') { if (typeof openMap === 'function') openMap(); else setMessage('🚧 Карта в разработке.'); return; }
+    
+    // Вход/выход из города
+    if (action === 'leave_city') {
+        g.location.place = 'Дорога'; g.location.location = 'Дорога'; g.outside = true;
+        setMessage('🛤️ Вы вышли на Королевский тракт.');
+        updateMenu(); if (typeof updateStory === 'function') updateStory(); if (typeof updateActions === 'function') updateActions(); saveData();
+        return;
     }
+    if (action === 'enter_city') {
+        g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
+        setMessage('🚪 Вы вошли в Королевскую Гавань.');
+        updateMenu(); if (typeof updateStory === 'function') updateStory(); if (typeof updateActions === 'function') updateActions(); saveData();
+        return;
+    }
+    
+    // Таверна
+    if (action === 'eat') {
+        if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
+        g.food = Math.min(g.food + 25, 100);
+        setMessage('🍞 Вы поели. Еда +25.');
+        updateMenu(); saveData();
+        return;
+    }
+    if (action === 'wash') {
+        startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); });
+        return;
+    }
+    if (action === 'sweep') {
+        startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); });
+        return;
+    }
+    if (action === 'rest') {
+        if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
+        g.fatigue = Math.min(100, g.fatigue + 30);
+        g.hp = Math.min(g.maxHp, g.hp + 15);
+        setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.');
+        updateMenu(); saveData();
+        return;
+    }
+    if (action === 'talk') {
+        setMessage(['🍺 Трактирщик: «Добро пожаловать!»','🍺 Трактирщик: «Заработай — помой посуду.»','🍺 Трактирщик: «Будь осторожен за воротами.»'][Math.floor(Math.random()*3)]);
+        return;
+    }
+    
+    // Перемещение (из карты)
+    if (action.startsWith('move_')) {
+        const place = action.replace('move_', '');
+        if (typeof moveToLocation === 'function') moveToLocation(place);
+        else setMessage('🚧 Перемещение в разработке.');
+        return;
+    }
+    
+    if (action === 'refresh') { location.reload(); return; }
+    
+    setMessage('🚧 В разработке.');
 }
 
 function startBusy(actionName, minutes, callback) {
@@ -247,14 +269,14 @@ function startBusy(actionName, minutes, callback) {
     isBusy = true;
     document.getElementById('busy-status').classList.remove('hide');
     document.getElementById('busy-status').textContent = '⏳ ' + actionName + '... (' + minutes + ' мин)';
-    updateActions();
+    if (typeof updateActions === 'function') updateActions();
     if (busyTimer) clearTimeout(busyTimer);
     busyTimer = setTimeout(function() {
         isBusy = false;
         document.getElementById('busy-status').classList.add('hide');
         busyTimer = null;
         if (callback) callback();
-        updateActions();
+        if (typeof updateActions === 'function') updateActions();
     }, minutes * 60 * 1000);
 }
 
@@ -312,6 +334,21 @@ function handleLogout() {
     if (resourceInterval) { clearInterval(resourceInterval); resourceInterval = null; }
     if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
 }
+
+// Заглушки для кнопок меню-бара
+function openCharacter() { setMessage('🚧 Персонаж в разработке.'); }
+function openInventory() { setMessage('🚧 Инвентарь в разработке.'); }
+function openLog() { setMessage('🚧 Лог в разработке.'); }
+function openMainMenu() { setMessage('🚧 Меню в разработке.'); }
+function showOnlineList() { setMessage('🚧 Список онлайн в разработке.'); }
+function closeMap() { document.getElementById('modal-map').classList.add('hide'); }
+function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
+function closeOnline() { document.getElementById('modal-online').classList.add('hide'); }
+function closeMenu() { document.getElementById('modal-menu').classList.add('hide'); }
+function closeLog() { document.getElementById('modal-log').classList.add('hide'); }
+function closeTrade() { document.getElementById('modal-trade').classList.add('hide'); }
+function closeGuild() { document.getElementById('modal-guild').classList.add('hide'); }
+function closeHouses() { document.getElementById('modal-houses').classList.add('hide'); }
 
 // ============================================================
 // ЗАПУСК
