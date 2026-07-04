@@ -1,11 +1,7 @@
 // ============================================================
-// MAIN.JS — ТОЧКА ВХОДА (МИНИМАЛЬНЫЙ)
-// Только регистрация и вход. Город в regions/crownlands/
+// MAIN.JS — ТОЧКА ВХОДА
 // ============================================================
 
-// ============================================================
-// РЕГИСТРАЦИЯ
-// ============================================================
 function handleRegister() {
     const name = document.getElementById('reg-name').value.trim();
     const password = document.getElementById('reg-password').value;
@@ -24,32 +20,14 @@ function handleRegister() {
         errEl.classList.remove('hide'); 
         return;
     }
-    if (name.length < 2) { 
-        errEl.textContent = '❌ Имя слишком короткое'; 
-        errEl.classList.remove('hide'); 
-        return; 
-    }
-    if (password.length < 4) { 
-        errEl.textContent = '❌ Пароль слишком короткий'; 
-        errEl.classList.remove('hide'); 
-        return; 
-    }
-    if (!NATIONALITIES[nationality]) { 
-        errEl.textContent = '❌ Выберите национальность'; 
-        errEl.classList.remove('hide'); 
-        return; 
-    }
-    if (users[name]) { 
-        errEl.textContent = '❌ Это имя уже занято'; 
-        errEl.classList.remove('hide'); 
-        return; 
-    }
+    if (name.length < 2) { errEl.textContent = '❌ Имя слишком короткое'; errEl.classList.remove('hide'); return; }
+    if (password.length < 4) { errEl.textContent = '❌ Пароль слишком короткий'; errEl.classList.remove('hide'); return; }
+    if (!NATIONALITIES[nationality]) { errEl.textContent = '❌ Выберите национальность'; errEl.classList.remove('hide'); return; }
+    if (users[name]) { errEl.textContent = '❌ Это имя уже занято'; errEl.classList.remove('hide'); return; }
     
     const now = Date.now();
     const skills = {};
-    ['sword', 'spear', 'mace', 'axe', 'bow', 'crossbow', 'shield', 'dagger'].forEach(s => { 
-        skills[s] = { level: 1, xp: 0 }; 
-    });
+    ['sword', 'spear', 'mace', 'axe', 'bow', 'crossbow', 'shield', 'dagger'].forEach(s => { skills[s] = { level: 1, xp: 0 }; });
     
     users[name] = {
         password: hash(password),
@@ -103,24 +81,16 @@ function handleRegister() {
     currentUser = name;
     localStorage.setItem('got_user', name);
     
-    // НЕ ПЕРЕХОДИМ В ИГРУ — ждём, пока появится контент из regions/
-    // setTimeout(function() { enterGame(name); }, 1200);
+    setTimeout(function() { enterGame(name); }, 1200);
 }
 
-// ============================================================
-// ВХОД
-// ============================================================
 function handleLogin() {
     const name = document.getElementById('login-name').value.trim();
     const password = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
     
-    if (!name || !password) { 
-        errEl.textContent = '❌ Заполните все поля'; 
-        errEl.classList.remove('hide'); 
-        return; 
-    }
+    if (!name || !password) { errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
     
     const user = users[name];
     if (!user || user.password !== hash(password)) {
@@ -135,64 +105,200 @@ function handleLogin() {
     enterGame(name);
 }
 
-// ============================================================
-// ВХОД В ИГРУ (заглушка — не падает)
-// ============================================================
-function enterGame(name) {
-    showPage('game');
-    
-    // Обновляем меню (без модулей — просто показываем что есть)
-    const user = users[name];
-    if (!user) return;
-    user.game.online = true;
-    
-    document.getElementById('menu-location').textContent = 'Таверна 🏰';
-    document.getElementById('menu-hp').textContent = '60';
-    document.getElementById('menu-hp-max').textContent = '60';
-    document.getElementById('menu-level').textContent = '1';
-    document.getElementById('menu-gold').textContent = '100';
-    document.getElementById('menu-silver').textContent = '0';
-    document.getElementById('menu-copper').textContent = '0';
-    document.getElementById('menu-food').textContent = '100';
-    document.getElementById('menu-thirst').textContent = '100';
-    document.getElementById('menu-fatigue').textContent = '100';
-    document.getElementById('story-title').textContent = '📍 Таверна';
-    document.getElementById('story-text').textContent = '🚧 Контент локации загружается...';
-    
-    // Кнопки-заглушки
-    const container = document.getElementById('actions-container');
-    container.innerHTML = '';
-    const actions = [
-        { id: 'inventory', label: '🎒 Инвентарь' },
-        { id: 'character', label: '👤 Персонаж' },
-        { id: 'menu', label: '📋 Меню' },
-        { id: 'refresh', label: '🔄 Обновить' }
-    ];
-    actions.forEach(a => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-game';
-        btn.textContent = a.label;
-        btn.onclick = function() { setMessage('🚧 Функция в разработке'); };
-        container.appendChild(btn);
-    });
-    
-    saveData();
+function fixOldAccount(user) {
+    if (!user) return user;
+    if (!user.game) {
+        user.game = {
+            gold: 100, silver: 0, copper: 0, food: 100, thirst: 100, fatigue: 100,
+            hp: 60, maxHp: 60, level: 1, xp: 0, nextLevelXp: 100, attributePoints: 0,
+            stats: { damage: 1, defense: 1, intelligence: 1, agility: 1 },
+            equipment: { rightHand: null, leftHand: null, helmet: null, chestplate: null, shoulders: null, leggings: null, boots: null, gloves: null, belt: null, cloak: null, horse: null },
+            skills: {}, stamina: { level: 1, xp: 0 },
+            professions: { 'Шахтёр': 1, 'Лесоруб': 1, 'Охотник': 1, 'Кузнец': 1 },
+            professionXp: { 'Шахтёр': 0, 'Лесоруб': 0, 'Охотник': 0, 'Кузнец': 0 },
+            activeProfession: 'Охотник', lastProfessionChange: 0, inventory: [],
+            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна' },
+            outside: false, death: null, lastReset: null, lastActive: Date.now(), online: true,
+            lastResourceUpdate: Date.now(), luck: 0, lastHeal: null, lastPrayer: null,
+            blessing: { active: false, expires: 0 }, jail: null,
+            activeBonuses: { crit: 5, pierce: 5, doubleHit: 5, counter: 5, points: 0 },
+            marketStall: { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 },
+            housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] },
+            booksBoughtToday: 0, lastBookReset: Date.now(),
+            quests: { completed: [], lastReset: 0, active: null, progress: {} },
+            brothelBuffs: [], brothelRoom: false
+        };
+        return user;
+    }
+    return user;
 }
 
-// ============================================================
-// ЗАГЛУШКИ (чтоб не падало)
-// ============================================================
-function updateMenu() {}
-function updateStory() {}
-function updateActions() {}
-function gameAction(action) { setMessage('🚧 Функция в разработке'); }
-function startBusy() {}
-function handleDeath() {}
-function getMaxHp() { return 60; }
-function startResourceSystem() {}
-function startAutoSave() {}
-function updateOnline() {}
+function getMaxHp(g) {
+    const staminaLevel = g.stamina?.level || 1;
+    let bonusHp = 0;
+    if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
+        bonusHp = HOUSING_TYPES[g.housing.type].restHp || 0;
+    }
+    return 60 + (g.level - 1) * 10 + staminaLevel * 2 + bonusHp;
+}
+
+function enterGame(name) {
+    const user = users[name];
+    if (!user) return;
+    fixOldAccount(user);
+    const g = user.game;
+    if (!g) return;
+    
+    showPage('game');
+    g.online = true;
+    g.lastActive = Date.now();
+    g.lastResourceUpdate = Date.now();
+    g.maxHp = getMaxHp(g);
+    if (g.hp > g.maxHp) g.hp = g.maxHp;
+    
+    // updateStory и updateActions берутся из kings_landing.js!
+    updateMenu();
+    updateStory();
+    updateActions();
+    setMessage('');
+    
+    isBusy = false;
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    document.getElementById('busy-status').classList.add('hide');
+    
+    updateOnline();
+    saveData();
+    startResourceSystem();
+    startAutoSave();
+}
+
+function updateMenu() {
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    const time = getTimeOfDay();
+    
+    g.maxHp = getMaxHp(g);
+    if (g.hp > g.maxHp) g.hp = g.maxHp;
+    if (g.hp === undefined || g.hp <= 0) g.hp = g.maxHp;
+    
+    document.getElementById('menu-time').textContent = time.timeStr;
+    document.getElementById('menu-period').textContent = time.emoji + ' ' + time.period;
+    document.getElementById('menu-location').textContent = g.location.place + (g.outside ? ' 🌲' : ' 🏰');
+    document.getElementById('menu-location-level').textContent = ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')';
+    document.getElementById('menu-hp').textContent = Math.round(g.hp);
+    document.getElementById('menu-hp-max').textContent = Math.round(g.maxHp);
+    document.getElementById('menu-level').textContent = g.level;
+    document.getElementById('menu-gold').textContent = g.gold;
+    document.getElementById('menu-silver').textContent = g.silver;
+    document.getElementById('menu-copper').textContent = g.copper;
+    document.getElementById('menu-food').textContent = Math.round(g.food);
+    document.getElementById('menu-thirst').textContent = Math.round(g.thirst);
+    document.getElementById('menu-fatigue').textContent = Math.round(g.fatigue);
+}
+
+function gameAction(action) {
+    setMessage('');
+    const user = users[currentUser];
+    if (!user) return;
+    const g = user.game;
+    
+    switch(action) {
+        case 'map': openMap(); break;
+        case 'leave_city':
+            g.location.place = 'Дорога'; g.location.location = 'Дорога'; g.outside = true;
+            setMessage('🛤️ Вы вышли на Королевский тракт.');
+            updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        case 'enter_city':
+            g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
+            setMessage('🚪 Вы вошли в Королевскую Гавань.');
+            updateMenu(); updateStory(); updateActions(); saveData();
+            break;
+        case 'eat':
+            if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
+            g.food = Math.min(g.food + 25, 100);
+            setMessage('🍞 Вы поели. Еда +25.');
+            updateMenu(); saveData();
+            break;
+        case 'wash':
+            startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); });
+            break;
+        case 'sweep':
+            startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); });
+            break;
+        case 'rest':
+            if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
+            g.fatigue = Math.min(100, g.fatigue + 30);
+            g.hp = Math.min(g.maxHp, g.hp + 15);
+            setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.');
+            updateMenu(); saveData();
+            break;
+        case 'talk':
+            setMessage(['🍺 Трактирщик: «Добро пожаловать!»','🍺 Трактирщик: «Заработай — помой посуду.»','🍺 Трактирщик: «Будь осторожен за воротами.»'][Math.floor(Math.random()*3)]);
+            break;
+        case 'refresh': location.reload(); break;
+        default: setMessage('🚧 В разработке.');
+    }
+}
+
+function startBusy(actionName, minutes, callback) {
+    if (isBusy) return;
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '⏳ ' + actionName + '... (' + minutes + ' мин)';
+    updateActions();
+    if (busyTimer) clearTimeout(busyTimer);
+    busyTimer = setTimeout(function() {
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        if (callback) callback();
+        updateActions();
+    }, minutes * 60 * 1000);
+}
+
+function startAutoSave() {
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => { if (currentUser && users[currentUser]) saveData(); }, 30000);
+}
+
+function startResourceSystem() {
+    if (resourceInterval) clearInterval(resourceInterval);
+    resourceInterval = setInterval(() => {
+        const user = users[currentUser];
+        if (!user || !user.game.online) return;
+        const g = user.game;
+        const now = Date.now();
+        const diff = (now - g.lastResourceUpdate) / 60000;
+        if (diff < 1) return;
+        g.food = Math.max(0, g.food - Math.floor(diff / 15));
+        g.thirst = Math.max(0, g.thirst - Math.floor(diff / 10));
+        g.lastResourceUpdate = now;
+        updateMenu();
+        saveData();
+    }, 30000);
+}
+
+function updateOnline() {
+    const online = { global: 0, region: 0, location: 0 };
+    if (!currentUser || !users[currentUser]) return;
+    const cur = users[currentUser];
+    for (const name in users) {
+        if (users[name].game.online) {
+            online.global++;
+            if (users[name].game.location.region === cur.game.location.region) online.region++;
+            if (users[name].game.location.location === cur.game.location.location) online.location++;
+        }
+    }
+    document.getElementById('online-global').textContent = online.global;
+    document.getElementById('online-region').textContent = online.region;
+    document.getElementById('online-location').textContent = online.location;
+    setTimeout(updateOnline, 10000);
+}
+
 function handleLogout() {
+    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
     if (currentUser && users[currentUser]) {
         users[currentUser].game.online = false;
         saveData();
@@ -200,6 +306,11 @@ function handleLogout() {
     localStorage.removeItem('got_user');
     currentUser = null;
     showPage('login');
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    if (resourceInterval) { clearInterval(resourceInterval); resourceInterval = null; }
+    if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
 }
 
 // ============================================================
