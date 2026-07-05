@@ -3,7 +3,7 @@
 // ============================================================
 
 // ============================================================
-// 1. МАГАЗИНЫ NPC (Оружейная, Кожевник, Бронник, Плотник, Кузница)
+// 1. МАГАЗИНЫ NPC
 // ============================================================
 
 function openShop(shopType) {
@@ -25,7 +25,7 @@ function openShop(shopType) {
         html += '<p style="color:#6a5a48;">Нет товаров.</p>';
     } else {
         shopItems.forEach(function(item) {
-            var stock = getTraderStock(shopType, item.key) || 0;
+            var stock = getTraderStock(shopType, item.key) || 99;
             var canBuy = stock > 0 && g.gold * 210 * 56 + g.silver * 56 + g.copper >= item.price;
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="font-size:13px;">' + item.label + '</span>';
@@ -59,86 +59,133 @@ function openShop(shopType) {
 function getShopItems(shopType) {
     var items = [];
     
+    // ===== ОРУЖЕЙНАЯ ЛАВКА =====
     if (shopType === 'Оружейная лавка') {
-        var weapons = ['sword','spear','axe','mace','dagger','shield'];
-        weapons.forEach(function(type) {
+        var weaponTypes = ['sword','spear','axe','mace','dagger','shield','bow','crossbow'];
+        weaponTypes.forEach(function(type) {
             var list = ALL_ITEMS.weapons[type] || [];
             list.forEach(function(w) {
                 var quality = 'Обычное';
                 var key = w.name + '|' + quality;
                 var price = Math.round((5 + w.level * 2 + (w.baseDamage || 0)) * 1.0);
-                items.push({ key: key, label: w.name + ' (ур.' + w.level + ')', price: price });
+                var label = w.name + ' (ур.' + w.level + ')';
+                if (w.baseDamage) label += ' ⚔️' + w.baseDamage;
+                if (w.defense) label += ' 🛡️' + w.defense;
+                items.push({ key: key, label: label, price: price });
             });
         });
     }
     
+    // ===== КОЖЕВНИК =====
     if (shopType === 'Кожевник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское'];
+        // Кожа как ресурс
+        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
         qualities.forEach(function(q) {
             var key = 'Кожа|' + q;
             var price = getResourcePrice('leather', q);
             items.push({ key: key, label: '🧵 Кожа (' + q + ')', price: price });
         });
+        // Кожаная броня
         Object.keys(ALL_ITEMS.leather).forEach(function(type) {
             ALL_ITEMS.leather[type].forEach(function(item) {
                 var quality = 'Обычное';
                 var key = item.name + '|' + quality;
                 var price = Math.round((5 + item.level * 2 + (item.baseDefense || 0)) * 1.0);
-                items.push({ key: key, label: '🪡 ' + item.name + ' (ур.' + item.level + ')', price: price });
+                var label = '🪡 ' + item.name + ' (ур.' + item.level + ')';
+                if (item.baseDefense) label += ' 🛡️' + item.baseDefense;
+                if (item.speedPercent) label += ' 🏃+' + item.speedPercent + '%';
+                items.push({ key: key, label: label, price: price });
             });
         });
     }
     
+    // ===== БРОННИК =====
     if (shopType === 'Бронник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское'];
+        // Сталь как ресурс
+        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
         qualities.forEach(function(q) {
             var key = 'Сталь|' + q;
             var price = getResourcePrice('steel', q);
             items.push({ key: key, label: '⚒️ Сталь (' + q + ')', price: price });
         });
+        // Латная броня
         Object.keys(ALL_ITEMS.plate).forEach(function(type) {
             ALL_ITEMS.plate[type].forEach(function(item) {
                 var quality = 'Обычное';
                 var key = item.name + '|' + quality;
                 var price = Math.round((5 + item.level * 2 + (item.baseDefense || 0)) * 1.0);
-                items.push({ key: key, label: '🛡️ ' + item.name + ' (ур.' + item.level + ')', price: price });
+                var label = '🛡️ ' + item.name + ' (ур.' + item.level + ')';
+                if (item.baseDefense) label += ' 🛡️' + item.baseDefense;
+                if (item.speedPercent) label += ' 🏃+' + item.speedPercent + '%';
+                items.push({ key: key, label: label, price: price });
             });
         });
     }
     
+    // ===== ПЛОТНИК =====
     if (shopType === 'Плотник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское'];
+        // Дерево как ресурс
+        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
         qualities.forEach(function(q) {
             var key = 'Дерево|' + q;
             var price = getResourcePrice('wood', q);
             items.push({ key: key, label: '🪵 Дерево (' + q + ')', price: price });
         });
+        // Луки и арбалеты
         ['bow','crossbow'].forEach(function(type) {
             ALL_ITEMS.weapons[type].forEach(function(item) {
                 var quality = 'Обычное';
                 var key = item.name + '|' + quality;
                 var price = Math.round((5 + item.level * 2 + (item.baseDamage || 0)) * 1.0);
-                items.push({ key: key, label: '🏹 ' + item.name + ' (ур.' + item.level + ')', price: price });
+                var label = '🏹 ' + item.name + ' (ур.' + item.level + ')';
+                if (item.baseDamage) label += ' ⚔️' + item.baseDamage;
+                items.push({ key: key, label: label, price: price });
             });
         });
     }
     
+    // ===== КУЗНИЦА =====
     if (shopType === 'Кузница') {
-        var resources = [
-            { name: 'Руда железная', type: 'iron' },
-            { name: 'Уголь', type: 'coal' },
-            { name: 'Сталь', type: 'steel' }
-        ];
-        resources.forEach(function(res) {
-            var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское'];
-            qualities.forEach(function(q) {
-                var key = res.name + '|' + q;
-                var price = getResourcePrice(res.type, q);
-                items.push({ key: key, label: '⛏️ ' + res.name + ' (' + q + ')', price: price });
+        // Ресурсы из CONSUMABLES
+        if (typeof CONSUMABLES !== 'undefined') {
+            if (CONSUMABLES.resources) {
+                CONSUMABLES.resources.forEach(function(res) {
+                    var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+                    qualities.forEach(function(q) {
+                        var key = res.name + '|' + q;
+                        var price = getResourcePrice(res.resourceType, q);
+                        items.push({ key: key, label: '⛏️ ' + res.name + ' (' + q + ')', price: price });
+                    });
+                });
+            }
+            if (CONSUMABLES.materials) {
+                CONSUMABLES.materials.forEach(function(mat) {
+                    var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+                    qualities.forEach(function(q) {
+                        var key = mat.name + '|' + q;
+                        var price = getResourcePrice(mat.resourceType, q);
+                        items.push({ key: key, label: '⚒️ ' + mat.name + ' (' + q + ')', price: price });
+                    });
+                });
+            }
+        } else {
+            // Запасной вариант — ресурсы из ALL_ITEMS
+            var resources = [
+                { name: 'Руда железная', type: 'iron' },
+                { name: 'Уголь', type: 'coal' },
+                { name: 'Сталь', type: 'steel' },
+                { name: 'Кожа', type: 'leather' },
+                { name: 'Дерево', type: 'wood' }
+            ];
+            resources.forEach(function(res) {
+                var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+                qualities.forEach(function(q) {
+                    var key = res.name + '|' + q;
+                    var price = getResourcePrice(res.type, q);
+                    items.push({ key: key, label: '⛏️ ' + res.name + ' (' + q + ')', price: price });
+                });
             });
-        });
-        items.push({ key: 'Руда 14 огней|Мифическое', label: '💎 Руда 14 огней', price: 50000 });
-        items.push({ key: 'Валирийская сталь|Мифическое', label: '🌟 Валирийская сталь', price: 100000 });
+        }
     }
     
     return items;
@@ -147,25 +194,31 @@ function getShopItems(shopType) {
 function getSellableItems(g, shopType) {
     var items = [];
     var shopTypes = {
-        'Оружейная лавка': ['sword','spear','axe','mace','dagger','shield'],
+        'Оружейная лавка': ['sword','spear','axe','mace','dagger','shield','bow','crossbow'],
         'Кожевник': ['leather'],
         'Бронник': ['plate'],
         'Плотник': ['bow','crossbow','wood'],
-        'Кузница': ['iron','coal','steel']
+        'Кузница': ['iron','coal','steel','valyrian_ore','valyrian_steel']
     };
     
     var allowedTypes = shopTypes[shopType] || [];
     
     g.inventory.forEach(function(item, index) {
         var isAllowed = false;
+        
+        // Проверка по типу ресурса
         if (item.type === 'resource') {
             if (allowedTypes.indexOf(item.resourceType) !== -1) isAllowed = true;
         }
+        
+        // Проверка по типу оружия
         if (item.type === 'sword' || item.type === 'spear' || item.type === 'axe' || 
             item.type === 'mace' || item.type === 'dagger' || item.type === 'shield' ||
             item.type === 'bow' || item.type === 'crossbow') {
             if (allowedTypes.indexOf(item.type) !== -1) isAllowed = true;
         }
+        
+        // Проверка по классу брони
         if (item.armorClass) {
             if (allowedTypes.indexOf(item.armorClass) !== -1) isAllowed = true;
         }
@@ -188,7 +241,10 @@ function getSellableItems(g, shopType) {
 function getItemPrice(item) {
     var basePrice = 5;
     if (item.type === 'resource') {
-        var resourcePrices = { 'leather': 5, 'iron': 8, 'wood': 3, 'steel': 20, 'coal': 4 };
+        var resourcePrices = { 
+            'leather': 5, 'iron': 8, 'wood': 3, 'steel': 20, 'coal': 4,
+            'valyrian_ore': 50000, 'valyrian_steel': 100000
+        };
         basePrice = resourcePrices[item.resourceType] || 5;
     } else if (item.finalDamage) {
         basePrice = 5 + (item.level || 1) * 2 + (item.finalDamage || 0);
@@ -209,55 +265,68 @@ function buyFromShop(shopType, itemKey, price) {
         return;
     }
     
-    var stock = getTraderStock(shopType, itemKey) || 0;
-    if (stock <= 0) {
-        setMessage('❌ Нет в наличии.');
-        return;
-    }
-    
-    removeTraderStock(shopType, itemKey, 1);
-    
     var parts = itemKey.split('|');
     var name = parts[0];
     var quality = parts[1] || 'Обычное';
     var q = QUALITIES[quality] || QUALITIES['Обычное'];
     
     var item = { name: name, quality: quality, count: 1 };
-    
-    // Определяем тип предмета
     var found = false;
-    for (var type in ALL_ITEMS.weapons) {
-        ALL_ITEMS.weapons[type].forEach(function(w) {
-            if (w.name === name) {
-                item.type = type;
-                item.level = w.level;
-                if (w.baseDamage) { item.baseDamage = w.baseDamage; item.finalDamage = Math.round(w.baseDamage * q.multiplier); }
-                if (w.defense) { item.defense = w.defense; item.finalDefense = Math.round(w.defense * q.multiplier); }
-                found = true;
-            }
-        });
-    }
-    if (!found) {
-        for (var armorClass in ALL_ITEMS) {
-            if (armorClass === 'weapons') continue;
-            for (var type in ALL_ITEMS[armorClass]) {
-                ALL_ITEMS[armorClass][type].forEach(function(w) {
-                    if (w.name === name) {
-                        item.type = type;
-                        item.armorClass = armorClass;
-                        item.level = w.level;
-                        if (w.baseDefense) { 
-                            var def = armorClass === 'leather' ? Math.floor(w.baseDefense / 2) : w.baseDefense;
-                            item.baseDefense = w.baseDefense;
-                            item.finalDefense = Math.round(def * q.multiplier);
-                            if (armorClass === 'leather') item.agilityBonus = item.finalDefense;
-                        }
-                        found = true;
-                    }
-                });
-            }
+    
+    // Поиск в ALL_ITEMS.weapons
+    if (ALL_ITEMS && ALL_ITEMS.weapons) {
+        for (var type in ALL_ITEMS.weapons) {
+            ALL_ITEMS.weapons[type].forEach(function(w) {
+                if (w.name === name) {
+                    item.type = type;
+                    item.level = w.level;
+                    if (w.baseDamage) { item.baseDamage = w.baseDamage; item.finalDamage = Math.round(w.baseDamage * q.multiplier); }
+                    if (w.defense) { item.defense = w.defense; item.finalDefense = Math.round(w.defense * q.multiplier); }
+                    found = true;
+                }
+            });
         }
     }
+    
+    // Поиск в ALL_ITEMS.leather
+    if (!found && ALL_ITEMS && ALL_ITEMS.leather) {
+        for (var type in ALL_ITEMS.leather) {
+            ALL_ITEMS.leather[type].forEach(function(w) {
+                if (w.name === name) {
+                    item.type = type;
+                    item.armorClass = 'leather';
+                    item.level = w.level;
+                    if (w.baseDefense) { 
+                        var def = Math.floor(w.baseDefense / 2);
+                        item.baseDefense = w.baseDefense;
+                        item.finalDefense = Math.round(def * q.multiplier);
+                        item.agilityBonus = item.finalDefense;
+                    }
+                    found = true;
+                }
+            });
+        }
+    }
+    
+    // Поиск в ALL_ITEMS.plate
+    if (!found && ALL_ITEMS && ALL_ITEMS.plate) {
+        for (var type in ALL_ITEMS.plate) {
+            ALL_ITEMS.plate[type].forEach(function(w) {
+                if (w.name === name) {
+                    item.type = type;
+                    item.armorClass = 'plate';
+                    item.level = w.level;
+                    if (w.baseDefense) { 
+                        item.baseDefense = w.baseDefense;
+                        item.finalDefense = Math.round(w.baseDefense * q.multiplier);
+                    }
+                    found = true;
+                }
+            });
+        }
+    }
+    
+    // Если не нашли — это ресурс
     if (!found) {
         item.type = 'resource';
         if (name === 'Руда железная') item.resourceType = 'iron';
@@ -267,6 +336,7 @@ function buyFromShop(shopType, itemKey, price) {
         else if (name === 'Дерево') item.resourceType = 'wood';
         else if (name === 'Руда 14 огней') item.resourceType = 'valyrian_ore';
         else if (name === 'Валирийская сталь') item.resourceType = 'valyrian_steel';
+        else if (name === 'Шкура') item.resourceType = 'leather';
     }
     
     addToInventory(g, item);
@@ -300,7 +370,7 @@ function sellToShop(shopType, index) {
 }
 
 // ============================================================
-// 2. КРАФТ (КУЗНИЦА)
+// 2. КРАФТ
 // ============================================================
 
 function openCraftMenu() {
@@ -342,7 +412,6 @@ function craftSteel() {
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
-    // Снимаем ресурсы
     var removedIron = 0, removedCoal = 0;
     for (var i = g.inventory.length - 1; i >= 0; i--) {
         if (g.inventory[i].resourceType === 'iron' && removedIron < 2) {
@@ -391,7 +460,6 @@ function craftSteel() {
         count: 1
     });
     
-    // Опыт кузнеца
     g.professionXp['Кузнец'] = (g.professionXp['Кузнец'] || 0) + Math.round(3);
     while (g.professionXp['Кузнец'] >= g.professions['Кузнец'] * 10) {
         g.professionXp['Кузнец'] -= g.professions['Кузнец'] * 10;
@@ -405,7 +473,7 @@ function craftSteel() {
 }
 
 // ============================================================
-// 3. ТАВЕРНА (ТОРГОВЛЯ ЕДОЙ)
+// 3. ТАВЕРНА
 // ============================================================
 
 function openTavernTrade() {
@@ -420,32 +488,71 @@ function openTavernTrade() {
     html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '</div>';
     
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
-    var foodItems = [
-        { id: 'bread', name: '🍞 Хлеб', price: 5, food: 20 },
-        { id: 'meat', name: '🥩 Мясо', price: 10, food: 30 },
-        { id: 'water', name: '💧 Вода', price: 2, thirst: 15 },
-        { id: 'ale', name: '🍺 Эль', price: 5, hp: 5, thirst: 10 },
-        { id: 'wine', name: '🍷 Вино', price: 8, hp: 8, thirst: 15 }
-    ];
-    foodItems.forEach(function(item) {
-        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + item.name + '</span>';
-        html += '<span class="value">' + formatCurrency(item.price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.id + '\',' + item.price + ',' + (item.food || 0) + ',' + (item.thirst || 0) + ',' + (item.hp || 0) + ')">Купить</button></span>';
-        html += '</div>';
-    });
+    // ЕДА
+    html += '<div class="modal-section"><h4>🍽️ ЕДА</h4>';
+    if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.food) {
+        CONSUMABLES.food.forEach(function(item) {
+            var price = item.price || 5;
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">' + item.name + '</span>';
+            html += '<span class="value">' + formatCurrency(price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + price + ',\'food\')">Купить</button></span>';
+            html += '</div>';
+        });
+    }
     html += '</div>';
     
+    // НАПИТКИ
+    html += '<div class="modal-section"><h4>🍷 НАПИТКИ</h4>';
+    if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.drinks) {
+        CONSUMABLES.drinks.forEach(function(item) {
+            var price = item.price || 5;
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">' + item.name + '</span>';
+            html += '<span class="value">' + formatCurrency(price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + price + ',\'drink\')">Купить</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    
+    // ЗЕЛЬЯ
+    html += '<div class="modal-section"><h4>🧪 ЗЕЛЬЯ</h4>';
+    if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.potions) {
+        CONSUMABLES.potions.forEach(function(item) {
+            var price = item.price || 30;
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">' + item.name + '</span>';
+            html += '<span class="value">' + formatCurrency(price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + price + ',\'potion\')">Купить</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    
+    // КНИГИ
+    html += '<div class="modal-section"><h4>📚 КНИГИ</h4>';
+    if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.books) {
+        CONSUMABLES.books.forEach(function(item) {
+            var price = item.price || 100;
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">' + item.name + '</span>';
+            html += '<span class="value">' + formatCurrency(price) + ' <button class="btn btn-small" onclick="buyTavernItem(\'' + item.name + '\',' + price + ',\'book\')">Купить</button></span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+    
+    // ПРОДАЖА
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     var sellItems = [];
     g.inventory.forEach(function(item, index) {
-        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst || item.effect.hp))) {
+        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst || item.effect.hp)) || item.isBook) {
             var price = 0;
             if (item.name.includes('Хлеб')) price = 3;
             else if (item.name.includes('Мясо')) price = 5;
+            else if (item.name.includes('Рыба')) price = 4;
             else if (item.name.includes('Вода')) price = 1;
             else if (item.name.includes('Эль')) price = 3;
             else if (item.name.includes('Вино')) price = 4;
+            else if (item.isBook) price = Math.round(item.xp * 2);
             else if (item.effect) {
                 if (item.effect.food) price = Math.floor(item.effect.food / 2);
                 else if (item.effect.thirst) price = Math.floor(item.effect.thirst / 2);
@@ -459,7 +566,7 @@ function openTavernTrade() {
         }
     });
     if (sellItems.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет еды для продажи.</p>';
+        html += '<p style="color:#6a5a48;">Нет предметов для продажи.</p>';
     } else {
         sellItems.forEach(function(item) {
             html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
@@ -475,7 +582,7 @@ function openTavernTrade() {
     modal.classList.remove('hide');
 }
 
-function buyTavernItem(itemId, price, food, thirst, hp) {
+function buyTavernItem(itemName, price, category) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
@@ -485,18 +592,45 @@ function buyTavernItem(itemId, price, food, thirst, hp) {
         return;
     }
     
-    var itemNames = { bread: 'Хлеб', meat: 'Мясо', water: 'Вода', ale: 'Эль', wine: 'Вино' };
-    var item = {
-        name: itemNames[itemId] || itemId,
-        quality: 'Обычное',
-        type: 'food',
-        effect: { food: food || 0, thirst: thirst || 0, hp: hp || 0 },
-        count: 1
-    };
+    var item = { name: itemName, quality: 'Обычное', count: 1 };
+    
+    // Определяем тип предмета
+    if (category === 'food') {
+        item.type = 'food';
+        var foodEffects = { '🍞 Хлеб': 20, '🥩 Мясо': 30, '🐟 Рыба': 25, '🧀 Сыр': 22, '🍎 Яблоко': 15 };
+        item.effect = { food: foodEffects[itemName] || 20 };
+    } else if (category === 'drink') {
+        item.type = 'food';
+        var drinkEffects = {
+            '💧 Вода': { thirst: 15 },
+            '🍺 Эль': { hp: 5, thirst: 10 },
+            '🍷 Вино': { hp: 8, thirst: 15 },
+            '🥛 Молоко': { food: 10, thirst: 10 }
+        };
+        item.effect = drinkEffects[itemName] || { thirst: 10 };
+    } else if (category === 'potion') {
+        item.type = 'food';
+        var potionEffects = {
+            '🧪 Малое зелье здоровья': { hp: 20 },
+            '🧪 Среднее зелье здоровья': { hp: 50 },
+            '🧪 Большое зелье здоровья': { hp: 100 },
+            '🧪 Зелье восстановления': { hp: 50, fatigue: 30 },
+            '🧪 Зелье выносливости': { hp: 10, fatigue: 20 }
+        };
+        item.effect = potionEffects[itemName] || { hp: 20 };
+    } else if (category === 'book') {
+        item.isBook = true;
+        item.type = 'book';
+        var bookData = CONSUMABLES.books.find(function(b) { return b.name === itemName; });
+        if (bookData) {
+            item.level = bookData.level;
+            item.xp = bookData.xp;
+        }
+    }
     
     addToInventory(g, item);
     saveData();
-    setMessage('✅ Вы купили ' + item.name);
+    setMessage('✅ Вы купили ' + itemName);
     openTavernTrade();
 }
 
@@ -524,7 +658,7 @@ function sellTavernItem(index, price) {
 }
 
 // ============================================================
-// 4. АУКЦИОН (ГИЛЬДИЯ ТОРГОВЦЕВ)
+// 4. АУКЦИОН
 // ============================================================
 
 function openGuild() {
@@ -648,7 +782,6 @@ function sellItemToMarket(itemIndex) {
         return;
     }
     
-    // Сохраняем предмет
     var itemCopy = JSON.parse(JSON.stringify(item));
     g.inventory.splice(itemIndex, 1);
     marketListings.push({
