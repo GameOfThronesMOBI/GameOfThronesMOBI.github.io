@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/07-locations.js — ТОРГОВЛЯ С РАЗДЕЛАМИ И КАЧЕСТВАМИ
+// js/game/07-locations.js — ТОРГОВЛЯ, КРАФТ, МАГАЗИНЫ, АУКЦИОН
 // ============================================================
 
 // ============================================================
@@ -20,14 +20,14 @@ function openShop(shopType) {
     html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '</div>';
     
-    // КАТЕГОРИИ
+    // РАЗДЕЛЫ
     html += '<div class="modal-section"><h4>📂 РАЗДЕЛЫ</h4>';
     html += '<div class="tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
     categories.forEach(function(cat) {
         html += '<button class="tab-btn" onclick="openCategory(\'' + shopType + '\',\'' + cat.id + '\')">' + cat.label + '</button>';
     });
     html += '</div>';
-    html += '<div id="shop-category-content"><p style="color:#6a5a48;">👆 Выберите раздел</p></div>';
+    html += '<div id="shop-category-content"></div>';
     html += '</div>';
     
     // ПРОДАЖА
@@ -48,6 +48,11 @@ function openShop(shopType) {
     html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
+    
+    // АВТОМАТИЧЕСКИ ОТКРЫВАЕМ ПЕРВЫЙ РАЗДЕЛ
+    if (categories.length > 0) {
+        openCategory(shopType, categories[0].id);
+    }
 }
 
 function getShopCategories(shopType) {
@@ -114,8 +119,6 @@ function openCategory(shopType, categoryId) {
     
     var items = getCategoryItems(shopType, categoryId);
     
-    var html = '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'' + shopType + '\')">⬅️ Назад к разделам</button>';
-    
     var categoryNames = {
         'sword': '🗡️ Мечи', 'spear': '🔱 Копья', 'axe': '🪓 Топоры',
         'mace': '🔨 Булавы', 'dagger': '🔪 Кинжалы', 'shield': '🛡️ Щиты',
@@ -130,37 +133,45 @@ function openCategory(shopType, categoryId) {
         'valyrian_steel': '🌟 Валирийская сталь'
     };
     
-    html += '<h4>' + (categoryNames[categoryId] || categoryId) + '</h4>';
+    var html = '<h4>' + (categoryNames[categoryId] || categoryId) + '</h4>';
     
     if (items.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет товаров в этом разделе.</p>';
+        html += '<p style="color:#6a5a48;">Нет предметов в этом разделе.</p>';
     } else {
-        html += '<div style="margin-top:10px;">';
+        // Группируем по имени
+        var grouped = {};
         items.forEach(function(item) {
-            var quality = item.quality || 'Обычное';
-            var q = QUALITIES[quality] || QUALITIES['Обычное'];
-            var stock = getTraderStock(shopType, item.key) || 99;
-            var canBuy = stock > 0;
-            var price = item.price;
-            
+            var key = item.name;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    name: item.name,
+                    level: item.level,
+                    stats: item.stats,
+                    qualities: []
+                };
+            }
+            grouped[key].qualities.push({
+                quality: item.quality,
+                price: item.price,
+                key: item.key,
+                stock: item.stock || 99
+            });
+        });
+        
+        html += '<div style="margin-top:10px;">';
+        for (var name in grouped) {
+            var data = grouped[name];
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<div style="flex:1;">';
-            html += '<span style="color:' + q.color + ';">' + q.emoji + ' ' + quality + '</span>';
-            html += '<br><span style="font-size:12px;color:#b8a890;">' + item.name;
-            if (item.stats) html += ' | ' + item.stats;
-            html += '</span>';
+            html += '<strong>' + data.name + '</strong>';
+            html += ' <span style="color:#6a5a48;font-size:11px;">(ур.' + data.level + ')</span>';
+            if (data.stats) html += '<br><span style="font-size:11px;color:#b8a890;">' + data.stats + '</span>';
             html += '</div>';
             html += '<div style="text-align:right;">';
-            html += '<span style="color:#6a5a48;font-size:11px;">📦 ' + stock + ' шт.</span><br>';
-            html += '<span style="color:#c9b694;">' + formatCurrency(price) + '</span>';
-            if (canBuy) {
-                html += ' <button class="btn btn-small" onclick="buyFromShop(\'' + shopType + '\',\'' + item.key + '\',' + price + ')">✅ Купить</button>';
-            } else {
-                html += ' <button class="btn btn-small" style="opacity:0.4;cursor:not-allowed;" disabled>❌ Нет</button>';
-            }
+            html += '<button class="btn btn-small" onclick="openQualityModal(\'' + shopType + '\',\'' + name + '\',' + data.level + ',\'' + (data.stats || '') + '\')">🔍 Выбрать</button>';
             html += '</div>';
             html += '</div>';
-        });
+        }
         html += '</div>';
     }
     
@@ -173,18 +184,11 @@ function getCategoryItems(shopType, categoryId) {
     if (!user) return items;
     var g = user.game;
     
-    var qualities = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
-    
     // ===== ОРУЖЕЙНАЯ ЛАВКА =====
     if (shopType === 'Оружейная лавка') {
         if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
             ALL_ITEMS.weapons[categoryId].forEach(function(w) {
-                var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
-                if (w.level >= 40) itemQualities.push('Мастерское');
-                if (w.level >= 60) itemQualities.push('Легендарное');
-                if (w.level >= 80) itemQualities.push('Мифическое');
-                if (w.level <= 1) itemQualities.unshift('Рваное');
-                
+                var itemQualities = getQualitiesForLevel(w.level);
                 itemQualities.forEach(function(quality) {
                     var q = QUALITIES[quality] || QUALITIES['Обычное'];
                     var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
@@ -199,7 +203,8 @@ function getCategoryItems(shopType, categoryId) {
                         price: price,
                         key: key,
                         stats: stats,
-                        level: w.level
+                        level: w.level,
+                        stock: 99
                     });
                 });
             });
@@ -221,18 +226,14 @@ function getCategoryItems(shopType, categoryId) {
                     price: price,
                     key: key,
                     stats: '📦 ресурс',
-                    level: 1
+                    level: 1,
+                    stock: 99
                 });
             });
         } else {
             if (ALL_ITEMS && ALL_ITEMS.leather && ALL_ITEMS.leather[categoryId]) {
                 ALL_ITEMS.leather[categoryId].forEach(function(w) {
-                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
-                    if (w.level >= 40) itemQualities.push('Мастерское');
-                    if (w.level >= 60) itemQualities.push('Легендарное');
-                    if (w.level >= 80) itemQualities.push('Мифическое');
-                    if (w.level <= 1) itemQualities.unshift('Рваное');
-                    
+                    var itemQualities = getQualitiesForLevel(w.level);
                     itemQualities.forEach(function(quality) {
                         var q = QUALITIES[quality] || QUALITIES['Обычное'];
                         var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
@@ -247,7 +248,8 @@ function getCategoryItems(shopType, categoryId) {
                             price: price,
                             key: key,
                             stats: stats,
-                            level: w.level
+                            level: w.level,
+                            stock: 99
                         });
                     });
                 });
@@ -270,17 +272,14 @@ function getCategoryItems(shopType, categoryId) {
                     price: price,
                     key: key,
                     stats: '📦 ресурс',
-                    level: 1
+                    level: 1,
+                    stock: 99
                 });
             });
         } else {
             if (ALL_ITEMS && ALL_ITEMS.plate && ALL_ITEMS.plate[categoryId]) {
                 ALL_ITEMS.plate[categoryId].forEach(function(w) {
-                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
-                    if (w.level >= 40) itemQualities.push('Мастерское');
-                    if (w.level >= 60) itemQualities.push('Легендарное');
-                    if (w.level >= 80) itemQualities.push('Мифическое');
-                    
+                    var itemQualities = getQualitiesForLevel(w.level);
                     itemQualities.forEach(function(quality) {
                         var q = QUALITIES[quality] || QUALITIES['Обычное'];
                         var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
@@ -295,7 +294,8 @@ function getCategoryItems(shopType, categoryId) {
                             price: price,
                             key: key,
                             stats: stats,
-                            level: w.level
+                            level: w.level,
+                            stock: 99
                         });
                     });
                 });
@@ -318,18 +318,14 @@ function getCategoryItems(shopType, categoryId) {
                     price: price,
                     key: key,
                     stats: '📦 ресурс',
-                    level: 1
+                    level: 1,
+                    stock: 99
                 });
             });
         } else {
             if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
                 ALL_ITEMS.weapons[categoryId].forEach(function(w) {
-                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
-                    if (w.level >= 40) itemQualities.push('Мастерское');
-                    if (w.level >= 60) itemQualities.push('Легендарное');
-                    if (w.level >= 80) itemQualities.push('Мифическое');
-                    if (w.level <= 1) itemQualities.unshift('Рваное');
-                    
+                    var itemQualities = getQualitiesForLevel(w.level);
                     itemQualities.forEach(function(quality) {
                         var q = QUALITIES[quality] || QUALITIES['Обычное'];
                         var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
@@ -343,7 +339,8 @@ function getCategoryItems(shopType, categoryId) {
                             price: price,
                             key: key,
                             stats: stats,
-                            level: w.level
+                            level: w.level,
+                            stock: 99
                         });
                     });
                 });
@@ -377,19 +374,199 @@ function getCategoryItems(shopType, categoryId) {
                     price: price,
                     key: key,
                     stats: '📦 ресурс',
-                    level: 1
+                    level: 1,
+                    stock: 99
                 });
             });
         }
     }
     
-    // Сортируем по качеству (от плохого к лучшему)
+    return items;
+}
+
+function getQualitiesForLevel(level) {
+    var qualities = ['Плохое','Обычное','Хорошее','Качественное'];
+    if (level >= 40) qualities.push('Мастерское');
+    if (level >= 60) qualities.push('Легендарное');
+    if (level >= 80) qualities.push('Мифическое');
+    if (level <= 1) qualities.unshift('Рваное');
+    return qualities;
+}
+
+// ============================================================
+// 4. ВЫБОР КАЧЕСТВА (МОДАЛЬНОЕ ОКНО)
+// ============================================================
+
+function openQualityModal(shopType, itemName, level, stats) {
+    var modal = document.getElementById('modal-quality');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-quality';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeQualityModal(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🔍 ВЫБОР КАЧЕСТВА</h3><button class="close-btn" onclick="closeQualityModal()">✕</button></div><div id="modal-quality-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-quality-content');
+    
+    // Получаем все качества для этого предмета
+    var allItems = getCategoryItems(shopType, '');
+    var qualities = [];
+    allItems.forEach(function(item) {
+        if (item.name === itemName) {
+            qualities.push({
+                quality: item.quality,
+                price: item.price,
+                key: item.key,
+                stock: item.stock || 99,
+                stats: item.stats
+            });
+        }
+    });
+    
+    // Сортируем качества по порядку
     var qualityOrder = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
-    items.sort(function(a, b) {
+    qualities.sort(function(a, b) {
         return qualityOrder.indexOf(a.quality) - qualityOrder.indexOf(b.quality);
     });
     
-    return items;
+    var html = '<div class="modal-section"><h4>🔍 ' + itemName + ' (ур.' + level + ')</h4>';
+    if (stats) html += '<p style="color:#6a5a48;font-size:12px;">' + stats + '</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Выберите качество:</p>';
+    html += '<div style="margin-top:10px;">';
+    
+    qualities.forEach(function(q) {
+        var quality = q.quality;
+        var qData = QUALITIES[quality] || QUALITIES['Обычное'];
+        var canBuy = q.stock > 0;
+        html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
+        html += '<div style="flex:1;">';
+        html += '<span style="color:' + qData.color + ';">' + qData.emoji + ' ' + quality + '</span>';
+        html += '<br><span style="font-size:11px;color:#6a5a48;">📦 ' + q.stock + ' шт.</span>';
+        html += '</div>';
+        html += '<div style="text-align:right;">';
+        html += '<span style="color:#c9b694;">' + formatCurrency(q.price) + '</span>';
+        if (canBuy) {
+            html += ' <button class="btn btn-small" onclick="buyFromShop(\'' + shopType + '\',\'' + q.key + '\',' + q.price + '); closeQualityModal();">✅ Купить</button>';
+        } else {
+            html += ' <button class="btn btn-small" style="opacity:0.4;cursor:not-allowed;" disabled>❌ Нет</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeQualityModal()" style="margin-top:10px;">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeQualityModal() {
+    var modal = document.getElementById('modal-quality');
+    if (modal) modal.classList.add('hide');
+}
+
+// ============================================================
+// 5. ПОКУПКА/ПРОДАЖА
+// ============================================================
+
+function buyFromShop(shopType, itemKey, price) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
+        return;
+    }
+    
+    var parts = itemKey.split('|');
+    var name = parts[0];
+    var quality = parts[1] || 'Обычное';
+    var q = QUALITIES[quality] || QUALITIES['Обычное'];
+    
+    var item = { name: name, quality: quality, count: 1 };
+    var found = false;
+    
+    // Поиск в ALL_ITEMS.weapons
+    if (ALL_ITEMS && ALL_ITEMS.weapons) {
+        for (var type in ALL_ITEMS.weapons) {
+            if (ALL_ITEMS.weapons[type]) {
+                ALL_ITEMS.weapons[type].forEach(function(w) {
+                    if (w.name === name) {
+                        item.type = type;
+                        item.level = w.level;
+                        if (w.baseDamage) { item.baseDamage = w.baseDamage; item.finalDamage = Math.round(w.baseDamage * q.multiplier); }
+                        if (w.defense) { item.defense = w.defense; item.finalDefense = Math.round(w.defense * q.multiplier); }
+                        found = true;
+                    }
+                });
+            }
+        }
+    }
+    
+    // Поиск в ALL_ITEMS.leather
+    if (!found && ALL_ITEMS && ALL_ITEMS.leather) {
+        for (var type in ALL_ITEMS.leather) {
+            if (ALL_ITEMS.leather[type]) {
+                ALL_ITEMS.leather[type].forEach(function(w) {
+                    if (w.name === name) {
+                        item.type = type;
+                        item.armorClass = 'leather';
+                        item.level = w.level;
+                        if (w.baseDefense) { 
+                            var def = Math.floor(w.baseDefense / 2);
+                            item.baseDefense = w.baseDefense;
+                            item.finalDefense = Math.round(def * q.multiplier);
+                            item.agilityBonus = item.finalDefense;
+                        }
+                        found = true;
+                    }
+                });
+            }
+        }
+    }
+    
+    // Поиск в ALL_ITEMS.plate
+    if (!found && ALL_ITEMS && ALL_ITEMS.plate) {
+        for (var type in ALL_ITEMS.plate) {
+            if (ALL_ITEMS.plate[type]) {
+                ALL_ITEMS.plate[type].forEach(function(w) {
+                    if (w.name === name) {
+                        item.type = type;
+                        item.armorClass = 'plate';
+                        item.level = w.level;
+                        if (w.baseDefense) { 
+                            item.baseDefense = w.baseDefense;
+                            item.finalDefense = Math.round(w.baseDefense * q.multiplier);
+                        }
+                        found = true;
+                    }
+                });
+            }
+        }
+    }
+    
+    // Если не нашли — ресурс
+    if (!found) {
+        item.type = 'resource';
+        if (name === 'Руда железная') item.resourceType = 'iron';
+        else if (name === 'Уголь') item.resourceType = 'coal';
+        else if (name === 'Сталь') item.resourceType = 'steel';
+        else if (name === 'Кожа') item.resourceType = 'leather';
+        else if (name === 'Дерево') item.resourceType = 'wood';
+        else if (name === 'Руда 14 огней') item.resourceType = 'valyrian_ore';
+        else if (name === 'Валирийская сталь') item.resourceType = 'valyrian_steel';
+        else if (name === 'Шкура') item.resourceType = 'leather';
+    }
+    
+    addToInventory(g, item);
+    saveData();
+    setMessage('✅ Вы купили ' + name + ' (' + quality + ')');
+    openShop(shopType);
 }
 
 function getSellableItems(g, shopType) {
@@ -406,7 +583,6 @@ function getSellableItems(g, shopType) {
     
     g.inventory.forEach(function(item, index) {
         var isAllowed = false;
-        
         if (item.type === 'resource') {
             if (allowedTypes.indexOf(item.resourceType) !== -1) isAllowed = true;
         }
@@ -457,98 +633,6 @@ function getItemPrice(item) {
     return Math.max(1, Math.round(basePrice * q.multiplier * 0.5));
 }
 
-function buyFromShop(shopType, itemKey, price) {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
-        return;
-    }
-    
-    var parts = itemKey.split('|');
-    var name = parts[0];
-    var quality = parts[1] || 'Обычное';
-    var q = QUALITIES[quality] || QUALITIES['Обычное'];
-    
-    var item = { name: name, quality: quality, count: 1 };
-    var found = false;
-    
-    if (ALL_ITEMS && ALL_ITEMS.weapons) {
-        for (var type in ALL_ITEMS.weapons) {
-            if (ALL_ITEMS.weapons[type]) {
-                ALL_ITEMS.weapons[type].forEach(function(w) {
-                    if (w.name === name) {
-                        item.type = type;
-                        item.level = w.level;
-                        if (w.baseDamage) { item.baseDamage = w.baseDamage; item.finalDamage = Math.round(w.baseDamage * q.multiplier); }
-                        if (w.defense) { item.defense = w.defense; item.finalDefense = Math.round(w.defense * q.multiplier); }
-                        found = true;
-                    }
-                });
-            }
-        }
-    }
-    
-    if (!found && ALL_ITEMS && ALL_ITEMS.leather) {
-        for (var type in ALL_ITEMS.leather) {
-            if (ALL_ITEMS.leather[type]) {
-                ALL_ITEMS.leather[type].forEach(function(w) {
-                    if (w.name === name) {
-                        item.type = type;
-                        item.armorClass = 'leather';
-                        item.level = w.level;
-                        if (w.baseDefense) { 
-                            var def = Math.floor(w.baseDefense / 2);
-                            item.baseDefense = w.baseDefense;
-                            item.finalDefense = Math.round(def * q.multiplier);
-                            item.agilityBonus = item.finalDefense;
-                        }
-                        found = true;
-                    }
-                });
-            }
-        }
-    }
-    
-    if (!found && ALL_ITEMS && ALL_ITEMS.plate) {
-        for (var type in ALL_ITEMS.plate) {
-            if (ALL_ITEMS.plate[type]) {
-                ALL_ITEMS.plate[type].forEach(function(w) {
-                    if (w.name === name) {
-                        item.type = type;
-                        item.armorClass = 'plate';
-                        item.level = w.level;
-                        if (w.baseDefense) { 
-                            item.baseDefense = w.baseDefense;
-                            item.finalDefense = Math.round(w.baseDefense * q.multiplier);
-                        }
-                        found = true;
-                    }
-                });
-            }
-        }
-    }
-    
-    if (!found) {
-        item.type = 'resource';
-        if (name === 'Руда железная') item.resourceType = 'iron';
-        else if (name === 'Уголь') item.resourceType = 'coal';
-        else if (name === 'Сталь') item.resourceType = 'steel';
-        else if (name === 'Кожа') item.resourceType = 'leather';
-        else if (name === 'Дерево') item.resourceType = 'wood';
-        else if (name === 'Руда 14 огней') item.resourceType = 'valyrian_ore';
-        else if (name === 'Валирийская сталь') item.resourceType = 'valyrian_steel';
-        else if (name === 'Шкура') item.resourceType = 'leather';
-    }
-    
-    addToInventory(g, item);
-    saveData();
-    setMessage('✅ Вы купили ' + name + ' (' + quality + ')');
-    openShop(shopType);
-}
-
 function sellToShop(shopType, index) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -574,7 +658,7 @@ function sellToShop(shopType, index) {
 }
 
 // ============================================================
-// 2. КРАФТ
+// 6. КРАФТ
 // ============================================================
 
 function openCraftMenu() {
@@ -677,7 +761,7 @@ function craftSteel() {
 }
 
 // ============================================================
-// 3. ТАВЕРНА
+// 7. ТАВЕРНА
 // ============================================================
 
 function openTavernTrade() {
@@ -729,26 +813,14 @@ function openTavernTrade() {
         });
     }
     
-    if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.books) {
-        CONSUMABLES.books.forEach(function(item) {
-            hasItems = true;
-            var price = item.price || 100;
-            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label">' + item.name + '</span>';
-            html += '<span class="value">' + formatCurrency(price) + ' <button class="btn btn-small" onclick="buyFromConsumable(\'' + item.name + '\',' + price + ',\'book\')">Купить</button></span>';
-            html += '</div>';
-        });
-    }
-    
     if (!hasItems) html += '<p style="color:#6a5a48;">Нет товаров.</p>';
     html += '</div>';
     
     // ПРОДАЖА
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     var sellItems = [];
-    
     g.inventory.forEach(function(item, index) {
-        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst || item.effect.hp)) || item.isBook) {
+        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst || item.effect.hp))) {
             var price = getItemPrice(item);
             if (price > 0) {
                 var countDisplay = '';
@@ -816,17 +888,6 @@ function buyFromConsumable(itemName, price, category) {
             });
         }
         if (!item.effect) item.effect = { hp: 20 };
-    } else if (category === 'book') {
-        item.isBook = true;
-        item.type = 'book';
-        if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.books) {
-            CONSUMABLES.books.forEach(function(b) {
-                if (b.name === itemName) {
-                    item.level = b.level;
-                    item.xp = b.xp;
-                }
-            });
-        }
     }
     
     addToInventory(g, item);
@@ -859,7 +920,7 @@ function sellTavernItem(index, price) {
 }
 
 // ============================================================
-// 4. АУКЦИОН
+// 8. АУКЦИОН
 // ============================================================
 
 function openGuild() {
@@ -1056,7 +1117,7 @@ function removeListing(index) {
 }
 
 // ============================================================
-// 5. ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН
+// 9. ЗАКРЫТИЕ
 // ============================================================
 
 function closeTrade() {
@@ -1064,8 +1125,54 @@ function closeTrade() {
     if (modal) modal.classList.add('hide');
 }
 
+function parseCurrencyInput(input) {
+    input = input.trim().toUpperCase();
+    if (!input) return null;
+    if (/^\d+$/.test(input)) return parseInt(input);
+    
+    var total = 0;
+    var patterns = [
+        { regex: /(\d+)\s*ЗОЛ(ОТО)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*СО(РЕБРО)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*МП(ЕДЬ)?/i, multiplier: 1 },
+        { regex: /(\d+)\s*G(OLD)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*S(ILVER)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*C(OPPER)?/i, multiplier: 1 }
+    ];
+    
+    for (var pi = 0; pi < patterns.length; pi++) {
+        var pattern = patterns[pi];
+        var regex = new RegExp(pattern.regex.source, 'gi');
+        var match;
+        while ((match = regex.exec(input)) !== null) {
+            var value = parseInt(match[1]);
+            if (!isNaN(value)) total += value * pattern.multiplier;
+        }
+    }
+    
+    if (total > 0) return total;
+    
+    var parts = input.split(' ');
+    for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+        var num = parseInt(part);
+        if (isNaN(num)) continue;
+        var next = i + 1 < parts.length ? parts[i + 1] : '';
+        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') {
+            total += num * 210 * 56; i++;
+        } else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') {
+            total += num * 56; i++;
+        } else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') {
+            total += num; i++;
+        } else {
+            total += num;
+        }
+    }
+    return total;
+}
+
 // ============================================================
-// 6. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
+// 10. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
 window.openShop = openShop;
@@ -1075,6 +1182,8 @@ window.openTavernTrade = openTavernTrade;
 window.closeTrade = closeTrade;
 window.closeGuild = closeGuild;
 window.openCategory = openCategory;
+window.openQualityModal = openQualityModal;
+window.closeQualityModal = closeQualityModal;
 window.buyFromShop = buyFromShop;
 window.sellToShop = sellToShop;
 window.buyFromConsumable = buyFromConsumable;
