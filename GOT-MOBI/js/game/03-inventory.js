@@ -2,10 +2,6 @@
 // js/game/03-inventory.js — ИНВЕНТАРЬ И ЭКИПИРОВКА
 // ============================================================
 
-// ============================================================
-// 1. ОТКРЫТИЕ ИНВЕНТАРЯ
-// ============================================================
-
 function openInventory() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -35,11 +31,9 @@ function openInventory() {
     html += '<button class="btn btn-small" onclick="mergeStacks()" style="margin-top:4px;">🔗 Объединить все стеки</button>';
     html += '</div>';
     
-    // ПРЕДМЕТЫ В ИНВЕНТАРЕ
     if (g.inventory.length === 0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">🎒 Пусто</p>';
     } else {
-        // Группируем для читаемости
         var grouped = {};
         g.inventory.forEach(function(item, i) {
             var key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
@@ -63,7 +57,6 @@ function openInventory() {
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
             html += '<span class="value" style="font-size:11px;">';
             
-            // Статистика
             var stats = '';
             if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
             else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
@@ -75,7 +68,6 @@ function openInventory() {
             }
             if (stats) html += stats + ' ';
             
-            // Кнопки
             if (isStack && item.count > 1) {
                 html += '<button class="btn btn-small" onclick="splitStack(' + index + ')">🔪 Разделить</button>';
                 html += '<button class="btn btn-small" onclick="mergeSpecificStack(' + index + ')">🔗 Объединить</button>';
@@ -115,7 +107,6 @@ function openInventory() {
         }
     }
     
-    // ===== НАДЕТО =====
     html += '<div class="modal-section"><h4>🛡️ НАДЕТО</h4>';
     var slots = [
         { key: 'rightHand', label: 'Правая рука' },
@@ -145,12 +136,9 @@ function openInventory() {
 }
 
 function closeInventory() {
-    document.getElementById('modal-inventory').classList.add('hide');
+    var modal = document.getElementById('modal-inventory');
+    if (modal) modal.classList.add('hide');
 }
-
-// ============================================================
-// 2. ПРОВЕРКА — МОЖНО ЛИ НАДЕТЬ
-// ============================================================
 
 function isEquippable(item) {
     if (!item) return false;
@@ -174,56 +162,23 @@ function getSlotForItem(item) {
     return slotMap[item.type] || null;
 }
 
-// ============================================================
-// 3. НАДЕТЬ ПРЕДМЕТ
-// ============================================================
-
 function equipItem(index) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (index >= g.inventory.length) {
-        setMessage('❌ Предмет не найден.');
-        return;
-    }
-    
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     var item = g.inventory[index];
-    
-    if (!isEquippable(item)) {
-        setMessage('❌ Этот предмет нельзя надеть.');
-        return;
-    }
-    
-    if (item.level && g.level < item.level) {
-        setMessage('❌ Требуется уровень ' + item.level + ' для надевания.');
-        return;
-    }
-    
+    if (!isEquippable(item)) { setMessage('❌ Этот предмет нельзя надеть.'); return; }
+    if (item.level && g.level < item.level) { setMessage('❌ Требуется уровень ' + item.level + ' для надевания.'); return; }
     var slot = getSlotForItem(item);
-    if (!slot) {
-        setMessage('❌ Неизвестный слот для этого предмета.');
-        return;
-    }
-    
-    // Снимаем то, что уже надето в этом слоте
-    if (g.equipment[slot]) {
-        addToInventory(g, g.equipment[slot]);
-    }
-    
-    // Надеваем новый предмет
+    if (!slot) { setMessage('❌ Неизвестный слот для этого предмета.'); return; }
+    if (g.equipment[slot]) { addToInventory(g, g.equipment[slot]); }
     g.equipment[slot] = item;
     g.inventory.splice(index, 1);
-    
-    // Если это лошадь — обновляем максимальное HP
     if (slot === 'horse') {
         var horse = HORSE_TYPES[item.horseType];
-        if (horse) {
-            g.equipment.horse.maxHp = horse.hp;
-            g.equipment.horse.hp = horse.hp;
-        }
+        if (horse) { g.equipment.horse.maxHp = horse.hp; g.equipment.horse.hp = horse.hp; }
     }
-    
     setMessage('✅ Вы надели ' + item.name);
     addLog('⚔️ ' + currentUser + ' надел ' + item.name);
     updateMenu();
@@ -231,40 +186,20 @@ function equipItem(index) {
     openInventory();
 }
 
-// ============================================================
-// 4. СНЯТЬ ПРЕДМЕТ
-// ============================================================
-
 function unequipItem(slot) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (!g.equipment[slot]) {
-        setMessage('❌ Слот пуст.');
-        return;
-    }
-    
-    // Проверяем, есть ли место в инвентаре
+    if (!g.equipment[slot]) { setMessage('❌ Слот пуст.'); return; }
     var maxInventory = getMaxInventory(g);
     var totalItems = 0;
     g.inventory.forEach(function(item) {
-        if (isStackable(item) && item.count) {
-            totalItems += item.count;
-        } else {
-            totalItems += 1;
-        }
+        if (isStackable(item) && item.count) { totalItems += item.count; } else { totalItems += 1; }
     });
-    
-    if (totalItems >= maxInventory) {
-        setMessage('❌ Инвентарь переполнен!');
-        return;
-    }
-    
+    if (totalItems >= maxInventory) { setMessage('❌ Инвентарь переполнен!'); return; }
     var item = g.equipment[slot];
     addToInventory(g, item);
     g.equipment[slot] = null;
-    
     setMessage('✅ Вы сняли ' + item.name);
     addLog('⚔️ ' + currentUser + ' снял ' + item.name);
     updateMenu();
@@ -272,35 +207,23 @@ function unequipItem(slot) {
     openInventory();
 }
 
-// ============================================================
-// 5. ИСПОЛЬЗОВАТЬ ПРЕДМЕТ
-// ============================================================
-
 function useItem(index) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (index >= g.inventory.length) {
-        setMessage('❌ Предмет не найден.');
-        return;
-    }
-    
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     var item = g.inventory[index];
     
-    // Еда/Напитки
     if (item.effect) {
         if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
         if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
         if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
-        
         if (item.count && item.count > 1) {
             item.count--;
             if (item.count === 0) g.inventory.splice(index, 1);
         } else {
             g.inventory.splice(index, 1);
         }
-        
         setMessage('✅ Использовано: ' + item.name);
         updateMenu();
         saveData();
@@ -308,7 +231,6 @@ function useItem(index) {
         return;
     }
     
-    // Еда (совместимость со старыми предметами)
     if (item.name && (item.name.includes('Хлеб') || item.name.includes('Мясо') || item.name.includes('Рыба'))) {
         g.food = Math.min(100, g.food + 20);
         if (item.count && item.count > 1) {
@@ -365,10 +287,6 @@ function useItem(index) {
     
     setMessage('❌ Этот предмет нельзя использовать.');
 }
-
-// ============================================================
-// 6. РЕГИСТРАЦИЯ
-// ============================================================
 
 window.openInventory = openInventory;
 window.closeInventory = closeInventory;
