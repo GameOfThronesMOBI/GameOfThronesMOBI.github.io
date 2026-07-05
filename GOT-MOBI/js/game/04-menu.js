@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/04-menu.js — МЕНЮ, ДОМА, ЛОГ, ОНЛАЙН
+// js/game/04-menu.js — МЕНЮ, ДОМА
 // ============================================================
 
 // ============================================================
@@ -12,8 +12,6 @@ function openMainMenu() {
     
     var html = '<div class="modal-section">';
     html += '<button class="btn" style="margin:4px 0;" onclick="openHouses()">🏘️ Дома Вестероса</button>';
-    html += '<button class="btn" style="margin:4px 0;" onclick="openLog()">📜 Лог событий</button>';
-    html += '<button class="btn" style="margin:4px 0;" onclick="showOnlineList()">👥 Игроки онлайн</button>';
     html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
     html += '</div>';
     
@@ -27,62 +25,7 @@ function closeMenu() {
 }
 
 // ============================================================
-// 2. ЛОГ СОБЫТИЙ
-// ============================================================
-
-function openLog() {
-    var modal = document.getElementById('modal-log');
-    var content = document.getElementById('modal-log-content');
-    
-    var html = '<div class="modal-section"><h4>📜 ПОСЛЕДНИЕ СОБЫТИЯ</h4>';
-    if (gameLog.length === 0) {
-        html += '<p style="color:#6a5a48;">Пусто</p>';
-    } else {
-        for (var i = gameLog.length - 1; i >= Math.max(0, gameLog.length - 20); i--) {
-            html += '<p style="color:#b8a890;font-size:12px;padding:2px 0;">' + gameLog[i] + '</p>';
-        }
-    }
-    html += '</div><button class="btn" onclick="closeLog()">Закрыть</button>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeLog() {
-    var modal = document.getElementById('modal-log');
-    if (modal) modal.classList.add('hide');
-}
-
-// ============================================================
-// 3. ОНЛАЙН
-// ============================================================
-
-function showOnlineList() {
-    var modal = document.getElementById('modal-online');
-    var content = document.getElementById('modal-online-content');
-    
-    var html = '<div class="modal-section"><h4>👥 ИГРОКИ ОНЛАЙН</h4>';
-    var count = 0;
-    for (var name in users) {
-        if (users[name].game.online) {
-            count++;
-            html += '<div class="row"><span class="label">' + name + '</span><span class="value">ур. ' + users[name].game.level + ' | ' + users[name].game.location.place + '</span></div>';
-        }
-    }
-    if (count === 0) html += '<p style="color:#6a5a48;">Нет игроков онлайн</p>';
-    html += '</div><button class="btn" onclick="closeOnline()">Закрыть</button>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeOnline() {
-    var modal = document.getElementById('modal-online');
-    if (modal) modal.classList.add('hide');
-}
-
-// ============================================================
-// 4. ДОМА ВЕСТЕРОСА
+// 2. ДОМА ВЕСТЕРОСА
 // ============================================================
 
 function openHouses() {
@@ -96,6 +39,7 @@ function openHouses() {
     if (typeof HOUSES === 'undefined') {
         var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
         html += '<p style="color:#c96a5a;">❌ Данные о домах не загружены.</p>';
+        html += '<p style="color:#6a5a48;font-size:12px;">Убедитесь, что файл js/data/houses.js подключён.</p>';
         html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
         html += '</div>';
         content.innerHTML = html;
@@ -122,7 +66,7 @@ function openHouses() {
     }
     
     var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Великие Дома и их вассалы.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Великие Дома и их вассалы. Нажмите на дом для подробной информации.</p>';
     html += '</div>';
     
     for (var regionKey in regions) {
@@ -163,7 +107,7 @@ function closeHouses() {
 }
 
 // ============================================================
-// 5. ИНФОРМАЦИЯ О ДОМЕ
+// 3. ИНФОРМАЦИЯ О ДОМЕ
 // ============================================================
 
 function showHouseInfo(houseId) {
@@ -242,15 +186,11 @@ function showHouseInfo(houseId) {
 }
 
 // ============================================================
-// 6. РЕГИСТРАЦИЯ
+// 4. РЕГИСТРАЦИЯ
 // ============================================================
 
 window.openMainMenu = openMainMenu;
 window.closeMenu = closeMenu;
-window.openLog = openLog;
-window.closeLog = closeLog;
-window.showOnlineList = showOnlineList;
-window.closeOnline = closeOnline;
 window.openHouses = openHouses;
 window.closeHouses = closeHouses;
 window.showHouseInfo = showHouseInfo;
