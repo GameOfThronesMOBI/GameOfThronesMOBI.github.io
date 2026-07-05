@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА
+// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА (ИСПРАВЛЕННАЯ)
 // ============================================================
 
 // ============================================================
@@ -23,39 +23,29 @@ function openMap() {
     var modal = document.getElementById('modal-map');
     var content = document.getElementById('modal-map-content');
     
-    var cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель'];
+    var cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель','Дорога'];
     
-    var html = '<div class="modal-section"><h4>📍 ' + g.location.place + ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')</h4></div>';
+    var html = '<div class="modal-section"><h4>📍 ' + g.location.place + '</h4></div>';
     html += '<div class="modal-section">';
     
-    BUILDINGS.forEach(function(b) {
-        var bIsCity = cityBuildings.indexOf(b.id) !== -1;
-        if (g.outside && bIsCity) return;
-        if (!g.outside && !bIsCity) return;
-        if (b.id === 'Дорога' && !g.outside) return;
-        if (b.id === 'Дорога' && g.outside && g.location.place === 'Дорога') {
-            var isCurrent = b.id === g.location.place;
-            html += '<div class="row"><span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
-            if (!isCurrent) {
-                html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\')">🚶 Идти</button></span>';
-            } else {
-                html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-            }
-            html += '</div>';
-            return;
-        }
-        
+    for (var i = 0; i < BUILDINGS.length; i++) {
+        var b = BUILDINGS[i];
         var isCurrent = b.id === g.location.place;
-        html += '<div class="row"><span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
-        if (!isCurrent && b.id !== 'Дорога') {
+        var isCityBuilding = cityBuildings.indexOf(b.id) !== -1;
+        
+        // Показываем только доступные здания
+        if (g.outside && b.id !== 'Дорога' && b.id !== 'Ворота') continue;
+        if (!g.outside && b.id === 'Дорога') continue;
+        
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
             html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\')">🚶 Идти</button></span>';
-        } else if (b.id === 'Дорога' && !g.outside) {
-            // не показываем Дорогу внутри города
         } else {
             html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
         }
         html += '</div>';
-    });
+    }
     
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
     content.innerHTML = html;
@@ -67,75 +57,323 @@ function closeMap() {
 }
 
 // ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ ПО ГАВАНИ
+// 3. ПЕРЕМЕЩЕНИЕ ПО ГАВАНИ (ОБНОВЛЕНО)
 // ============================================================
 
 function goToBuilding(building) {
     var user = users[currentUser];
-    if (!user) return;
+    if (!user) {
+        setMessage('❌ Игрок не найден.');
+        return;
+    }
     var g = user.game;
     
-    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
-    if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
+    if (isBusy) {
+        setMessage('⏳ Вы заняты.');
+        return;
+    }
+    if (building === g.location.place) {
+        setMessage('📍 Вы уже здесь.');
+        return;
+    }
     
     // Проверка существования здания
     var exists = false;
     for (var i = 0; i < BUILDINGS.length; i++) {
         if (BUILDINGS[i].id === building) { exists = true; break; }
     }
-    if (!exists) { setMessage('❌ Здание не найдено.'); return; }
+    if (!exists) {
+        setMessage('❌ Здание не найдено.');
+        return;
+    }
+    
+    // МЕНЯЕМ ЛОКАЦИЮ
+    g.location.place = building;
+    g.location.location = 'Королевская Гавань';
     
     // Особые случаи
     if (building === 'Дорога') {
         g.outside = true;
-        g.location.place = 'Дорога';
         g.location.location = 'Дорога';
         setMessage('🛤️ Вы вышли на Королевский тракт.');
-        closeMap();
-        updateMenu();
-        updateStory();
-        updateActions();
-        saveData();
-        return;
+    } else if (building === 'Ворота') {
+        g.outside = false;
+        setMessage('🚪 Вы у Ворот.');
+    } else {
+        g.outside = false;
+        setMessage('✅ Вы прибыли в ' + building + '.');
     }
     
-    if (building === 'Ворота') {
-        if (g.outside) {
-            g.outside = false;
-            g.location.place = 'Ворота';
-            g.location.location = 'Королевская Гавань';
-            setMessage('🚪 Вы вошли в город через Ворота.');
-        } else {
-            g.location.place = 'Ворота';
-            g.location.location = 'Королевская Гавань';
-            setMessage('🚪 Вы у Ворот.');
-        }
-        closeMap();
-        updateMenu();
-        updateStory();
-        updateActions();
-        saveData();
-        return;
-    }
-    
-    // Обычное перемещение
-    g.location.place = building;
-    g.location.location = 'Королевская Гавань';
-    g.outside = false;
-    setMessage('✅ Вы прибыли в ' + building + '.');
+    // ЗАКРЫВАЕМ КАРТУ
     closeMap();
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
+    
+    // ОБНОВЛЯЕМ UI
+    if (typeof updateMenu === 'function') updateMenu();
+    if (typeof updateStory === 'function') updateStory();
+    if (typeof updateActions === 'function') updateActions();
+    
+    // СОХРАНЯЕМ
+    if (typeof saveData === 'function') saveData();
 }
 
 // ============================================================
-// 4. ОТКРЫТИЕ ЗДАНИЙ (обёртки для main.js)
+// 4. ОБНОВЛЕНИЕ STORY (НОВОЕ)
+// ============================================================
+
+function updateStory() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var place = g.location.place;
+    
+    var titleEl = document.getElementById('story-title');
+    var textEl = document.getElementById('story-text');
+    
+    if (titleEl) {
+        titleEl.textContent = '📍 ' + place + ' (ур.' + (LOCATION_LEVELS[place] || 1) + ')';
+    }
+    
+    var texts = {
+        'Таверна': '🍺 Добро пожаловать в таверну! Здесь можно поесть, поработать и отдохнуть.',
+        'Рынок': '🏪 Центральный рынок. Здесь можно торговать с другими игроками.',
+        'Кузница': '⚒️ Вы в кузнице. Здесь можно купить ресурсы и скрафтить предметы.',
+        'Оружейная лавка': '🗡️ Вы в оружейной лавке. Здесь можно купить и продать оружие.',
+        'Кожевник': '🪡 Вы у кожевника. Здесь можно купить и продать кожаную броню.',
+        'Бронник': '🛡️ Вы у бронника. Здесь можно купить и продать латную броню.',
+        'Плотник': '🪵 Вы у плотника. Здесь можно купить и продать луки и арбалеты.',
+        'Конюшня': '🐴 Королевская конюшня. Здесь можно купить или продать лошадь.',
+        'Гильдия торговцев': '🏛️ Вы в гильдии торговцев. Здесь можно торговать на аукционе.',
+        'Магистрат': '📜 Магистрат — центр управления городом. Недвижимость и лавки.',
+        'Ворота': '🚪 Вы у городских ворот.',
+        'Королевский квартал': '👑 Элитный район. Здесь живут самые богатые люди.',
+        'Торговый квартал': '🏙️ Центр торговли. Здесь селятся ремесленники и купцы.',
+        'Квартал бедноты': '🏚️ Окраина города. Жильё дёшево, но опасно.',
+        'Дом': '🏠 Ваш дом. Здесь можно отдохнуть и хранить вещи.',
+        'Великая септа': '⛪ Великая Септа Бейлора. Исцеление, молитва и удача.',
+        'Порт': '⛵ Порт Королевской Гавани.',
+        'Тюрьма': '⛓️ Вы в тюрьме.',
+        'Дорога': '🛤️ Королевский тракт. Отсюда можно отправиться в другие земли.',
+        'Библиотека мейстеров': '📚 Библиотека мейстеров. Книги для развития.',
+        'Гильдия наёмников': '🗡️ Гильдия наёмников. Ежедневные задания.',
+        'Бордель': '💃 Бордель Королевской Гавани. Отдых и развлечения.'
+    };
+    
+    if (textEl) {
+        textEl.textContent = texts[place] || 'Вы находитесь в ' + place + '.';
+    }
+    
+    // ОБНОВЛЯЕМ ДЕЙСТВИЯ
+    if (typeof updateActions === 'function') {
+        updateActions();
+    }
+}
+
+// ============================================================
+// 5. ОБНОВЛЕНИЕ ACTIONS (НОВОЕ)
+// ============================================================
+
+function updateActions() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var place = g.location.place;
+    var container = document.getElementById('actions-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    var actions = [];
+    
+    // БАЗОВЫЕ ДЕЙСТВИЯ (всегда)
+    actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
+    actions.push({ id: 'character', label: '👤 Персонаж' });
+    actions.push({ id: 'menu', label: '📋 Меню' });
+    actions.push({ id: 'map', label: '🗺️ Карта' });
+    
+    // ДЕЙСТВИЯ ПО ЗДАНИЯМ
+    if (place === 'Таверна') {
+        actions = [
+            { id: 'tavern_eat', label: '🍞 Попросить еды (+25)' },
+            { id: 'tavern_buy', label: '🛒 Торговля в таверне' },
+            { id: 'wash', label: '🧹 Помыть посуду (1 мин → 1 МП)' },
+            { id: 'sweep', label: '🧹 Подмести пол (5 мин → 5 МП)' },
+            { id: 'rest', label: '🛏️ Отдохнуть (10 МП → +30 уст., +15 HP)' },
+            { id: 'talk', label: '🗣️ Поговорить с трактирщиком' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Рынок') {
+        actions = [
+            { id: 'market_stalls', label: '🏪 Рынок (лавки)' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Кузница') {
+        actions = [
+            { id: 'shop_resources', label: '⚒️ Кузница (ресурсы)' },
+            { id: 'craft', label: '🔨 Крафт' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Оружейная лавка') {
+        actions = [
+            { id: 'shop_weapons', label: '🗡️ Оружейная лавка' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Кожевник') {
+        actions = [
+            { id: 'shop_leather', label: '🪡 Кожевник' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Бронник') {
+        actions = [
+            { id: 'shop_plate', label: '🛡️ Бронник' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Плотник') {
+        actions = [
+            { id: 'shop_bows', label: '🪵 Плотник' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Конюшня') {
+        actions = [
+            { id: 'stable_buy', label: '🐴 Конюшня (купить)' },
+            { id: 'stable_sell', label: '💰 Конюшня (продать)' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Гильдия торговцев') {
+        actions = [
+            { id: 'auction_list', label: '🏛️ Аукцион (все лоты)' },
+            { id: 'auction_my', label: '📦 Мои лоты' },
+            { id: 'auction_sell', label: '💰 Выставить лот' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Магистрат') {
+        actions = [
+            { id: 'magistrate_housing', label: '🏠 Недвижимость' },
+            { id: 'magistrate_stall_buy', label: '🏪 Купить лавку' },
+            { id: 'magistrate_stall_pay', label: '💰 Оплатить лавку' },
+            { id: 'magistrate_confiscated', label: '📦 Конфискат' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Ворота') {
+        if (!g.outside) {
+            actions = [
+                { id: 'leave_city', label: '🚪 Выйти на Дорогу' }
+            ].concat(actions);
+        } else {
+            actions = [
+                { id: 'enter_city', label: '🚶 Войти в город' }
+            ].concat(actions);
+        }
+    }
+    
+    if (place === 'Дорога') {
+        actions = [
+            { id: 'enter_city', label: '🚶 Войти в Королевскую Гавань' },
+            { id: 'search', label: '🔍 Поиск' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
+        var hasHouse = false;
+        if (g.housing && g.housing.type && HOUSING_TYPES[g.housing.type]) {
+            if (HOUSING_TYPES[g.housing.type].district === place) {
+                hasHouse = true;
+            }
+        }
+        if (hasHouse) {
+            actions = [
+                { id: 'housing_enter', label: '🏠 Зайти домой' }
+            ].concat(actions);
+        } else {
+            actions = [
+                { id: 'housing_view', label: '🏠 Купить жильё' }
+            ].concat(actions);
+        }
+    }
+    
+    if (place === 'Дом') {
+        actions = [
+            { id: 'home_rest', label: '🛏️ Отдохнуть (бесплатно)' },
+            { id: 'home_storage', label: '📦 Склад' },
+            { id: 'home_leave', label: '🚪 Выйти из дома' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Великая септа') {
+        actions = [
+            { id: 'temple_heal', label: '💉 Бесплатное исцеление' },
+            { id: 'temple_bless', label: '🙏 Молитва (благословение)' },
+            { id: 'temple_luck', label: '🍀 Купить удачу' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Порт') {
+        actions = [
+            { id: 'port_travel', label: '⛵ Порт' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Тюрьма') {
+        actions = [
+            { id: 'jail_pay', label: '💰 Заплатить штраф' },
+            { id: 'jail_wait', label: '⏳ Ждать освобождения' },
+            { id: 'jail_escape', label: '🏃 Попытаться сбежать' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Библиотека мейстеров') {
+        actions = [
+            { id: 'library_buy', label: '📚 Купить книгу' },
+            { id: 'library_read', label: '📖 Читать книгу' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Гильдия наёмников') {
+        actions = [
+            { id: 'quest_take', label: '📋 Взять задание' },
+            { id: 'quest_abandon', label: '❌ Отказаться' }
+        ].concat(actions);
+    }
+    
+    if (place === 'Бордель') {
+        actions = [
+            { id: 'brothel_rest', label: '🛏️ Отдых' },
+            { id: 'brothel_dice', label: '🎲 Игра в кости' }
+        ].concat(actions);
+    }
+    
+    // ДОБАВЛЯЕМ КНОПКИ
+    for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        btn.onclick = (function(actionId) {
+            return function() {
+                if (typeof gameAction === 'function') {
+                    gameAction(actionId);
+                } else {
+                    setMessage('❌ Действие временно недоступно.');
+                }
+            };
+        })(a.id);
+        container.appendChild(btn);
+    }
+}
+
+// ============================================================
+// 6. ОТКРЫТИЕ ЗДАНИЙ
 // ============================================================
 
 function openInventory() {
-    // Вызываем функцию из main.js, если она есть
     if (typeof window.openInventory === 'function') {
         window.openInventory();
     } else {
@@ -152,18 +390,14 @@ function openCharacter() {
 }
 
 function openMainMenu() {
-    if (typeof window.openMainMenu === 'function') {
-        window.openMainMenu();
-    } else {
-        var modal = document.getElementById('modal-menu');
-        var content = document.getElementById('modal-menu-content');
-        var html = '<div class="modal-section">';
-        html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
-        html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
-        html += '</div>';
-        content.innerHTML = html;
-        modal.classList.remove('hide');
-    }
+    var modal = document.getElementById('modal-menu');
+    var content = document.getElementById('modal-menu-content');
+    var html = '<div class="modal-section">';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
+    html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
 }
 
 function openLog() {
@@ -228,7 +462,7 @@ function closeOnline() {
 }
 
 // ============================================================
-// 5. РАБОТА С ДОМАМИ (из HOUSING_TYPES)
+// 7. РАБОТА С ДОМАМИ
 // ============================================================
 
 function buyHouse(type) {
@@ -274,6 +508,7 @@ function buyHouse(type) {
     setMessage('✅ Вы купили ' + house.name + '! Осталось: ' + (market.total - market.occupied) + ' свободных.');
     addLog('🏠 ' + currentUser + ' купил ' + house.name);
     updateMenu();
+    updateActions();
 }
 
 function sellHouse() {
@@ -308,6 +543,7 @@ function sellHouse() {
     setMessage('🏚️ Вы продали ' + house.name + ' за ' + refund + ' золота.');
     addLog('💰 ' + currentUser + ' продал ' + house.name);
     updateMenu();
+    updateActions();
 }
 
 function payRent() {
@@ -338,6 +574,7 @@ function payRent() {
     setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю!');
     addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
     updateMenu();
+    updateActions();
 }
 
 function checkRent() {
@@ -386,10 +623,11 @@ function evictFromHousing() {
     setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
     addLog('💀 ' + currentUser + ' выселен из ' + house.name);
     updateMenu();
+    updateActions();
 }
 
 // ============================================================
-// 6. СКЛАД (в доме)
+// 8. СКЛАД
 // ============================================================
 
 function openStorage() {
@@ -513,7 +751,7 @@ function openStorageHold() {
 }
 
 // ============================================================
-// 7. КОНЮШНЯ
+// 9. КОНЮШНЯ
 // ============================================================
 
 function openStable() {
@@ -525,7 +763,6 @@ function openStable() {
     
     var msg = '🐴 КОНЮШНЯ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
     
-    // Текущая лошадь
     if (g.equipment && g.equipment.horse) {
         var horse = HORSE_TYPES[g.equipment.horse.horseType];
         if (horse) {
@@ -539,7 +776,6 @@ function openStable() {
         msg += 'У вас нет лошади.\n\n';
     }
     
-    // Доступные лошади
     msg += 'ДОСТУПНЫЕ ЛОШАДИ (обновление раз в неделю):\n';
     for (var key in HORSE_TYPES) {
         var h = HORSE_TYPES[key];
@@ -604,6 +840,7 @@ function buyHorse(type) {
     setMessage('✅ Вы купили ' + horse.name + '! Осталось: ' + (market.total - market.sold));
     addLog('🐴 ' + currentUser + ' купил ' + horse.name);
     updateMenu();
+    updateActions();
 }
 
 function sellHorse() {
@@ -625,10 +862,11 @@ function sellHorse() {
     setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56));
     addLog('💰 ' + currentUser + ' продал лошадь');
     updateMenu();
+    updateActions();
 }
 
 // ============================================================
-// 8. ВЕЛИКАЯ СЕПТА
+// 10. ВЕЛИКАЯ СЕПТА
 // ============================================================
 
 function openTemple() {
@@ -778,7 +1016,7 @@ function buyPotion(potionId, price, hp, fatigue) {
 }
 
 // ============================================================
-// 9. ГИЛЬДИЯ НАЁМНИКОВ
+// 11. ГИЛЬДИЯ НАЁМНИКОВ
 // ============================================================
 
 function openGuildHall() {
@@ -955,7 +1193,7 @@ function checkQuestProgress(type, target, count) {
 }
 
 // ============================================================
-// 10. БИБЛИОТЕКА МЕЙСТЕРОВ
+// 12. БИБЛИОТЕКА МЕЙСТЕРОВ
 // ============================================================
 
 function openLibrary() {
@@ -1086,7 +1324,7 @@ function readBook(index) {
 }
 
 // ============================================================
-// 11. БОРДЕЛЬ
+// 13. БОРДЕЛЬ
 // ============================================================
 
 function openBrothel() {
@@ -1154,7 +1392,7 @@ function useBrothelService(serviceId, price, fatigue, hp, buff) {
 }
 
 // ============================================================
-// 12. РЫНОК (ТОРГОВЫЕ ЛАВКИ)
+// 14. РЫНОК (ТОРГОВЫЕ ЛАВКИ)
 // ============================================================
 
 function openMarket() {
@@ -1423,7 +1661,7 @@ function confiscateStall() {
 }
 
 // ============================================================
-// 13. КОНФИСКАТ
+// 15. КОНФИСКАТ
 // ============================================================
 
 function openConfiscated() {
@@ -1498,7 +1736,7 @@ function openConfiscated() {
 }
 
 // ============================================================
-// 14. МАГИСТРАТ (ЦЕНТР УПРАВЛЕНИЯ)
+// 16. МАГИСТРАТ (ЦЕНТР УПРАВЛЕНИЯ)
 // ============================================================
 
 function openMagistrate() {
@@ -1694,7 +1932,7 @@ function leaveStall() {
 }
 
 // ============================================================
-// 15. ИГРА В КОСТИ (PvP)
+// 17. ИГРА В КОСТИ (PvP)
 // ============================================================
 
 function playDice() {
@@ -1891,7 +2129,7 @@ function finishDiceGame(gameId) {
 }
 
 // ============================================================
-// 16. ПОРТ
+// 18. ПОРТ
 // ============================================================
 
 function openPort() {
@@ -1919,7 +2157,7 @@ function openPort() {
 }
 
 // ============================================================
-// 17. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ parseCurrencyInput
+// 19. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ parseCurrencyInput
 // ============================================================
 
 function parseCurrencyInput(input) {
@@ -1977,13 +2215,28 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 18. ФУНКЦИИ ДЛЯ ИНТЕГРАЦИИ С MAIN.JS
+// 20. ПЕРЕОПРЕДЕЛЕНИЕ updateStory И updateActions (если нужно)
 // ============================================================
 
-// Регистрируем функции в глобальной области
+// Заменяем функции в main.js на наши, если они есть
+if (typeof window.updateStory !== 'function' || window.updateStory.toString().indexOf('Таверна') !== -1) {
+    window.updateStory = updateStory;
+}
+
+if (typeof window.updateActions !== 'function' || window.updateActions.toString().indexOf('actions-container') === -1) {
+    window.updateActions = updateActions;
+}
+
+// ============================================================
+// 21. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
+// ============================================================
+
+// Регистрируем все функции в глобальной области
 window.openMap = openMap;
 window.closeMap = closeMap;
 window.goToBuilding = goToBuilding;
+window.updateStory = updateStory;
+window.updateActions = updateActions;
 window.openInventory = openInventory;
 window.openCharacter = openCharacter;
 window.openMainMenu = openMainMenu;
@@ -2041,57 +2294,20 @@ window.joinDiceGame = joinDiceGame;
 window.rollDice = rollDice;
 window.finishDiceGame = finishDiceGame;
 
-// Функции для магазинов (обёртки)
+// Функции для магазинов (заглушки, пока нет логики)
 window.openShop = function(shopType) {
-    setMessage('🏪 ' + shopType + ' временно недоступна.');
+    setMessage('🏪 ' + shopType + ' (в разработке)');
 };
 
 window.openCraftMenu = function() {
-    setMessage('🔨 Крафт временно недоступен.');
+    setMessage('🔨 Крафт (в разработке)');
 };
 
 // ============================================================
-// 19. ИНИЦИАЛИЗАЦИЯ
+// 22. ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
-// Автоматическая инициализация при загрузке
 (function() {
-    // Проверяем, что все глобальные переменные существуют
-    if (typeof housingMarket === 'undefined') {
-        console.warn('housingMarket не определён, создаём...');
-        window.housingMarket = {
-            'night': { total: 400, occupied: 0 },
-            'room': { total: 300, occupied: 0 },
-            'house': { total: 250, occupied: 0 },
-            'townhouse': { total: 80, occupied: 0 },
-            'mansion': { total: 10, occupied: 0 }
-        };
-    }
-    
-    if (typeof marketStalls === 'undefined') {
-        console.warn('marketStalls не определён, создаём...');
-        window.marketStalls = {};
-        for (var i = 1; i <= 50; i++) {
-            marketStalls[i] = { owner: null, rentPaid: null, rentDays: 0, inventory: [], prices: {} };
-        }
-    }
-    
-    if (typeof horseMarket === 'undefined') {
-        console.warn('horseMarket не определён, создаём...');
-        window.horseMarket = {
-            'work': { total: 50, sold: 0, resetTime: null },
-            'riding': { total: 30, sold: 0, resetTime: null },
-            'war': { total: 20, sold: 0, resetTime: null },
-            'racer': { total: 15, sold: 0, resetTime: null },
-            'heavy': { total: 10, sold: 0, resetTime: null },
-            'royal': { total: 5, sold: 0, resetTime: null },
-            'fire': { total: 1, sold: 0, resetTime: null }
-        };
-    }
-    
-    if (typeof confiscatedItems === 'undefined') {
-        window.confiscatedItems = [];
-    }
-    
     console.log('🏰 Королевская Гавань загружена!');
+    console.log('📍 Текущая локация: ' + (currentUser ? users[currentUser]?.game?.location?.place : 'неизвестно'));
 })();
