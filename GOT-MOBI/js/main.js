@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ТОЧКА ВХОДА (ПОЛНАЯ ВЕРСИЯ)
+// MAIN.JS — ПОЛНАЯ ВЕРСИЯ (БЕЗ ЗАГЛУШЕК)
 // ============================================================
 
 function handleRegister() {
@@ -68,7 +68,8 @@ function handleRegister() {
             lastBookReset: now,
             quests: { completed: [], lastReset: 0, active: null, progress: {} },
             brothelBuffs: [],
-            brothelRoom: false
+            brothelRoom: false,
+            lastTavernEat: 0
         }
     };
     
@@ -126,10 +127,13 @@ function fixOldAccount(user) {
             housing: { type: null, purchased: null, rentPaid: null, rentDays: 0, debt: 0, storage: [], storageHold: [] },
             booksBoughtToday: 0, lastBookReset: Date.now(),
             quests: { completed: [], lastReset: 0, active: null, progress: {} },
-            brothelBuffs: [], brothelRoom: false
+            brothelBuffs: [], brothelRoom: false,
+            lastTavernEat: 0
         };
         return user;
     }
+    var g = user.game;
+    if (g.lastTavernEat === undefined) g.lastTavernEat = 0;
     return user;
 }
 
@@ -213,7 +217,7 @@ function gameAction(action) {
     // ============================================================
     // КАРТА
     // ============================================================
-    if (action === 'map') { if (typeof openMap === 'function') { openMap(); return; } return; }
+    if (action === 'map') { openMap(); return; }
     
     // ============================================================
     // ВХОД/ВЫХОД ИЗ ГОРОДА
@@ -236,25 +240,40 @@ function gameAction(action) {
     // ============================================================
     if (action === 'enter_red_keep') {
         if (typeof enterRedKeep === 'function') { enterRedKeep(); return; }
-        setMessage('❌ Красный замок временно недоступен.');
+        setMessage('⏳ Красный замок в разработке.');
         return;
     }
     
     // ============================================================
-    // ТАВЕРНА
+    // ТАВЕРНА — ЕДА (КУЛДАУН 2 ЧАСА)
     // ============================================================
     if (action === 'tavern_eat') {
+        var now = Date.now();
+        var cooldown = 2 * 60 * 60 * 1000;
+        if (g.lastTavernEat && (now - g.lastTavernEat) < cooldown) {
+            var timeLeft = Math.ceil((cooldown - (now - g.lastTavernEat)) / (60 * 1000));
+            setMessage('⏳ Трактирщик сказал: «Приходи через ' + timeLeft + ' мин.»');
+            return;
+        }
         if (g.food >= 100) { setMessage('🍖 Вы сыты.'); return; }
         g.food = Math.min(g.food + 25, 100);
-        setMessage('🍞 Вы поели. Еда +25.');
+        g.lastTavernEat = now;
+        setMessage('🍞 Вы поели. Еда +25. Следующий раз через 2 часа.');
         updateMenu(); saveData();
         return;
     }
+    
+    // ============================================================
+    // ТАВЕРНА — ТОРГОВЛЯ
+    // ============================================================
     if (action === 'tavern_buy') {
-        if (typeof openTavernTrade === 'function') { openTavernTrade(); return; }
-        setMessage('❌ Торговля в таверне временно недоступна.');
+        openTavernTrade();
         return;
     }
+    
+    // ============================================================
+    // ТАВЕРНА — РАБОТА
+    // ============================================================
     if (action === 'wash') {
         startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); });
         return;
@@ -263,6 +282,10 @@ function gameAction(action) {
         startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); });
         return;
     }
+    
+    // ============================================================
+    // ТАВЕРНА — ОТДЫХ (10 МП)
+    // ============================================================
     if (action === 'rest') {
         if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
         g.fatigue = Math.min(100, g.fatigue + 30);
@@ -271,6 +294,10 @@ function gameAction(action) {
         updateMenu(); saveData();
         return;
     }
+    
+    // ============================================================
+    // ТАВЕРНА — РАЗГОВОР
+    // ============================================================
     if (action === 'talk') {
         var msgs = ['🍺 Трактирщик: «Добро пожаловать!»', '🍺 Трактирщик: «Заработай — помой посуду.»', '🍺 Трактирщик: «Будь осторожен за воротами.»'];
         setMessage(msgs[Math.floor(Math.random() * 3)]);
@@ -280,19 +307,18 @@ function gameAction(action) {
     // ============================================================
     // МАГАЗИНЫ NPC
     // ============================================================
-    if (action === 'shop_weapons') { if (typeof openShop === 'function') { openShop('Оружейная лавка'); return; } setMessage('❌ Оружейная лавка временно недоступна.'); return; }
-    if (action === 'shop_leather') { if (typeof openShop === 'function') { openShop('Кожевник'); return; } setMessage('❌ Кожевник временно недоступен.'); return; }
-    if (action === 'shop_plate') { if (typeof openShop === 'function') { openShop('Бронник'); return; } setMessage('❌ Бронник временно недоступен.'); return; }
-    if (action === 'shop_bows') { if (typeof openShop === 'function') { openShop('Плотник'); return; } setMessage('❌ Плотник временно недоступен.'); return; }
-    if (action === 'shop_resources') { if (typeof openShop === 'function') { openShop('Кузница'); return; } setMessage('❌ Кузница временно недоступна.'); return; }
-    if (action === 'craft') { if (typeof openCraftMenu === 'function') { openCraftMenu(); return; } setMessage('❌ Крафт временно недоступен.'); return; }
+    if (action === 'shop_weapons') { openShop('Оружейная лавка'); return; }
+    if (action === 'shop_leather') { openShop('Кожевник'); return; }
+    if (action === 'shop_plate') { openShop('Бронник'); return; }
+    if (action === 'shop_bows') { openShop('Плотник'); return; }
+    if (action === 'shop_resources') { openShop('Кузница'); return; }
+    if (action === 'craft') { openCraftMenu(); return; }
     
     // ============================================================
     // КОНЮШНЯ
     // ============================================================
     if (action === 'stable_open' || action === 'stable_buy' || action === 'stable_sell') {
-        if (typeof openStable === 'function') { openStable(); return; }
-        setMessage('❌ Конюшня временно недоступна.');
+        openStable();
         return;
     }
     
@@ -300,8 +326,7 @@ function gameAction(action) {
     // СЕПТА
     // ============================================================
     if (action === 'temple_open' || action === 'temple_heal' || action === 'temple_bless' || action === 'temple_luck') {
-        if (typeof openTemple === 'function') { openTemple(); return; }
-        setMessage('❌ Септа временно недоступна.');
+        openTemple();
         return;
     }
     
@@ -309,17 +334,15 @@ function gameAction(action) {
     // РЫНОК (ЛАВКИ)
     // ============================================================
     if (action === 'market_stalls') {
-        if (typeof openMarket === 'function') { openMarket(); return; }
-        setMessage('❌ Рынок временно недоступен.');
+        openMarket();
         return;
     }
     
     // ============================================================
-    // АУКЦИОН (ГИЛЬДИЯ ТОРГОВЦЕВ)
+    // АУКЦИОН
     // ============================================================
     if (action === 'auction_list' || action === 'auction_my' || action === 'auction_sell') {
-        if (typeof openGuild === 'function') { openGuild(); return; }
-        setMessage('❌ Аукцион временно недоступен.');
+        openGuild();
         return;
     }
     
@@ -327,38 +350,21 @@ function gameAction(action) {
     // МАГИСТРАТ
     // ============================================================
     if (action === 'magistrate_open' || action === 'magistrate_housing' || action === 'magistrate_stall_buy' || action === 'magistrate_stall_pay' || action === 'magistrate_rent_pay' || action === 'magistrate_confiscated') {
-        if (typeof openMagistrate === 'function') { openMagistrate(); return; }
-        setMessage('❌ Магистрат временно недоступен.');
+        openMagistrate();
         return;
     }
     
     // ============================================================
     // ЖИЛЬЁ
     // ============================================================
-    if (action === 'housing_view') {
-        if (typeof viewDistrict === 'function') { viewDistrict(g.location.place); return; }
-        setMessage('❌ Просмотр жилья временно недоступен.');
-        return;
-    }
-    if (action === 'housing_enter') {
-        if (typeof enterHome === 'function') { enterHome(); return; }
-        setMessage('❌ Вход в дом временно недоступен.');
-        return;
-    }
+    if (action === 'housing_view') { viewDistrict(g.location.place); return; }
+    if (action === 'housing_enter') { enterHome(); return; }
     
     // ============================================================
     // ДОМ
     // ============================================================
-    if (action === 'home_rest') {
-        if (typeof restAtHome === 'function') { restAtHome(); return; }
-        setMessage('❌ Отдых дома временно недоступен.');
-        return;
-    }
-    if (action === 'home_storage') {
-        if (typeof openStorage === 'function') { openStorage(); return; }
-        setMessage('❌ Склад временно недоступен.');
-        return;
-    }
+    if (action === 'home_rest') { restAtHome(); return; }
+    if (action === 'home_storage') { openStorage(); return; }
     if (action === 'home_leave') {
         if (g.housing && g.housing.type) {
             g.location.place = HOUSING_TYPES[g.housing.type].district;
@@ -375,8 +381,7 @@ function gameAction(action) {
     // БИБЛИОТЕКА
     // ============================================================
     if (action === 'library_open' || action === 'library_buy' || action === 'library_read') {
-        if (typeof openLibrary === 'function') { openLibrary(); return; }
-        setMessage('❌ Библиотека временно недоступна.');
+        openLibrary();
         return;
     }
     
@@ -384,8 +389,7 @@ function gameAction(action) {
     // ГИЛЬДИЯ НАЁМНИКОВ
     // ============================================================
     if (action === 'guildhall_open' || action === 'quest_take' || action === 'quest_abandon' || action === 'quest_progress') {
-        if (typeof openGuildHall === 'function') { openGuildHall(); return; }
-        setMessage('❌ Гильдия наёмников временно недоступна.');
+        openGuildHall();
         return;
     }
     
@@ -393,63 +397,46 @@ function gameAction(action) {
     // БОРДЕЛЬ
     // ============================================================
     if (action === 'brothel_rest' || action === 'brothel_dice') {
-        if (typeof openBrothel === 'function') { openBrothel(); return; }
-        setMessage('❌ Бордель временно недоступен.');
+        openBrothel();
         return;
     }
     
     // ============================================================
     // ТЮРЬМА
     // ============================================================
-    if (action === 'jail_pay') { if (typeof payJailFine === 'function') { payJailFine(); return; } setMessage('❌ Тюрьма временно недоступна.'); return; }
-    if (action === 'jail_wait') { if (typeof waitJailTime === 'function') { waitJailTime(); return; } setMessage('❌ Тюрьма временно недоступна.'); return; }
-    if (action === 'jail_escape') { if (typeof attemptEscape === 'function') { attemptEscape(); return; } setMessage('❌ Тюрьма временно недоступна.'); return; }
+    if (action === 'jail_pay') { payJailFine(); return; }
+    if (action === 'jail_wait') { waitJailTime(); return; }
+    if (action === 'jail_escape') { attemptEscape(); return; }
     
     // ============================================================
     // ПОРТ
     // ============================================================
     if (action === 'port_travel') {
-        if (typeof openPort === 'function') { openPort(); return; }
-        setMessage('❌ Порт временно недоступен.');
+        openPort();
         return;
     }
     
     // ============================================================
-    // ПОИСК
+    // ПОИСК НА ДОРОГЕ
     // ============================================================
     if (action === 'search') {
         if (typeof doSearch === 'function') { doSearch(); return; }
-        setMessage('❌ Поиск временно недоступен.');
+        setMessage('🔍 Поиск временно недоступен.');
         return;
     }
     
     // ============================================================
     // ИНВЕНТАРЬ И ПЕРСОНАЖ
     // ============================================================
-    if (action === 'inventory') {
-        if (typeof openInventory === 'function') { openInventory(); return; }
-        setMessage('❌ Инвентарь временно недоступен.');
-        return;
-    }
-    if (action === 'character') {
-        if (typeof openCharacter === 'function') { openCharacter(); return; }
-        setMessage('❌ Персонаж временно недоступен.');
-        return;
-    }
-    if (action === 'menu') {
-        if (typeof openMainMenu === 'function') { openMainMenu(); return; }
-        setMessage('❌ Меню временно недоступно.');
-        return;
-    }
+    if (action === 'inventory') { openInventory(); return; }
+    if (action === 'character') { openCharacter(); return; }
+    if (action === 'menu') { openMainMenu(); return; }
     
     // ============================================================
     // ОБНОВЛЕНИЕ
     // ============================================================
     if (action === 'refresh') { location.reload(); return; }
     
-    // ============================================================
-    // ЕСЛИ НИЧЕГО НЕ ПОДОШЛО
-    // ============================================================
     setMessage('❌ Неизвестное действие: ' + action);
 }
 
@@ -534,4 +521,4 @@ if (savedUser && users[savedUser]) {
     enterGame(savedUser);
 } else {
     showPage('login');
-        }
+}
