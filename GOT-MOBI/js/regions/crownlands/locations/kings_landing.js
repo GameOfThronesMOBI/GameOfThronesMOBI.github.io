@@ -1,10 +1,10 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ТОЛЬКО УНИКАЛЬНАЯ ЛОГИКА
+// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 // ============================================================
-// 1. КАРТА ГАВАНИ
+// 1. КАРТА
 // ============================================================
 
 function openMap() {
@@ -85,7 +85,7 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// 3. STORY И ACTIONS
+// 3. STORY
 // ============================================================
 
 function updateStory() {
@@ -133,6 +133,10 @@ function updateStory() {
     updateActions();
 }
 
+// ============================================================
+// 4. ACTIONS
+// ============================================================
+
 function updateActions() {
     var user = users[currentUser];
     if (!user) return;
@@ -155,7 +159,7 @@ function updateActions() {
             { id: 'tavern_buy', label: '🛒 Торговля' },
             { id: 'wash', label: '🧹 Помыть посуду' },
             { id: 'sweep', label: '🧹 Подмести пол' },
-            { id: 'rest', label: '🛏️ Отдохнуть' },
+            { id: 'rest', label: '🛏️ Отдохнуть (10 МП)' },
             { id: 'talk', label: '🗣️ Поговорить' }
         ].concat(actions);
     }
@@ -283,7 +287,7 @@ function updateActions() {
 }
 
 // ============================================================
-// 4. ДОМА (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 5. ДОМА
 // ============================================================
 
 function buyHouse(type) {
@@ -442,7 +446,7 @@ function evictFromHousing() {
 }
 
 // ============================================================
-// 5. СКЛАД (УНИКАЛЬНО ДЛЯ ДОМОВ В ГАВАНИ)
+// 6. СКЛАД
 // ============================================================
 
 function openStorage() {
@@ -461,15 +465,7 @@ function openStorage() {
         overlay.id = 'modal-storage';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStorage(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>📦 СКЛАД</h3>
-                    <button class="close-btn" onclick="closeStorage()">✕</button>
-                </div>
-                <div id="modal-storage-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД</h3><button class="close-btn" onclick="closeStorage()">✕</button></div><div id="modal-storage-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -575,15 +571,7 @@ function openStorageHold() {
         overlay.id = 'modal-storage-hold';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStorageHold(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>📦 КАМЕРА ХРАНЕНИЯ</h3>
-                    <button class="close-btn" onclick="closeStorageHold()">✕</button>
-                </div>
-                <div id="modal-storage-hold-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -639,7 +627,7 @@ function takeFromStorageHold(index) {
 }
 
 // ============================================================
-// 6. КОНЮШНЯ (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 7. КОНЮШНЯ
 // ============================================================
 
 function openStable() {
@@ -655,15 +643,7 @@ function openStable() {
         overlay.id = 'modal-stable';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStable(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>🐴 КОНЮШНЯ</h3>
-                    <button class="close-btn" onclick="closeStable()">✕</button>
-                </div>
-                <div id="modal-stable-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🐴 КОНЮШНЯ</h3><button class="close-btn" onclick="closeStable()">✕</button></div><div id="modal-stable-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -671,7 +651,6 @@ function openStable() {
     var content = document.getElementById('modal-stable-content');
     var html = '';
     
-    // ТЕКУЩАЯ ЛОШАДЬ
     if (g.equipment && g.equipment.horse) {
         var horse = HORSE_TYPES[g.equipment.horse.horseType];
         if (horse) {
@@ -687,7 +666,6 @@ function openStable() {
         html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🐴 У вас нет лошади.</p>';
     }
     
-    // ДОСТУПНЫЕ ЛОШАДИ
     html += '<h4 style="color:#c9b694;margin-top:16px;">📦 ДОСТУПНЫЕ ЛОШАДИ (обновление раз в неделю)</h4>';
     
     for (var key in HORSE_TYPES) {
@@ -788,7 +766,7 @@ function sellHorse() {
 }
 
 // ============================================================
-// 7. СЕПТА (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 8. СЕПТА
 // ============================================================
 
 function openTemple() {
@@ -803,15 +781,7 @@ function openTemple() {
         overlay.id = 'modal-temple';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeTemple(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>⛪ ВЕЛИКАЯ СЕПТА</h3>
-                    <button class="close-btn" onclick="closeTemple()">✕</button>
-                </div>
-                <div id="modal-temple-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>⛪ ВЕЛИКАЯ СЕПТА</h3><button class="close-btn" onclick="closeTemple()">✕</button></div><div id="modal-temple-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -948,7 +918,7 @@ function donateLuck() {
 }
 
 // ============================================================
-// 8. БИБЛИОТЕКА (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 9. БИБЛИОТЕКА
 // ============================================================
 
 function openLibrary() {
@@ -964,15 +934,7 @@ function openLibrary() {
         overlay.id = 'modal-library';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeLibrary(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>📚 БИБЛИОТЕКА</h3>
-                    <button class="close-btn" onclick="closeLibrary()">✕</button>
-                </div>
-                <div id="modal-library-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📚 БИБЛИОТЕКА</h3><button class="close-btn" onclick="closeLibrary()">✕</button></div><div id="modal-library-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -1168,7 +1130,7 @@ function readBook(index) {
 }
 
 // ============================================================
-// 9. ГИЛЬДИЯ НАЁМНИКОВ (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 10. ГИЛЬДИЯ НАЁМНИКОВ
 // ============================================================
 
 function openGuildHall() {
@@ -1203,15 +1165,7 @@ function openGuildHall() {
         overlay.id = 'modal-guildhall';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeGuildHall(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3>
-                    <button class="close-btn" onclick="closeGuildHall()">✕</button>
-                </div>
-                <div id="modal-guildhall-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ГИЛЬДИЯ НАЁМНИКОВ</h3><button class="close-btn" onclick="closeGuildHall()">✕</button></div><div id="modal-guildhall-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -1222,7 +1176,6 @@ function openGuildHall() {
     html += '<p style="color:#6a5a48;font-size:12px;">Задания обновляются каждые 5 часов.</p>';
     html += '<p style="color:#6a5a48;font-size:12px;">⏳ Следующее обновление через: ' + hoursLeft + ' ч ' + minutesLeft + ' мин</p>';
     
-    // Активное задание
     if (g.quests.active) {
         var activeQuest = null;
         for (var i = 0; i < quests.length; i++) {
@@ -1242,7 +1195,6 @@ function openGuildHall() {
         }
     }
     
-    // Список заданий
     html += '<h4 style="margin-top:10px;">📜 ДОСТУПНЫЕ ЗАДАНИЯ</h4>';
     quests.forEach(function(quest) {
         var isCompleted = false;
@@ -1399,7 +1351,7 @@ function checkQuestProgress(type, target, count) {
 }
 
 // ============================================================
-// 10. БОРДЕЛЬ (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 11. БОРДЕЛЬ
 // ============================================================
 
 function openBrothel() {
@@ -1420,15 +1372,7 @@ function openBrothel() {
         overlay.id = 'modal-brothel';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeBrothel(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>💃 БОРДЕЛЬ</h3>
-                    <button class="close-btn" onclick="closeBrothel()">✕</button>
-                </div>
-                <div id="modal-brothel-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>💃 БОРДЕЛЬ</h3><button class="close-btn" onclick="closeBrothel()">✕</button></div><div id="modal-brothel-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -1549,169 +1493,259 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
 }
 
 // ============================================================
-// 11. КОСТИ (PvP)
+// 12. РЫНОК (ЛАВКИ)
 // ============================================================
 
-function getActiveDiceGames() {
-    var now = Date.now();
-    var timeout = 5 * 60 * 1000;
-    var active = [];
-    
-    for (var id in diceGames) {
-        var game = diceGames[id];
-        if (now - game.createdAt > timeout && game.status === 'waiting') {
-            var creator = users[game.creator];
-            if (creator) {
-                creator.game.copper += game.bet;
-                convertCurrency(creator.game);
-                saveData();
-            }
-            delete diceGames[id];
-            continue;
-        }
-        if (game.status === 'waiting' || game.status === 'playing') {
-            active.push(game);
-        }
-    }
-    
-    return active;
-}
-
-function createDiceGame(bet) {
+function openMarket() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
-    for (var id in diceGames) {
-        if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') {
-            setMessage('❌ У вас уже есть активная игра!');
-            return;
+    var modal = document.getElementById('modal-market');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-market';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeMarket(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏪 РЫНОК</h3><button class="close-btn" onclick="closeMarket()">✕</button></div><div id="modal-market-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-market-content');
+    
+    var html = '<div class="modal-section"><h4>🏪 РЫНОК КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно торговать с другими игроками.</p>';
+    
+    if (g.marketStall && g.marketStall.owned) {
+        var stall = marketStalls[g.marketStall.stallId];
+        var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
+        html += '<div style="color:#c9b694;font-size:16px;">🏪 Ваша лавка #' + g.marketStall.stallId + '</div>';
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;">⛔ Аренда истекла! Оплатите в Магистрате.</div>';
+        } else {
+            html += '<div style="color:#7ac98a;">✅ Аренда активна</div>';
+            html += '<div style="color:#6a5a48;font-size:11px;">⏳ Осталось: ' + timeLeft.text + '</div>';
         }
-    }
-    
-    if (!spendMoney(g, bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
-    
-    var gameId = 'dice_' + (++diceGameIdCounter);
-    diceGames[gameId] = {
-        id: gameId,
-        creator: currentUser,
-        bet: bet,
-        createdAt: Date.now(),
-        status: 'waiting',
-        player2: null,
-        creatorRoll: null,
-        player2Roll: null
-    };
-    
-    saveData();
-    setMessage('✅ Вы создали игру в кости на ' + formatCurrency(bet) + '! Ждите соперника.');
-    addLog('🎲 ' + currentUser + ' создал игру в кости на ' + formatCurrency(bet));
-    updateMenu();
-    openBrothel();
-}
-
-function joinDiceGame(gameId) {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    var game = diceGames[gameId];
-    if (!game) { setMessage('❌ Игра не найдена.'); return; }
-    if (game.creator === currentUser) { setMessage('❌ Вы не можете присоединиться к своей игре.'); return; }
-    if (game.status !== 'waiting') { setMessage('❌ Игра уже началась или завершена.'); return; }
-    if (!spendMoney(g, game.bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
-    
-    game.player2 = currentUser;
-    game.status = 'playing';
-    
-    saveData();
-    setMessage('✅ Вы присоединились к игре! Бросайте кости.');
-    addLog('🎲 ' + currentUser + ' присоединился к игре ' + gameId);
-    updateMenu();
-    playDicePvP(gameId);
-}
-
-function playDicePvP(gameId) {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    var game = diceGames[gameId];
-    if (!game) { setMessage('❌ Игра не найдена.'); return; }
-    if (game.creator !== currentUser && game.player2 !== currentUser) { setMessage('❌ Вы не участник этой игры.'); return; }
-    
-    var dice1 = Math.floor(Math.random() * 6) + 1;
-    var dice2 = Math.floor(Math.random() * 6) + 1;
-    var total = dice1 + dice2;
-    
-    if (game.creator === currentUser) {
-        if (game.creatorRoll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
-        game.creatorRoll = total;
-        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
-    } else if (game.player2 === currentUser) {
-        if (game.player2Roll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
-        game.player2Roll = total;
-        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
-    }
-    
-    saveData();
-    updateMenu();
-    
-    if (game.creatorRoll !== null && game.player2Roll !== null) {
-        finishDiceGame(gameId);
-    }
-}
-
-function finishDiceGame(gameId) {
-    var game = diceGames[gameId];
-    if (!game) return;
-    
-    var creator = users[game.creator];
-    var player2 = users[game.player2];
-    var totalBet = game.bet * 2;
-    
-    var winner = null;
-    var winnerName = '';
-    
-    if (game.creatorRoll > game.player2Roll) {
-        winner = creator;
-        winnerName = game.creator;
-        setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')');
-    } else if (game.player2Roll > game.creatorRoll) {
-        winner = player2;
-        winnerName = game.player2;
-        setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')');
+        html += '<button class="btn btn-small" onclick="enterStall(' + g.marketStall.stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
+        if (timeLeft.expired) {
+            html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:4px;">🏛️ Перейти в Магистрат</button>';
+        }
+        html += '</div>';
     } else {
-        creator.game.copper += game.bet;
-        player2.game.copper += game.bet;
-        convertCurrency(creator.game);
-        convertCurrency(player2.game);
-        setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.');
-        addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2);
-        game.status = 'finished';
-        delete diceGames[gameId];
-        saveData();
-        updateMenu();
-        openBrothel();
+        html += '<p style="color:#6a5a48;font-size:12px;">У вас нет лавки. Приобретите её в Магистрате.</p>';
+        html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:6px;">🏛️ Перейти в Магистрат</button>';
+    }
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>📋 СПИСОК ЛАВОК</h4>';
+    html += '<div class="stall-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">';
+    var hasStalls = false;
+    for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+        var stall = marketStalls[i];
+        if (stall && stall.owner) {
+            var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+            var isActive = !timeLeft.expired;
+            hasStalls = true;
+            html += '<div class="stall-card" style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:10px;text-align:center;cursor:pointer;" onclick="enterStall(' + i + ')">';
+            html += '<div class="stall-number" style="color:#6a5a48;font-size:12px;">🏪 #' + i + '</div>';
+            html += '<div class="stall-owner" style="color:#c9b694;font-size:13px;">' + stall.owner + '</div>';
+            html += '<div class="stall-status" style="font-size:11px;margin-top:4px;">' + (isActive ? '<span class="badge-green" style="color:#7ac98a;">✅ Активна</span>' : '<span class="badge-red" style="color:#c96a5a;">⛔ Истекла</span>') + '</div>';
+            html += '<div style="font-size:11px;color:#6a5a48;">📦 ' + (stall.inventory ? stall.inventory.length : 0) + ' товаров</div>';
+            html += '</div>';
+        }
+    }
+    if (!hasStalls) {
+        html += '<p style="color:#6a5a48;grid-column:1/-1;text-align:center;padding:20px 0;">Нет активных лавок</p>';
+    }
+    html += '</div>';
+    html += '</div>';
+    
+    html += '<button class="btn btn-secondary" onclick="closeMarket()" style="margin-top:10px;">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeMarket() {
+    var modal = document.getElementById('modal-market');
+    if (modal) modal.classList.add('hide');
+}
+
+function enterStall(stallId) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
+    if (!stall) { setMessage('❌ Лавка не найдена.'); return; }
+    
+    var isOwner = stall.owner === currentUser;
+    var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+    var isActive = !timeLeft.expired;
+    
+    var modal = document.getElementById('modal-stall');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-stall';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeStall(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏪 ЛАВКА</h3><button class="close-btn" onclick="closeStall()">✕</button></div><div id="modal-stall-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-stall-content');
+    
+    var html = '<div class="modal-section"><h4>🏪 ЛАВКА #' + stallId + '</h4>';
+    html += '<p style="color:#6a5a48;">👤 Владелец: <strong>' + stall.owner + '</strong></p>';
+    html += '<p style="color:#6a5a48;">' + (isActive ? '✅ Активна' : '⛔ Аренда истекла') + '</p>';
+    if (!isActive && isOwner) {
+        html += '<p style="color:#c96a5a;">⚠️ Оплатите аренду в Магистрате!</p>';
+    }
+    html += '</div>';
+    
+    if (isOwner && isActive) {
+        html += '<div class="modal-section"><h4>📦 УПРАВЛЕНИЕ ЛАВКОЙ</h4>';
+        html += '<button class="btn btn-small" onclick="addToStall(' + stallId + ')" style="margin:4px 0;">📥 Добавить товар из инвентаря</button>';
+        html += '</div>';
+    }
+    
+    html += '<div class="modal-section"><h4>🛒 ТОВАРЫ</h4>';
+    if (!stall.inventory || stall.inventory.length === 0) {
+        html += '<p style="color:#6a5a48;">В лавке нет товаров.</p>';
+    } else {
+        stall.inventory.forEach(function(item, idx) {
+            var quality = item.quality || 'Обычное';
+            var q = QUALITIES[quality] || QUALITIES['Обычное'];
+            var price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
+            var stats = '';
+            var countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
+            else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
+            
+            html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
+            html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + formatCurrency(price);
+            if (isOwner && isActive) {
+                html += ' <button class="btn btn-small" onclick="removeFromStall(' + stallId + ',' + idx + ')">❌ Убрать</button>';
+            } else if (isActive && !isOwner) {
+                html += ' <button class="btn btn-small" onclick="buyFromStall(' + stallId + ',' + idx + ')">🛒 Купить</button>';
+            }
+            html += '</span></div>';
+        });
+    }
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeStall()">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeStall() {
+    var modal = document.getElementById('modal-stall');
+    if (modal) modal.classList.add('hide');
+}
+
+function addToStall(stallId) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
+    
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
+    if (g.inventory.length === 0) { setMessage('❌ Инвентарь пуст.'); return; }
+    
+    var choices = 'Выберите предмет для лавки (можно целый стек):\n';
+    g.inventory.forEach(function(item, i) {
+        var countDisplay = '';
+        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
+    });
+    choices += '0. Отмена';
+    var choice = prompt(choices);
+    var index = parseInt(choice) - 1;
+    if (isNaN(index) || index < 0 || index >= g.inventory.length) {
+        setMessage('❌ Отменено.');
         return;
     }
     
-    if (winner) {
-        winner.game.copper += totalBet;
-        convertCurrency(winner.game);
-        setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!');
-        addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator));
+    var item = g.inventory.splice(index, 1)[0];
+    var priceInput = prompt('Введите цену (в меди, например: 100, 5 ЗОЛ, 1 ЗОЛ 50 МП):');
+    var price = parseCurrencyInput(priceInput);
+    if (price === null || price < 1) {
+        setMessage('❌ Цена должна быть не менее 1 МП.');
+        addToInventory(g, item);
+        return;
     }
     
-    game.status = 'finished';
-    delete diceGames[gameId];
+    if (!stall.inventory) stall.inventory = [];
+    if (!stall.prices) stall.prices = {};
+    var newIdx = stall.inventory.length;
+    stall.inventory.push(item);
+    stall.prices[newIdx] = price;
+    
+    saveMarketStalls();
     saveData();
+    setMessage('✅ Вы добавили ' + item.name + ' в лавку за ' + formatCurrency(price));
+    addLog('🏪 ' + currentUser + ' добавил ' + item.name + ' в лавку #' + stallId);
     updateMenu();
-    openBrothel();
+    enterStall(stallId);
+}
+
+function buyFromStall(stallId, idx) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
+    
+    if (!stall || !stall.inventory || idx >= stall.inventory.length) {
+        setMessage('❌ Товар не найден.');
+        return;
+    }
+    var item = stall.inventory[idx];
+    var price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
+    if (price <= 0) { setMessage('❌ Цена не указана.'); return; }
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
+    
+    var owner = users[stall.owner];
+    if (owner) {
+        owner.game.copper += price;
+        convertCurrency(owner.game);
+        saveData();
+    }
+    stall.inventory.splice(idx, 1);
+    if (stall.prices) delete stall.prices[idx];
+    addToInventory(g, item);
+    saveMarketStalls();
+    saveData();
+    setMessage('✅ Вы купили ' + item.name + ' за ' + formatCurrency(price));
+    addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + formatCurrency(price));
+    updateMenu();
+    enterStall(stallId);
+}
+
+function removeFromStall(stallId, idx) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
+    
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
+    if (!stall.inventory || idx >= stall.inventory.length) { setMessage('❌ Товар не найден.'); return; }
+    var item = stall.inventory.splice(idx, 1)[0];
+    if (stall.prices) delete stall.prices[idx];
+    addToInventory(g, item);
+    saveMarketStalls();
+    saveData();
+    setMessage('✅ Вы убрали ' + item.name + ' из лавки.');
+    updateMenu();
+    enterStall(stallId);
 }
 
 // ============================================================
-// 12. ПОРТ (ЗАГЛУШКА)
+// 13. ПОРТ
 // ============================================================
 
 function openPort() {
@@ -1739,7 +1773,7 @@ function openPort() {
 }
 
 // ============================================================
-// 13. МАГИСТРАТ (УНИКАЛЬНО ДЛЯ ГАВАНИ)
+// 14. МАГИСТРАТ
 // ============================================================
 
 function openMagistrate() {
@@ -1753,15 +1787,7 @@ function openMagistrate() {
         overlay.id = 'modal-magistrate';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeMagistrate(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>📜 МАГИСТРАТ</h3>
-                    <button class="close-btn" onclick="closeMagistrate()">✕</button>
-                </div>
-                <div id="modal-magistrate-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📜 МАГИСТРАТ</h3><button class="close-btn" onclick="closeMagistrate()">✕</button></div><div id="modal-magistrate-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -2061,7 +2087,7 @@ function confiscateStall() {
 }
 
 // ============================================================
-// 14. КОНФИСКАТ
+// 15. КОНФИСКАТ
 // ============================================================
 
 function openConfiscated() {
@@ -2084,15 +2110,7 @@ function openConfiscated() {
         overlay.id = 'modal-confiscated';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeConfiscated(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>📦 КОНФИСКАТ</h3>
-                    <button class="close-btn" onclick="closeConfiscated()">✕</button>
-                </div>
-                <div id="modal-confiscated-content"></div>
-            </div>
-        `;
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КОНФИСКАТ</h3><button class="close-btn" onclick="closeConfiscated()">✕</button></div><div id="modal-confiscated-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -2156,275 +2174,219 @@ function returnFromConfiscate(entryIdx, itemIdx) {
 }
 
 // ============================================================
-// 15. РЫНОК (ЛАВКИ)
+// 16. КОСТИ
 // ============================================================
 
-function openMarket() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
+function getActiveDiceGames() {
+    var now = Date.now();
+    var timeout = 5 * 60 * 1000;
+    var active = [];
     
-    var modal = document.getElementById('modal-market');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-market';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeMarket(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>🏪 РЫНОК</h3>
-                    <button class="close-btn" onclick="closeMarket()">✕</button>
-                </div>
-                <div id="modal-market-content"></div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-market-content');
-    
-    var html = '<div class="modal-section"><h4>🏪 РЫНОК КОРОЛЕВСКОЙ ГАВАНИ</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Здесь можно торговать с другими игроками.</p>';
-    
-    if (g.marketStall && g.marketStall.owned) {
-        var stall = marketStalls[g.marketStall.stallId];
-        var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
-        html += '<div style="color:#c9b694;font-size:16px;">🏪 Ваша лавка #' + g.marketStall.stallId + '</div>';
-        if (timeLeft.expired) {
-            html += '<div style="color:#c96a5a;">⛔ Аренда истекла! Оплатите в Магистрате.</div>';
-        } else {
-            html += '<div style="color:#7ac98a;">✅ Аренда активна</div>';
-            html += '<div style="color:#6a5a48;font-size:11px;">⏳ Осталось: ' + timeLeft.text + '</div>';
-        }
-        html += '<button class="btn btn-small" onclick="enterStall(' + g.marketStall.stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
-        if (timeLeft.expired) {
-            html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:4px;">🏛️ Перейти в Магистрат</button>';
-        }
-        html += '</div>';
-    } else {
-        html += '<p style="color:#6a5a48;font-size:12px;">У вас нет лавки. Приобретите её в Магистрате.</p>';
-        html += '<button class="btn btn-small" onclick="openMagistrate()" style="margin-top:6px;">🏛️ Перейти в Магистрат</button>';
-    }
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>📋 СПИСОК ЛАВОК</h4>';
-    html += '<div class="stall-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">';
-    var hasStalls = false;
-    for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
-        var stall = marketStalls[i];
-        if (stall && stall.owner) {
-            var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-            var isActive = !timeLeft.expired;
-            hasStalls = true;
-            html += '<div class="stall-card" style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:10px;text-align:center;cursor:pointer;" onclick="enterStall(' + i + ')">';
-            html += '<div class="stall-number" style="color:#6a5a48;font-size:12px;">🏪 #' + i + '</div>';
-            html += '<div class="stall-owner" style="color:#c9b694;font-size:13px;">' + stall.owner + '</div>';
-            html += '<div class="stall-status" style="font-size:11px;margin-top:4px;">' + (isActive ? '<span class="badge-green" style="color:#7ac98a;">✅ Активна</span>' : '<span class="badge-red" style="color:#c96a5a;">⛔ Истекла</span>') + '</div>';
-            html += '<div style="font-size:11px;color:#6a5a48;">📦 ' + (stall.inventory ? stall.inventory.length : 0) + ' товаров</div>';
-            html += '</div>';
-        }
-    }
-    if (!hasStalls) {
-        html += '<p style="color:#6a5a48;grid-column:1/-1;text-align:center;padding:20px 0;">Нет активных лавок</p>';
-    }
-    html += '</div>';
-    html += '</div>';
-    
-    html += '<button class="btn btn-secondary" onclick="closeMarket()" style="margin-top:10px;">Закрыть</button>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeMarket() {
-    var modal = document.getElementById('modal-market');
-    if (modal) modal.classList.add('hide');
-}
-
-function enterStall(stallId) {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    var stall = marketStalls[stallId];
-    if (!stall) { setMessage('❌ Лавка не найдена.'); return; }
-    
-    var isOwner = stall.owner === currentUser;
-    var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-    var isActive = !timeLeft.expired;
-    
-    var modal = document.getElementById('modal-stall');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-stall';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStall(); };
-        overlay.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3>🏪 ЛАВКА</h3>
-                    <button class="close-btn" onclick="closeStall()">✕</button>
-                </div>
-                <div id="modal-stall-content"></div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-stall-content');
-    
-    var html = '<div class="modal-section"><h4>🏪 ЛАВКА #' + stallId + '</h4>';
-    html += '<p style="color:#6a5a48;">👤 Владелец: <strong>' + stall.owner + '</strong></p>';
-    html += '<p style="color:#6a5a48;">' + (isActive ? '✅ Активна' : '⛔ Аренда истекла') + '</p>';
-    if (!isActive && isOwner) {
-        html += '<p style="color:#c96a5a;">⚠️ Оплатите аренду в Магистрате!</p>';
-    }
-    html += '</div>';
-    
-    if (isOwner && isActive) {
-        html += '<div class="modal-section"><h4>📦 УПРАВЛЕНИЕ ЛАВКОЙ</h4>';
-        html += '<button class="btn btn-small" onclick="addToStall(' + stallId + ')" style="margin:4px 0;">📥 Добавить товар из инвентаря</button>';
-        html += '</div>';
-    }
-    
-    html += '<div class="modal-section"><h4>🛒 ТОВАРЫ</h4>';
-    if (!stall.inventory || stall.inventory.length === 0) {
-        html += '<p style="color:#6a5a48;">В лавке нет товаров.</p>';
-    } else {
-        stall.inventory.forEach(function(item, idx) {
-            var quality = item.quality || 'Обычное';
-            var q = QUALITIES[quality] || QUALITIES['Обычное'];
-            var price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
-            var stats = '';
-            var countDisplay = '';
-            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
-            if (item.finalDamage) stats = '⚔️ ' + item.finalDamage;
-            else if (item.finalDefense) stats = '🛡️ ' + item.finalDefense;
-            
-            html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
-            html += '<span class="value" style="font-size:11px;">' + stats + ' | 💰' + formatCurrency(price);
-            if (isOwner && isActive) {
-                html += ' <button class="btn btn-small" onclick="removeFromStall(' + stallId + ',' + idx + ')">❌ Убрать</button>';
-            } else if (isActive && !isOwner) {
-                html += ' <button class="btn btn-small" onclick="buyFromStall(' + stallId + ',' + idx + ')">🛒 Купить</button>';
+    for (var id in diceGames) {
+        var game = diceGames[id];
+        if (now - game.createdAt > timeout && game.status === 'waiting') {
+            var creator = users[game.creator];
+            if (creator) {
+                creator.game.copper += game.bet;
+                convertCurrency(creator.game);
+                saveData();
             }
-            html += '</span></div>';
-        });
+            delete diceGames[id];
+            continue;
+        }
+        if (game.status === 'waiting' || game.status === 'playing') {
+            active.push(game);
+        }
     }
-    html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeStall()">Закрыть</button>';
     
-    content.innerHTML = html;
-    modal.classList.remove('hide');
+    return active;
 }
 
-function closeStall() {
-    var modal = document.getElementById('modal-stall');
-    if (modal) modal.classList.add('hide');
-}
-
-function addToStall(stallId) {
+function createDiceGame(bet) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    var stall = marketStalls[stallId];
     
-    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
-    if (g.inventory.length === 0) { setMessage('❌ Инвентарь пуст.'); return; }
-    
-    var choices = 'Выберите предмет для лавки (можно целый стек):\n';
-    g.inventory.forEach(function(item, i) {
-        var countDisplay = '';
-        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
-        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
-    });
-    choices += '0. Отмена';
-    var choice = prompt(choices);
-    var index = parseInt(choice) - 1;
-    if (isNaN(index) || index < 0 || index >= g.inventory.length) {
-        setMessage('❌ Отменено.');
-        return;
+    for (var id in diceGames) {
+        if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') {
+            setMessage('❌ У вас уже есть активная игра!');
+            return;
+        }
     }
     
-    var item = g.inventory.splice(index, 1)[0];
-    var priceInput = prompt('Введите цену (в меди, например: 100, 5 ЗОЛ, 1 ЗОЛ 50 МП):');
-    var price = parseCurrencyInput(priceInput);
-    if (price === null || price < 1) {
-        setMessage('❌ Цена должна быть не менее 1 МП.');
-        addToInventory(g, item);
-        return;
-    }
+    if (!spendMoney(g, bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
     
-    if (!stall.inventory) stall.inventory = [];
-    if (!stall.prices) stall.prices = {};
-    var newIdx = stall.inventory.length;
-    stall.inventory.push(item);
-    stall.prices[newIdx] = price;
+    var gameId = 'dice_' + (++diceGameIdCounter);
+    diceGames[gameId] = {
+        id: gameId,
+        creator: currentUser,
+        bet: bet,
+        createdAt: Date.now(),
+        status: 'waiting',
+        player2: null,
+        creatorRoll: null,
+        player2Roll: null
+    };
     
-    saveMarketStalls();
     saveData();
-    setMessage('✅ Вы добавили ' + item.name + ' в лавку за ' + formatCurrency(price));
-    addLog('🏪 ' + currentUser + ' добавил ' + item.name + ' в лавку #' + stallId);
+    setMessage('✅ Вы создали игру в кости на ' + formatCurrency(bet) + '! Ждите соперника.');
+    addLog('🎲 ' + currentUser + ' создал игру в кости на ' + formatCurrency(bet));
     updateMenu();
-    enterStall(stallId);
+    openBrothel();
 }
 
-function buyFromStall(stallId, idx) {
+function joinDiceGame(gameId) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    var stall = marketStalls[stallId];
     
-    if (!stall || !stall.inventory || idx >= stall.inventory.length) {
-        setMessage('❌ Товар не найден.');
-        return;
+    var game = diceGames[gameId];
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator === currentUser) { setMessage('❌ Вы не можете присоединиться к своей игре.'); return; }
+    if (game.status !== 'waiting') { setMessage('❌ Игра уже началась или завершена.'); return; }
+    if (!spendMoney(g, game.bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
+    
+    game.player2 = currentUser;
+    game.status = 'playing';
+    
+    saveData();
+    setMessage('✅ Вы присоединились к игре! Бросайте кости.');
+    addLog('🎲 ' + currentUser + ' присоединился к игре ' + gameId);
+    updateMenu();
+    playDicePvP(gameId);
+}
+
+function playDicePvP(gameId) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var game = diceGames[gameId];
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator !== currentUser && game.player2 !== currentUser) { setMessage('❌ Вы не участник этой игры.'); return; }
+    
+    var dice1 = Math.floor(Math.random() * 6) + 1;
+    var dice2 = Math.floor(Math.random() * 6) + 1;
+    var total = dice1 + dice2;
+    
+    if (game.creator === currentUser) {
+        if (game.creatorRoll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
+        game.creatorRoll = total;
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
+    } else if (game.player2 === currentUser) {
+        if (game.player2Roll !== null) { setMessage('❌ Вы уже бросили кости! Ждите соперника.'); return; }
+        game.player2Roll = total;
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
     }
-    var item = stall.inventory[idx];
-    var price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
-    if (price <= 0) { setMessage('❌ Цена не указана.'); return; }
-    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
     
-    var owner = users[stall.owner];
-    if (owner) {
-        owner.game.copper += price;
-        convertCurrency(owner.game);
+    saveData();
+    updateMenu();
+    
+    if (game.creatorRoll !== null && game.player2Roll !== null) {
+        finishDiceGame(gameId);
+    }
+}
+
+function finishDiceGame(gameId) {
+    var game = diceGames[gameId];
+    if (!game) return;
+    
+    var creator = users[game.creator];
+    var player2 = users[game.player2];
+    var totalBet = game.bet * 2;
+    
+    var winner = null;
+    var winnerName = '';
+    
+    if (game.creatorRoll > game.player2Roll) {
+        winner = creator;
+        winnerName = game.creator;
+        setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')');
+    } else if (game.player2Roll > game.creatorRoll) {
+        winner = player2;
+        winnerName = game.player2;
+        setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')');
+    } else {
+        creator.game.copper += game.bet;
+        player2.game.copper += game.bet;
+        convertCurrency(creator.game);
+        convertCurrency(player2.game);
+        setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.');
+        addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2);
+        game.status = 'finished';
+        delete diceGames[gameId];
         saveData();
+        updateMenu();
+        openBrothel();
+        return;
     }
-    stall.inventory.splice(idx, 1);
-    if (stall.prices) delete stall.prices[idx];
-    addToInventory(g, item);
-    saveMarketStalls();
-    saveData();
-    setMessage('✅ Вы купили ' + item.name + ' за ' + formatCurrency(price));
-    addLog('🏪 ' + currentUser + ' купил ' + item.name + ' в лавке #' + stallId + ' за ' + formatCurrency(price));
-    updateMenu();
-    enterStall(stallId);
-}
-
-function removeFromStall(stallId, idx) {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    var stall = marketStalls[stallId];
     
-    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
-    if (!stall.inventory || idx >= stall.inventory.length) { setMessage('❌ Товар не найден.'); return; }
-    var item = stall.inventory.splice(idx, 1)[0];
-    if (stall.prices) delete stall.prices[idx];
-    addToInventory(g, item);
-    saveMarketStalls();
+    if (winner) {
+        winner.game.copper += totalBet;
+        convertCurrency(winner.game);
+        setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!');
+        addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator));
+    }
+    
+    game.status = 'finished';
+    delete diceGames[gameId];
     saveData();
-    setMessage('✅ Вы убрали ' + item.name + ' из лавки.');
     updateMenu();
-    enterStall(stallId);
+    openBrothel();
 }
 
 // ============================================================
-// 16. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
+// 17. ВСПОМОГАТЕЛЬНЫЕ
+// ============================================================
+
+function parseCurrencyInput(input) {
+    input = input.trim().toUpperCase();
+    if (!input) return null;
+    if (/^\d+$/.test(input)) return parseInt(input);
+    
+    var total = 0;
+    var patterns = [
+        { regex: /(\d+)\s*ЗОЛ(ОТО)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*СО(РЕБРО)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*МП(ЕДЬ)?/i, multiplier: 1 },
+        { regex: /(\d+)\s*G(OLD)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*S(ILVER)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*C(OPPER)?/i, multiplier: 1 }
+    ];
+    
+    for (var pi = 0; pi < patterns.length; pi++) {
+        var pattern = patterns[pi];
+        var regex = new RegExp(pattern.regex.source, 'gi');
+        var match;
+        while ((match = regex.exec(input)) !== null) {
+            var value = parseInt(match[1]);
+            if (!isNaN(value)) total += value * pattern.multiplier;
+        }
+    }
+    
+    if (total > 0) return total;
+    
+    var parts = input.split(' ');
+    for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+        var num = parseInt(part);
+        if (isNaN(num)) continue;
+        var next = i + 1 < parts.length ? parts[i + 1] : '';
+        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') {
+            total += num * 210 * 56; i++;
+        } else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') {
+            total += num * 56; i++;
+        } else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') {
+            total += num; i++;
+        } else {
+            total += num;
+        }
+    }
+    return total;
+}
+
+// ============================================================
+// 18. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
 // ============================================================
 
 function openInventory() {
@@ -2516,9 +2478,10 @@ function closeOnline() {
 }
 
 // ============================================================
-// 17. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
+// 19. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
+// КАРТА
 window.openMap = openMap;
 window.closeMap = closeMap;
 window.goToBuilding = goToBuilding;
