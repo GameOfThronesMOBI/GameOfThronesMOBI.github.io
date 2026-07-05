@@ -62,14 +62,41 @@
 <div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) document.getElementById('modal-guild').classList.add('hide')"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="document.getElementById('modal-guild').classList.add('hide')">✕</button></div><div id="modal-guild-content"></div></div></div>
 <div id="modal-log" class="modal-overlay hide" onclick="if(event.target===this) closeLog()"><div class="modal-box"><div class="modal-header"><h3>📜 ЛОГ СОБЫТИЙ</h3><button class="close-btn" onclick="closeLog()">✕</button></div><div id="modal-log-content"></div></div></div>
 
-<!-- Ядро — работает -->
+<!-- ============================================================ -->
+<!-- 1. CORE — ЯДРО ИГРЫ -->
+<!-- ============================================================ -->
 <script src="js/core/01-config.js"></script>
 <script src="js/core/02-state.js"></script>
 <script src="js/core/03-utils.js"></script>
 <script src="js/core/04-storage.js"></script>
 
-<!-- ТОЛЬКО город -->
+<!-- ============================================================ -->
+<!-- 2. DATA — ДАННЫЕ -->
+<!-- ============================================================ -->
+<script src="js/data/drop.js"></script>
+<script src="js/data/houses.js"></script>
+<script src="js/data/items.js"></script>
+<script src="js/data/mobs.js"></script>
+
+<!-- ============================================================ -->
+<!-- 3. GAME — ИГРОВАЯ ЛОГИКА -->
+<!-- ============================================================ -->
+<script src="js/game/character.js"></script>
+<script src="js/game/combat.js"></script>
+<script src="js/game/diplomacy.js"></script>
+<script src="js/game/inventory.js"></script>
+<script src="js/game/menu.js"></script>
+<script src="js/game/movement.js"></script>
+
+<!-- ============================================================ -->
+<!-- 4. REGIONS — КОРОЛЕВСКАЯ ГАВАНЬ -->
+<!-- ============================================================ -->
 <script src="js/regions/crownlands/locations/kings_landing.js"></script>
+
+<!-- ============================================================ -->
+<!-- 5. MAIN — ТОЧКА ВХОДА -->
+<!-- ============================================================ -->
+<script src="js/main.js"></script>
 
 <!-- Точка входа -->
 <script src="js/main.js"></script>
