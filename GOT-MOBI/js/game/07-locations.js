@@ -1,6 +1,5 @@
 // ============================================================
-// js/game/07-locations.js — ТОРГОВЛЯ, КРАФТ, МАГАЗИНЫ, АУКЦИОН
-// ТОЛЬКО ДЛЯ КОРОЛЕВСКОЙ ГАВАНИ
+// js/game/07-locations.js — ТОРГОВЛЯ С РАЗДЕЛАМИ И КАЧЕСТВАМИ
 // ============================================================
 
 // ============================================================
@@ -15,29 +14,23 @@ function openShop(shopType) {
     var modal = document.getElementById('modal-trade');
     var content = document.getElementById('modal-trade-content');
     
-    var shopItems = getShopItems(shopType);
+    var categories = getShopCategories(shopType);
+    
     var html = '<div class="modal-section"><h4>🏪 ' + shopType + '</h4>';
     html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '</div>';
     
-    // ТОВАРЫ ДЛЯ ПОКУПКИ
-    html += '<div class="modal-section"><h4>📦 КУПИТЬ</h4>';
-    if (shopItems.buy.length === 0) {
-        html += '<p style="color:#6a5a48;">Нет товаров для покупки.</p>';
-    } else {
-        shopItems.buy.forEach(function(item) {
-            var stock = 99;
-            var canBuy = g.gold * 210 * 56 + g.silver * 56 + g.copper >= item.price;
-            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="font-size:13px;">' + item.label + '</span>';
-            html += '<span class="value" style="font-size:11px;">' + formatCurrency(item.price) + ' | 📦' + stock;
-            html += ' <button class="btn btn-small" onclick="buyFromShop(\'' + shopType + '\',\'' + item.key + '\',' + item.price + ')" ' + (canBuy ? '' : 'disabled') + '>' + (canBuy ? '✅ Купить' : '❌') + '</button>';
-            html += '</span></div>';
-        });
-    }
+    // КАТЕГОРИИ
+    html += '<div class="modal-section"><h4>📂 РАЗДЕЛЫ</h4>';
+    html += '<div class="tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
+    categories.forEach(function(cat) {
+        html += '<button class="tab-btn" onclick="openCategory(\'' + shopType + '\',\'' + cat.id + '\')">' + cat.label + '</button>';
+    });
+    html += '</div>';
+    html += '<div id="shop-category-content"><p style="color:#6a5a48;">👆 Выберите раздел</p></div>';
     html += '</div>';
     
-    // ПРОДАЖА ПРЕДМЕТОВ
+    // ПРОДАЖА
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     var sellItems = getSellableItems(g, shopType);
     if (sellItems.length === 0) {
@@ -57,120 +50,346 @@ function openShop(shopType) {
     modal.classList.remove('hide');
 }
 
-function getShopItems(shopType) {
-    var buyItems = [];
-    var result = { buy: buyItems };
+function getShopCategories(shopType) {
+    if (shopType === 'Оружейная лавка') {
+        return [
+            { id: 'sword', label: '🗡️ Мечи' },
+            { id: 'spear', label: '🔱 Копья' },
+            { id: 'axe', label: '🪓 Топоры' },
+            { id: 'mace', label: '🔨 Булавы' },
+            { id: 'dagger', label: '🔪 Кинжалы' },
+            { id: 'shield', label: '🛡️ Щиты' },
+            { id: 'bow', label: '🏹 Луки' },
+            { id: 'crossbow', label: '🎯 Арбалеты' }
+        ];
+    }
+    if (shopType === 'Кожевник') {
+        return [
+            { id: 'leather', label: '🧵 Кожа (ресурс)' },
+            { id: 'helmet', label: '🪖 Шлемы' },
+            { id: 'chestplate', label: '🦺 Нагрудники' },
+            { id: 'shoulders', label: '💪 Наплечники' },
+            { id: 'leggings', label: '👖 Поножи' },
+            { id: 'boots', label: '👢 Сапоги' },
+            { id: 'gloves', label: '🧤 Перчатки' },
+            { id: 'belt', label: '🎗️ Пояса' },
+            { id: 'cloak', label: '🧥 Плащи' }
+        ];
+    }
+    if (shopType === 'Бронник') {
+        return [
+            { id: 'steel', label: '⚒️ Сталь (ресурс)' },
+            { id: 'helmet', label: '🪖 Шлемы' },
+            { id: 'chestplate', label: '🦺 Нагрудники' },
+            { id: 'shoulders', label: '💪 Наплечники' },
+            { id: 'leggings', label: '👖 Поножи' },
+            { id: 'boots', label: '👢 Сапоги' },
+            { id: 'gloves', label: '🧤 Перчатки' },
+            { id: 'belt', label: '🎗️ Пояса' },
+            { id: 'cloak', label: '🧥 Плащи' }
+        ];
+    }
+    if (shopType === 'Плотник') {
+        return [
+            { id: 'wood', label: '🪵 Дерево (ресурс)' },
+            { id: 'bow', label: '🏹 Луки' },
+            { id: 'crossbow', label: '🎯 Арбалеты' }
+        ];
+    }
+    if (shopType === 'Кузница') {
+        return [
+            { id: 'iron', label: '⛏️ Руда' },
+            { id: 'coal', label: '🔥 Уголь' },
+            { id: 'steel', label: '⚒️ Сталь' },
+            { id: 'valyrian_ore', label: '💎 Руда 14 огней' },
+            { id: 'valyrian_steel', label: '🌟 Валирийская сталь' }
+        ];
+    }
+    return [];
+}
+
+function openCategory(shopType, categoryId) {
+    var container = document.getElementById('shop-category-content');
+    if (!container) return;
+    
+    var items = getCategoryItems(shopType, categoryId);
+    
+    var html = '<button class="btn btn-secondary" style="margin-bottom:10px;" onclick="openShop(\'' + shopType + '\')">⬅️ Назад к разделам</button>';
+    
+    var categoryNames = {
+        'sword': '🗡️ Мечи', 'spear': '🔱 Копья', 'axe': '🪓 Топоры',
+        'mace': '🔨 Булавы', 'dagger': '🔪 Кинжалы', 'shield': '🛡️ Щиты',
+        'bow': '🏹 Луки', 'crossbow': '🎯 Арбалеты',
+        'helmet': '🪖 Шлемы', 'chestplate': '🦺 Нагрудники',
+        'shoulders': '💪 Наплечники', 'leggings': '👖 Поножи',
+        'boots': '👢 Сапоги', 'gloves': '🧤 Перчатки',
+        'belt': '🎗️ Пояса', 'cloak': '🧥 Плащи',
+        'leather': '🧵 Кожа', 'steel': '⚒️ Сталь',
+        'wood': '🪵 Дерево', 'iron': '⛏️ Руда',
+        'coal': '🔥 Уголь', 'valyrian_ore': '💎 Руда 14 огней',
+        'valyrian_steel': '🌟 Валирийская сталь'
+    };
+    
+    html += '<h4>' + (categoryNames[categoryId] || categoryId) + '</h4>';
+    
+    if (items.length === 0) {
+        html += '<p style="color:#6a5a48;">Нет товаров в этом разделе.</p>';
+    } else {
+        html += '<div style="margin-top:10px;">';
+        items.forEach(function(item) {
+            var quality = item.quality || 'Обычное';
+            var q = QUALITIES[quality] || QUALITIES['Обычное'];
+            var stock = getTraderStock(shopType, item.key) || 99;
+            var canBuy = stock > 0;
+            var price = item.price;
+            
+            html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
+            html += '<div style="flex:1;">';
+            html += '<span style="color:' + q.color + ';">' + q.emoji + ' ' + quality + '</span>';
+            html += '<br><span style="font-size:12px;color:#b8a890;">' + item.name;
+            if (item.stats) html += ' | ' + item.stats;
+            html += '</span>';
+            html += '</div>';
+            html += '<div style="text-align:right;">';
+            html += '<span style="color:#6a5a48;font-size:11px;">📦 ' + stock + ' шт.</span><br>';
+            html += '<span style="color:#c9b694;">' + formatCurrency(price) + '</span>';
+            if (canBuy) {
+                html += ' <button class="btn btn-small" onclick="buyFromShop(\'' + shopType + '\',\'' + item.key + '\',' + price + ')">✅ Купить</button>';
+            } else {
+                html += ' <button class="btn btn-small" style="opacity:0.4;cursor:not-allowed;" disabled>❌ Нет</button>';
+            }
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+function getCategoryItems(shopType, categoryId) {
+    var items = [];
+    var user = users[currentUser];
+    if (!user) return items;
+    var g = user.game;
+    
+    var qualities = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
     
     // ===== ОРУЖЕЙНАЯ ЛАВКА =====
     if (shopType === 'Оружейная лавка') {
-        var weaponTypes = ['sword','spear','axe','mace','dagger','shield','bow','crossbow'];
-        weaponTypes.forEach(function(type) {
-            if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[type]) {
-                ALL_ITEMS.weapons[type].forEach(function(w) {
-                    var quality = 'Обычное';
+        if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
+            ALL_ITEMS.weapons[categoryId].forEach(function(w) {
+                var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
+                if (w.level >= 40) itemQualities.push('Мастерское');
+                if (w.level >= 60) itemQualities.push('Легендарное');
+                if (w.level >= 80) itemQualities.push('Мифическое');
+                if (w.level <= 1) itemQualities.unshift('Рваное');
+                
+                itemQualities.forEach(function(quality) {
+                    var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                    var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
+                    var price = Math.round(basePrice * q.multiplier);
                     var key = w.name + '|' + quality;
-                    var price = Math.round((5 + w.level * 2 + (w.baseDamage || 0)) * 1.0);
-                    var label = w.name + ' (ур.' + w.level + ')';
-                    if (w.baseDamage) label += ' ⚔️' + w.baseDamage;
-                    if (w.defense) label += ' 🛡️' + w.defense;
-                    buyItems.push({ key: key, label: label, price: price });
+                    var stats = '';
+                    if (w.baseDamage) stats = '⚔️ ' + Math.round(w.baseDamage * q.multiplier);
+                    if (w.defense) stats = '🛡️ ' + Math.round(w.defense * q.multiplier);
+                    items.push({
+                        name: w.name,
+                        quality: quality,
+                        price: price,
+                        key: key,
+                        stats: stats,
+                        level: w.level
+                    });
                 });
-            }
-        });
+            });
+        }
     }
     
     // ===== КОЖЕВНИК =====
     if (shopType === 'Кожевник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
-        qualities.forEach(function(q) {
-            var key = 'Кожа|' + q;
-            var price = getResourcePrice('leather', q);
-            buyItems.push({ key: key, label: '🧵 Кожа (' + q + ')', price: price });
-        });
-        if (ALL_ITEMS && ALL_ITEMS.leather) {
-            Object.keys(ALL_ITEMS.leather).forEach(function(type) {
-                ALL_ITEMS.leather[type].forEach(function(item) {
-                    var quality = 'Обычное';
-                    var key = item.name + '|' + quality;
-                    var price = Math.round((5 + item.level * 2 + (item.baseDefense || 0)) * 1.0);
-                    var label = '🪡 ' + item.name + ' (ур.' + item.level + ')';
-                    if (item.baseDefense) label += ' 🛡️' + item.baseDefense;
-                    if (item.speedPercent) label += ' 🏃+' + item.speedPercent + '%';
-                    buyItems.push({ key: key, label: label, price: price });
+        if (categoryId === 'leather') {
+            var leatherQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+            leatherQualities.forEach(function(quality) {
+                var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                var basePrice = 5;
+                var price = Math.round(basePrice * q.multiplier);
+                var key = 'Кожа|' + quality;
+                items.push({
+                    name: '🧵 Кожа',
+                    quality: quality,
+                    price: price,
+                    key: key,
+                    stats: '📦 ресурс',
+                    level: 1
                 });
             });
+        } else {
+            if (ALL_ITEMS && ALL_ITEMS.leather && ALL_ITEMS.leather[categoryId]) {
+                ALL_ITEMS.leather[categoryId].forEach(function(w) {
+                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
+                    if (w.level >= 40) itemQualities.push('Мастерское');
+                    if (w.level >= 60) itemQualities.push('Легендарное');
+                    if (w.level >= 80) itemQualities.push('Мифическое');
+                    if (w.level <= 1) itemQualities.unshift('Рваное');
+                    
+                    itemQualities.forEach(function(quality) {
+                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                        var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
+                        var price = Math.round(basePrice * q.multiplier);
+                        var key = w.name + '|' + quality;
+                        var stats = '';
+                        if (w.baseDefense) stats = '🛡️ ' + Math.round(w.baseDefense * q.multiplier);
+                        if (w.speedPercent) stats += ' | 🏃 +' + w.speedPercent + '%';
+                        items.push({
+                            name: w.name,
+                            quality: quality,
+                            price: price,
+                            key: key,
+                            stats: stats,
+                            level: w.level
+                        });
+                    });
+                });
+            }
         }
     }
     
     // ===== БРОННИК =====
     if (shopType === 'Бронник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
-        qualities.forEach(function(q) {
-            var key = 'Сталь|' + q;
-            var price = getResourcePrice('steel', q);
-            buyItems.push({ key: key, label: '⚒️ Сталь (' + q + ')', price: price });
-        });
-        if (ALL_ITEMS && ALL_ITEMS.plate) {
-            Object.keys(ALL_ITEMS.plate).forEach(function(type) {
-                ALL_ITEMS.plate[type].forEach(function(item) {
-                    var quality = 'Обычное';
-                    var key = item.name + '|' + quality;
-                    var price = Math.round((5 + item.level * 2 + (item.baseDefense || 0)) * 1.0);
-                    var label = '🛡️ ' + item.name + ' (ур.' + item.level + ')';
-                    if (item.baseDefense) label += ' 🛡️' + item.baseDefense;
-                    if (item.speedPercent) label += ' 🏃+' + item.speedPercent + '%';
-                    buyItems.push({ key: key, label: label, price: price });
+        if (categoryId === 'steel') {
+            var steelQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+            steelQualities.forEach(function(quality) {
+                var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                var basePrice = 20;
+                var price = Math.round(basePrice * q.multiplier);
+                var key = 'Сталь|' + quality;
+                items.push({
+                    name: '⚒️ Сталь',
+                    quality: quality,
+                    price: price,
+                    key: key,
+                    stats: '📦 ресурс',
+                    level: 1
                 });
             });
+        } else {
+            if (ALL_ITEMS && ALL_ITEMS.plate && ALL_ITEMS.plate[categoryId]) {
+                ALL_ITEMS.plate[categoryId].forEach(function(w) {
+                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
+                    if (w.level >= 40) itemQualities.push('Мастерское');
+                    if (w.level >= 60) itemQualities.push('Легендарное');
+                    if (w.level >= 80) itemQualities.push('Мифическое');
+                    
+                    itemQualities.forEach(function(quality) {
+                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                        var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
+                        var price = Math.round(basePrice * q.multiplier);
+                        var key = w.name + '|' + quality;
+                        var stats = '';
+                        if (w.baseDefense) stats = '🛡️ ' + Math.round(w.baseDefense * q.multiplier);
+                        if (w.speedPercent) stats += ' | 🏃 +' + w.speedPercent + '%';
+                        items.push({
+                            name: w.name,
+                            quality: quality,
+                            price: price,
+                            key: key,
+                            stats: stats,
+                            level: w.level
+                        });
+                    });
+                });
+            }
         }
     }
     
     // ===== ПЛОТНИК =====
     if (shopType === 'Плотник') {
-        var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
-        qualities.forEach(function(q) {
-            var key = 'Дерево|' + q;
-            var price = getResourcePrice('wood', q);
-            buyItems.push({ key: key, label: '🪵 Дерево (' + q + ')', price: price });
-        });
-        if (ALL_ITEMS && ALL_ITEMS.weapons) {
-            ['bow','crossbow'].forEach(function(type) {
-                if (ALL_ITEMS.weapons[type]) {
-                    ALL_ITEMS.weapons[type].forEach(function(item) {
-                        var quality = 'Обычное';
-                        var key = item.name + '|' + quality;
-                        var price = Math.round((5 + item.level * 2 + (item.baseDamage || 0)) * 1.0);
-                        var label = '🏹 ' + item.name + ' (ур.' + item.level + ')';
-                        if (item.baseDamage) label += ' ⚔️' + item.baseDamage;
-                        buyItems.push({ key: key, label: label, price: price });
-                    });
-                }
+        if (categoryId === 'wood') {
+            var woodQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+            woodQualities.forEach(function(quality) {
+                var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                var basePrice = 3;
+                var price = Math.round(basePrice * q.multiplier);
+                var key = 'Дерево|' + quality;
+                items.push({
+                    name: '🪵 Дерево',
+                    quality: quality,
+                    price: price,
+                    key: key,
+                    stats: '📦 ресурс',
+                    level: 1
+                });
             });
+        } else {
+            if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
+                ALL_ITEMS.weapons[categoryId].forEach(function(w) {
+                    var itemQualities = ['Плохое','Обычное','Хорошее','Качественное'];
+                    if (w.level >= 40) itemQualities.push('Мастерское');
+                    if (w.level >= 60) itemQualities.push('Легендарное');
+                    if (w.level >= 80) itemQualities.push('Мифическое');
+                    if (w.level <= 1) itemQualities.unshift('Рваное');
+                    
+                    itemQualities.forEach(function(quality) {
+                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                        var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
+                        var price = Math.round(basePrice * q.multiplier);
+                        var key = w.name + '|' + quality;
+                        var stats = '';
+                        if (w.baseDamage) stats = '⚔️ ' + Math.round(w.baseDamage * q.multiplier);
+                        items.push({
+                            name: w.name,
+                            quality: quality,
+                            price: price,
+                            key: key,
+                            stats: stats,
+                            level: w.level
+                        });
+                    });
+                });
+            }
         }
     }
     
     // ===== КУЗНИЦА =====
     if (shopType === 'Кузница') {
-        var resources = [
-            { name: 'Руда железная', type: 'iron' },
-            { name: 'Уголь', type: 'coal' },
-            { name: 'Сталь', type: 'steel' },
-            { name: 'Кожа', type: 'leather' },
-            { name: 'Дерево', type: 'wood' },
-            { name: 'Руда 14 огней', type: 'valyrian_ore' },
-            { name: 'Валирийская сталь', type: 'valyrian_steel' }
-        ];
-        resources.forEach(function(res) {
-            var qualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
-            qualities.forEach(function(q) {
-                var key = res.name + '|' + q;
-                var price = getResourcePrice(res.type, q);
-                buyItems.push({ key: key, label: '⛏️ ' + res.name + ' (' + q + ')', price: price });
+        var resourceNames = {
+            'iron': { name: '⛏️ Руда железная', basePrice: 8 },
+            'coal': { name: '🔥 Уголь', basePrice: 4 },
+            'steel': { name: '⚒️ Сталь', basePrice: 20 },
+            'valyrian_ore': { name: '💎 Руда 14 огней', basePrice: 50000 },
+            'valyrian_steel': { name: '🌟 Валирийская сталь', basePrice: 100000 }
+        };
+        
+        var res = resourceNames[categoryId];
+        if (res) {
+            var resQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
+            if (categoryId === 'valyrian_ore' || categoryId === 'valyrian_steel') {
+                resQualities = ['Мифическое'];
+            }
+            resQualities.forEach(function(quality) {
+                var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                var price = Math.round(res.basePrice * q.multiplier);
+                var key = res.name + '|' + quality;
+                items.push({
+                    name: res.name,
+                    quality: quality,
+                    price: price,
+                    key: key,
+                    stats: '📦 ресурс',
+                    level: 1
+                });
             });
-        });
+        }
     }
     
-    return result;
+    // Сортируем по качеству (от плохого к лучшему)
+    var qualityOrder = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
+    items.sort(function(a, b) {
+        return qualityOrder.indexOf(a.quality) - qualityOrder.indexOf(b.quality);
+    });
+    
+    return items;
 }
 
 function getSellableItems(g, shopType) {
@@ -855,6 +1074,7 @@ window.openGuild = openGuild;
 window.openTavernTrade = openTavernTrade;
 window.closeTrade = closeTrade;
 window.closeGuild = closeGuild;
+window.openCategory = openCategory;
 window.buyFromShop = buyFromShop;
 window.sellToShop = sellToShop;
 window.buyFromConsumable = buyFromConsumable;
