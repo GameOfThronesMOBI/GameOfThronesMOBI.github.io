@@ -225,17 +225,17 @@ function updateActions() {
     if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
         var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
         if (hasHouse) {
-            actions = [{ id: 'housing_enter', label: '🏠 Домой' }].concat(actions);
+            actions = [{ id: 'housing_enter', label: '🏠 Зайти домой' }].concat(actions);
         } else {
-            actions = [{ id: 'housing_view', label: '🏠 Купить' }].concat(actions);
+            actions = [{ id: 'housing_view', label: '🏠 Купить жильё' }].concat(actions);
         }
     }
     
     if (place === 'Дом') {
         actions = [
-            { id: 'home_rest', label: '🛏️ Отдохнуть' },
+            { id: 'home_rest', label: '🛏️ Отдохнуть (бесплатно)' },
             { id: 'home_storage', label: '📦 Склад' },
-            { id: 'home_leave', label: '🚪 Выйти' }
+            { id: 'home_leave', label: '🚪 Выйти из дома' }
         ].concat(actions);
     }
     
@@ -249,9 +249,9 @@ function updateActions() {
     
     if (place === 'Тюрьма') {
         actions = [
-            { id: 'jail_pay', label: '💰 Штраф' },
-            { id: 'jail_wait', label: '⏳ Ждать' },
-            { id: 'jail_escape', label: '🏃 Сбежать' }
+            { id: 'jail_pay', label: '💰 Заплатить штраф' },
+            { id: 'jail_wait', label: '⏳ Ждать освобождения' },
+            { id: 'jail_escape', label: '🏃 Попытаться сбежать' }
         ].concat(actions);
     }
     
@@ -317,7 +317,7 @@ function buyHouse(type) {
     g.housing.type = type;
     g.housing.purchased = Date.now();
     g.housing.rentPaid = Date.now();
-    g.housing.rentDays = 1;
+    g.housing.rentDays = 1; // 1 день аренды при покупке
     g.housing.debt = 0;
     if (!g.housing.storage) g.housing.storage = [];
     if (!g.housing.storageHold) g.housing.storageHold = [];
@@ -378,7 +378,7 @@ function payRent() {
     var totalDays = currentDays + 7;
     
     if (totalDays > 28) {
-        setMessage('⏳ Вы оплатили 4 недели вперёд.');
+        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
         return;
     }
     
@@ -387,14 +387,15 @@ function payRent() {
         return;
     }
     
-    g.housing.rentDays = (g.housing.rentDays || 0) + 7;
+    g.housing.rentDays = totalDays;
     g.housing.rentPaid = Date.now();
     
     saveData();
     setMessage('✅ Аренда оплачена на неделю!');
-    addLog('💰 ' + currentUser + ' оплатил аренду');
+    addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
     updateMenu();
     updateActions();
+    if (typeof showMagistrateHousing === 'function') showMagistrateHousing();
 }
 
 function checkRent() {
@@ -422,14 +423,12 @@ function evictFromHousing() {
     saveHousingMarket();
     
     if (g.housing.storage && g.housing.storage.length > 0) {
-        if (!confiscatedItems) confiscatedItems = [];
-        confiscatedItems.push({
-            owner: currentUser,
-            items: g.housing.storage,
-            confiscatedAt: Date.now(),
-            type: 'house'
+        if (!g.housing.storageHold) g.housing.storageHold = [];
+        g.housing.storage.forEach(function(item) {
+            g.housing.storageHold.push(item);
         });
         g.housing.storage = [];
+        setMessage('📦 ' + g.housing.storageHold.length + ' вещей перемещено в хранилище Магистрата.');
         saveData();
     }
     
@@ -439,10 +438,140 @@ function evictFromHousing() {
     g.housing.debt = 0;
     
     saveData();
-    setMessage('💀 Вас выселили из ' + house.name);
-    addLog('💀 ' + currentUser + ' выселен');
+    setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
+    addLog('💀 ' + currentUser + ' выселен из ' + house.name);
     updateMenu();
     updateActions();
+}
+
+function enterHome() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет дома!');
+        return;
+    }
+    
+    var house = HOUSING_TYPES[g.housing.type];
+    var timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+    if (timeLeft.expired) {
+        setMessage('❌ Аренда дома истекла! Оплатите в Магистрате.');
+        return;
+    }
+    
+    g.location.place = 'Дом';
+    g.location.location = 'Королевская Гавань';
+    setMessage('🏠 Вы вошли в свой дом.');
+    addLog('🏠 ' + currentUser + ' вошёл в дом');
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function restAtHome() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.housing || !g.housing.type) {
+        setMessage('❌ У вас нет дома!');
+        return;
+    }
+    
+    var house = HOUSING_TYPES[g.housing.type];
+    var timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+    if (timeLeft.expired) {
+        setMessage('❌ Аренда дома истекла! Оплатите в Магистрате.');
+        return;
+    }
+    
+    g.hp = Math.min(g.maxHp, g.hp + house.restHp);
+    g.fatigue = Math.min(100, g.fatigue + house.restFatigue);
+    setMessage('🛏️ Вы отдохнули дома. HP +' + house.restHp + ', усталость +' + house.restFatigue);
+    addLog('🛏️ ' + currentUser + ' отдохнул в ' + house.name);
+    updateMenu();
+    saveData();
+}
+
+function viewDistrict(district) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (g.housing && g.housing.type) {
+        setMessage('❌ У вас уже есть жильё!');
+        return;
+    }
+    
+    var districtMap = {
+        'Королевский квартал': ['mansion', 'townhouse'],
+        'Торговый квартал': ['house', 'room'],
+        'Квартал бедноты': ['night']
+    };
+    var types = districtMap[district];
+    if (!types) {
+        setMessage('❌ В этом районе нет жилья.');
+        return;
+    }
+    
+    var msg = '📍 ' + district + '\n\nДоступные варианты:\n';
+    var availableTypes = [];
+    types.forEach(function(type) {
+        var house = HOUSING_TYPES[type];
+        var market = housingMarket[type];
+        var available = market.total - market.occupied;
+        if (available > 0) {
+            availableTypes.push(type);
+            msg += house.emoji + ' ' + house.name + ' — ' + house.price + ' зол. (свободно: ' + available + ')\n';
+        } else {
+            msg += house.emoji + ' ' + house.name + ' — ❌ РАСПРОДАНО\n';
+        }
+    });
+    
+    if (availableTypes.length === 0) {
+        setMessage(msg + '\n❌ В этом районе нет свободного жилья.');
+        return;
+    }
+    
+    msg += '\nВведите номер для покупки:\n';
+    availableTypes.forEach(function(type, i) {
+        var house = HOUSING_TYPES[type];
+        msg += (i + 1) + '. ' + house.emoji + ' ' + house.name + ' (' + house.price + ' зол., аренда ' + house.rent + '/нед)\n';
+    });
+    msg += '0. Отмена';
+    
+    var choice = prompt(msg);
+    if (!choice || choice === '0') { setMessage('❌ Отменено.'); return; }
+    var index = parseInt(choice) - 1;
+    if (isNaN(index) || index < 0 || index >= availableTypes.length) {
+        setMessage('❌ Неверный выбор.');
+        return;
+    }
+    
+    var selectedType = availableTypes[index];
+    var house = HOUSING_TYPES[selectedType];
+    var market = housingMarket[selectedType];
+    var available = market.total - market.occupied;
+    if (available <= 0) {
+        setMessage('❌ К сожалению, все ' + house.name + ' распродали!');
+        return;
+    }
+    
+    var confirmMsg = '🏠 ' + house.name + '\n' +
+                     '📖 ' + house.description + '\n' +
+                     '📍 ' + house.district + '\n' +
+                     '💰 Цена: ' + house.price + ' зол.\n' +
+                     '💳 Аренда: ' + house.rent + ' зол./нед\n' +
+                     '📦 Склад: ' + house.storageSlots + ' слотов\n' +
+                     '🛏️ Отдых: +' + house.restHp + ' HP\n' +
+                     '📊 Свободно: ' + available + ' из ' + market.total + '\n\n' +
+                     'Купить? (да/нет)';
+    if (confirm(confirmMsg)) {
+        buyHouse(selectedType);
+    }
 }
 
 // ============================================================
@@ -571,35 +700,45 @@ function openStorageHold() {
         overlay.id = 'modal-storage-hold';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStorageHold(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div>';
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
     
     var content = document.getElementById('modal-storage-hold-content');
     
-    var html = '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из домов, от которых вы отказались или были выселены.</p>';
+    var html = '<div class="modal-section"><h4>📦 ХРАНИЛИЩЕ МАГИСТРАТА</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из просроченных домов и лавок.</p>';
     html += '<p style="color:#6a5a48;font-size:12px;">📊 Всего предметов: ' + hold.length + '</p>';
     
     if (hold.length === 0) {
         html += '<p style="color:#6a5a48;text-align:center;padding:20px 0;">📭 Хранилище пусто</p>';
     } else {
-        hold.forEach(function(item, i) {
+        var grouped = {};
+        hold.forEach(function(item, idx) {
+            var key = item.name + '|' + (item.quality || 'Обычное');
+            if (!grouped[key]) {
+                grouped[key] = { item: item, indices: [], count: 0 };
+            }
+            grouped[key].indices.push(idx);
+            grouped[key].count += (item.count || 1);
+        });
+        
+        for (var key in grouped) {
+            var data = grouped[key];
+            var item = data.item;
             var quality = item.quality || 'Обычное';
             var q = QUALITIES[quality] || QUALITIES['Обычное'];
-            var countDisplay = '';
-            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            var countDisplay = data.count > 1 ? ' ×' + data.count : '';
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
             html += '<span class="value">';
-            html += ' <button class="btn btn-small" onclick="takeFromStorageHold(' + i + ')">📤 Забрать</button>';
+            html += '<button class="btn btn-small" onclick="takeFromStorageHold(\'' + key + '\')">📤 Забрать все</button>';
             html += '</span></div>';
-        });
+        }
     }
     
     html += '<button class="btn btn-secondary" onclick="closeStorageHold()" style="margin-top:10px;">Закрыть</button>';
-    
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -609,18 +748,45 @@ function closeStorageHold() {
     if (modal) modal.classList.add('hide');
 }
 
-function takeFromStorageHold(index) {
+function takeFromStorageHold(key) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
     if (!g.housing || !g.housing.storageHold) { setMessage('❌ Хранилище пусто.'); return; }
-    if (index >= g.housing.storageHold.length) { setMessage('❌ Предмет не найден.'); return; }
     
-    var item = g.housing.storageHold.splice(index, 1)[0];
-    addToInventory(g, item);
+    var hold = g.housing.storageHold;
+    var parts = key.split('|');
+    var name = parts[0];
+    var quality = parts[1] || 'Обычное';
     
-    setMessage('✅ Вы забрали ' + item.name + ' из камеры хранения.');
+    var indices = [];
+    hold.forEach(function(item, i) {
+        if (item.name === name && (item.quality || 'Обычное') === quality) {
+            indices.push(i);
+        }
+    });
+    
+    if (indices.length === 0) { setMessage('❌ Предметы не найдены.'); return; }
+    
+    var totalCount = 0;
+    indices.forEach(function(i) {
+        totalCount += hold[i].count || 1;
+    });
+    
+    if (g.inventory.length + totalCount > 50) {
+        setMessage('❌ В инвентаре недостаточно места! (макс. 50)');
+        return;
+    }
+    
+    var items = [];
+    indices.sort(function(a, b) { return b - a; }).forEach(function(i) {
+        items.push(hold.splice(i, 1)[0]);
+    });
+    items.forEach(function(item) { addToInventory(g, item); });
+    
+    setMessage('✅ Вы забрали ' + items.length + ' ' + name + ' из хранилища.');
+    addLog('📤 ' + currentUser + ' забрал ' + items.length + ' ' + name + ' из хранилища');
     saveData();
     updateMenu();
     openStorageHold();
@@ -842,6 +1008,28 @@ function openTemple() {
     }
     html += '</div>';
     
+    // ЗЕЛЬЯ (ТЕПЕРЬ В СЕПТЕ!)
+    html += '<div class="modal-section"><h4>🧪 ЗЕЛЬЯ</h4>';
+    var potions = [
+        { id: 'health_small', name: '🧪 Малое зелье здоровья', price: 30, hp: 20 },
+        { id: 'health_medium', name: '🧪 Среднее зелье здоровья', price: 80, hp: 50 },
+        { id: 'health_large', name: '🧪 Большое зелье здоровья', price: 150, hp: 100 },
+        { id: 'restore', name: '🧪 Зелье восстановления', price: 200, hp: 50, fatigue: 30 },
+        { id: 'stamina', name: '🧪 Зелье выносливости', price: 100, hp: 10, fatigue: 20 }
+    ];
+    potions.forEach(function(potion) {
+        var canBuy = g.gold * 210 * 56 + g.silver * 56 + g.copper >= potion.price;
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label" style="font-size:13px;">' + potion.name + '</span>';
+        html += '<span class="value" style="font-size:11px;">';
+        html += '❤️ +' + potion.hp + ' HP';
+        if (potion.fatigue > 0) html += ' | 😴 +' + potion.fatigue + ' устал.';
+        html += ' | 💰' + formatCurrency(potion.price);
+        html += ' <button class="btn btn-small" onclick="buyPotion(\'' + potion.id + '\',' + potion.price + ',' + potion.hp + ',' + (potion.fatigue || 0) + '); openTemple();" ' + (canBuy ? '' : 'disabled') + '>' + (canBuy ? 'Купить' : '❌') + '</button>';
+        html += '</span></div>';
+    });
+    html += '</div>';
+    
     html += '<button class="btn btn-secondary" onclick="closeTemple()">Закрыть</button>';
     
     content.innerHTML = html;
@@ -915,6 +1103,39 @@ function donateLuck() {
     setMessage('🍀 +5 удачи! (всего: ' + g.luck + '/25)');
     addLog('🍀 ' + currentUser + ' купил удачу');
     updateMenu();
+}
+
+function buyPotion(potionId, price, hp, fatigue) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!spendMoney(g, price)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
+        return;
+    }
+    
+    var potionNames = {
+        'health_small': 'Малое зелье здоровья',
+        'health_medium': 'Среднее зелье здоровья',
+        'health_large': 'Большое зелье здоровья',
+        'restore': 'Зелье восстановления',
+        'stamina': 'Зелье выносливости'
+    };
+    
+    var item = {
+        name: potionNames[potionId] || potionId,
+        quality: 'Обычное',
+        type: 'food',
+        effect: { hp: hp || 0, fatigue: fatigue || 0 },
+        count: 1
+    };
+    
+    addToInventory(g, item);
+    saveData();
+    setMessage('✅ Вы купили ' + item.name);
+    updateMenu();
+    openTemple();
 }
 
 // ============================================================
@@ -1913,10 +2134,10 @@ function showMagistrateStalls() {
         } else {
             html += '<div class="row"><span class="label">⏳ Осталось</span><span class="value" style="color:#7ac98a;">' + timeLeft.text + '</span></div>';
             var currentWeeks = Math.floor((stall.rentDays || 1) / 7);
-            if (currentWeeks < 4) {
+            if (currentWeeks < 1) {
                 html += '<button class="btn" onclick="payStallRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, 10 зол.)</button>';
             } else {
-                html += '<div style="color:#6a5a48;">✅ Оплачено на 4 недели вперёд</div>';
+                html += '<div style="color:#6a5a48;">✅ Оплачено на 1 неделю</div>';
             }
         }
         html += '<button class="btn btn-small" onclick="enterStall(' + g.marketStall.stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
@@ -1955,7 +2176,7 @@ function buyStall() {
     
     marketStalls[freeStall].owner = currentUser;
     marketStalls[freeStall].rentPaid = Date.now();
-    marketStalls[freeStall].rentDays = 1;
+    marketStalls[freeStall].rentDays = 1; // 1 день аренды при покупке
     marketStalls[freeStall].inventory = [];
     marketStalls[freeStall].prices = {};
     
@@ -1973,6 +2194,7 @@ function buyStall() {
     addLog('🏪 ' + currentUser + ' купил лавку #' + freeStall);
     updateMenu();
     showMagistrateStalls();
+    openMarket();
 }
 
 function leaveStall() {
@@ -2020,18 +2242,26 @@ function payStallRent() {
     var rentCost = 10;
     var currentDays = stall.rentDays || 0;
     var totalDays = currentDays + 7;
-    if (totalDays > 28) { setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.'); return; }
-    if (!spendMoney(g, rentCost * 210 * 56)) { setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' золота.'); return; }
     
-    stall.rentDays = (stall.rentDays || 0) + 7;
+    if (totalDays > 7) {
+        setMessage('⏳ Лавку можно оплатить только на 1 неделю вперёд.');
+        return;
+    }
+    
+    if (!spendMoney(g, rentCost * 210 * 56)) {
+        setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' зол.');
+        return;
+    }
+    
+    stall.rentDays = totalDays;
     stall.rentPaid = Date.now();
-    g.marketStall.rentDays = stall.rentDays;
+    g.marketStall.rentDays = totalDays;
     g.marketStall.rentPaid = Date.now();
     
     saveMarketStalls();
     saveData();
-    setMessage('✅ Вы оплатили аренду лавки на неделю!');
-    addLog('💰 ' + currentUser + ' оплатил аренду лавки #' + stallId);
+    setMessage('✅ Аренда лавки оплачена на неделю!');
+    addLog('💰 ' + currentUser + ' оплатил аренду лавки');
     updateMenu();
     showMagistrateStalls();
 }
@@ -2061,14 +2291,18 @@ function confiscateStall() {
     if (!stall || stall.owner !== currentUser) return;
     
     if (stall.inventory && stall.inventory.length > 0) {
-        confiscatedItems.push({
-            owner: currentUser,
-            items: stall.inventory,
-            confiscatedAt: Date.now(),
-            type: 'stall'
+        if (!confiscatedItems) confiscatedItems = [];
+        stall.inventory.forEach(function(item) {
+            confiscatedItems.push({
+                owner: currentUser,
+                items: [item],
+                confiscatedAt: Date.now(),
+                type: 'stall'
+            });
         });
-        saveData();
+        stall.inventory = [];
         setMessage('📦 Товары из лавки #' + stallId + ' перемещены в конфискат.');
+        saveData();
     }
     
     stall.owner = null;
@@ -2336,7 +2570,122 @@ function finishDiceGame(gameId) {
 }
 
 // ============================================================
-// 17. ВСПОМОГАТЕЛЬНЫЕ
+// 17. ТЮРЬМА
+// ============================================================
+
+function payJailFine() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.jail) { setMessage('❌ Вы не в тюрьме.'); return; }
+    
+    var fine = getJailFine(g);
+    if (!spendMoney(g, fine * 210 * 56)) {
+        setMessage('❌ Недостаточно денег! Штраф: ' + fine + ' зол.');
+        return;
+    }
+    
+    setMessage('💰 Вы заплатили штраф ' + fine + ' зол. и вышли на свободу!');
+    addLog('💰 ' + currentUser + ' заплатил штраф ' + fine + ' зол.');
+    freeFromJail();
+}
+
+function waitJailTime() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.jail) { setMessage('❌ Вы не в тюрьме.'); return; }
+    
+    var jailTime = 5 * 60 * 1000;
+    var timeSpent = Date.now() - g.jail.enterTime;
+    var timeLeft = jailTime - timeSpent;
+    if (timeLeft <= 0) {
+        freeFromJail();
+        return;
+    }
+    
+    var minutes = Math.ceil(timeLeft / 60000);
+    setMessage('⏳ Вы ждёте освобождения... Осталось ' + minutes + ' мин.');
+    
+    isBusy = true;
+    document.getElementById('busy-status').classList.remove('hide');
+    document.getElementById('busy-status').textContent = '⛓️ В тюрьме... (' + minutes + ' мин)';
+    updateActions();
+    if (busyTimer) clearTimeout(busyTimer);
+    busyTimer = setTimeout(function() {
+        freeFromJail();
+        isBusy = false;
+        document.getElementById('busy-status').classList.add('hide');
+        busyTimer = null;
+        updateActions();
+    }, timeLeft);
+}
+
+function attemptEscape() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.jail) { setMessage('❌ Вы не в тюрьме.'); return; }
+    
+    var escapeCooldown = 4 * 60 * 1000;
+    var lastEscape = g.jail.lastEscapeAttempt || 0;
+    if (Date.now() - lastEscape < escapeCooldown) {
+        var timeLeft = Math.ceil((escapeCooldown - (Date.now() - lastEscape)) / 60000);
+        setMessage('⏳ Попытка побега доступна через ' + timeLeft + ' мин.');
+        return;
+    }
+    
+    g.jail.lastEscapeAttempt = Date.now();
+    if (Math.random() * 100 < 10) {
+        setMessage('🏃 Вы сбежали из тюрьмы!');
+        addLog('🏃 ' + currentUser + ' сбежал из тюрьмы');
+        freeFromJail();
+    } else {
+        var extraTime = 10 * 60 * 1000;
+        g.jail.enterTime = Date.now() - extraTime;
+        setMessage('⛓️ Побег не удался! Стража добавила 10 минут.');
+        addLog('⛓️ ' + currentUser + ' не удалось сбежать из тюрьмы');
+        updateMenu();
+        saveData();
+    }
+}
+
+function getJailFine(g) {
+    if (!g.jail || !g.jail.enterTime) return 1;
+    var timeSpent = Date.now() - g.jail.enterTime;
+    var fiveMinutes = 5 * 60 * 1000;
+    var intervals = Math.ceil(timeSpent / fiveMinutes);
+    return Math.max(1, intervals);
+}
+
+function freeFromJail() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    
+    var previousLocation = g.jail?.previousLocation || 'Таверна';
+    var previousLocationFull = g.jail?.previousLocationFull || 'Королевская Гавань';
+    g.location.place = previousLocation;
+    g.location.location = previousLocationFull;
+    g.outside = false;
+    g.jail = null;
+    
+    setMessage('⛓️ Вы освободились из тюрьмы!');
+    addLog('⛓️ ' + currentUser + ' освободился из тюрьмы');
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+// ============================================================
+// 18. ВСПОМОГАТЕЛЬНЫЕ
 // ============================================================
 
 function parseCurrencyInput(input) {
@@ -2386,7 +2735,7 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 18. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
+// 19. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
 // ============================================================
 
 function openInventory() {
@@ -2478,7 +2827,7 @@ function closeOnline() {
 }
 
 // ============================================================
-// 19. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
+// 20. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
 // КАРТА
@@ -2512,6 +2861,13 @@ window.openConfiscated = openConfiscated;
 window.closeConfiscated = closeConfiscated;
 window.enterStall = enterStall;
 window.closeStall = closeStall;
+window.enterHome = enterHome;
+window.restAtHome = restAtHome;
+window.viewDistrict = viewDistrict;
+window.payJailFine = payJailFine;
+window.waitJailTime = waitJailTime;
+window.attemptEscape = attemptEscape;
+window.freeFromJail = freeFromJail;
 
 // ЖИЛЬЁ
 window.buyHouse = buyHouse;
