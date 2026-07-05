@@ -1,151 +1,258 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ - УНИКАЛЬНАЯ ЛОГИКА ГОРОДА
+// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА
 // ============================================================
 
-// 1. ИМПОРТЫ из core
-import { QUALITIES, BUILDINGS, LOCATION_LEVELS, HOUSING_TYPES } from '../../core/01-config.js';
-import { users, currentUser, isBusy, gameLog } from '../../core/02-state.js';
-import { formatCurrency, spendMoney, convertCurrency, addToInventory, getTimeLeft, isStackable } from '../../core/03-utils.js';
-import { saveData, loadData } from '../../core/04-storage.js';
-
-// 2. ИМПОРТЫ из game
-import { getMaxHp, getXpMultiplier, getMaxInventory } from '../../game/character.js';
-import { openShop, openCraftMenu } from '../../game/locations.js';
-import { updateMenu, updateStory, updateActions } from '../../game/menu.js';
-
 // ============================================================
-// 3. КОНСТАНТЫ ГАВАНИ (уникальные для города)
+// 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (локальные)
 // ============================================================
 
-// 3.1 РЫНОК НЕДВИЖИМОСТИ
-let housingMarket = {
-    'night': { total: 400, occupied: 0 },
-    'room': { total: 300, occupied: 0 },
-    'house': { total: 250, occupied: 0 },
-    'townhouse': { total: 80, occupied: 0 },
-    'mansion': { total: 10, occupied: 0 }
-};
-
-// 3.2 ТОРГОВЫЕ ЛАВКИ
-const MARKET_STALLS_TOTAL = 50;
-let marketStalls = {};
-
-// 3.3 РЫНОК КОНЕЙ
-let horseMarket = {
-    'work': { total: 50, sold: 0, resetTime: null },
-    'riding': { total: 30, sold: 0, resetTime: null },
-    'war': { total: 20, sold: 0, resetTime: null },
-    'racer': { total: 15, sold: 0, resetTime: null },
-    'heavy': { total: 10, sold: 0, resetTime: null },
-    'royal': { total: 5, sold: 0, resetTime: null },
-    'fire': { total: 1, sold: 0, resetTime: null }
-};
-
-// 3.4 КОНФИСКАТ
-let confiscatedItems = [];
-
-// 3.5 КНИГИ
-const BOOKS = [
-    { level: 1, xp: 50, price: 100 },
-    { level: 5, xp: 100, price: 200 },
-    { level: 10, xp: 150, price: 350 },
-    { level: 15, xp: 200, price: 500 },
-    { level: 20, xp: 300, price: 700 },
-    { level: 25, xp: 400, price: 1000 }
-];
-
-// 3.6 БОРДЕЛЬ
-const BROTHEL_SERVICES = [
-    { id: 'rest', name: '🛏️ Отдых с девушкой', desc: '+50 усталости, +10 HP', price: 20, fatigue: 50, hp: 10, buff: null },
-    { id: 'wine', name: '🍷 Вино с компанией', desc: '+30 усталости, +5 HP, бафф "Веселье" (+5% XP 30 мин)', price: 50, fatigue: 30, hp: 5, buff: { type: 'xp', value: 5, duration: 30 } },
-    { id: 'dance', name: '💃 Танец', desc: '+20 усталости, бафф "Вдохновение" (+10% урон 15 мин)', price: 100, fatigue: 20, hp: 0, buff: { type: 'damage', value: 10, duration: 15 } },
-    { id: 'vip', name: '👑 VIP-комната', desc: '+80 усталости, +20 HP, бафф "+15% XP 1 час"', price: 200, fatigue: 80, hp: 20, buff: { type: 'xp', value: 15, duration: 60 } }
-];
-
-// 3.7 ИГРЫ В КОСТИ (PvP)
-let diceGames = {};
-let diceGameIdCounter = 0;
+function getHousingMarket() { return housingMarket; }
+function getMarketStalls() { return marketStalls; }
+function getHorseMarket() { return horseMarket; }
 
 // ============================================================
-// 4. ИНИЦИАЛИЗАЦИЯ
+// 2. КАРТА ГАВАНИ (открытие)
 // ============================================================
 
-export function initKingsLanding() {
-    loadHousingMarket();
-    loadMarketStalls();
-    loadHorseMarket();
-    loadConfiscated();
-    loadDiceGames();
-    initMarketStalls();
-    console.log('🏰 Королевская Гавань инициализирована');
+function openMap() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    
+    var modal = document.getElementById('modal-map');
+    var content = document.getElementById('modal-map-content');
+    
+    var cityBuildings = ['Таверна','Рынок','Кузница','Оружейная лавка','Кожевник','Бронник','Плотник','Конюшня','Гильдия торговцев','Магистрат','Ворота','Королевский квартал','Торговый квартал','Квартал бедноты','Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель'];
+    
+    var html = '<div class="modal-section"><h4>📍 ' + g.location.place + ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')</h4></div>';
+    html += '<div class="modal-section">';
+    
+    BUILDINGS.forEach(function(b) {
+        var bIsCity = cityBuildings.indexOf(b.id) !== -1;
+        if (g.outside && bIsCity) return;
+        if (!g.outside && !bIsCity) return;
+        if (b.id === 'Дорога' && !g.outside) return;
+        if (b.id === 'Дорога' && g.outside && g.location.place === 'Дорога') {
+            var isCurrent = b.id === g.location.place;
+            html += '<div class="row"><span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+            if (!isCurrent) {
+                html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\')">🚶 Идти</button></span>';
+            } else {
+                html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+            }
+            html += '</div>';
+            return;
+        }
+        
+        var isCurrent = b.id === g.location.place;
+        html += '<div class="row"><span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent && b.id !== 'Дорога') {
+            html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\')">🚶 Идти</button></span>';
+        } else if (b.id === 'Дорога' && !g.outside) {
+            // не показываем Дорогу внутри города
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
+        html += '</div>';
+    });
+    
+    html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeMap() {
+    document.getElementById('modal-map').classList.add('hide');
 }
 
 // ============================================================
-// 5. ДВИЖЕНИЕ ПО ГОРОДУ
+// 3. ПЕРЕМЕЩЕНИЕ ПО ГАВАНИ
 // ============================================================
 
-export function goToBuilding(buildingId) {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function goToBuilding(building) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
     
-    const g = user.game;
+    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
+    if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
     
-    if (isBusy) {
-        return { success: false, message: '⏳ Вы заняты.' };
+    // Проверка существования здания
+    var exists = false;
+    for (var i = 0; i < BUILDINGS.length; i++) {
+        if (BUILDINGS[i].id === building) { exists = true; break; }
     }
-    
-    const exists = BUILDINGS.find(b => b.id === buildingId);
-    if (!exists) {
-        return { success: false, message: '❌ Здание не найдено.' };
-    }
-    
-    // Перемещение
-    g.location.place = buildingId;
-    g.location.location = 'Королевская Гавань';
+    if (!exists) { setMessage('❌ Здание не найдено.'); return; }
     
     // Особые случаи
-    if (buildingId === 'Ворота') {
-        g.outside = false;
-    } else if (buildingId === 'Дорога') {
+    if (building === 'Дорога') {
         g.outside = true;
-    } else {
-        g.outside = false;
+        g.location.place = 'Дорога';
+        g.location.location = 'Дорога';
+        setMessage('🛤️ Вы вышли на Королевский тракт.');
+        closeMap();
+        updateMenu();
+        updateStory();
+        updateActions();
+        saveData();
+        return;
     }
     
-    // Обновление UI
+    if (building === 'Ворота') {
+        if (g.outside) {
+            g.outside = false;
+            g.location.place = 'Ворота';
+            g.location.location = 'Королевская Гавань';
+            setMessage('🚪 Вы вошли в город через Ворота.');
+        } else {
+            g.location.place = 'Ворота';
+            g.location.location = 'Королевская Гавань';
+            setMessage('🚪 Вы у Ворот.');
+        }
+        closeMap();
+        updateMenu();
+        updateStory();
+        updateActions();
+        saveData();
+        return;
+    }
+    
+    // Обычное перемещение
+    g.location.place = building;
+    g.location.location = 'Королевская Гавань';
+    g.outside = false;
+    setMessage('✅ Вы прибыли в ' + building + '.');
+    closeMap();
     updateMenu();
     updateStory();
     updateActions();
     saveData();
-    
-    return { success: true, message: `✅ Вы прибыли в ${buildingId}.` };
 }
 
 // ============================================================
-// 6. МАГИСТРАТ - НЕДВИЖИМОСТЬ
+// 4. ОТКРЫТИЕ ЗДАНИЙ (обёртки для main.js)
 // ============================================================
 
-export function buyHouse(type) {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function openInventory() {
+    // Вызываем функцию из main.js, если она есть
+    if (typeof window.openInventory === 'function') {
+        window.openInventory();
+    } else {
+        setMessage('🎒 Инвентарь временно недоступен.');
+    }
+}
+
+function openCharacter() {
+    if (typeof window.openCharacter === 'function') {
+        window.openCharacter();
+    } else {
+        setMessage('👤 Персонаж временно недоступен.');
+    }
+}
+
+function openMainMenu() {
+    if (typeof window.openMainMenu === 'function') {
+        window.openMainMenu();
+    } else {
+        var modal = document.getElementById('modal-menu');
+        var content = document.getElementById('modal-menu-content');
+        var html = '<div class="modal-section">';
+        html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
+        html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
+        html += '</div>';
+        content.innerHTML = html;
+        modal.classList.remove('hide');
+    }
+}
+
+function openLog() {
+    var modal = document.getElementById('modal-log');
+    var content = document.getElementById('modal-log-content');
+    var html = '<div class="modal-section"><h4>📜 ПОСЛЕДНИЕ СОБЫТИЯ</h4>';
+    if (gameLog.length === 0) {
+        html += '<p style="color:#6a5a48;">Пусто</p>';
+    } else {
+        for (var i = gameLog.length - 1; i >= Math.max(0, gameLog.length - 20); i--) {
+            html += '<p style="color:#b8a890;font-size:12px;padding:2px 0;">' + gameLog[i] + '</p>';
+        }
+    }
+    html += '</div><button class="btn" onclick="closeLog()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeLog() {
+    document.getElementById('modal-log').classList.add('hide');
+}
+
+function closeMenu() {
+    document.getElementById('modal-menu').classList.add('hide');
+}
+
+function openHouses() {
+    var modal = document.getElementById('modal-houses');
+    var content = document.getElementById('modal-houses-content');
+    var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Информация о Великих Домах Вестероса.</p>';
+    html += '<div style="padding:10px;text-align:center;color:#6a5a48;">🔒 Раздел в разработке</div>';
+    html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeHouses() {
+    document.getElementById('modal-houses').classList.add('hide');
+}
+
+function showOnlineList() {
+    var modal = document.getElementById('modal-online');
+    var content = document.getElementById('modal-online-content');
+    var html = '<div class="modal-section"><h4>👥 ИГРОКИ ОНЛАЙН</h4>';
+    var count = 0;
+    for (var name in users) {
+        if (users[name].game.online) {
+            count++;
+            html += '<div class="row"><span class="label">' + name + '</span><span class="value">ур. ' + users[name].game.level + ' | ' + users[name].game.location.place + '</span></div>';
+        }
+    }
+    if (count === 0) html += '<p style="color:#6a5a48;">Нет игроков онлайн</p>';
+    html += '</div><button class="btn" onclick="closeOnline()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeOnline() {
+    document.getElementById('modal-online').classList.add('hide');
+}
+
+// ============================================================
+// 5. РАБОТА С ДОМАМИ (из HOUSING_TYPES)
+// ============================================================
+
+function buyHouse(type) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const house = HOUSING_TYPES[type];
-    
-    if (!house) return { success: false, message: '❌ Такого жилья нет.' };
+    var house = HOUSING_TYPES[type];
+    if (!house) { setMessage('❌ Такого жилья нет.'); return; }
     
     if (g.housing && g.housing.type) {
-        return { success: false, message: '❌ У вас уже есть жильё!' };
+        setMessage('❌ У вас уже есть жильё! Продайте его.');
+        return;
     }
     
-    const market = housingMarket[type];
+    var market = housingMarket[type];
     if (!market || market.occupied >= market.total) {
-        return { success: false, message: `❌ Все ${house.name} уже проданы!` };
+        setMessage('❌ Все ' + house.name + ' уже проданы!');
+        return;
     }
     
     if (!spendMoney(g, house.price * 210 * 56)) {
-        return { success: false, message: `❌ Недостаточно денег! Нужно: ${house.price} золота.` };
+        setMessage('❌ Недостаточно денег! Нужно: ' + house.price + ' золота.');
+        return;
     }
     
     if (!g.housing) {
@@ -157,40 +264,38 @@ export function buyHouse(type) {
     g.housing.rentPaid = Date.now();
     g.housing.rentDays = 1;
     g.housing.debt = 0;
+    if (!g.housing.storage) g.housing.storage = [];
+    if (!g.housing.storageHold) g.housing.storageHold = [];
     
     market.occupied++;
     saveHousingMarket();
     saveData();
     
+    setMessage('✅ Вы купили ' + house.name + '! Осталось: ' + (market.total - market.occupied) + ' свободных.');
+    addLog('🏠 ' + currentUser + ' купил ' + house.name);
     updateMenu();
-    
-    return { success: true, message: `✅ Вы купили ${house.name}! Осталось: ${market.total - market.occupied} свободных.` };
 }
 
-export function sellHouse() {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function sellHouse() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
+    if (!g.housing || !g.housing.type) { setMessage('❌ У вас нет жилья.'); return; }
     
-    if (!g.housing || !g.housing.type) {
-        return { success: false, message: '❌ У вас нет жилья.' };
-    }
-    
-    const house = HOUSING_TYPES[g.housing.type];
-    const refund = Math.floor(house.price * 0.6);
-    
+    var house = HOUSING_TYPES[g.housing.type];
+    var refund = Math.floor(house.price * 0.6);
     g.copper += refund;
     convertCurrency(g);
     
-    // Перемещение вещей в камеру хранения
     if (g.housing.storage && g.housing.storage.length > 0) {
         if (!g.housing.storageHold) g.housing.storageHold = [];
         g.housing.storageHold = g.housing.storageHold.concat(g.housing.storage);
         g.housing.storage = [];
+        setMessage('📦 Предметы со склада перемещены в камеру хранения.');
     }
     
-    const market = housingMarket[g.housing.type];
+    var market = housingMarket[g.housing.type];
     if (market) market.occupied = Math.max(0, market.occupied - 1);
     saveHousingMarket();
     
@@ -200,69 +305,67 @@ export function sellHouse() {
     g.housing.rentDays = 0;
     
     saveData();
+    setMessage('🏚️ Вы продали ' + house.name + ' за ' + refund + ' золота.');
+    addLog('💰 ' + currentUser + ' продал ' + house.name);
     updateMenu();
-    
-    return { success: true, message: `🏚️ Вы продали ${house.name} за ${refund} золота.` };
 }
 
-export function payRent() {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function payRent() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
+    if (!g.housing || !g.housing.type) { setMessage('❌ У вас нет жилья!'); return; }
     
-    if (!g.housing || !g.housing.type) {
-        return { success: false, message: '❌ У вас нет жилья!' };
-    }
-    
-    const house = HOUSING_TYPES[g.housing.type];
-    const currentDays = g.housing.rentDays || 0;
-    const totalDays = currentDays + 7;
+    var house = HOUSING_TYPES[g.housing.type];
+    var currentDays = g.housing.rentDays || 0;
+    var totalDays = currentDays + 7;
     
     if (totalDays > 28) {
-        return { success: false, message: '⏳ Вы уже оплатили аренду на 4 недели вперёд.' };
+        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
+        return;
     }
     
     if (!spendMoney(g, house.rent * 210 * 56)) {
-        return { success: false, message: `❌ Недостаточно денег! Нужно: ${house.rent} золота.` };
+        setMessage('❌ Недостаточно денег! Нужно: ' + house.rent + ' золота.');
+        return;
     }
     
     g.housing.rentDays = (g.housing.rentDays || 0) + 7;
     g.housing.rentPaid = Date.now();
     
     saveData();
+    setMessage('✅ Вы оплатили аренду за ' + house.name + ' на неделю!');
+    addLog('💰 ' + currentUser + ' оплатил аренду за ' + house.name);
     updateMenu();
-    
-    return { success: true, message: `✅ Вы оплатили аренду за ${house.name} на неделю!` };
 }
 
-export function checkRent() {
-    const user = users[currentUser];
+function checkRent() {
+    var user = users[currentUser];
     if (!user) return;
-    
-    const g = user.game;
+    var g = user.game;
     if (!g.housing || !g.housing.type) return;
     
-    const timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
-    
+    var timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
     if (timeLeft.expired) {
         evictFromHousing();
+        setMessage('🚪 Ваш дом конфискован за неуплату!');
     }
 }
 
 function evictFromHousing() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    
-    const g = user.game;
+    var g = user.game;
     if (!g.housing || !g.housing.type) return;
     
-    const house = HOUSING_TYPES[g.housing.type];
-    const market = housingMarket[g.housing.type];
+    var house = HOUSING_TYPES[g.housing.type];
+    var market = housingMarket[g.housing.type];
     if (market) market.occupied = Math.max(0, market.occupied - 1);
     saveHousingMarket();
     
     if (g.housing.storage && g.housing.storage.length > 0) {
+        if (!confiscatedItems) confiscatedItems = [];
         confiscatedItems.push({
             owner: currentUser,
             items: g.housing.storage,
@@ -270,7 +373,8 @@ function evictFromHousing() {
             type: 'house'
         });
         g.housing.storage = [];
-        saveConfiscated();
+        saveData();
+        setMessage('📦 Предметы со склада перемещены в конфискат.');
     }
     
     g.housing.type = null;
@@ -279,47 +383,46 @@ function evictFromHousing() {
     g.housing.debt = 0;
     
     saveData();
+    setMessage('💀 Вас выселили из ' + house.name + ' за неуплату!');
+    addLog('💀 ' + currentUser + ' выселен из ' + house.name);
     updateMenu();
 }
 
 // ============================================================
-// 7. СКЛАД
+// 6. СКЛАД (в доме)
 // ============================================================
 
-export function openStorage() {
-    const user = users[currentUser];
-    if (!user) return;
+function openStorage() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    if (!g.housing || !g.housing.type) {
-        alert('❌ У вас нет жилья!');
-        return;
-    }
+    if (!g.housing || !g.housing.type) { setMessage('❌ У вас нет жилья!'); return; }
     
-    const house = HOUSING_TYPES[g.housing.type];
-    const storage = g.housing.storage || [];
+    var house = HOUSING_TYPES[g.housing.type];
+    var storage = g.housing.storage || [];
     
-    let msg = `📦 СКЛАД (${house.name})\n`;
-    msg += `Свободно: ${(house.storageSlots || 10) - storage.length}/${house.storageSlots} слотов\n\n`;
+    var msg = '📦 СКЛАД (' + house.name + ')\n';
+    msg += 'Свободно: ' + ((house.storageSlots || 10) - storage.length) + '/' + house.storageSlots + ' слотов\n\n';
     
     if (storage.length === 0) {
         msg += '📭 Склад пуст';
     } else {
-        storage.forEach((item, i) => {
-            const quality = item.quality || 'Обычное';
-            let countDisplay = '';
-            if (item.count && item.count > 1) countDisplay = ` ×${item.count}`;
-            msg += `${i + 1}. ${item.name} (${quality})${countDisplay}\n`;
+        storage.forEach(function(item, i) {
+            var quality = item.quality || 'Обычное';
+            var countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            msg += (i + 1) + '. ' + item.name + ' (' + quality + ')' + countDisplay + '\n';
         });
     }
     
-    const action = prompt(msg + '\n\nВыберите действие:\n1. Положить предмет\n2. Забрать предмет\n0. Выйти');
+    var action = prompt(msg + '\n\nВыберите действие:\n1. Положить предмет\n2. Забрать предмет\n0. Выйти');
     
     if (action === '1') {
         moveToStorage();
     } else if (action === '2') {
-        const idx = prompt('Введите номер предмета для забора:');
-        const index = parseInt(idx) - 1;
+        var idx = prompt('Введите номер предмета для забора:');
+        var index = parseInt(idx) - 1;
         if (!isNaN(index) && index >= 0 && index < storage.length) {
             takeFromStorage(index);
         }
@@ -327,146 +430,161 @@ export function openStorage() {
 }
 
 function moveToStorage() {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    if (!g.housing || !g.housing.type) {
-        alert('❌ У вас нет жилья!');
-        return;
-    }
+    if (!g.housing || !g.housing.type) { setMessage('❌ У вас нет жилья!'); return; }
     
-    const house = HOUSING_TYPES[g.housing.type];
-    const storage = g.housing.storage || [];
+    var house = HOUSING_TYPES[g.housing.type];
+    var storage = g.housing.storage || [];
     
-    if (storage.length >= house.storageSlots) {
-        alert('❌ Склад переполнен!');
-        return;
-    }
+    if (storage.length >= house.storageSlots) { setMessage('❌ Склад переполнен!'); return; }
+    if (g.inventory.length === 0) { setMessage('❌ Инвентарь пуст!'); return; }
     
-    if (g.inventory.length === 0) {
-        alert('❌ Инвентарь пуст!');
-        return;
-    }
-    
-    let choices = 'Выберите предмет для склада:\n';
-    g.inventory.forEach((item, i) => {
-        let countDisplay = '';
-        if (item.count && item.count > 1) countDisplay = ` ×${item.count}`;
-        choices += `${i + 1}. ${item.name} (${item.quality || 'Обычное'})${countDisplay}\n`;
+    var choices = 'Выберите предмет для склада:\n';
+    g.inventory.forEach(function(item, i) {
+        var countDisplay = '';
+        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
     });
     
-    const choice = prompt(choices + '\nВведите номер предмета:');
-    const index = parseInt(choice) - 1;
+    var choice = prompt(choices + '\nВведите номер предмета:');
+    var index = parseInt(choice) - 1;
     if (isNaN(index) || index < 0 || index >= g.inventory.length) {
-        alert('❌ Отменено.');
+        setMessage('❌ Отменено.');
         return;
     }
     
-    const item = g.inventory.splice(index, 1)[0];
+    var item = g.inventory.splice(index, 1)[0];
     if (!g.housing.storage) g.housing.storage = [];
     g.housing.storage.push(item);
     
-    alert(`✅ Вы положили ${item.name} на склад.`);
+    setMessage('✅ Вы положили ' + item.name + ' на склад.');
     saveData();
     updateMenu();
 }
 
 function takeFromStorage(index) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    if (!g.housing || !g.housing.storage) {
-        alert('❌ Склад пуст.');
-        return;
-    }
+    if (!g.housing || !g.housing.storage) { setMessage('❌ Склад пуст.'); return; }
+    if (index >= g.housing.storage.length) { setMessage('❌ Предмет не найден.'); return; }
     
-    if (index >= g.housing.storage.length) {
-        alert('❌ Предмет не найден.');
-        return;
-    }
-    
-    const item = g.housing.storage.splice(index, 1)[0];
+    var item = g.housing.storage.splice(index, 1)[0];
     addToInventory(g, item);
     
-    alert(`✅ Вы забрали ${item.name} со склада.`);
+    setMessage('✅ Вы забрали ' + item.name + ' со склада.');
     saveData();
     updateMenu();
 }
 
+function openStorageHold() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var hold = (g.housing && g.housing.storageHold) || [];
+    var msg = '📦 КАМЕРА ХРАНЕНИЯ\n';
+    msg += 'Всего предметов: ' + hold.length + '\n\n';
+    
+    if (hold.length === 0) {
+        msg += '📭 Хранилище пусто';
+    } else {
+        hold.forEach(function(item, i) {
+            var quality = item.quality || 'Обычное';
+            var countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            msg += (i + 1) + '. ' + item.name + ' (' + quality + ')' + countDisplay + '\n';
+        });
+    }
+    
+    var choice = prompt(msg + '\n\nВведите номер предмета для забора, или 0 для выхода:');
+    var idx = parseInt(choice) - 1;
+    if (!isNaN(idx) && idx >= 0 && idx < hold.length) {
+        var item = hold.splice(idx, 1)[0];
+        addToInventory(g, item);
+        setMessage('✅ Вы забрали ' + item.name + ' из камеры хранения.');
+        saveData();
+        updateMenu();
+    }
+}
+
 // ============================================================
-// 8. КОНЮШНЯ
+// 7. КОНЮШНЯ
 // ============================================================
 
-export function openStable() {
-    const user = users[currentUser];
-    if (!user) return;
+function openStable() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
     checkHorseReset();
     
-    let msg = '🐴 КОНЮШНЯ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
+    var msg = '🐴 КОНЮШНЯ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
     
     // Текущая лошадь
     if (g.equipment && g.equipment.horse) {
-        const horse = HORSE_TYPES[g.equipment.horse.horseType];
+        var horse = HORSE_TYPES[g.equipment.horse.horseType];
         if (horse) {
-            msg += `ВАША ЛОШАДЬ:\n`;
-            msg += `${horse.emoji} ${horse.name}\n`;
-            msg += `❤️ HP: ${g.equipment.horse.hp}/${g.equipment.horse.maxHp}\n`;
-            msg += `⚡ Скорость: +${horse.speedBonus}%\n`;
-            msg += `🛡️ Защита: +${horse.defensePercent}%\n\n`;
+            msg += 'ВАША ЛОШАДЬ:\n';
+            msg += horse.emoji + ' ' + horse.name + '\n';
+            msg += '❤️ HP: ' + g.equipment.horse.hp + '/' + g.equipment.horse.maxHp + '\n';
+            msg += '⚡ Скорость: +' + horse.speedBonus + '%\n';
+            msg += '🛡️ Защита: +' + horse.defensePercent + '%\n\n';
         }
     } else {
-        msg += `У вас нет лошади.\n\n`;
+        msg += 'У вас нет лошади.\n\n';
     }
     
     // Доступные лошади
     msg += 'ДОСТУПНЫЕ ЛОШАДИ (обновление раз в неделю):\n';
-    for (let key in HORSE_TYPES) {
-        const horse = HORSE_TYPES[key];
-        const market = horseMarket[key];
-        const available = market.total - market.sold;
+    for (var key in HORSE_TYPES) {
+        var h = HORSE_TYPES[key];
+        var market = horseMarket[key];
+        var available = market.total - market.sold;
         
         if (g.equipment && g.equipment.horse && g.equipment.horse.horseType === key) {
-            msg += `✅ ${horse.emoji} ${horse.name} (ваша)\n`;
+            msg += '✅ ' + h.emoji + ' ' + h.name + ' (ваша)\n';
         } else if (available > 0) {
-            msg += `${horse.emoji} ${horse.name} - ${formatCurrency(horse.price * 210 * 56)} (осталось: ${available}/${market.total})\n`;
+            msg += h.emoji + ' ' + h.name + ' - ' + formatCurrency(h.price * 210 * 56) + ' (осталось: ' + available + '/' + market.total + ')\n';
         } else {
-            msg += `❌ ${horse.emoji} ${horse.name} (распродано)\n`;
+            msg += '❌ ' + h.emoji + ' ' + h.name + ' (распродано)\n';
         }
     }
     
-    const action = prompt(msg + '\n\nВведите тип лошади для покупки (work, riding, war, racer, heavy, royal, fire) или 0 для выхода:');
+    var action = prompt(msg + '\n\nВведите тип лошади для покупки (work, riding, war, racer, heavy, royal, fire) или 0 для выхода:');
     
     if (action && action !== '0') {
         buyHorse(action);
     }
 }
 
-export function buyHorse(type) {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function buyHorse(type) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const horse = HORSE_TYPES[type];
-    
-    if (!horse) return { success: false, message: '❌ Такой лошади нет.' };
+    var horse = HORSE_TYPES[type];
+    if (!horse) { setMessage('❌ Такой лошади нет.'); return; }
     
     checkHorseReset();
-    const market = horseMarket[type];
-    
+    var market = horseMarket[type];
     if (market.sold >= market.total) {
-        return { success: false, message: `❌ Все ${horse.name} на этой неделе уже проданы!` };
+        setMessage('❌ Все ' + horse.name + ' на этой неделе уже проданы!');
+        return;
     }
     
     if (g.equipment && g.equipment.horse) {
-        return { success: false, message: '❌ У вас уже есть лошадь! Продайте её.' };
+        setMessage('❌ У вас уже есть лошадь! Продайте её.');
+        return;
     }
     
     if (!spendMoney(g, horse.price * 210 * 56)) {
-        return { success: false, message: `❌ Недостаточно денег! Нужно: ${formatCurrency(horse.price * 210 * 56)}` };
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(horse.price * 210 * 56));
+        return;
     }
     
     g.equipment.horse = {
@@ -482,68 +600,47 @@ export function buyHorse(type) {
     market.sold++;
     saveHorseMarket();
     saveData();
-    updateMenu();
     
-    return { success: true, message: `✅ Вы купили ${horse.name}! Осталось: ${market.total - market.sold}` };
+    setMessage('✅ Вы купили ' + horse.name + '! Осталось: ' + (market.total - market.sold));
+    addLog('🐴 ' + currentUser + ' купил ' + horse.name);
+    updateMenu();
 }
 
-export function sellHorse() {
-    const user = users[currentUser];
-    if (!user) return { success: false, message: '❌ Игрок не найден.' };
+function sellHorse() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
+    if (!g.equipment || !g.equipment.horse) { setMessage('❌ У вас нет лошади.'); return; }
     
-    if (!g.equipment || !g.equipment.horse) {
-        return { success: false, message: '❌ У вас нет лошади.' };
-    }
+    var horseType = HORSE_TYPES[g.equipment.horse.horseType];
+    if (!horseType) { setMessage('❌ Лошадь не найдена.'); return; }
     
-    const horseType = HORSE_TYPES[g.equipment.horse.horseType];
-    if (!horseType) return { success: false, message: '❌ Лошадь не найдена.' };
-    
-    const refund = Math.floor(horseType.price * 0.5);
+    var refund = Math.floor(horseType.price * 0.5);
     g.copper += refund;
     convertCurrency(g);
     g.equipment.horse = null;
     
     saveData();
+    setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56));
+    addLog('💰 ' + currentUser + ' продал лошадь');
     updateMenu();
-    
-    return { success: true, message: `💰 Вы продали лошадь за ${formatCurrency(refund * 210 * 56)}` };
-}
-
-function checkHorseReset() {
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    let reset = false;
-    
-    for (let key in horseMarket) {
-        if (!horseMarket[key].resetTime || (now - horseMarket[key].resetTime) > weekMs) {
-            horseMarket[key].sold = 0;
-            horseMarket[key].resetTime = now;
-            reset = true;
-        }
-    }
-    if (reset) saveHorseMarket();
 }
 
 // ============================================================
-// 9. ВЕЛИКАЯ СЕПТА
+// 8. ВЕЛИКАЯ СЕПТА
 // ============================================================
 
-export function openTemple() {
-    const user = users[currentUser];
-    if (!user) return;
+function openTemple() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var maxHp = getMaxHp(g);
     
-    const g = user.game;
-    const maxHp = getMaxHp(g);
-    const lastHeal = g.lastHeal || 0;
-    const canHeal = (Date.now() - lastHeal) >= 2 * 60 * 60 * 1000;
-    
-    let msg = '⛪ ВЕЛИКАЯ СЕПТА БЕЙЛОРА\n\n';
-    msg += `💰 ${formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper)}\n\n`;
-    msg += `❤️ HP: ${Math.round(g.hp)}/${maxHp}\n`;
-    msg += `🍀 Удача: ${g.luck || 0}/25\n\n`;
-    
+    var msg = '⛪ ВЕЛИКАЯ СЕПТА БЕЙЛОРА\n\n';
+    msg += '💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '\n';
+    msg += '❤️ HP: ' + Math.round(g.hp) + '/' + maxHp + '\n';
+    msg += '🍀 Удача: ' + (g.luck || 0) + '/25\n\n';
     msg += 'ДОСТУПНЫЕ ДЕЙСТВИЯ:\n';
     msg += '1. 💉 Бесплатное исцеление (раз в 2 часа)\n';
     msg += '2. 🙏 Молитва (+10% опыта на 1 час, раз в день)\n';
@@ -551,59 +648,49 @@ export function openTemple() {
     msg += '4. 🧪 Купить зелье\n';
     msg += '0. Выйти';
     
-    const action = prompt(msg);
+    var action = prompt(msg);
     
-    if (action === '1') {
-        freeHeal();
-    } else if (action === '2') {
-        prayForBlessing();
-    } else if (action === '3') {
-        donateLuck();
-    } else if (action === '4') {
-        buyPotionMenu();
-    }
+    if (action === '1') { freeHeal(); }
+    else if (action === '2') { prayForBlessing(); }
+    else if (action === '3') { donateLuck(); }
+    else if (action === '4') { buyPotionMenu(); }
 }
 
 function freeHeal() {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var maxHp = getMaxHp(g);
     
-    const g = user.game;
-    const maxHp = getMaxHp(g);
+    if (g.hp >= maxHp) { setMessage('✅ Вы уже здоровы!'); return; }
     
-    if (g.hp >= maxHp) {
-        alert('✅ Вы уже здоровы!');
-        return;
-    }
-    
-    const now = Date.now();
-    const healCooldown = 2 * 60 * 60 * 1000;
+    var now = Date.now();
+    var healCooldown = 2 * 60 * 60 * 1000;
     
     if (g.lastHeal && (now - g.lastHeal) < healCooldown) {
-        const timeLeft = Math.ceil((healCooldown - (now - g.lastHeal)) / (60 * 1000));
-        alert(`⏳ Исцеление доступно через ${timeLeft} мин.`);
+        var timeLeft = Math.ceil((healCooldown - (now - g.lastHeal)) / (60 * 1000));
+        setMessage('⏳ Исцеление доступно через ' + timeLeft + ' мин.');
         return;
     }
     
     g.hp = maxHp;
     g.lastHeal = now;
-    
-    alert('💉 Вы полностью исцелились!');
     saveData();
+    setMessage('💉 Вы полностью исцелились!');
     updateMenu();
 }
 
 function prayForBlessing() {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
+    var now = Date.now();
+    var dayMs = 24 * 60 * 60 * 1000;
     
     if (g.lastPrayer && (now - g.lastPrayer) < dayMs) {
-        const timeLeft = Math.ceil((dayMs - (now - g.lastPrayer)) / (60 * 60 * 1000));
-        alert(`⏳ Молитва доступна через ${timeLeft} ч.`);
+        var timeLeft = Math.ceil((dayMs - (now - g.lastPrayer)) / (60 * 60 * 1000));
+        setMessage('⏳ Молитва доступна через ' + timeLeft + ' ч.');
         return;
     }
     
@@ -612,40 +699,29 @@ function prayForBlessing() {
     g.blessing.active = true;
     g.blessing.expires = now + 60 * 60 * 1000;
     
-    alert('🙏 Вы получили благословение! +10% к опыту на 1 час.');
     saveData();
+    setMessage('🙏 Вы получили благословение! +10% к опыту на 1 час.');
+    addLog('🙏 ' + currentUser + ' получил благословение');
     updateMenu();
 }
 
 function donateLuck() {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    
-    if ((g.luck || 0) >= 25) {
-        alert('🍀 Удача уже максимальная (25)!');
-        return;
-    }
-    
-    if (!spendMoney(g, 1000 * 210 * 56)) {
-        alert('❌ Недостаточно золота! Нужно: 1000 зол.');
-        return;
-    }
+    if ((g.luck || 0) >= 25) { setMessage('🍀 Удача уже максимальная (25)!'); return; }
+    if (!spendMoney(g, 1000 * 210 * 56)) { setMessage('❌ Недостаточно золота! Нужно: 1000 зол.'); return; }
     
     g.luck = Math.min(25, (g.luck || 0) + 5);
-    alert(`🍀 Вы купили удачу! +5 (всего: ${g.luck}/25)`);
     saveData();
+    setMessage('🍀 Вы купили удачу! +5 (всего: ' + g.luck + '/25)');
+    addLog('🍀 ' + currentUser + ' купил удачу за 1000 зол.');
     updateMenu();
 }
 
 function buyPotionMenu() {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    
-    const potions = [
+    var potions = [
         { id: 'health_small', name: '🧪 Малое зелье здоровья', price: 30, hp: 20, fatigue: 0 },
         { id: 'health_medium', name: '🧪 Среднее зелье здоровья', price: 80, hp: 50, fatigue: 0 },
         { id: 'health_large', name: '🧪 Большое зелье здоровья', price: 150, hp: 100, fatigue: 0 },
@@ -653,37 +729,33 @@ function buyPotionMenu() {
         { id: 'stamina', name: '🧪 Зелье выносливости', price: 100, hp: 10, fatigue: 20 }
     ];
     
-    let msg = '🧪 ЗЕЛЬЯ\n\n';
-    potions.forEach((p, i) => {
-        msg += `${i + 1}. ${p.name} - ${formatCurrency(p.price)}`;
-        msg += ` (❤️+${p.hp}`;
-        if (p.fatigue > 0) msg += `, 😴+${p.fatigue}`;
+    var msg = '🧪 ЗЕЛЬЯ\n\n';
+    potions.forEach(function(p, i) {
+        msg += (i + 1) + '. ' + p.name + ' - ' + formatCurrency(p.price);
+        msg += ' (❤️+' + p.hp;
+        if (p.fatigue > 0) msg += ', 😴+' + p.fatigue;
         msg += ')\n';
     });
     msg += '\n0. Выйти';
     
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1 || choice > potions.length) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1 || choice > potions.length) { setMessage('❌ Отменено.'); return; }
     
-    const potion = potions[choice - 1];
+    var potion = potions[choice - 1];
     buyPotion(potion.id, potion.price, potion.hp, potion.fatigue);
 }
 
 function buyPotion(potionId, price, hp, fatigue) {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
     if (!spendMoney(g, price)) {
-        alert(`❌ Недостаточно денег! Нужно: ${formatCurrency(price)}`);
+        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
         return;
     }
     
-    const potionNames = {
+    var potionNames = {
         'health_small': 'Малое зелье здоровья',
         'health_medium': 'Среднее зелье здоровья',
         'health_large': 'Большое зелье здоровья',
@@ -691,7 +763,7 @@ function buyPotion(potionId, price, hp, fatigue) {
         'stamina': 'Зелье выносливости'
     };
     
-    const item = {
+    var item = {
         name: potionNames[potionId] || potionId,
         quality: 'Обычное',
         type: 'food',
@@ -700,45 +772,228 @@ function buyPotion(potionId, price, hp, fatigue) {
     };
     
     addToInventory(g, item);
-    alert(`✅ Вы купили ${item.name}`);
     saveData();
+    setMessage('✅ Вы купили ' + item.name);
     updateMenu();
+}
+
+// ============================================================
+// 9. ГИЛЬДИЯ НАЁМНИКОВ
+// ============================================================
+
+function openGuildHall() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.quests) {
+        g.quests = { completed: [], lastReset: 0, active: null, progress: {} };
+    }
+    
+    var now = Date.now();
+    var resetInterval = 5 * 60 * 60 * 1000;
+    
+    if (!g.quests.lastReset || (now - g.quests.lastReset) >= resetInterval) {
+        g.quests.completed = [];
+        g.quests.lastReset = now;
+        g.quests.active = null;
+        g.quests.progress = {};
+        saveData();
+    }
+    
+    var quests = generateDailyQuests();
+    var nextReset = g.quests.lastReset + resetInterval;
+    var timeLeft = nextReset - now;
+    var hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+    var minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+    
+    var msg = '🗡️ ГИЛЬДИЯ НАЁМНИКОВ\n\n';
+    msg += '⏳ Обновление через: ' + hoursLeft + 'ч ' + minutesLeft + 'м\n\n';
+    
+    if (g.quests.active) {
+        var activeQuest = null;
+        for (var i = 0; i < quests.length; i++) {
+            if (quests[i].id === g.quests.active) { activeQuest = quests[i]; break; }
+        }
+        if (activeQuest) {
+            var progress = g.quests.progress[activeQuest.id] || 0;
+            msg += '📌 АКТИВНОЕ ЗАДАНИЕ:\n';
+            msg += activeQuest.name + '\n';
+            msg += activeQuest.desc + '\n';
+            msg += '📊 Прогресс: ' + progress + '/' + activeQuest.count + '\n';
+            msg += '💰 ' + formatCurrency(activeQuest.rewardGold) + ' | ⭐ ' + activeQuest.rewardXp + ' XP\n\n';
+        }
+    }
+    
+    msg += 'ДОСТУПНЫЕ ЗАДАНИЯ:\n';
+    for (var j = 0; j < quests.length; j++) {
+        var q = quests[j];
+        var isCompleted = false;
+        for (var k = 0; k < g.quests.completed.length; k++) {
+            if (g.quests.completed[k] === q.id) { isCompleted = true; break; }
+        }
+        var isActive = g.quests.active === q.id;
+        var status = isCompleted ? '✅' : (isActive ? '⏳' : (j + 1));
+        msg += status + ' ' + q.name + ' (' + q.difficulty + ')\n';
+    }
+    msg += '\nВведите номер задания для взятия, или 0 для выхода:';
+    
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1 || choice > quests.length) { setMessage('❌ Отменено.'); return; }
+    
+    var quest = quests[choice - 1];
+    var isCompleted = false;
+    for (var l = 0; l < g.quests.completed.length; l++) {
+        if (g.quests.completed[l] === quest.id) { isCompleted = true; break; }
+    }
+    if (isCompleted) { setMessage('❌ Это задание уже выполнено.'); return; }
+    if (g.quests.active) { setMessage('❌ У вас уже есть активное задание!'); return; }
+    
+    takeQuest(quest.id);
+}
+
+function generateDailyQuests() {
+    var easy = [
+        { id: 'easy_kill_rats', name: '🐀 Крысиная охота', desc: 'Убить 5 крыс', type: 'kill', target: 'Крыса', count: 5, rewardGold: 50, rewardXp: 20, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_skins', name: '🧵 Сбор шкур', desc: 'Принести 10 шкур', type: 'gather', target: 'Шкура', count: 10, rewardGold: 40, rewardXp: 15, difficulty: '🟢 Лёгкий' },
+        { id: 'easy_gather_wood', name: '🪵 Дрова для таверны', desc: 'Принести 15 дерева', type: 'gather', target: 'Дерево', count: 15, rewardGold: 35, rewardXp: 12, difficulty: '🟢 Лёгкий' }
+    ];
+    
+    var medium = [
+        { id: 'medium_kill_bandits', name: '🗡️ Очистка дорог', desc: 'Убить 5 бандитов', type: 'kill', target: 'Бандит', count: 5, rewardGold: 150, rewardXp: 50, difficulty: '🟡 Средний' },
+        { id: 'medium_gather_ore', name: '⛏️ Поставка руды', desc: 'Принести 20 руды', type: 'gather', target: 'Руда железная', count: 20, rewardGold: 100, rewardXp: 40, difficulty: '🟡 Средний' }
+    ];
+    
+    var hard = [
+        { id: 'hard_kill_thugs', name: '⚔️ Уничтожение банды', desc: 'Убить 3 головорезов', type: 'kill', target: 'Головорез', count: 3, rewardGold: 300, rewardXp: 100, difficulty: '🔴 Сложный' }
+    ];
+    
+    var shuffledEasy = easy.sort(function() { return Math.random() - 0.5; }).slice(0, 1);
+    var shuffledMedium = medium.sort(function() { return Math.random() - 0.5; }).slice(0, 1);
+    var shuffledHard = hard.sort(function() { return Math.random() - 0.5; }).slice(0, 1);
+    
+    return shuffledEasy.concat(shuffledMedium).concat(shuffledHard);
+}
+
+function takeQuest(questId) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    g.quests.active = questId;
+    if (!g.quests.progress) g.quests.progress = {};
+    g.quests.progress[questId] = 0;
+    
+    saveData();
+    setMessage('📋 Вы взяли задание!');
+    updateMenu();
+}
+
+function abandonQuest() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.quests.active) { setMessage('❌ У вас нет активного задания.'); return; }
+    
+    g.quests.active = null;
+    saveData();
+    setMessage('❌ Вы отказались от задания.');
+    updateMenu();
+}
+
+function checkQuestProgress(type, target, count) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    if (!g.quests || !g.quests.active) return;
+    
+    var quests = generateDailyQuests();
+    var quest = null;
+    for (var i = 0; i < quests.length; i++) {
+        if (quests[i].id === g.quests.active) { quest = quests[i]; break; }
+    }
+    if (!quest) return;
+    if (quest.type !== type || quest.target !== target) return;
+    
+    var isCompleted = false;
+    for (var j = 0; j < g.quests.completed.length; j++) {
+        if (g.quests.completed[j] === quest.id) { isCompleted = true; break; }
+    }
+    if (isCompleted) return;
+    
+    if (!g.quests.progress) g.quests.progress = {};
+    g.quests.progress[quest.id] = (g.quests.progress[quest.id] || 0) + count;
+    
+    if (g.quests.progress[quest.id] >= quest.count) {
+        g.quests.completed.push(quest.id);
+        g.quests.active = null;
+        
+        var xpMultiplier = 1 + (g.stats.intelligence / 100);
+        var xpGain = Math.round(quest.rewardXp * xpMultiplier);
+        g.copper += quest.rewardGold;
+        convertCurrency(g);
+        g.xp += xpGain;
+        
+        while (g.xp >= g.nextLevelXp) {
+            g.xp -= g.nextLevelXp;
+            g.level++;
+            g.nextLevelXp = 100 + g.level * 10;
+            if (g.level <= 100) {
+                g.attributePoints++;
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
+            } else {
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
+            }
+        }
+        
+        saveData();
+        setMessage('✅ Задание выполнено! +' + formatCurrency(quest.rewardGold) + ', +' + xpGain + ' XP');
+        addLog('✅ ' + currentUser + ' выполнил задание ' + quest.name);
+        updateMenu();
+    }
 }
 
 // ============================================================
 // 10. БИБЛИОТЕКА МЕЙСТЕРОВ
 // ============================================================
 
-export function openLibrary() {
-    const user = users[currentUser];
-    if (!user) return;
+function openLibrary() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const available = getBooksAvailable(g);
+    var available = getBooksAvailable(g);
     
-    let msg = '📚 БИБЛИОТЕКА МЕЙСТЕРОВ\n\n';
-    msg += `💰 ${formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper)}\n`;
-    msg += `📖 Осталось покупок сегодня: ${available}/3\n\n`;
+    var msg = '📚 БИБЛИОТЕКА МЕЙСТЕРОВ\n\n';
+    msg += '💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '\n';
+    msg += '📖 Осталось покупок сегодня: ' + available + '/3\n\n';
+    
+    var books = [
+        { level: 1, xp: 50, price: 100 },
+        { level: 5, xp: 100, price: 200 },
+        { level: 10, xp: 150, price: 350 },
+        { level: 15, xp: 200, price: 500 },
+        { level: 20, xp: 300, price: 700 },
+        { level: 25, xp: 400, price: 1000 }
+    ];
     
     msg += 'ДОСТУПНЫЕ КНИГИ:\n';
-    BOOKS.forEach((book, i) => {
-        msg += `${i + 1}. Книга (ур.${book.level}) - ${formatCurrency(book.price)} (+${book.xp} XP)\n`;
+    books.forEach(function(book, i) {
+        msg += (i + 1) + '. Книга (ур.' + book.level + ') - ' + formatCurrency(book.price) + ' (+' + book.xp + ' XP)\n';
     });
     msg += '\n0. Выйти';
     
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1 || choice > BOOKS.length) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1 || choice > books.length) { setMessage('❌ Отменено.'); return; }
     
-    const book = BOOKS[choice - 1];
+    var book = books[choice - 1];
     buyBook(book.level, book.xp, book.price);
 }
 
 function getBooksAvailable(g) {
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
+    var now = Date.now();
+    var dayMs = 24 * 60 * 60 * 1000;
     
     if (now - g.lastBookReset >= dayMs) {
         g.booksBoughtToday = 0;
@@ -750,23 +1005,15 @@ function getBooksAvailable(g) {
 }
 
 function buyBook(level, xp, price) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const available = getBooksAvailable(g);
+    var available = getBooksAvailable(g);
+    if (available <= 0) { setMessage('❌ Вы уже купили 3 книги сегодня.'); return; }
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
     
-    if (available <= 0) {
-        alert('❌ Вы уже купили 3 книги сегодня. Приходите завтра.');
-        return;
-    }
-    
-    if (!spendMoney(g, price)) {
-        alert(`❌ Недостаточно денег! Нужно: ${formatCurrency(price)}`);
-        return;
-    }
-    
-    const book = {
+    var book = {
         name: '📖 Искусство войны',
         level: level,
         xp: xp,
@@ -778,50 +1025,36 @@ function buyBook(level, xp, price) {
     addToInventory(g, book);
     g.booksBoughtToday = (g.booksBoughtToday || 0) + 1;
     
-    alert(`✅ Вы купили книгу (ур.${level}). Осталось: ${available - 1}`);
     saveData();
+    setMessage('✅ Вы купили книгу (ур.' + level + '). Осталось: ' + (available - 1));
     updateMenu();
 }
 
-export function readBook(index) {
-    const user = users[currentUser];
-    if (!user) return;
+function readBook(index) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    if (index >= g.inventory.length) {
-        alert('❌ Книга не найдена.');
-        return;
-    }
+    if (index >= g.inventory.length) { setMessage('❌ Книга не найдена.'); return; }
+    var item = g.inventory[index];
+    if (!item.isBook) { setMessage('❌ Это не книга.'); return; }
     
-    const item = g.inventory[index];
-    if (!item.isBook) {
-        alert('❌ Это не книга.');
-        return;
-    }
+    var weapon = g.equipment.rightHand;
+    var weaponType = null;
+    if (weapon) { weaponType = weapon.type; }
     
-    const weapon = g.equipment.rightHand;
-    let weaponType = null;
-    if (weapon) {
-        weaponType = weapon.type;
-    }
+    if (!weaponType) { setMessage('❌ Наденьте оружие для чтения книги.'); return; }
     
-    if (!weaponType) {
-        alert('❌ Наденьте оружие для чтения книги.');
-        return;
-    }
+    var baseTime = 30;
+    var intelligence = Math.min(30, g.stats.intelligence || 1);
+    var readTimeMinutes = Math.max(5, baseTime - intelligence);
     
-    const baseTime = 30;
-    const intelligence = Math.min(30, g.stats.intelligence || 1);
-    const readTimeMinutes = Math.max(5, baseTime - intelligence);
+    setMessage('⏳ Чтение книги займёт ' + readTimeMinutes + ' мин.');
     
-    alert(`⏳ Чтение книги займёт ${readTimeMinutes} мин.`);
-    
-    // Чтение книги (асинхронно)
-    setTimeout(() => {
-        const xpMultiplier = getXpMultiplier(g);
-        const xpGain = Math.round(item.xp * xpMultiplier);
+    setTimeout(function() {
+        var xpMultiplier = 1 + (g.stats.intelligence / 100);
+        var xpGain = Math.round(item.xp * xpMultiplier);
         
-        // Общий опыт
         g.xp += xpGain;
         while (g.xp >= g.nextLevelXp) {
             g.xp -= g.nextLevelXp;
@@ -829,339 +1062,154 @@ export function readBook(index) {
             g.nextLevelXp = 100 + g.level * 10;
             if (g.level <= 100) {
                 g.attributePoints++;
-                alert(`🎉 Вы достигли ${g.level} уровня! +1 очко атрибутов.`);
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
             } else {
-                alert(`🎉 Вы достигли ${g.level} уровня!`);
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
             }
         }
         
-        // Мастерство оружия
         if (g.skills[weaponType]) {
             g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
-            const needed = g.skills[weaponType].level * 20 + 10;
+            var needed = g.skills[weaponType].level * 20 + 10;
             while (g.skills[weaponType].xp >= needed) {
                 g.skills[weaponType].xp -= needed;
                 g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
-                alert(`⚔️ Мастерство повышено до ${g.skills[weaponType].level}!`);
+                setMessage('⚔️ Мастерство повышено до ' + g.skills[weaponType].level + '!');
             }
         }
         
         g.inventory.splice(index, 1);
-        alert(`📖 Вы прочитали книгу! +${xpGain} XP`);
         saveData();
+        setMessage('📖 Вы прочитали книгу! +' + xpGain + ' XP');
         updateMenu();
     }, readTimeMinutes * 60 * 1000);
 }
 
 // ============================================================
-// 11. ГИЛЬДИЯ НАЁМНИКОВ
+// 11. БОРДЕЛЬ
 // ============================================================
 
-export function openGuildHall() {
-    const user = users[currentUser];
-    if (!user) return;
+function openBrothel() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    
-    if (!g.quests) {
-        g.quests = { completed: [], lastReset: 0, active: null, progress: {} };
-    }
-    
-    const now = Date.now();
-    const resetInterval = 5 * 60 * 60 * 1000;
-    
-    if (!g.quests.lastReset || (now - g.quests.lastReset) >= resetInterval) {
-        g.quests.completed = [];
-        g.quests.lastReset = now;
-        g.quests.active = null;
-        g.quests.progress = {};
-        saveData();
-    }
-    
-    const quests = generateDailyQuests();
-    const nextReset = g.quests.lastReset + resetInterval;
-    const timeLeft = nextReset - now;
-    const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
-    const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-    
-    let msg = '🗡️ ГИЛЬДИЯ НАЁМНИКОВ\n\n';
-    msg += `⏳ Следующее обновление через: ${hoursLeft}ч ${minutesLeft}м\n\n`;
-    
-    if (g.quests.active) {
-        const activeQuest = quests.find(q => q.id === g.quests.active);
-        if (activeQuest) {
-            const progress = g.quests.progress[activeQuest.id] || 0;
-            msg += `📌 АКТИВНОЕ ЗАДАНИЕ:\n`;
-            msg += `${activeQuest.name}\n`;
-            msg += `${activeQuest.desc}\n`;
-            msg += `📊 Прогресс: ${progress}/${activeQuest.count}\n`;
-            msg += `💰 ${formatCurrency(activeQuest.rewardGold)} | ⭐ ${activeQuest.rewardXp} XP\n\n`;
-        }
-    }
-    
-    msg += 'ДОСТУПНЫЕ ЗАДАНИЯ:\n';
-    quests.forEach((quest, i) => {
-        const isCompleted = g.quests.completed.includes(quest.id);
-        const isActive = g.quests.active === quest.id;
-        const status = isCompleted ? '✅' : (isActive ? '⏳' : `${i + 1}`);
-        msg += `${status} ${quest.name} (${quest.difficulty})\n`;
-    });
-    msg += '\nВведите номер задания для взятия, или 0 для выхода:';
-    
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1 || choice > quests.length) {
-        alert('❌ Отменено.');
-        return;
-    }
-    
-    const quest = quests[choice - 1];
-    if (g.quests.completed.includes(quest.id)) {
-        alert('❌ Это задание уже выполнено.');
-        return;
-    }
-    if (g.quests.active) {
-        alert('❌ У вас уже есть активное задание!');
-        return;
-    }
-    
-    takeQuest(quest.id);
-}
-
-function generateDailyQuests() {
-    const easy = [
-        { id: 'easy_kill_rats', name: '🐀 Крысиная охота', desc: 'Убить 5 крыс', type: 'kill', target: 'Крыса', count: 5, rewardGold: 50, rewardXp: 20, difficulty: '🟢 Лёгкий' },
-        { id: 'easy_gather_skins', name: '🧵 Сбор шкур', desc: 'Принести 10 шкур', type: 'gather', target: 'Шкура', count: 10, rewardGold: 40, rewardXp: 15, difficulty: '🟢 Лёгкий' },
-        { id: 'easy_gather_wood', name: '🪵 Дрова для таверны', desc: 'Принести 15 дерева', type: 'gather', target: 'Дерево', count: 15, rewardGold: 35, rewardXp: 12, difficulty: '🟢 Лёгкий' }
+    var services = [
+        { id: 'rest', name: '🛏️ Отдых с девушкой', desc: '+50 усталости, +10 HP', price: 20, fatigue: 50, hp: 10, buff: null },
+        { id: 'wine', name: '🍷 Вино с компанией', desc: '+30 усталости, +5 HP, бафф "Веселье" (+5% XP 30 мин)', price: 50, fatigue: 30, hp: 5, buff: { type: 'xp', value: 5, duration: 30 } },
+        { id: 'dance', name: '💃 Танец', desc: '+20 усталости, бафф "Вдохновение" (+10% урон 15 мин)', price: 100, fatigue: 20, hp: 0, buff: { type: 'damage', value: 10, duration: 15 } },
+        { id: 'vip', name: '👑 VIP-комната', desc: '+80 усталости, +20 HP, бафф "+15% XP 1 час"', price: 200, fatigue: 80, hp: 20, buff: { type: 'xp', value: 15, duration: 60 } }
     ];
     
-    const medium = [
-        { id: 'medium_kill_bandits', name: '🗡️ Очистка дорог', desc: 'Убить 5 бандитов', type: 'kill', target: 'Бандит', count: 5, rewardGold: 150, rewardXp: 50, difficulty: '🟡 Средний' },
-        { id: 'medium_gather_ore', name: '⛏️ Поставка руды', desc: 'Принести 20 руды', type: 'gather', target: 'Руда железная', count: 20, rewardGold: 100, rewardXp: 40, difficulty: '🟡 Средний' }
-    ];
-    
-    const hard = [
-        { id: 'hard_kill_thugs', name: '⚔️ Уничтожение банды', desc: 'Убить 3 головорезов', type: 'kill', target: 'Головорез', count: 3, rewardGold: 300, rewardXp: 100, difficulty: '🔴 Сложный' }
-    ];
-    
-    const shuffledEasy = easy.sort(() => Math.random() - 0.5).slice(0, 1);
-    const shuffledMedium = medium.sort(() => Math.random() - 0.5).slice(0, 1);
-    const shuffledHard = hard.sort(() => Math.random() - 0.5).slice(0, 1);
-    
-    return [...shuffledEasy, ...shuffledMedium, ...shuffledHard];
-}
-
-function takeQuest(questId) {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    g.quests.active = questId;
-    if (!g.quests.progress) g.quests.progress = {};
-    g.quests.progress[questId] = 0;
-    
-    alert('📋 Вы взяли задание!');
-    saveData();
-}
-
-export function abandonQuest() {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    if (!g.quests.active) {
-        alert('❌ У вас нет активного задания.');
-        return;
-    }
-    
-    g.quests.active = null;
-    alert('❌ Вы отказались от задания.');
-    saveData();
-}
-
-export function checkQuestProgress(type, target, count) {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    if (!g.quests || !g.quests.active) return;
-    
-    const quests = generateDailyQuests();
-    const quest = quests.find(q => q.id === g.quests.active);
-    if (!quest) return;
-    if (quest.type !== type || quest.target !== target) return;
-    if (g.quests.completed.includes(quest.id)) return;
-    
-    if (!g.quests.progress) g.quests.progress = {};
-    g.quests.progress[quest.id] = (g.quests.progress[quest.id] || 0) + count;
-    
-    if (g.quests.progress[quest.id] >= quest.count) {
-        g.quests.completed.push(quest.id);
-        g.quests.active = null;
-        
-        const xpMultiplier = getXpMultiplier(g);
-        const xpGain = Math.round(quest.rewardXp * xpMultiplier);
-        g.copper += quest.rewardGold;
-        convertCurrency(g);
-        g.xp += xpGain;
-        
-        while (g.xp >= g.nextLevelXp) {
-            g.xp -= g.nextLevelXp;
-            g.level++;
-            g.nextLevelXp = 100 + g.level * 10;
-            if (g.level <= 100) {
-                g.attributePoints++;
-                alert(`🎉 Вы достигли ${g.level} уровня! +1 очко атрибутов.`);
-            } else {
-                alert(`🎉 Вы достигли ${g.level} уровня!`);
-            }
-        }
-        
-        alert(`✅ Задание выполнено! +${formatCurrency(quest.rewardGold)}, +${xpGain} XP`);
-        saveData();
-        updateMenu();
-    }
-}
-
-// ============================================================
-// 12. БОРДЕЛЬ
-// ============================================================
-
-export function openBrothel() {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    
-    let msg = '💃 БОРДЕЛЬ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
-    msg += `💰 ${formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper)}\n`;
-    msg += `😴 Усталость: ${g.fatigue}/100\n\n`;
-    
+    var msg = '💃 БОРДЕЛЬ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
+    msg += '💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '\n';
+    msg += '😴 Усталость: ' + g.fatigue + '/100\n\n';
     msg += 'УСЛУГИ:\n';
-    BROTHEL_SERVICES.forEach((service, i) => {
-        msg += `${i + 1}. ${service.name} - ${formatCurrency(service.price)}\n`;
-        msg += `   ${service.desc}\n`;
+    services.forEach(function(service, i) {
+        msg += (i + 1) + '. ' + service.name + ' - ' + formatCurrency(service.price) + '\n';
+        msg += '   ' + service.desc + '\n';
     });
     msg += '\n0. Выйти';
     
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1 || choice > BROTHEL_SERVICES.length) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1 || choice > services.length) { setMessage('❌ Отменено.'); return; }
     
-    const service = BROTHEL_SERVICES[choice - 1];
-    useBrothelService(service.id);
+    var service = services[choice - 1];
+    useBrothelService(service.id, service.price, service.fatigue, service.hp, service.buff);
 }
 
-function useBrothelService(serviceId) {
-    const user = users[currentUser];
-    if (!user) return;
+function useBrothelService(serviceId, price, fatigue, hp, buff) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const service = BROTHEL_SERVICES.find(s => s.id === serviceId);
-    if (!service) {
-        alert('❌ Услуга не найдена.');
-        return;
-    }
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
     
-    if (!spendMoney(g, service.price)) {
-        alert(`❌ Недостаточно денег! Нужно: ${formatCurrency(service.price)}`);
-        return;
-    }
+    g.fatigue = Math.min(100, g.fatigue + fatigue);
+    if (hp > 0) g.hp = Math.min(getMaxHp(g), g.hp + hp);
     
-    // Восстановление
-    g.fatigue = Math.min(100, g.fatigue + service.fatigue);
-    if (service.hp > 0) g.hp = Math.min(getMaxHp(g), g.hp + service.hp);
-    
-    // Бафф
-    if (service.buff) {
+    if (buff) {
         if (!g.brothelBuffs) g.brothelBuffs = [];
-        
-        const buffNames = {
-            'xp': '🎯 Благословение опыта',
-            'damage': '⚔️ Вдохновение'
-        };
-        
+        var buffNames = { 'xp': '🎯 Благословение опыта', 'damage': '⚔️ Вдохновение' };
         g.brothelBuffs.push({
-            name: buffNames[service.buff.type] || 'Бафф',
-            desc: `+${service.buff.value}% ${service.buff.type === 'xp' ? 'опыта' : 'урона'}`,
-            type: service.buff.type,
-            value: service.buff.value,
-            expires: Date.now() + service.buff.duration * 60 * 1000
+            name: buffNames[buff.type] || 'Бафф',
+            desc: '+' + buff.value + '% ' + (buff.type === 'xp' ? 'опыта' : 'урона'),
+            type: buff.type,
+            value: buff.value,
+            expires: Date.now() + buff.duration * 60 * 1000
         });
     }
     
-    alert(`✅ ${service.name}! +${service.fatigue} усталости${service.hp > 0 ? `, +${service.hp} HP` : ''}`);
+    var serviceNames = {
+        'rest': 'Отдых с девушкой',
+        'wine': 'Вино с компанией',
+        'dance': 'Танец',
+        'vip': 'VIP-комната'
+    };
+    
     saveData();
+    setMessage('✅ ' + serviceNames[serviceId] + '! +' + fatigue + ' усталости' + (hp > 0 ? ', +' + hp + ' HP' : ''));
+    addLog('💃 ' + currentUser + ' посетил бордель (' + serviceNames[serviceId] + ')');
     updateMenu();
 }
 
 // ============================================================
-// 13. ТОРГОВЫЕ ЛАВКИ (РЫНОК)
+// 12. РЫНОК (ТОРГОВЫЕ ЛАВКИ)
 // ============================================================
 
-export function openMarket() {
-    const user = users[currentUser];
-    if (!user) return;
+function openMarket() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    let msg = '🏪 РЫНОК КОРОЛЕВСКОЙ ГАВАНИ\n\n';
+    var msg = '🏪 РЫНОК КОРОЛЕВСКОЙ ГАВАНИ\n\n';
     
-    // Проверка лавки игрока
     if (g.marketStall && g.marketStall.owned) {
-        const stall = marketStalls[g.marketStall.stallId];
-        const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-        msg += `🏪 Ваша лавка #${g.marketStall.stallId}\n`;
-        msg += timeLeft.expired ? '⛔ Аренда истекла!\n' : `✅ Активна (${timeLeft.text})\n`;
-        msg += `📦 ${stall.inventory ? stall.inventory.length : 0} товаров\n\n`;
+        var stall = marketStalls[g.marketStall.stallId];
+        var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+        msg += '🏪 Ваша лавка #' + g.marketStall.stallId + '\n';
+        msg += timeLeft.expired ? '⛔ Аренда истекла!\n' : '✅ Активна (' + timeLeft.text + ')\n';
+        msg += '📦 ' + (stall.inventory ? stall.inventory.length : 0) + ' товаров\n\n';
     } else {
         msg += 'У вас нет лавки.\n';
         msg += '💡 Купите лавку в Магистрате (80 зол.)\n\n';
     }
     
-    // Список лавок
     msg += 'АКТИВНЫЕ ЛАВКИ:\n';
-    let hasStalls = false;
-    for (let i = 1; i <= MARKET_STALLS_TOTAL; i++) {
-        const stall = marketStalls[i];
+    var hasStalls = false;
+    for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+        var stall = marketStalls[i];
         if (stall && stall.owner) {
-            const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+            var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
             if (!timeLeft.expired) {
                 hasStalls = true;
-                msg += `#${i} - ${stall.owner} (${stall.inventory ? stall.inventory.length : 0} товаров)\n`;
+                msg += '#' + i + ' - ' + stall.owner + ' (' + (stall.inventory ? stall.inventory.length : 0) + ' товаров)\n';
             }
         }
     }
     if (!hasStalls) msg += 'Нет активных лавок\n';
     
     msg += '\nВведите номер лавки для входа, или 0 для выхода:';
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1 || choice > MARKET_STALLS_TOTAL) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1 || choice > MARKET_STALLS_TOTAL) { setMessage('❌ Отменено.'); return; }
     
     enterStall(choice);
 }
 
 function enterStall(stallId) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
     
-    const g = user.game;
-    const stall = marketStalls[stallId];
+    if (!stall) { setMessage('❌ Лавка не найдена.'); return; }
     
-    if (!stall) {
-        alert('❌ Лавка не найдена.');
-        return;
-    }
+    var isOwner = stall.owner === currentUser;
+    var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+    var isActive = !timeLeft.expired;
     
-    const isOwner = stall.owner === currentUser;
-    const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-    const isActive = !timeLeft.expired;
-    
-    let msg = `🏪 ЛАВКА #${stallId}\n`;
-    msg += `👤 Владелец: ${stall.owner || 'Свободна'}\n`;
+    var msg = '🏪 ЛАВКА #' + stallId + '\n';
+    msg += '👤 Владелец: ' + (stall.owner || 'Свободна') + '\n';
     msg += isActive ? '✅ Активна\n' : '⛔ Аренда истекла\n\n';
     
     if (isOwner && isActive) {
@@ -1175,118 +1223,94 @@ function enterStall(stallId) {
     if (!stall.inventory || stall.inventory.length === 0) {
         msg += 'Нет товаров\n';
     } else {
-        stall.inventory.forEach((item, i) => {
-            const price = stall.prices && stall.prices[i] ? stall.prices[i] : 0;
-            const quality = item.quality || 'Обычное';
-            let countDisplay = '';
-            if (item.count && item.count > 1) countDisplay = ` ×${item.count}`;
-            msg += `${i + 1}. ${item.name} (${quality})${countDisplay} - ${formatCurrency(price)}\n`;
+        stall.inventory.forEach(function(item, i) {
+            var price = stall.prices && stall.prices[i] ? stall.prices[i] : 0;
+            var quality = item.quality || 'Обычное';
+            var countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            msg += (i + 1) + '. ' + item.name + ' (' + quality + ')' + countDisplay + ' - ' + formatCurrency(price) + '\n';
         });
     }
     
     if (!isOwner && isActive && stall.inventory && stall.inventory.length > 0) {
         msg += '\nВведите номер товара для покупки, или 0 для выхода:';
-        const choice = parseInt(prompt(msg));
+        var choice = parseInt(prompt(msg));
         if (!isNaN(choice) && choice >= 1 && choice <= stall.inventory.length) {
             buyFromStall(stallId, choice - 1);
         }
     } else if (isOwner && isActive) {
-        const choice = parseInt(prompt(msg + '\nВведите действие:'));
-        if (choice === 1) {
-            addToStall(stallId);
-        } else if (choice === 2) {
-            const idx = parseInt(prompt('Введите номер товара для удаления:'));
+        var choice = parseInt(prompt(msg + '\nВведите действие:'));
+        if (choice === 1) { addToStall(stallId); }
+        else if (choice === 2) {
+            var idx = parseInt(prompt('Введите номер товара для удаления:'));
             if (!isNaN(idx) && idx >= 1 && idx <= stall.inventory.length) {
                 removeFromStall(stallId, idx - 1);
             }
-        } else if (choice === 3) {
-            payStallRent();
-        }
+        } else if (choice === 3) { payStallRent(); }
     } else {
         alert(msg);
     }
 }
 
 function addToStall(stallId) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
     
-    const g = user.game;
-    const stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
+    if (g.inventory.length === 0) { setMessage('❌ Инвентарь пуст.'); return; }
     
-    if (!stall || stall.owner !== currentUser) {
-        alert('❌ Это не ваша лавка.');
-        return;
-    }
-    
-    if (g.inventory.length === 0) {
-        alert('❌ Инвентарь пуст.');
-        return;
-    }
-    
-    let choices = 'Выберите предмет для лавки:\n';
-    g.inventory.forEach((item, i) => {
-        let countDisplay = '';
-        if (item.count && item.count > 1) countDisplay = ` ×${item.count}`;
-        choices += `${i + 1}. ${item.name} (${item.quality || 'Обычное'})${countDisplay}\n`;
+    var choices = 'Выберите предмет для лавки:\n';
+    g.inventory.forEach(function(item, i) {
+        var countDisplay = '';
+        if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+        choices += (i + 1) + '. ' + item.name + ' (' + (item.quality || 'Обычное') + ')' + countDisplay + '\n';
     });
     choices += '0. Отмена';
     
-    const choice = parseInt(prompt(choices));
-    if (isNaN(choice) || choice < 1 || choice > g.inventory.length) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(choices));
+    if (isNaN(choice) || choice < 1 || choice > g.inventory.length) { setMessage('❌ Отменено.'); return; }
     
-    const item = g.inventory.splice(choice - 1, 1)[0];
+    var item = g.inventory.splice(choice - 1, 1)[0];
     
-    const priceInput = prompt('Введите цену (в меди, например: 100, 5 ЗОЛ, 1 ЗОЛ 50 МП):');
-    const price = parseCurrencyInput(priceInput);
-    
+    var priceInput = prompt('Введите цену (в меди, например: 100, 5 ЗОЛ, 1 ЗОЛ 50 МП):');
+    var price = parseCurrencyInput(priceInput);
     if (price === null || price < 1) {
-        alert('❌ Цена должна быть не менее 1 МП.');
+        setMessage('❌ Цена должна быть не менее 1 МП.');
         addToInventory(g, item);
         return;
     }
     
     if (!stall.inventory) stall.inventory = [];
     if (!stall.prices) stall.prices = {};
-    const newIdx = stall.inventory.length;
+    var newIdx = stall.inventory.length;
     stall.inventory.push(item);
     stall.prices[newIdx] = price;
     
     saveMarketStalls();
-    alert(`✅ Вы добавили ${item.name} в лавку за ${formatCurrency(price)}`);
     saveData();
+    setMessage('✅ Вы добавили ' + item.name + ' в лавку за ' + formatCurrency(price));
     updateMenu();
 }
 
 function buyFromStall(stallId, idx) {
-    const user = users[currentUser];
-    if (!user) return;
-    
-    const g = user.game;
-    const stall = marketStalls[stallId];
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
     
     if (!stall || !stall.inventory || idx >= stall.inventory.length) {
-        alert('❌ Товар не найден.');
+        setMessage('❌ Товар не найден.');
         return;
     }
     
-    const item = stall.inventory[idx];
-    const price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
+    var item = stall.inventory[idx];
+    var price = stall.prices && stall.prices[idx] ? stall.prices[idx] : 0;
+    if (price <= 0) { setMessage('❌ Цена не указана.'); return; }
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
     
-    if (price <= 0) {
-        alert('❌ Цена не указана.');
-        return;
-    }
-    
-    if (!spendMoney(g, price)) {
-        alert(`❌ Недостаточно денег! Нужно: ${formatCurrency(price)}`);
-        return;
-    }
-    
-    const owner = users[stall.owner];
+    var owner = users[stall.owner];
     if (owner) {
         owner.game.copper += price;
         convertCurrency(owner.game);
@@ -1297,68 +1321,43 @@ function buyFromStall(stallId, idx) {
     if (stall.prices) delete stall.prices[idx];
     addToInventory(g, item);
     saveMarketStalls();
-    
-    alert(`✅ Вы купили ${item.name} за ${formatCurrency(price)}`);
     saveData();
+    setMessage('✅ Вы купили ' + item.name + ' за ' + formatCurrency(price));
     updateMenu();
 }
 
 function removeFromStall(stallId, idx) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var stall = marketStalls[stallId];
     
-    const g = user.game;
-    const stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
+    if (!stall.inventory || idx >= stall.inventory.length) { setMessage('❌ Товар не найден.'); return; }
     
-    if (!stall || stall.owner !== currentUser) {
-        alert('❌ Это не ваша лавка.');
-        return;
-    }
-    
-    if (!stall.inventory || idx >= stall.inventory.length) {
-        alert('❌ Товар не найден.');
-        return;
-    }
-    
-    const item = stall.inventory.splice(idx, 1)[0];
+    var item = stall.inventory.splice(idx, 1)[0];
     if (stall.prices) delete stall.prices[idx];
     addToInventory(g, item);
     saveMarketStalls();
-    
-    alert(`✅ Вы убрали ${item.name} из лавки.`);
     saveData();
+    setMessage('✅ Вы убрали ' + item.name + ' из лавки.');
     updateMenu();
 }
 
 function payStallRent() {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    if (!g.marketStall || !g.marketStall.owned) {
-        alert('❌ У вас нет лавки!');
-        return;
-    }
+    if (!g.marketStall || !g.marketStall.owned) { setMessage('❌ У вас нет лавки!'); return; }
+    var stall = marketStalls[g.marketStall.stallId];
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
     
-    const stall = marketStalls[g.marketStall.stallId];
-    if (!stall || stall.owner !== currentUser) {
-        alert('❌ Это не ваша лавка.');
-        return;
-    }
-    
-    const rentCost = 10;
-    const currentDays = stall.rentDays || 0;
-    const totalDays = currentDays + 7;
-    
-    if (totalDays > 28) {
-        alert('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
-        return;
-    }
-    
-    if (!spendMoney(g, rentCost * 210 * 56)) {
-        alert(`❌ Недостаточно денег! Нужно: ${rentCost} золота.`);
-        return;
-    }
+    var rentCost = 10;
+    var currentDays = stall.rentDays || 0;
+    var totalDays = currentDays + 7;
+    if (totalDays > 28) { setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.'); return; }
+    if (!spendMoney(g, rentCost * 210 * 56)) { setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' золота.'); return; }
     
     stall.rentDays = (stall.rentDays || 0) + 7;
     stall.rentPaid = Date.now();
@@ -1366,46 +1365,46 @@ function payStallRent() {
     g.marketStall.rentPaid = Date.now();
     
     saveMarketStalls();
-    alert('✅ Вы оплатили аренду лавки на неделю!');
     saveData();
+    setMessage('✅ Вы оплатили аренду лавки на неделю!');
     updateMenu();
 }
 
 function checkStallRent() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    
-    const g = user.game;
+    var g = user.game;
     if (!g.marketStall || !g.marketStall.owned) return;
     
-    const stall = marketStalls[g.marketStall.stallId];
+    var stall = marketStalls[g.marketStall.stallId];
     if (!stall) return;
     
-    const timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+    var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
     if (timeLeft.expired) {
         confiscateStall();
+        setMessage('🚪 Ваша лавка конфискована за неуплату!');
     }
 }
 
 function confiscateStall() {
-    const user = users[currentUser];
+    var user = users[currentUser];
     if (!user) return;
-    
-    const g = user.game;
-    const stallId = g.marketStall.stallId;
-    const stall = marketStalls[stallId];
+    var g = user.game;
+    var stallId = g.marketStall.stallId;
+    var stall = marketStalls[stallId];
     
     if (!stall || stall.owner !== currentUser) return;
     
     if (stall.inventory && stall.inventory.length > 0) {
+        if (!confiscatedItems) confiscatedItems = [];
         confiscatedItems.push({
             owner: currentUser,
             items: stall.inventory,
             confiscatedAt: Date.now(),
             type: 'stall'
         });
-        saveConfiscated();
-        alert(`📦 Товары из лавки #${stallId} перемещены в конфискат.`);
+        saveData();
+        setMessage('📦 Товары из лавки #' + stallId + ' перемещены в конфискат.');
     }
     
     stall.owner = null;
@@ -1417,84 +1416,280 @@ function confiscateStall() {
     g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
     
     saveMarketStalls();
-    alert(`🚪 Лавка #${stallId} конфискована за неуплату!`);
     saveData();
+    setMessage('🚪 Лавка #' + stallId + ' конфискована за неуплату!');
+    addLog('🚪 ' + currentUser + ' потерял лавку #' + stallId);
     updateMenu();
 }
 
 // ============================================================
-// 14. КОНФИСКАТ
+// 13. КОНФИСКАТ
 // ============================================================
 
-export function openConfiscated() {
-    const user = users[currentUser];
-    if (!user) return;
+function openConfiscated() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const userItems = confiscatedItems.filter(item => item.owner === currentUser);
-    
-    if (userItems.length === 0) {
-        alert('📦 У вас нет вещей в конфискате.');
-        return;
+    var userItems = [];
+    for (var i = 0; i < confiscatedItems.length; i++) {
+        if (confiscatedItems[i].owner === currentUser) {
+            userItems.push(confiscatedItems[i]);
+        }
     }
     
-    let msg = '📦 КОНФИСКАТ\n\n';
-    userItems.forEach((entry, ei) => {
-        msg += `📅 ${new Date(entry.confiscatedAt).toLocaleString()}\n`;
-        entry.items.forEach((item, ii) => {
-            const quality = item.quality || 'Обычное';
-            let countDisplay = '';
-            if (item.count && item.count > 1) countDisplay = ` ×${item.count}`;
-            msg += `  ${ii + 1}. ${item.name} (${quality})${countDisplay}\n`;
-        });
+    if (userItems.length === 0) { setMessage('📦 У вас нет вещей в конфискате.'); return; }
+    
+    var msg = '📦 КОНФИСКАТ\n\n';
+    var totalItems = 0;
+    for (var ei = 0; ei < userItems.length; ei++) {
+        var entry = userItems[ei];
+        msg += '📅 ' + new Date(entry.confiscatedAt).toLocaleString() + '\n';
+        for (var ii = 0; ii < entry.items.length; ii++) {
+            var item = entry.items[ii];
+            var quality = item.quality || 'Обычное';
+            var countDisplay = '';
+            if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
+            totalItems++;
+            msg += '  ' + totalItems + '. ' + item.name + ' (' + quality + ')' + countDisplay + '\n';
+        }
         msg += '\n';
-    });
+    }
     msg += 'Введите номер предмета для забора, или 0 для выхода:';
     
-    const choice = parseInt(prompt(msg));
-    if (isNaN(choice) || choice < 1) {
-        alert('❌ Отменено.');
-        return;
-    }
+    var choice = parseInt(prompt(msg));
+    if (isNaN(choice) || choice < 1) { setMessage('❌ Отменено.'); return; }
     
-    let totalItems = 0;
-    let foundEntry = null;
-    let foundIdx = -1;
+    var foundEntry = null;
+    var foundIdx = -1;
+    var currentCount = 0;
     
-    for (let ei = 0; ei < userItems.length; ei++) {
-        const entry = userItems[ei];
-        for (let ii = 0; ii < entry.items.length; ii++) {
-            totalItems++;
-            if (totalItems === choice) {
-                foundEntry = entry;
-                foundIdx = ii;
+    for (var ei2 = 0; ei2 < userItems.length; ei2++) {
+        var entry2 = userItems[ei2];
+        for (var ii2 = 0; ii2 < entry2.items.length; ii2++) {
+            currentCount++;
+            if (currentCount === choice) {
+                foundEntry = entry2;
+                foundIdx = ii2;
                 break;
             }
         }
         if (foundEntry) break;
     }
     
-    if (!foundEntry) {
-        alert('❌ Предмет не найден.');
-        return;
-    }
+    if (!foundEntry) { setMessage('❌ Предмет не найден.'); return; }
     
-    const realEntryIdx = confiscatedItems.indexOf(foundEntry);
-    if (realEntryIdx === -1) {
-        alert('❌ Ошибка: предмет не найден.');
-        return;
+    var realEntryIdx = -1;
+    for (var ri = 0; ri < confiscatedItems.length; ri++) {
+        if (confiscatedItems[ri] === foundEntry) { realEntryIdx = ri; break; }
     }
+    if (realEntryIdx === -1) { setMessage('❌ Ошибка: предмет не найден.'); return; }
     
-    const item = foundEntry.items.splice(foundIdx, 1)[0];
+    var item = foundEntry.items.splice(foundIdx, 1)[0];
     addToInventory(g, item);
     
     if (foundEntry.items.length === 0) {
         confiscatedItems.splice(realEntryIdx, 1);
     }
     
-    saveConfiscated();
     saveData();
-    alert(`✅ Вы забрали ${item.name} из конфиската.`);
+    setMessage('✅ Вы забрали ' + item.name + ' из конфиската.');
+    updateMenu();
+}
+
+// ============================================================
+// 14. МАГИСТРАТ (ЦЕНТР УПРАВЛЕНИЯ)
+// ============================================================
+
+function openMagistrate() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var msg = '📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
+    msg += '1. 🏠 Недвижимость\n';
+    msg += '2. 🏪 Торговые лавки\n';
+    msg += '3. 📦 Конфискат\n';
+    msg += '0. Выйти';
+    
+    var choice = prompt(msg);
+    if (choice === '1') { magistrateHousing(); }
+    else if (choice === '2') { magistrateStalls(); }
+    else if (choice === '3') { openConfiscated(); }
+}
+
+function magistrateHousing() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var msg = '🏠 НЕДВИЖИМОСТЬ\n\n';
+    
+    if (g.housing && g.housing.type) {
+        var house = HOUSING_TYPES[g.housing.type];
+        var timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
+        msg += 'ВАШЕ ЖИЛЬЁ:\n';
+        msg += house.emoji + ' ' + house.name + '\n';
+        msg += '📍 ' + house.district + '\n';
+        msg += '📦 Склад: ' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + '\n';
+        msg += timeLeft.expired ? '⛔ АРЕНДА ПРОСРОЧЕНА!\n' : '⏳ Осталось: ' + timeLeft.text + '\n';
+        msg += '\n1. 💰 Оплатить аренду (' + house.rent + ' зол./нед)\n';
+        msg += '2. 🏚️ Продать жильё\n';
+        msg += '0. Назад\n\n';
+    } else {
+        msg += 'У вас нет жилья.\n\n';
+    }
+    
+    msg += 'ДОСТУПНОЕ ЖИЛЬЁ:\n';
+    var districts = {
+        'Королевский квартал': ['mansion', 'townhouse'],
+        'Торговый квартал': ['house', 'room'],
+        'Квартал бедноты': ['night']
+    };
+    
+    for (var dist in districts) {
+        msg += '\n📍 ' + dist + ':\n';
+        var types = districts[dist];
+        for (var i = 0; i < types.length; i++) {
+            var type = types[i];
+            var h = HOUSING_TYPES[type];
+            var market = housingMarket[type];
+            var available = market.total - market.occupied;
+            msg += '  ' + h.emoji + ' ' + h.name + ' - ' + h.price + ' зол.';
+            msg += (available > 0) ? ' (✅ ' + available + ' свободно)' : ' (❌ РАСПРОДАНО)';
+            if (available > 0) {
+                msg += ' [введите ' + type + ' для покупки]';
+            }
+            msg += '\n';
+        }
+    }
+    
+    var action = prompt(msg + '\n\nВведите команду:');
+    if (!action || action === '0') return;
+    
+    if (action === '1' && g.housing && g.housing.type) {
+        payRent();
+        return;
+    }
+    if (action === '2' && g.housing && g.housing.type) {
+        sellHouse();
+        return;
+    }
+    
+    if (HOUSING_TYPES[action]) {
+        buyHouse(action);
+    } else {
+        setMessage('❌ Неверная команда.');
+    }
+}
+
+function magistrateStalls() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var msg = '🏪 ТОРГОВЫЕ ЛАВКИ\n\n';
+    msg += 'Стоимость лавки: 80 золота. Аренда: 10 золота/неделя.\n\n';
+    
+    if (g.marketStall && g.marketStall.owned) {
+        var stall = marketStalls[g.marketStall.stallId];
+        var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
+        msg += '🏪 Ваша лавка #' + g.marketStall.stallId + '\n';
+        msg += timeLeft.expired ? '⛔ АРЕНДА ПРОСРОЧЕНА!\n' : '⏳ Осталось: ' + timeLeft.text + '\n';
+        msg += '📦 ' + (stall.inventory ? stall.inventory.length : 0) + ' товаров\n';
+        msg += '\n1. 💰 Оплатить аренду (10 зол.)\n';
+        msg += '2. 🚪 Оставить лавку\n';
+        msg += '0. Назад\n\n';
+    } else {
+        var freeStalls = 0;
+        for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+            if (!marketStalls[i].owner) freeStalls++;
+        }
+        msg += 'Свободных лавок: ' + freeStalls + '\n';
+        msg += '\n1. 🏪 Купить лавку (80 зол.)\n';
+        msg += '0. Назад\n\n';
+    }
+    
+    var action = prompt(msg);
+    if (!action || action === '0') return;
+    
+    if (action === '1') {
+        if (g.marketStall && g.marketStall.owned) {
+            payStallRent();
+        } else {
+            buyStall();
+        }
+    } else if (action === '2' && g.marketStall && g.marketStall.owned) {
+        leaveStall();
+    }
+}
+
+function buyStall() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (g.marketStall && g.marketStall.owned) { setMessage('❌ У вас уже есть лавка!'); return; }
+    
+    var freeStall = null;
+    for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
+        if (!marketStalls[i].owner) { freeStall = i; break; }
+    }
+    if (!freeStall) { setMessage('❌ Все лавки заняты!'); return; }
+    
+    if (!spendMoney(g, 80 * 210 * 56)) { setMessage('❌ Недостаточно денег! Нужно: 80 золота.'); return; }
+    
+    marketStalls[freeStall].owner = currentUser;
+    marketStalls[freeStall].rentPaid = Date.now();
+    marketStalls[freeStall].rentDays = 1;
+    marketStalls[freeStall].inventory = [];
+    marketStalls[freeStall].prices = {};
+    
+    g.marketStall = {
+        owned: true,
+        stallId: freeStall,
+        rentPaid: Date.now(),
+        rentDays: 1,
+        debt: 0
+    };
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('✅ Вы купили лавку #' + freeStall + ' за 80 золота!');
+    addLog('🏪 ' + currentUser + ' купил лавку #' + freeStall);
+    updateMenu();
+}
+
+function leaveStall() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    if (!g.marketStall || !g.marketStall.owned) { setMessage('❌ У вас нет лавки.'); return; }
+    
+    var stallId = g.marketStall.stallId;
+    var stall = marketStalls[stallId];
+    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
+    
+    if (!confirm('Вы уверены, что хотите оставить лавку #' + stallId + '?\nВсе товары вернутся в инвентарь.')) return;
+    
+    if (stall.inventory && stall.inventory.length > 0) {
+        stall.inventory.forEach(function(item) { addToInventory(g, item); });
+        setMessage('📦 ' + stall.inventory.length + ' товаров возвращено в инвентарь.');
+    }
+    
+    stall.owner = null;
+    stall.rentPaid = null;
+    stall.rentDays = 0;
+    stall.inventory = [];
+    stall.prices = {};
+    
+    g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
+    
+    saveMarketStalls();
+    saveData();
+    setMessage('🚪 Вы оставили лавку #' + stallId + '.');
+    addLog('🚪 ' + currentUser + ' оставил лавку #' + stallId);
     updateMenu();
 }
 
@@ -1502,23 +1697,23 @@ export function openConfiscated() {
 // 15. ИГРА В КОСТИ (PvP)
 // ============================================================
 
-export function playDice() {
-    const user = users[currentUser];
-    if (!user) return;
+function playDice() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    const activeGames = getActiveDiceGames();
-    
-    let msg = '🎲 ИГРА В КОСТИ (PvP)\n\n';
+    var activeGames = getActiveDiceGames();
+    var msg = '🎲 ИГРА В КОСТИ (PvP)\n\n';
     
     if (activeGames.length > 0) {
         msg += 'АКТИВНЫЕ ИГРЫ:\n';
-        activeGames.forEach(game => {
+        for (var i = 0; i < activeGames.length; i++) {
+            var game = activeGames[i];
             if (game.creator !== currentUser) {
-                const timeLeft = Math.ceil((game.createdAt + 5 * 60 * 1000 - Date.now()) / 60000);
-                msg += `🎲 ${game.creator} (ставка: ${formatCurrency(game.bet)}) - ⏳ ${timeLeft} мин\n`;
+                var timeLeft = Math.ceil((game.createdAt + 5 * 60 * 1000 - Date.now()) / 60000);
+                msg += '🎲 ' + game.creator + ' (ставка: ' + formatCurrency(game.bet) + ') - ⏳ ' + timeLeft + ' мин\n';
             }
-        });
+        }
         msg += '\n';
     }
     
@@ -1531,26 +1726,26 @@ export function playDice() {
     msg += '6. Присоединиться к игре (введите ID)\n';
     msg += '0. Выйти';
     
-    const choice = parseInt(prompt(msg));
+    var choice = parseInt(prompt(msg));
     
     if (choice >= 1 && choice <= 5) {
-        const bets = [10, 25, 50, 100, 200];
+        var bets = [10, 25, 50, 100, 200];
         createDiceGame(bets[choice - 1]);
     } else if (choice === 6) {
-        const gameId = prompt('Введите ID игры:');
+        var gameId = prompt('Введите ID игры:');
         if (gameId) joinDiceGame(gameId);
     }
 }
 
 function getActiveDiceGames() {
-    const now = Date.now();
-    const timeout = 5 * 60 * 1000;
-    const active = [];
+    var now = Date.now();
+    var timeout = 5 * 60 * 1000;
+    var active = [];
     
-    for (let id in diceGames) {
-        const game = diceGames[id];
+    for (var id in diceGames) {
+        var game = diceGames[id];
         if (now - game.createdAt > timeout && game.status === 'waiting') {
-            const creator = users[game.creator];
+            var creator = users[game.creator];
             if (creator) {
                 creator.game.copper += game.bet;
                 convertCurrency(creator.game);
@@ -1568,24 +1763,20 @@ function getActiveDiceGames() {
 }
 
 function createDiceGame(bet) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
     
-    const g = user.game;
-    
-    for (let id in diceGames) {
+    for (var id in diceGames) {
         if (diceGames[id].creator === currentUser && diceGames[id].status === 'waiting') {
-            alert('❌ У вас уже есть активная игра!');
+            setMessage('❌ У вас уже есть активная игра!');
             return;
         }
     }
     
-    if (!spendMoney(g, bet)) {
-        alert('❌ Недостаточно денег для ставки!');
-        return;
-    }
+    if (!spendMoney(g, bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
     
-    const gameId = 'dice_' + (++diceGameIdCounter);
+    var gameId = 'dice_' + (++diceGameIdCounter);
     diceGames[gameId] = {
         id: gameId,
         creator: currentUser,
@@ -1597,86 +1788,55 @@ function createDiceGame(bet) {
         player2Roll: null
     };
     
-    saveDiceGames();
     saveData();
-    alert(`✅ Вы создали игру в кости на ${formatCurrency(bet)}! ID: ${gameId}`);
+    setMessage('✅ Вы создали игру в кости на ' + formatCurrency(bet) + '! ID: ' + gameId);
+    addLog('🎲 ' + currentUser + ' создал игру в кости на ' + formatCurrency(bet));
 }
 
 function joinDiceGame(gameId) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var game = diceGames[gameId];
     
-    const g = user.game;
-    const game = diceGames[gameId];
-    
-    if (!game) {
-        alert('❌ Игра не найдена.');
-        return;
-    }
-    
-    if (game.creator === currentUser) {
-        alert('❌ Вы не можете присоединиться к своей игре.');
-        return;
-    }
-    
-    if (game.status !== 'waiting') {
-        alert('❌ Игра уже началась или завершена.');
-        return;
-    }
-    
-    if (!spendMoney(g, game.bet)) {
-        alert('❌ Недостаточно денег для ставки!');
-        return;
-    }
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator === currentUser) { setMessage('❌ Вы не можете присоединиться к своей игре.'); return; }
+    if (game.status !== 'waiting') { setMessage('❌ Игра уже началась или завершена.'); return; }
+    if (!spendMoney(g, game.bet)) { setMessage('❌ Недостаточно денег для ставки!'); return; }
     
     game.player2 = currentUser;
     game.status = 'playing';
     
-    saveDiceGames();
     saveData();
-    alert('✅ Вы присоединились к игре! Бросайте кости.');
+    setMessage('✅ Вы присоединились к игре! Бросайте кости.');
+    addLog('🎲 ' + currentUser + ' присоединился к игре ' + gameId);
     
     rollDice(gameId);
 }
 
 function rollDice(gameId) {
-    const user = users[currentUser];
-    if (!user) return;
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var game = diceGames[gameId];
     
-    const g = user.game;
-    const game = diceGames[gameId];
+    if (!game) { setMessage('❌ Игра не найдена.'); return; }
+    if (game.creator !== currentUser && game.player2 !== currentUser) { setMessage('❌ Вы не участник этой игры.'); return; }
     
-    if (!game) {
-        alert('❌ Игра не найдена.');
-        return;
-    }
-    
-    if (game.creator !== currentUser && game.player2 !== currentUser) {
-        alert('❌ Вы не участник этой игры.');
-        return;
-    }
-    
-    const dice1 = Math.floor(Math.random() * 6) + 1;
-    const dice2 = Math.floor(Math.random() * 6) + 1;
-    const total = dice1 + dice2;
+    var dice1 = Math.floor(Math.random() * 6) + 1;
+    var dice2 = Math.floor(Math.random() * 6) + 1;
+    var total = dice1 + dice2;
     
     if (game.creator === currentUser) {
-        if (game.creatorRoll !== null) {
-            alert('❌ Вы уже бросили кости! Ждите соперника.');
-            return;
-        }
+        if (game.creatorRoll !== null) { setMessage('❌ Вы уже бросили кости!'); return; }
         game.creatorRoll = total;
-        alert(`🎲 Ваш бросок: ${dice1} + ${dice2} = ${total} (ждём соперника)`);
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
     } else if (game.player2 === currentUser) {
-        if (game.player2Roll !== null) {
-            alert('❌ Вы уже бросили кости! Ждите соперника.');
-            return;
-        }
+        if (game.player2Roll !== null) { setMessage('❌ Вы уже бросили кости!'); return; }
         game.player2Roll = total;
-        alert(`🎲 Ваш бросок: ${dice1} + ${dice2} = ${total} (ждём соперника)`);
+        setMessage('🎲 Ваш бросок: ' + dice1 + ' + ' + dice2 + ' = ' + total + ' (ждём соперника)');
     }
     
-    saveDiceGames();
     saveData();
     
     if (game.creatorRoll !== null && game.player2Roll !== null) {
@@ -1685,199 +1845,253 @@ function rollDice(gameId) {
 }
 
 function finishDiceGame(gameId) {
-    const game = diceGames[gameId];
+    var game = diceGames[gameId];
     if (!game) return;
     
-    const creator = users[game.creator];
-    const player2 = users[game.player2];
-    const totalBet = game.bet * 2;
+    var creator = users[game.creator];
+    var player2 = users[game.player2];
+    var totalBet = game.bet * 2;
     
-    let winner = null;
-    let winnerName = '';
+    var winner = null;
+    var winnerName = '';
     
     if (game.creatorRoll > game.player2Roll) {
         winner = creator;
         winnerName = game.creator;
+        setMessage('🎉 ' + game.creator + ' победил! (' + game.creatorRoll + ' vs ' + game.player2Roll + ')');
     } else if (game.player2Roll > game.creatorRoll) {
         winner = player2;
         winnerName = game.player2;
+        setMessage('🎉 ' + game.player2 + ' победил! (' + game.player2Roll + ' vs ' + game.creatorRoll + ')');
     } else {
         creator.game.copper += game.bet;
         player2.game.copper += game.bet;
         convertCurrency(creator.game);
         convertCurrency(player2.game);
-        alert(`🤝 Ничья! (${game.creatorRoll} vs ${game.player2Roll}) Ставки возвращены.`);
+        setMessage('🤝 Ничья! (' + game.creatorRoll + ' vs ' + game.player2Roll + ') Ставки возвращены.');
+        addLog('🤝 Ничья в кости между ' + game.creator + ' и ' + game.player2);
         game.status = 'finished';
         delete diceGames[gameId];
-        saveDiceGames();
         saveData();
+        updateMenu();
         return;
     }
     
     if (winner) {
         winner.game.copper += totalBet;
         convertCurrency(winner.game);
-        alert(`🏆 ${winnerName} выиграл ${formatCurrency(totalBet)}!`);
+        setMessage('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + '!');
+        addLog('🏆 ' + winnerName + ' выиграл ' + formatCurrency(totalBet) + ' в кости у ' + (winnerName === game.creator ? game.player2 : game.creator));
     }
     
     game.status = 'finished';
     delete diceGames[gameId];
-    saveDiceGames();
     saveData();
+    updateMenu();
 }
 
 // ============================================================
-// 16. СОХРАНЕНИЕ (локальное для гавани)
+// 16. ПОРТ
 // ============================================================
 
-function loadHousingMarket() {
-    try {
-        const raw = localStorage.getItem('kl_housing_market');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            for (let key in housingMarket) {
-                if (parsed[key]) {
-                    housingMarket[key].occupied = parsed[key].occupied || 0;
-                }
+function openPort() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var currentCity = g.location.location || 'Королевская Гавань';
+    
+    var msg = '⛵ ПОРТ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
+    msg += '📍 Текущий город: ' + currentCity + '\n\n';
+    msg += '🚧 В разработке. Скоро здесь можно будет путешествовать.\n\n';
+    msg += 'ГОРОДА ВЕСТЕРОСА:\n';
+    
+    for (var city in PORT_CITIES) {
+        var data = PORT_CITIES[city];
+        var isCurrent = city === currentCity;
+        msg += (isCurrent ? '✅ ' : '   ') + data.emoji + ' ' + city;
+        msg += isCurrent ? ' (вы здесь)' : ' (' + data.region + ')';
+        if (!isCurrent) msg += ' - ' + data.price + ' зол.';
+        msg += '\n';
+    }
+    
+    alert(msg);
+}
+
+// ============================================================
+// 17. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ parseCurrencyInput
+// ============================================================
+
+function parseCurrencyInput(input) {
+    input = input.trim().toUpperCase();
+    if (!input) return null;
+    
+    if (/^\d+$/.test(input)) {
+        return parseInt(input);
+    }
+    
+    var total = 0;
+    var patterns = [
+        { regex: /(\d+)\s*ЗОЛ(ОТО)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*СО(РЕБРО)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*МП(ЕДЬ)?/i, multiplier: 1 },
+        { regex: /(\d+)\s*G(OLD)?/i, multiplier: 210 * 56 },
+        { regex: /(\d+)\s*S(ILVER)?/i, multiplier: 56 },
+        { regex: /(\d+)\s*C(OPPER)?/i, multiplier: 1 }
+    ];
+    
+    for (var pi = 0; pi < patterns.length; pi++) {
+        var pattern = patterns[pi];
+        var regex = new RegExp(pattern.regex.source, 'gi');
+        var match;
+        while ((match = regex.exec(input)) !== null) {
+            var value = parseInt(match[1]);
+            if (!isNaN(value)) {
+                total += value * pattern.multiplier;
             }
         }
-    } catch(e) {}
-}
-
-function saveHousingMarket() {
-    localStorage.setItem('kl_housing_market', JSON.stringify(housingMarket));
-}
-
-function loadMarketStalls() {
-    try {
-        const raw = localStorage.getItem('kl_market_stalls');
-        if (raw) {
-            marketStalls = JSON.parse(raw);
-        }
-    } catch(e) {}
-    initMarketStalls();
-}
-
-function saveMarketStalls() {
-    localStorage.setItem('kl_market_stalls', JSON.stringify(marketStalls));
-}
-
-function initMarketStalls() {
-    for (let i = 1; i <= MARKET_STALLS_TOTAL; i++) {
-        if (!marketStalls[i]) {
-            marketStalls[i] = {
-                owner: null,
-                rentPaid: null,
-                rentDays: 0,
-                inventory: [],
-                prices: {}
-            };
+    }
+    
+    if (total > 0) return total;
+    
+    var parts = input.split(' ');
+    for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+        var num = parseInt(part);
+        if (isNaN(num)) continue;
+        var next = i + 1 < parts.length ? parts[i + 1] : '';
+        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') {
+            total += num * 210 * 56;
+            i++;
+        } else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') {
+            total += num * 56;
+            i++;
+        } else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') {
+            total += num;
+            i++;
+        } else {
+            total += num;
         }
     }
-}
-
-function loadHorseMarket() {
-    try {
-        const raw = localStorage.getItem('kl_horse_market');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            for (let key in horseMarket) {
-                if (parsed[key]) {
-                    horseMarket[key].sold = parsed[key].sold || 0;
-                    horseMarket[key].resetTime = parsed[key].resetTime || null;
-                }
-            }
-        }
-    } catch(e) {}
-}
-
-function saveHorseMarket() {
-    localStorage.setItem('kl_horse_market', JSON.stringify(horseMarket));
-}
-
-function loadConfiscated() {
-    try {
-        const raw = localStorage.getItem('kl_confiscated');
-        if (raw) {
-            confiscatedItems = JSON.parse(raw);
-        }
-    } catch(e) {
-        confiscatedItems = [];
-    }
-}
-
-function saveConfiscated() {
-    localStorage.setItem('kl_confiscated', JSON.stringify(confiscatedItems));
-}
-
-function loadDiceGames() {
-    try {
-        const raw = localStorage.getItem('kl_dice_games');
-        if (raw) {
-            diceGames = JSON.parse(raw);
-        }
-    } catch(e) {
-        diceGames = {};
-    }
-}
-
-function saveDiceGames() {
-    localStorage.setItem('kl_dice_games', JSON.stringify(diceGames));
+    return total;
 }
 
 // ============================================================
-// 17. ЭКСПОРТ ВСЕХ ФУНКЦИЙ
+// 18. ФУНКЦИИ ДЛЯ ИНТЕГРАЦИИ С MAIN.JS
 // ============================================================
 
-export default {
-    // Инициализация
-    initKingsLanding,
-    
-    // Движение
-    goToBuilding,
-    
-    // Магистрат (недвижимость)
-    buyHouse,
-    sellHouse,
-    payRent,
-    checkRent,
-    
-    // Склад
-    openStorage,
-    
-    // Конюшня
-    openStable,
-    buyHorse,
-    sellHorse,
-    
-    // Септа
-    openTemple,
-    
-    // Библиотека
-    openLibrary,
-    readBook,
-    
-    // Гильдия наёмников
-    openGuildHall,
-    abandonQuest,
-    checkQuestProgress,
-    
-    // Бордель
-    openBrothel,
-    
-    // Рынок (лавки)
-    openMarket,
-    
-    // Конфискат
-    openConfiscated,
-    
-    // Кости
-    playDice,
-    
-    // Константы (для использования в других файлах)
-    BUILDINGS,
-    HOUSING_TYPES,
-    HORSE_TYPES,
-    BOOKS,
-    BROTHEL_SERVICES
+// Регистрируем функции в глобальной области
+window.openMap = openMap;
+window.closeMap = closeMap;
+window.goToBuilding = goToBuilding;
+window.openInventory = openInventory;
+window.openCharacter = openCharacter;
+window.openMainMenu = openMainMenu;
+window.openLog = openLog;
+window.closeLog = closeLog;
+window.closeMenu = closeMenu;
+window.openHouses = openHouses;
+window.closeHouses = closeHouses;
+window.showOnlineList = showOnlineList;
+window.closeOnline = closeOnline;
+
+// Функции для зданий
+window.openStable = openStable;
+window.openTemple = openTemple;
+window.openLibrary = openLibrary;
+window.openGuildHall = openGuildHall;
+window.openBrothel = openBrothel;
+window.openMarket = openMarket;
+window.openMagistrate = openMagistrate;
+window.openPort = openPort;
+window.openStorage = openStorage;
+window.openStorageHold = openStorageHold;
+window.openConfiscated = openConfiscated;
+
+// Функции для жилья
+window.buyHouse = buyHouse;
+window.sellHouse = sellHouse;
+window.payRent = payRent;
+window.checkRent = checkRent;
+
+// Функции для лавок
+window.enterStall = enterStall;
+window.addToStall = addToStall;
+window.buyFromStall = buyFromStall;
+window.removeFromStall = removeFromStall;
+window.payStallRent = payStallRent;
+window.checkStallRent = checkStallRent;
+window.confiscateStall = confiscateStall;
+window.buyStall = buyStall;
+window.leaveStall = leaveStall;
+
+// Функции для книг
+window.readBook = readBook;
+window.buyBook = buyBook;
+
+// Функции для квестов
+window.takeQuest = takeQuest;
+window.abandonQuest = abandonQuest;
+window.checkQuestProgress = checkQuestProgress;
+
+// Функции для костей
+window.playDice = playDice;
+window.createDiceGame = createDiceGame;
+window.joinDiceGame = joinDiceGame;
+window.rollDice = rollDice;
+window.finishDiceGame = finishDiceGame;
+
+// Функции для магазинов (обёртки)
+window.openShop = function(shopType) {
+    setMessage('🏪 ' + shopType + ' временно недоступна.');
 };
+
+window.openCraftMenu = function() {
+    setMessage('🔨 Крафт временно недоступен.');
+};
+
+// ============================================================
+// 19. ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+
+// Автоматическая инициализация при загрузке
+(function() {
+    // Проверяем, что все глобальные переменные существуют
+    if (typeof housingMarket === 'undefined') {
+        console.warn('housingMarket не определён, создаём...');
+        window.housingMarket = {
+            'night': { total: 400, occupied: 0 },
+            'room': { total: 300, occupied: 0 },
+            'house': { total: 250, occupied: 0 },
+            'townhouse': { total: 80, occupied: 0 },
+            'mansion': { total: 10, occupied: 0 }
+        };
+    }
+    
+    if (typeof marketStalls === 'undefined') {
+        console.warn('marketStalls не определён, создаём...');
+        window.marketStalls = {};
+        for (var i = 1; i <= 50; i++) {
+            marketStalls[i] = { owner: null, rentPaid: null, rentDays: 0, inventory: [], prices: {} };
+        }
+    }
+    
+    if (typeof horseMarket === 'undefined') {
+        console.warn('horseMarket не определён, создаём...');
+        window.horseMarket = {
+            'work': { total: 50, sold: 0, resetTime: null },
+            'riding': { total: 30, sold: 0, resetTime: null },
+            'war': { total: 20, sold: 0, resetTime: null },
+            'racer': { total: 15, sold: 0, resetTime: null },
+            'heavy': { total: 10, sold: 0, resetTime: null },
+            'royal': { total: 5, sold: 0, resetTime: null },
+            'fire': { total: 1, sold: 0, resetTime: null }
+        };
+    }
+    
+    if (typeof confiscatedItems === 'undefined') {
+        window.confiscatedItems = [];
+    }
+    
+    console.log('🏰 Королевская Гавань загружена!');
+})();
