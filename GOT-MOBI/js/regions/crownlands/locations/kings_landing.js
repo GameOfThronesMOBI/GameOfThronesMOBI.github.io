@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ВЕРСИЯ
+// КОРОЛЕВСКАЯ ГАВАНЬ — ТОЛЬКО УНИКАЛЬНАЯ ЛОГИКА
 // ============================================================
 
 // ============================================================
@@ -78,10 +78,10 @@ function goToBuilding(building) {
     }
     
     closeMap();
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
+    if (typeof updateMenu === 'function') updateMenu();
+    if (typeof updateStory === 'function') updateStory();
+    if (typeof updateActions === 'function') updateActions();
+    if (typeof saveData === 'function') saveData();
 }
 
 // ============================================================
@@ -130,11 +130,13 @@ function updateStory() {
         textEl.textContent = texts[place] || 'Вы в ' + place + '.';
     }
     
-    updateActions();
+    if (typeof updateActions === 'function') {
+        updateActions();
+    }
 }
 
 // ============================================================
-// 4. ACTIONS
+// 4. ACTIONS (ТОЛЬКО УНИКАЛЬНЫЕ КНОПКИ)
 // ============================================================
 
 function updateActions() {
@@ -279,6 +281,8 @@ function updateActions() {
             return function() {
                 if (typeof gameAction === 'function') {
                     gameAction(actionId);
+                } else {
+                    setMessage('❌ Действие временно недоступно.');
                 }
             };
         })(a.id);
@@ -317,7 +321,7 @@ function buyHouse(type) {
     g.housing.type = type;
     g.housing.purchased = Date.now();
     g.housing.rentPaid = Date.now();
-    g.housing.rentDays = 1; // 1 день аренды при покупке
+    g.housing.rentDays = 1;
     g.housing.debt = 0;
     if (!g.housing.storage) g.housing.storage = [];
     if (!g.housing.storageHold) g.housing.storageHold = [];
@@ -378,7 +382,7 @@ function payRent() {
     var totalDays = currentDays + 7;
     
     if (totalDays > 28) {
-        setMessage('⏳ Вы уже оплатили аренду на 4 недели вперёд.');
+        setMessage('⏳ Вы оплатили 4 недели вперёд.');
         return;
     }
     
@@ -700,14 +704,14 @@ function openStorageHold() {
         overlay.id = 'modal-storage-hold';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStorageHold(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div>';
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 КАМЕРА ХРАНЕНИЯ</h3><button class="close-btn" onclick="closeStorageHold()">✕</button></div><div id="modal-storage-hold-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
     
     var content = document.getElementById('modal-storage-hold-content');
     
-    var html = '<div class="modal-section"><h4>📦 ХРАНИЛИЩЕ МАГИСТРАТА</h4>';
+    var html = '<div class="modal-section"><h4>📦 КАМЕРА ХРАНЕНИЯ МАГИСТРАТА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Здесь хранятся вещи из просроченных домов и лавок.</p>';
     html += '<p style="color:#6a5a48;font-size:12px;">📊 Всего предметов: ' + hold.length + '</p>';
     
@@ -959,7 +963,6 @@ function openTemple() {
     html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
     html += '</div>';
     
-    // ИСЦЕЛЕНИЕ
     var lastHeal = g.lastHeal || 0;
     var canHeal = (Date.now() - lastHeal) >= 2 * 60 * 60 * 1000;
     html += '<div class="modal-section"><h4>💉 БЕСПЛАТНОЕ ИСЦЕЛЕНИЕ</h4>';
@@ -974,7 +977,6 @@ function openTemple() {
     }
     html += '</div>';
     
-    // МОЛИТВА
     var blessing = g.blessing || { active: false, expires: 0 };
     html += '<div class="modal-section"><h4>🙏 МОЛИТВА (Благословение)</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">+10% к опыту на 1 час. Раз в сутки.</p>';
@@ -993,7 +995,6 @@ function openTemple() {
     }
     html += '</div>';
     
-    // УДАЧА
     html += '<div class="modal-section"><h4>🍀 УДАЧА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">🍀 Текущая удача: <strong>' + (g.luck || 0) + '/25</strong></p>';
     html += '<p style="color:#6a5a48;font-size:12px;">💰 1000 золота → +5 удачи</p>';
@@ -1008,7 +1009,7 @@ function openTemple() {
     }
     html += '</div>';
     
-    // ЗЕЛЬЯ (ТЕПЕРЬ В СЕПТЕ!)
+    // ===== ЗЕЛЬЯ (В СЕПТЕ!) =====
     html += '<div class="modal-section"><h4>🧪 ЗЕЛЬЯ</h4>';
     var potions = [
         { id: 'health_small', name: '🧪 Малое зелье здоровья', price: 30, hp: 20 },
@@ -1168,7 +1169,6 @@ function openLibrary() {
     html += '<p style="color:#ffd700;">📖 Осталось покупок сегодня: ' + available + '/3</p>';
     html += '</div>';
     
-    // КУПИТЬ КНИГИ
     html += '<div class="modal-section"><h4>📖 КУПИТЬ КНИГИ</h4>';
     var books = [
         { level: 1, xp: 50, price: 100 },
@@ -1187,12 +1187,11 @@ function openLibrary() {
     });
     html += '</div>';
     
-    // КНИГИ В ИНВЕНТАРЕ
-    html += '<div class="modal-section"><h4>📚 ВАШИ КНИГИ</h4>';
     var userBooks = [];
     g.inventory.forEach(function(item, idx) {
         if (item.isBook) userBooks.push(idx);
     });
+    html += '<div class="modal-section"><h4>📚 ВАШИ КНИГИ</h4>';
     if (userBooks.length === 0) {
         html += '<p style="color:#6a5a48;">У вас нет книг.</p>';
     } else {
@@ -1606,7 +1605,6 @@ function openBrothel() {
     html += '<p style="color:#6a5a48;">😴 Усталость: ' + g.fatigue + '/100</p>';
     html += '</div>';
     
-    // УСЛУГИ
     html += '<div class="modal-section"><h4>🛏️ УСЛУГИ</h4>';
     services.forEach(function(service) {
         var canAfford = g.gold * 210 * 56 + g.silver * 56 + g.copper >= service.price;
@@ -1622,7 +1620,6 @@ function openBrothel() {
     });
     html += '</div>';
     
-    // АКТИВНЫЕ БАФФЫ
     if (g.brothelBuffs && g.brothelBuffs.length > 0) {
         html += '<div class="modal-section"><h4>✨ АКТИВНЫЕ БАФФЫ</h4>';
         var now = Date.now();
@@ -1638,7 +1635,6 @@ function openBrothel() {
         html += '</div>';
     }
     
-    // ИГРА В КОСТИ
     html += '<div class="modal-section"><h4>🎲 ИГРА В КОСТИ (PvP)</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Сыграйте с другим игроком. Победитель забирает банк!</p>';
     
@@ -1660,7 +1656,6 @@ function openBrothel() {
         html += '<p style="color:#6a5a48;font-size:11px;">Нет активных игр. Создайте свою!</p>';
     }
     
-    // Создать игру
     html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">';
     var betOptions = [10, 25, 50, 100, 200];
     betOptions.forEach(function(bet) {
@@ -2176,7 +2171,7 @@ function buyStall() {
     
     marketStalls[freeStall].owner = currentUser;
     marketStalls[freeStall].rentPaid = Date.now();
-    marketStalls[freeStall].rentDays = 1; // 1 день аренды при покупке
+    marketStalls[freeStall].rentDays = 1;
     marketStalls[freeStall].inventory = [];
     marketStalls[freeStall].prices = {};
     
@@ -2242,12 +2237,10 @@ function payStallRent() {
     var rentCost = 10;
     var currentDays = stall.rentDays || 0;
     var totalDays = currentDays + 7;
-    
     if (totalDays > 7) {
         setMessage('⏳ Лавку можно оплатить только на 1 неделю вперёд.');
         return;
     }
-    
     if (!spendMoney(g, rentCost * 210 * 56)) {
         setMessage('❌ Недостаточно денег! Нужно: ' + rentCost + ' зол.');
         return;
@@ -2354,7 +2347,6 @@ function openConfiscated() {
     var html = '<div class="modal-section"><h4>📦 КОНФИСКАТ</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;">Вещи из просроченных лавок и домов.</p>';
     
-    var totalItems = 0;
     for (var ei = 0; ei < userItems.length; ei++) {
         var entry = userItems[ei];
         html += '<div style="border:1px solid #3d3026;border-radius:10px;padding:10px;margin:6px 0;">';
@@ -2365,7 +2357,6 @@ function openConfiscated() {
             var q = QUALITIES[quality] || QUALITIES['Обычное'];
             var countDisplay = '';
             if (item.count && item.count > 1) countDisplay = ' ×' + item.count;
-            totalItems++;
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label" style="color:' + q.color + ';">' + q.emoji + ' ' + item.name + ' (' + quality + ')' + countDisplay + '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="returnFromConfiscate(' + ei + ',' + ii + ')">📤 Забрать</button></span>';
@@ -2735,109 +2726,16 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 19. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
+// 19. РЕГИСТРАЦИЯ (ТОЛЬКО УНИКАЛЬНЫЕ ФУНКЦИИ!)
 // ============================================================
 
-function openInventory() {
-    if (typeof window.openInventory === 'function') {
-        window.openInventory();
-    } else {
-        setMessage('🎒 Инвентарь временно недоступен.');
-    }
-}
-
-function openCharacter() {
-    if (typeof window.openCharacter === 'function') {
-        window.openCharacter();
-    } else {
-        setMessage('👤 Персонаж временно недоступен.');
-    }
-}
-
-function openMainMenu() {
-    var modal = document.getElementById('modal-menu');
-    var content = document.getElementById('modal-menu-content');
-    var html = '<div class="modal-section">';
-    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
-    html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
-    html += '</div>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function openLog() {
-    var modal = document.getElementById('modal-log');
-    var content = document.getElementById('modal-log-content');
-    var html = '<div class="modal-section"><h4>📜 ПОСЛЕДНИЕ СОБЫТИЯ</h4>';
-    if (gameLog.length === 0) {
-        html += '<p style="color:#6a5a48;">Пусто</p>';
-    } else {
-        for (var i = gameLog.length - 1; i >= Math.max(0, gameLog.length - 20); i--) {
-            html += '<p style="color:#b8a890;font-size:12px;padding:2px 0;">' + gameLog[i] + '</p>';
-        }
-    }
-    html += '</div><button class="btn" onclick="closeLog()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeLog() {
-    document.getElementById('modal-log').classList.add('hide');
-}
-
-function closeMenu() {
-    document.getElementById('modal-menu').classList.add('hide');
-}
-
-function openHouses() {
-    var modal = document.getElementById('modal-houses');
-    var content = document.getElementById('modal-houses-content');
-    var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Информация о Великих Домах Вестероса.</p>';
-    html += '<div style="padding:10px;text-align:center;color:#6a5a48;">🔒 Раздел в разработке</div>';
-    html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
-    html += '</div>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeHouses() {
-    document.getElementById('modal-houses').classList.add('hide');
-}
-
-function showOnlineList() {
-    var modal = document.getElementById('modal-online');
-    var content = document.getElementById('modal-online-content');
-    var html = '<div class="modal-section"><h4>👥 ИГРОКИ ОНЛАЙН</h4>';
-    var count = 0;
-    for (var name in users) {
-        if (users[name].game.online) {
-            count++;
-            html += '<div class="row"><span class="label">' + name + '</span><span class="value">ур. ' + users[name].game.level + ' | ' + users[name].game.location.place + '</span></div>';
-        }
-    }
-    if (count === 0) html += '<p style="color:#6a5a48;">Нет игроков онлайн</p>';
-    html += '</div><button class="btn" onclick="closeOnline()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closeOnline() {
-    document.getElementById('modal-online').classList.add('hide');
-}
-
-// ============================================================
-// 20. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
-// ============================================================
-
-// КАРТА
 window.openMap = openMap;
 window.closeMap = closeMap;
 window.goToBuilding = goToBuilding;
 window.updateStory = updateStory;
 window.updateActions = updateActions;
 
-// ЗДАНИЯ
+// ЗДАНИЯ (ТОЛЬКО УНИКАЛЬНЫЕ)
 window.openStable = openStable;
 window.closeStable = closeStable;
 window.openTemple = openTemple;
@@ -2904,17 +2802,5 @@ window.finishDiceGame = finishDiceGame;
 // МАГИСТРАТ
 window.showMagistrateHousing = showMagistrateHousing;
 window.showMagistrateStalls = showMagistrateStalls;
-
-// МЕНЮ
-window.openMainMenu = openMainMenu;
-window.openLog = openLog;
-window.closeLog = closeLog;
-window.closeMenu = closeMenu;
-window.openHouses = openHouses;
-window.closeHouses = closeHouses;
-window.showOnlineList = showOnlineList;
-window.closeOnline = closeOnline;
-window.openInventory = openInventory;
-window.openCharacter = openCharacter;
 
 console.log('🏰 Королевская Гавань загружена!');
