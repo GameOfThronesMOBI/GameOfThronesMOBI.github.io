@@ -11,9 +11,9 @@ function openMainMenu() {
     var content = document.getElementById('modal-menu-content');
     
     var html = '<div class="modal-section">';
-    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома Вестероса</button>';
-    html += '<button class="btn" style="margin:4px 0;" onclick="openLog(); closeMenu();">📜 Лог событий</button>';
-    html += '<button class="btn" style="margin:4px 0;" onclick="showOnlineList(); closeMenu();">👥 Игроки онлайн</button>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses()">🏘️ Дома Вестероса</button>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openLog()">📜 Лог событий</button>';
+    html += '<button class="btn" style="margin:4px 0;" onclick="showOnlineList()">👥 Игроки онлайн</button>';
     html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
     html += '</div>';
     
@@ -22,7 +22,8 @@ function openMainMenu() {
 }
 
 function closeMenu() {
-    document.getElementById('modal-menu').classList.add('hide');
+    var modal = document.getElementById('modal-menu');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
@@ -48,7 +49,8 @@ function openLog() {
 }
 
 function closeLog() {
-    document.getElementById('modal-log').classList.add('hide');
+    var modal = document.getElementById('modal-log');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
@@ -75,7 +77,8 @@ function showOnlineList() {
 }
 
 function closeOnline() {
-    document.getElementById('modal-online').classList.add('hide');
+    var modal = document.getElementById('modal-online');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
@@ -86,10 +89,13 @@ function openHouses() {
     var modal = document.getElementById('modal-houses');
     var content = document.getElementById('modal-houses-content');
     
+    // Закрываем меню
+    var menuModal = document.getElementById('modal-menu');
+    if (menuModal) menuModal.classList.add('hide');
+    
     if (typeof HOUSES === 'undefined') {
         var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
         html += '<p style="color:#c96a5a;">❌ Данные о домах не загружены.</p>';
-        html += '<p style="color:#6a5a48;font-size:12px;">Убедитесь, что файл js/data/houses.js подключён.</p>';
         html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
         html += '</div>';
         content.innerHTML = html;
@@ -152,11 +158,12 @@ function openHouses() {
 }
 
 function closeHouses() {
-    document.getElementById('modal-houses').classList.add('hide');
+    var modal = document.getElementById('modal-houses');
+    if (modal) modal.classList.add('hide');
 }
 
 // ============================================================
-// 5. ИНФОРМАЦИЯ О ДОМЕ (ПРОСТАЯ ВЕРСИЯ)
+// 5. ИНФОРМАЦИЯ О ДОМЕ
 // ============================================================
 
 function showHouseInfo(houseId) {
