@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА (ИСПРАВЛЕННАЯ)
+// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА
 // ============================================================
 
 // ============================================================
@@ -33,7 +33,6 @@ function openMap() {
         var isCurrent = b.id === g.location.place;
         var isCityBuilding = cityBuildings.indexOf(b.id) !== -1;
         
-        // Показываем только доступные здания
         if (g.outside && b.id !== 'Дорога' && b.id !== 'Ворота') continue;
         if (!g.outside && b.id === 'Дорога') continue;
         
@@ -57,7 +56,7 @@ function closeMap() {
 }
 
 // ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ ПО ГАВАНИ (ОБНОВЛЕНО)
+// 3. ПЕРЕМЕЩЕНИЕ ПО ГАВАНИ
 // ============================================================
 
 function goToBuilding(building) {
@@ -77,7 +76,6 @@ function goToBuilding(building) {
         return;
     }
     
-    // Проверка существования здания
     var exists = false;
     for (var i = 0; i < BUILDINGS.length; i++) {
         if (BUILDINGS[i].id === building) { exists = true; break; }
@@ -87,11 +85,9 @@ function goToBuilding(building) {
         return;
     }
     
-    // МЕНЯЕМ ЛОКАЦИЮ
     g.location.place = building;
     g.location.location = 'Королевская Гавань';
     
-    // Особые случаи
     if (building === 'Дорога') {
         g.outside = true;
         g.location.location = 'Дорога';
@@ -104,20 +100,17 @@ function goToBuilding(building) {
         setMessage('✅ Вы прибыли в ' + building + '.');
     }
     
-    // ЗАКРЫВАЕМ КАРТУ
     closeMap();
     
-    // ОБНОВЛЯЕМ UI
     if (typeof updateMenu === 'function') updateMenu();
     if (typeof updateStory === 'function') updateStory();
     if (typeof updateActions === 'function') updateActions();
     
-    // СОХРАНЯЕМ
     if (typeof saveData === 'function') saveData();
 }
 
 // ============================================================
-// 4. ОБНОВЛЕНИЕ STORY (НОВОЕ)
+// 4. ОБНОВЛЕНИЕ STORY
 // ============================================================
 
 function updateStory() {
@@ -162,14 +155,13 @@ function updateStory() {
         textEl.textContent = texts[place] || 'Вы находитесь в ' + place + '.';
     }
     
-    // ОБНОВЛЯЕМ ДЕЙСТВИЯ
     if (typeof updateActions === 'function') {
         updateActions();
     }
 }
 
 // ============================================================
-// 5. ОБНОВЛЕНИЕ ACTIONS (НОВОЕ)
+// 5. ОБНОВЛЕНИЕ ACTIONS
 // ============================================================
 
 function updateActions() {
@@ -183,13 +175,11 @@ function updateActions() {
     container.innerHTML = '';
     var actions = [];
     
-    // БАЗОВЫЕ ДЕЙСТВИЯ (всегда)
     actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
     actions.push({ id: 'character', label: '👤 Персонаж' });
     actions.push({ id: 'menu', label: '📋 Меню' });
     actions.push({ id: 'map', label: '🗺️ Карта' });
     
-    // ДЕЙСТВИЯ ПО ЗДАНИЯМ
     if (place === 'Таверна') {
         actions = [
             { id: 'tavern_eat', label: '🍞 Попросить еды (+25)' },
@@ -255,10 +245,7 @@ function updateActions() {
     
     if (place === 'Магистрат') {
         actions = [
-            { id: 'magistrate_housing', label: '🏠 Недвижимость' },
-            { id: 'magistrate_stall_buy', label: '🏪 Купить лавку' },
-            { id: 'magistrate_stall_pay', label: '💰 Оплатить лавку' },
-            { id: 'magistrate_confiscated', label: '📦 Конфискат' }
+            { id: 'magistrate_open', label: '📜 Магистрат' }
         ].concat(actions);
     }
     
@@ -350,7 +337,6 @@ function updateActions() {
         ].concat(actions);
     }
     
-    // ДОБАВЛЯЕМ КНОПКИ
     for (var i = 0; i < actions.length; i++) {
         var a = actions[i];
         var btn = document.createElement('button');
@@ -1736,7 +1722,7 @@ function openConfiscated() {
 }
 
 // ============================================================
-// 16. МАГИСТРАТ (ЦЕНТР УПРАВЛЕНИЯ)
+// 16. МАГИСТРАТ (МОДАЛЬНЫЕ ОКНА)
 // ============================================================
 
 function openMagistrate() {
@@ -1744,191 +1730,170 @@ function openMagistrate() {
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
-    var msg = '📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ\n\n';
-    msg += '1. 🏠 Недвижимость\n';
-    msg += '2. 🏪 Торговые лавки\n';
-    msg += '3. 📦 Конфискат\n';
-    msg += '0. Выйти';
+    var modal = document.getElementById('modal-magistrate');
+    if (!modal) {
+        createMagistrateModal();
+        modal = document.getElementById('modal-magistrate');
+    }
     
-    var choice = prompt(msg);
-    if (choice === '1') { magistrateHousing(); }
-    else if (choice === '2') { magistrateStalls(); }
-    else if (choice === '3') { openConfiscated(); }
+    var content = document.getElementById('modal-magistrate-content');
+    
+    var html = '<div class="modal-section"><h4>📜 МАГИСТРАТ КОРОЛЕВСКОЙ ГАВАНИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Управление недвижимостью и торговыми лавками.</p></div>';
+    html += '<div class="tabs">';
+    html += '<button class="tab-btn" onclick="showMagistrateHousing()">🏠 Недвижимость</button>';
+    html += '<button class="tab-btn" onclick="showMagistrateStalls()">🏪 Торг. лавки</button>';
+    html += '<button class="tab-btn" onclick="openConfiscated()">📦 Конфискат</button>';
+    html += '</div>';
+    html += '<div id="magistrate-content" class="modal-section"></div>';
+    html += '<button class="btn btn-secondary" onclick="closeMagistrate()" style="margin-top:10px;">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+    
+    showMagistrateHousing();
 }
 
-function magistrateHousing() {
+function createMagistrateModal() {
+    var overlay = document.createElement('div');
+    overlay.id = 'modal-magistrate';
+    overlay.className = 'modal-overlay hide';
+    overlay.onclick = function(e) { if (e.target === this) closeMagistrate(); };
+    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📜 МАГИСТРАТ</h3><button class="close-btn" onclick="closeMagistrate()">✕</button></div><div id="modal-magistrate-content"></div></div>';
+    document.body.appendChild(overlay);
+}
+
+function closeMagistrate() {
+    var modal = document.getElementById('modal-magistrate');
+    if (modal) modal.classList.add('hide');
+}
+
+function showMagistrateHousing() {
+    var container = document.getElementById('magistrate-content');
     var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    if (!user) return;
     var g = user.game;
     
-    var msg = '🏠 НЕДВИЖИМОСТЬ\n\n';
+    var html = '<h4>🏠 НЕДВИЖИМОСТЬ</h4>';
     
     if (g.housing && g.housing.type) {
         var house = HOUSING_TYPES[g.housing.type];
         var timeLeft = getTimeLeft(g.housing.rentPaid, g.housing.rentDays || 1);
-        msg += 'ВАШЕ ЖИЛЬЁ:\n';
-        msg += house.emoji + ' ' + house.name + '\n';
-        msg += '📍 ' + house.district + '\n';
-        msg += '📦 Склад: ' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + '\n';
-        msg += timeLeft.expired ? '⛔ АРЕНДА ПРОСРОЧЕНА!\n' : '⏳ Осталось: ' + timeLeft.text + '\n';
-        msg += '\n1. 💰 Оплатить аренду (' + house.rent + ' зол./нед)\n';
-        msg += '2. 🏚️ Продать жильё\n';
-        msg += '0. Назад\n\n';
+        
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
+        html += '<div style="color:#c9b694;font-size:18px;">' + house.emoji + ' ' + house.name + '</div>';
+        html += '<div style="color:#6a5a48;font-size:12px;">📍 ' + house.district + '</div>';
+        html += '<div style="color:#b8a890;font-size:13px;margin:6px 0;">' + house.description + '</div>';
+        html += '<div class="row"><span class="label">📦 Склад</span><span class="value">' + (g.housing.storage ? g.housing.storage.length : 0) + '/' + house.storageSlots + ' слотов</span></div>';
+        html += '<div class="row"><span class="label">💰 Аренда</span><span class="value">' + house.rent + ' зол./неделя</span></div>';
+        
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;font-size:16px;margin:10px 0;">⚠️ АРЕНДА ПРОСРОЧЕНА!</div>';
+            html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Срочно оплатить аренду (' + house.rent + ' зол.)</button>';
+        } else {
+            html += '<div class="row"><span class="label">⏳ Осталось</span><span class="value" style="color:#7ac98a;">' + timeLeft.text + '</span></div>';
+            var currentWeeks = Math.floor((g.housing.rentDays || 1) / 7);
+            if (currentWeeks < 4) {
+                html += '<button class="btn" onclick="payRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, ' + house.rent + ' зол.)</button>';
+            } else {
+                html += '<div style="color:#6a5a48;">✅ Оплачено на 4 недели вперёд</div>';
+            }
+        }
+        html += '<button class="btn btn-danger" onclick="sellHouse()" style="margin-top:6px;">🏚️ Продать жильё</button>';
+        html += '</div>';
     } else {
-        msg += 'У вас нет жилья.\n\n';
+        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🏚️ У вас нет жилья. Выберите вариант ниже.</p>';
     }
     
-    msg += 'ДОСТУПНОЕ ЖИЛЬЁ:\n';
+    html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;font-weight:bold;">🏘️ ДОСТУПНОЕ ЖИЛЬЁ</p>';
+    
     var districts = {
         'Королевский квартал': ['mansion', 'townhouse'],
         'Торговый квартал': ['house', 'room'],
         'Квартал бедноты': ['night']
     };
     
-    for (var dist in districts) {
-        msg += '\n📍 ' + dist + ':\n';
-        var types = districts[dist];
+    for (var districtName in districts) {
+        var types = districts[districtName];
+        html += '<div style="margin-top:10px;"><p style="color:#6a5a48;font-size:13px;">📍 ' + districtName + '</p>';
+        
         for (var i = 0; i < types.length; i++) {
             var type = types[i];
-            var h = HOUSING_TYPES[type];
+            var house = HOUSING_TYPES[type];
             var market = housingMarket[type];
             var available = market.total - market.occupied;
-            msg += '  ' + h.emoji + ' ' + h.name + ' - ' + h.price + ' зол.';
-            msg += (available > 0) ? ' (✅ ' + available + ' свободно)' : ' (❌ РАСПРОДАНО)';
-            if (available > 0) {
-                msg += ' [введите ' + type + ' для покупки]';
+            var isAvailable = available > 0;
+            
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1410;">';
+            html += '<div style="flex:1;">';
+            html += '<span style="font-size:16px;">' + house.emoji + '</span> <strong>' + house.name + '</strong>';
+            html += '<span style="color:#6a5a48;font-size:11px;"> (' + market.total + ')</span>';
+            html += '<br><span style="font-size:11px;color:#6a5a48;">📦 ' + house.storageSlots + ' слотов | 🛏️ +' + house.restHp + ' HP</span>';
+            html += '</div>';
+            html += '<div style="text-align:right;">';
+            if (isAvailable) {
+                html += '<span style="color:#c9b694;">' + house.price + ' зол.</span><br>';
+                html += '<span style="font-size:10px;color:#6a5a48;">аренда ' + house.rent + '/нед</span><br>';
+                html += '<button class="btn btn-small" onclick="buyHouse(\'' + type + '\')" style="margin-top:2px;">✅ Купить</button>';
+                html += ' <span style="font-size:10px;color:#7ac98a;">' + available + ' свободно</span>';
+            } else {
+                html += '<span style="color:#c96a5a;">❌ РАСПРОДАНО</span>';
             }
-            msg += '\n';
+            html += '</div></div>';
         }
     }
+    html += '</div>';
     
-    var action = prompt(msg + '\n\nВведите команду:');
-    if (!action || action === '0') return;
-    
-    if (action === '1' && g.housing && g.housing.type) {
-        payRent();
-        return;
-    }
-    if (action === '2' && g.housing && g.housing.type) {
-        sellHouse();
-        return;
-    }
-    
-    if (HOUSING_TYPES[action]) {
-        buyHouse(action);
-    } else {
-        setMessage('❌ Неверная команда.');
-    }
+    container.innerHTML = html;
 }
 
-function magistrateStalls() {
+function showMagistrateStalls() {
+    var container = document.getElementById('magistrate-content');
     var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    if (!user) return;
     var g = user.game;
     
-    var msg = '🏪 ТОРГОВЫЕ ЛАВКИ\n\n';
-    msg += 'Стоимость лавки: 80 золота. Аренда: 10 золота/неделя.\n\n';
+    var html = '<h4>🏪 ТОРГОВЫЕ ЛАВКИ</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Стоимость лавки: 80 золота. Аренда: 10 золота/неделя.</p>';
     
     if (g.marketStall && g.marketStall.owned) {
         var stall = marketStalls[g.marketStall.stallId];
         var timeLeft = getTimeLeft(stall.rentPaid, stall.rentDays || 1);
-        msg += '🏪 Ваша лавка #' + g.marketStall.stallId + '\n';
-        msg += timeLeft.expired ? '⛔ АРЕНДА ПРОСРОЧЕНА!\n' : '⏳ Осталось: ' + timeLeft.text + '\n';
-        msg += '📦 ' + (stall.inventory ? stall.inventory.length : 0) + ' товаров\n';
-        msg += '\n1. 💰 Оплатить аренду (10 зол.)\n';
-        msg += '2. 🚪 Оставить лавку\n';
-        msg += '0. Назад\n\n';
+        
+        html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin:10px 0;">';
+        html += '<div style="color:#c9b694;font-size:16px;">🏪 Ваша лавка #' + g.marketStall.stallId + '</div>';
+        
+        if (timeLeft.expired) {
+            html += '<div style="color:#c96a5a;font-size:16px;margin:10px 0;">⚠️ АРЕНДА ПРОСРОЧЕНА!</div>';
+            html += '<button class="btn" onclick="payStallRent()" style="margin-top:6px;">💰 Срочно оплатить аренду (10 зол.)</button>';
+        } else {
+            html += '<div class="row"><span class="label">⏳ Осталось</span><span class="value" style="color:#7ac98a;">' + timeLeft.text + '</span></div>';
+            var currentWeeks = Math.floor((stall.rentDays || 1) / 7);
+            if (currentWeeks < 4) {
+                html += '<button class="btn" onclick="payStallRent()" style="margin-top:6px;">💰 Оплатить аренду (+1 нед, 10 зол.)</button>';
+            } else {
+                html += '<div style="color:#6a5a48;">✅ Оплачено на 4 недели вперёд</div>';
+            }
+        }
+        html += '<button class="btn btn-small" onclick="enterStall(' + g.marketStall.stallId + ')" style="margin-top:6px;">📦 Войти в лавку</button>';
+        html += '<button class="btn btn-danger" onclick="leaveStall()" style="margin-top:6px;">🚪 Оставить лавку</button>';
+        html += '</div>';
     } else {
+        html += '<p style="color:#6a5a48;margin:10px 0;">У вас нет торговой лавки.</p>';
+        
         var freeStalls = 0;
         for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
             if (!marketStalls[i].owner) freeStalls++;
         }
-        msg += 'Свободных лавок: ' + freeStalls + '\n';
-        msg += '\n1. 🏪 Купить лавку (80 зол.)\n';
-        msg += '0. Назад\n\n';
-    }
-    
-    var action = prompt(msg);
-    if (!action || action === '0') return;
-    
-    if (action === '1') {
-        if (g.marketStall && g.marketStall.owned) {
-            payStallRent();
+        
+        if (freeStalls > 0) {
+            html += '<p style="color:#6a5a48;">Свободных лавок: ' + freeStalls + '</p>';
+            html += '<button class="btn" onclick="buyStall()">🏪 Купить лавку (80 зол.)</button>';
         } else {
-            buyStall();
+            html += '<p style="color:#c96a5a;">❌ Все лавки заняты!</p>';
         }
-    } else if (action === '2' && g.marketStall && g.marketStall.owned) {
-        leaveStall();
     }
-}
-
-function buyStall() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    if (g.marketStall && g.marketStall.owned) { setMessage('❌ У вас уже есть лавка!'); return; }
-    
-    var freeStall = null;
-    for (var i = 1; i <= MARKET_STALLS_TOTAL; i++) {
-        if (!marketStalls[i].owner) { freeStall = i; break; }
-    }
-    if (!freeStall) { setMessage('❌ Все лавки заняты!'); return; }
-    
-    if (!spendMoney(g, 80 * 210 * 56)) { setMessage('❌ Недостаточно денег! Нужно: 80 золота.'); return; }
-    
-    marketStalls[freeStall].owner = currentUser;
-    marketStalls[freeStall].rentPaid = Date.now();
-    marketStalls[freeStall].rentDays = 1;
-    marketStalls[freeStall].inventory = [];
-    marketStalls[freeStall].prices = {};
-    
-    g.marketStall = {
-        owned: true,
-        stallId: freeStall,
-        rentPaid: Date.now(),
-        rentDays: 1,
-        debt: 0
-    };
-    
-    saveMarketStalls();
-    saveData();
-    setMessage('✅ Вы купили лавку #' + freeStall + ' за 80 золота!');
-    addLog('🏪 ' + currentUser + ' купил лавку #' + freeStall);
-    updateMenu();
-}
-
-function leaveStall() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    if (!g.marketStall || !g.marketStall.owned) { setMessage('❌ У вас нет лавки.'); return; }
-    
-    var stallId = g.marketStall.stallId;
-    var stall = marketStalls[stallId];
-    if (!stall || stall.owner !== currentUser) { setMessage('❌ Это не ваша лавка.'); return; }
-    
-    if (!confirm('Вы уверены, что хотите оставить лавку #' + stallId + '?\nВсе товары вернутся в инвентарь.')) return;
-    
-    if (stall.inventory && stall.inventory.length > 0) {
-        stall.inventory.forEach(function(item) { addToInventory(g, item); });
-        setMessage('📦 ' + stall.inventory.length + ' товаров возвращено в инвентарь.');
-    }
-    
-    stall.owner = null;
-    stall.rentPaid = null;
-    stall.rentDays = 0;
-    stall.inventory = [];
-    stall.prices = {};
-    
-    g.marketStall = { owned: false, stallId: null, rentPaid: null, rentDays: 0, debt: 0 };
-    
-    saveMarketStalls();
-    saveData();
-    setMessage('🚪 Вы оставили лавку #' + stallId + '.');
-    addLog('🚪 ' + currentUser + ' оставил лавку #' + stallId);
-    updateMenu();
+    container.innerHTML = html;
 }
 
 // ============================================================
@@ -2215,10 +2180,9 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 20. ПЕРЕОПРЕДЕЛЕНИЕ updateStory И updateActions (если нужно)
+// 20. ПЕРЕОПРЕДЕЛЕНИЕ updateStory И updateActions
 // ============================================================
 
-// Заменяем функции в main.js на наши, если они есть
 if (typeof window.updateStory !== 'function' || window.updateStory.toString().indexOf('Таверна') !== -1) {
     window.updateStory = updateStory;
 }
@@ -2231,7 +2195,6 @@ if (typeof window.updateActions !== 'function' || window.updateActions.toString(
 // 21. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
-// Регистрируем все функции в глобальной области
 window.openMap = openMap;
 window.closeMap = closeMap;
 window.goToBuilding = goToBuilding;
@@ -2294,14 +2257,12 @@ window.joinDiceGame = joinDiceGame;
 window.rollDice = rollDice;
 window.finishDiceGame = finishDiceGame;
 
-// Функции для магазинов (заглушки, пока нет логики)
-window.openShop = function(shopType) {
-    setMessage('🏪 ' + shopType + ' (в разработке)');
-};
+// Функции магистрата
+window.showMagistrateHousing = showMagistrateHousing;
+window.showMagistrateStalls = showMagistrateStalls;
+window.closeMagistrate = closeMagistrate;
 
-window.openCraftMenu = function() {
-    setMessage('🔨 Крафт (в разработке)');
-};
+// НЕТ ЗАГЛУШЕК!
 
 // ============================================================
 // 22. ИНИЦИАЛИЗАЦИЯ
