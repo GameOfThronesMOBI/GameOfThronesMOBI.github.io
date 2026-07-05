@@ -735,11 +735,14 @@ function closeTrade() {
 // 6. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
+// ============================================================
+// РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
+// ============================================================
+
 window.openShop = openShop;
-window.openTavernTrade = openTavernTrade;
 window.openCraftMenu = openCraftMenu;
 window.openGuild = openGuild;
-window.closeGuild = closeGuild;
+window.openTavernTrade = openTavernTrade;
 window.closeTrade = closeTrade;
 window.buyFromShop = buyFromShop;
 window.sellToShop = sellToShop;
