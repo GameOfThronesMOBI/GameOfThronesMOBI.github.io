@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ - ПОЛНАЯ ЛОГИКА
+// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ЛОГИКА
 // ============================================================
 
 // ============================================================
@@ -2068,7 +2068,99 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 17. РЕГИСТРАЦИЯ
+// 17. ОТКРЫТИЕ ЗДАНИЙ (ОБЁРТКИ)
+// ============================================================
+
+function openInventory() {
+    if (typeof window.openInventory === 'function') {
+        window.openInventory();
+    } else {
+        setMessage('🎒 Инвентарь временно недоступен.');
+    }
+}
+
+function openCharacter() {
+    if (typeof window.openCharacter === 'function') {
+        window.openCharacter();
+    } else {
+        setMessage('👤 Персонаж временно недоступен.');
+    }
+}
+
+function openMainMenu() {
+    var modal = document.getElementById('modal-menu');
+    var content = document.getElementById('modal-menu-content');
+    var html = '<div class="modal-section">';
+    html += '<button class="btn" style="margin:4px 0;" onclick="openHouses(); closeMenu();">🏘️ Дома</button>';
+    html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="closeMenu()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function openLog() {
+    var modal = document.getElementById('modal-log');
+    var content = document.getElementById('modal-log-content');
+    var html = '<div class="modal-section"><h4>📜 ПОСЛЕДНИЕ СОБЫТИЯ</h4>';
+    if (gameLog.length === 0) {
+        html += '<p style="color:#6a5a48;">Пусто</p>';
+    } else {
+        for (var i = gameLog.length - 1; i >= Math.max(0, gameLog.length - 20); i--) {
+            html += '<p style="color:#b8a890;font-size:12px;padding:2px 0;">' + gameLog[i] + '</p>';
+        }
+    }
+    html += '</div><button class="btn" onclick="closeLog()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeLog() {
+    document.getElementById('modal-log').classList.add('hide');
+}
+
+function closeMenu() {
+    document.getElementById('modal-menu').classList.add('hide');
+}
+
+function openHouses() {
+    var modal = document.getElementById('modal-houses');
+    var content = document.getElementById('modal-houses-content');
+    var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Информация о Великих Домах Вестероса.</p>';
+    html += '<div style="padding:10px;text-align:center;color:#6a5a48;">🔒 Раздел в разработке</div>';
+    html += '<button class="btn btn-secondary" onclick="closeHouses()">Закрыть</button>';
+    html += '</div>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeHouses() {
+    document.getElementById('modal-houses').classList.add('hide');
+}
+
+function showOnlineList() {
+    var modal = document.getElementById('modal-online');
+    var content = document.getElementById('modal-online-content');
+    var html = '<div class="modal-section"><h4>👥 ИГРОКИ ОНЛАЙН</h4>';
+    var count = 0;
+    for (var name in users) {
+        if (users[name].game.online) {
+            count++;
+            html += '<div class="row"><span class="label">' + name + '</span><span class="value">ур. ' + users[name].game.level + ' | ' + users[name].game.location.place + '</span></div>';
+        }
+    }
+    if (count === 0) html += '<p style="color:#6a5a48;">Нет игроков онлайн</p>';
+    html += '</div><button class="btn" onclick="closeOnline()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closeOnline() {
+    document.getElementById('modal-online').classList.add('hide');
+}
+
+// ============================================================
+// 18. РЕГИСТРАЦИЯ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================================
 
 window.openMap = openMap;
