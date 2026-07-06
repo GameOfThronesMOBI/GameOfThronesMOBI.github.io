@@ -2,7 +2,7 @@
 // ВСЕ МОБЫ (С АЛКАШАМИ)
 // ============================================================
 
-const MOBS = {
+var MOBS = {
 
     // ============================================================
     // КОРОЛЕВСКИЕ ЗЕМЛИ (уровни 1-30)
@@ -47,7 +47,6 @@ const MOBS = {
     // СЕВЕР (уровни 31-100)
     // ============================================================
     north: [
-        // Животные
         { id: 'ice_wolf', name: 'Ледяной волк', hp: 110, damage: 33, defense: 14, xp: 70, level: 31, type: 'animal', agility: 5, region: 'north' },
         { id: 'snow_fox', name: 'Снежная лиса', hp: 115, damage: 34, defense: 12, xp: 72, level: 34, type: 'animal', agility: 7, region: 'north' },
         { id: 'winter_wolf', name: 'Зимний волк', hp: 120, damage: 36, defense: 15, xp: 76, level: 37, type: 'animal', agility: 5, region: 'north' },
@@ -66,7 +65,6 @@ const MOBS = {
         { id: 'north_legend_bear', name: 'Легендарный медведь Севера', hp: 280, damage: 76, defense: 40, xp: 158, level: 95, type: 'animal', agility: 3, region: 'north' },
         { id: 'north_alpha_wolf', name: 'Верховный вожак волков Севера', hp: 300, damage: 80, defense: 42, xp: 165, level: 99, type: 'animal', agility: 8, region: 'north' },
 
-        // Люди
         { id: 'north_bandit', name: 'Северный бандит', hp: 115, damage: 34, defense: 14, xp: 72, level: 33, type: 'human', agility: 4, region: 'north' },
         { id: 'north_raider', name: 'Северный рейдер', hp: 125, damage: 37, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'north' },
         { id: 'north_mercenary', name: 'Северный наёмник', hp: 135, damage: 39, defense: 17, xp: 82, level: 42, type: 'human', agility: 5, region: 'north' },
@@ -84,10 +82,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ЗАПАДНЫЕ ЗЕМЛИ (уровни 31-100)
+    // ЗАПАДНЫЕ ЗЕМЛИ
     // ============================================================
     westlands: [
-        // Животные
         { id: 'golden_fox', name: 'Золотая лиса', hp: 110, damage: 32, defense: 12, xp: 70, level: 32, type: 'animal', agility: 7, region: 'westlands' },
         { id: 'mountain_goat', name: 'Горный козёл', hp: 115, damage: 33, defense: 14, xp: 72, level: 35, type: 'animal', agility: 5, region: 'westlands' },
         { id: 'golden_wolf', name: 'Золотой волк', hp: 125, damage: 36, defense: 15, xp: 78, level: 39, type: 'animal', agility: 6, region: 'westlands' },
@@ -104,7 +101,6 @@ const MOBS = {
         { id: 'west_alpha_wolf', name: 'Верховный вожак волков Запада', hp: 285, damage: 76, defense: 40, xp: 158, level: 92, type: 'animal', agility: 8, region: 'westlands' },
         { id: 'west_immortal_bear', name: 'Неувядаемый медведь Запада', hp: 310, damage: 82, defense: 44, xp: 168, level: 98, type: 'animal', agility: 3, region: 'westlands' },
 
-        // Люди
         { id: 'west_bandit', name: 'Западный бандит', hp: 118, damage: 35, defense: 15, xp: 74, level: 34, type: 'human', agility: 4, region: 'westlands' },
         { id: 'west_raider', name: 'Западный рейдер', hp: 128, damage: 37, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'westlands' },
         { id: 'west_mercenary', name: 'Западный наёмник', hp: 140, damage: 40, defense: 18, xp: 86, level: 42, type: 'human', agility: 5, region: 'westlands' },
@@ -122,10 +118,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ПРОСТОР (уровни 31-100)
+    // ПРОСТОР
     // ============================================================
     reach: [
-        // Животные
         { id: 'reach_boar', name: 'Кабан Простора', hp: 110, damage: 32, defense: 14, xp: 70, level: 33, type: 'animal', agility: 3, region: 'reach' },
         { id: 'forest_wolf', name: 'Лесной волк', hp: 125, damage: 36, defense: 15, xp: 76, level: 39, type: 'animal', agility: 5, region: 'reach' },
         { id: 'golden_stag', name: 'Золотой олень', hp: 120, damage: 34, defense: 14, xp: 74, level: 41, type: 'animal', agility: 6, region: 'reach' },
@@ -134,14 +129,13 @@ const MOBS = {
         { id: 'reach_direwolf', name: 'Лютоволк Простора', hp: 170, damage: 48, defense: 22, xp: 100, level: 57, type: 'animal', agility: 6, region: 'reach' },
         { id: 'sun_bear', name: 'Солнечный медведь', hp: 185, damage: 52, defense: 24, xp: 110, level: 63, type: 'animal', agility: 3, region: 'reach' },
         { id: 'wild_horse', name: 'Дикий скакун', hp: 175, damage: 50, defense: 20, xp: 105, level: 67, type: 'animal', agility: 8, region: 'reach' },
-        { id: 'golden_boar', name: 'Золотой кабан', hp: 210, damage: 58, defense: 28, xp: 125, level: 73, type: 'animal', agility: 3, region: 'reach' },
+        { id: 'reach_golden_boar', name: 'Золотой кабан', hp: 210, damage: 58, defense: 28, xp: 125, level: 73, type: 'animal', agility: 3, region: 'reach' },
         { id: 'reach_wolf_alpha', name: 'Вожак волков Простора', hp: 225, damage: 62, defense: 30, xp: 132, level: 79, type: 'animal', agility: 6, region: 'reach' },
         { id: 'reach_giant_boar', name: 'Гигантский кабан Простора', hp: 245, damage: 68, defense: 34, xp: 142, level: 85, type: 'animal', agility: 3, region: 'reach' },
         { id: 'reach_legend_bear', name: 'Легендарный медведь Простора', hp: 270, damage: 74, defense: 38, xp: 155, level: 91, type: 'animal', agility: 3, region: 'reach' },
         { id: 'reach_legend_wolf', name: 'Легендарный волк Простора', hp: 290, damage: 78, defense: 40, xp: 162, level: 95, type: 'animal', agility: 7, region: 'reach' },
         { id: 'reach_alpha_wolf', name: 'Верховный вожак волков Простора', hp: 310, damage: 82, defense: 44, xp: 170, level: 99, type: 'animal', agility: 8, region: 'reach' },
 
-        // Люди
         { id: 'reach_bandit', name: 'Разбойник Простора', hp: 120, damage: 34, defense: 15, xp: 74, level: 35, type: 'human', agility: 4, region: 'reach' },
         { id: 'reach_raider', name: 'Рейдер Простора', hp: 130, damage: 38, defense: 16, xp: 80, level: 40, type: 'human', agility: 5, region: 'reach' },
         { id: 'reach_mercenary', name: 'Наёмник Простора', hp: 142, damage: 40, defense: 18, xp: 86, level: 44, type: 'human', agility: 5, region: 'reach' },
@@ -159,10 +153,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // РЕЧНЫЕ ЗЕМЛИ (уровни 31-100)
+    // РЕЧНЫЕ ЗЕМЛИ
     // ============================================================
     riverlands: [
-        // Животные
         { id: 'river_fox', name: 'Речная лиса', hp: 108, damage: 32, defense: 12, xp: 68, level: 31, type: 'animal', agility: 7, region: 'riverlands' },
         { id: 'river_wolf', name: 'Речной волк', hp: 120, damage: 35, defense: 14, xp: 76, level: 36, type: 'animal', agility: 5, region: 'riverlands' },
         { id: 'swamp_boar', name: 'Болотный кабан', hp: 130, damage: 38, defense: 16, xp: 80, level: 41, type: 'animal', agility: 3, region: 'riverlands' },
@@ -178,7 +171,6 @@ const MOBS = {
         { id: 'river_alpha_wolf', name: 'Верховный вожак волков Речных земель', hp: 295, damage: 80, defense: 42, xp: 165, level: 94, type: 'animal', agility: 8, region: 'riverlands' },
         { id: 'river_immortal_bear', name: 'Неувядаемый медведь Речных земель', hp: 320, damage: 86, defense: 46, xp: 175, level: 99, type: 'animal', agility: 3, region: 'riverlands' },
 
-        // Люди
         { id: 'river_bandit', name: 'Речной бандит', hp: 115, damage: 34, defense: 14, xp: 72, level: 33, type: 'human', agility: 4, region: 'riverlands' },
         { id: 'river_raider', name: 'Речной рейдер', hp: 125, damage: 36, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'riverlands' },
         { id: 'river_mercenary', name: 'Речной наёмник', hp: 138, damage: 39, defense: 18, xp: 84, level: 42, type: 'human', agility: 5, region: 'riverlands' },
@@ -196,10 +188,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ШТОРМОВЫЕ ЗЕМЛИ (уровни 31-100)
+    // ШТОРМОВЫЕ ЗЕМЛИ
     // ============================================================
     stormlands: [
-        // Животные
         { id: 'storm_wolf', name: 'Штормовой волк', hp: 120, damage: 35, defense: 14, xp: 76, level: 36, type: 'animal', agility: 5, region: 'stormlands' },
         { id: 'storm_boar', name: 'Штормовой кабан', hp: 130, damage: 38, defense: 16, xp: 80, level: 41, type: 'animal', agility: 3, region: 'stormlands' },
         { id: 'storm_bear', name: 'Штормовой медведь', hp: 145, damage: 42, defense: 18, xp: 88, level: 46, type: 'animal', agility: 3, region: 'stormlands' },
@@ -211,7 +202,6 @@ const MOBS = {
         { id: 'storm_legend_wolf', name: 'Легендарный волк Штормовых земель', hp: 260, damage: 72, defense: 36, xp: 150, level: 86, type: 'animal', agility: 7, region: 'stormlands' },
         { id: 'storm_alpha_wolf', name: 'Верховный вожак волков Штормовых земель', hp: 285, damage: 76, defense: 40, xp: 158, level: 92, type: 'animal', agility: 8, region: 'stormlands' },
 
-        // Люди
         { id: 'storm_bandit', name: 'Штормовой бандит', hp: 118, damage: 35, defense: 15, xp: 74, level: 34, type: 'human', agility: 4, region: 'stormlands' },
         { id: 'storm_raider', name: 'Штормовой рейдер', hp: 128, damage: 37, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'stormlands' },
         { id: 'storm_mercenary', name: 'Штормовой наёмник', hp: 140, damage: 40, defense: 18, xp: 86, level: 42, type: 'human', agility: 5, region: 'stormlands' },
@@ -227,10 +217,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ДОРН (уровни 31-100)
+    // ДОРН
     // ============================================================
     dorne: [
-        // Животные
         { id: 'desert_fox', name: 'Пустынная лиса', hp: 105, damage: 30, defense: 10, xp: 65, level: 31, type: 'animal', agility: 7, region: 'dorne' },
         { id: 'sand_wolf', name: 'Песчаный волк', hp: 118, damage: 35, defense: 14, xp: 74, level: 36, type: 'animal', agility: 6, region: 'dorne' },
         { id: 'dornish_boar', name: 'Дорнский кабан', hp: 128, damage: 38, defense: 16, xp: 80, level: 41, type: 'animal', agility: 3, region: 'dorne' },
@@ -243,7 +232,6 @@ const MOBS = {
         { id: 'dornish_legend_wolf', name: 'Легендарный волк Дорна', hp: 260, damage: 72, defense: 36, xp: 150, level: 86, type: 'animal', agility: 7, region: 'dorne' },
         { id: 'dornish_alpha_wolf', name: 'Верховный вожак волков Дорна', hp: 285, damage: 76, defense: 40, xp: 158, level: 92, type: 'animal', agility: 8, region: 'dorne' },
 
-        // Люди
         { id: 'dornish_bandit', name: 'Дорнский бандит', hp: 115, damage: 34, defense: 14, xp: 72, level: 33, type: 'human', agility: 4, region: 'dorne' },
         { id: 'dornish_raider', name: 'Дорнский рейдер', hp: 125, damage: 36, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'dorne' },
         { id: 'dornish_mercenary', name: 'Дорнский наёмник', hp: 138, damage: 39, defense: 18, xp: 84, level: 42, type: 'human', agility: 5, region: 'dorne' },
@@ -259,10 +247,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ДОЛИНА (уровни 31-100)
+    // ДОЛИНА
     // ============================================================
     vale: [
-        // Животные
         { id: 'mountain_wolf', name: 'Горный волк', hp: 120, damage: 35, defense: 14, xp: 76, level: 36, type: 'animal', agility: 5, region: 'vale' },
         { id: 'vale_boar', name: 'Кабан Долины', hp: 130, damage: 38, defense: 16, xp: 80, level: 41, type: 'animal', agility: 3, region: 'vale' },
         { id: 'vale_bear', name: 'Медведь Долины', hp: 145, damage: 42, defense: 18, xp: 88, level: 46, type: 'animal', agility: 3, region: 'vale' },
@@ -274,7 +261,6 @@ const MOBS = {
         { id: 'vale_legend_wolf', name: 'Легендарный волк Долины', hp: 260, damage: 72, defense: 36, xp: 150, level: 86, type: 'animal', agility: 7, region: 'vale' },
         { id: 'vale_alpha_wolf', name: 'Верховный вожак волков Долины', hp: 285, damage: 76, defense: 40, xp: 158, level: 92, type: 'animal', agility: 8, region: 'vale' },
 
-        // Люди
         { id: 'vale_bandit', name: 'Бандит Долины', hp: 118, damage: 35, defense: 15, xp: 74, level: 34, type: 'human', agility: 4, region: 'vale' },
         { id: 'vale_raider', name: 'Рейдер Долины', hp: 128, damage: 37, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'vale' },
         { id: 'vale_mercenary', name: 'Наёмник Долины', hp: 140, damage: 40, defense: 18, xp: 86, level: 42, type: 'human', agility: 5, region: 'vale' },
@@ -290,10 +276,9 @@ const MOBS = {
     ],
 
     // ============================================================
-    // ЖЕЛЕЗНЫЕ ОСТРОВА (уровни 31-100)
+    // ЖЕЛЕЗНЫЕ ОСТРОВА
     // ============================================================
     iron_islands: [
-        // Животные
         { id: 'sea_wolf', name: 'Морской волк', hp: 120, damage: 35, defense: 14, xp: 76, level: 36, type: 'animal', agility: 5, region: 'iron_islands' },
         { id: 'iron_boar', name: 'Железный кабан', hp: 130, damage: 38, defense: 16, xp: 80, level: 41, type: 'animal', agility: 3, region: 'iron_islands' },
         { id: 'iron_bear', name: 'Железный медведь', hp: 145, damage: 42, defense: 18, xp: 88, level: 46, type: 'animal', agility: 3, region: 'iron_islands' },
@@ -303,7 +288,6 @@ const MOBS = {
         { id: 'iron_legend_wolf', name: 'Легендарный волк Железных островов', hp: 260, damage: 72, defense: 36, xp: 150, level: 86, type: 'animal', agility: 7, region: 'iron_islands' },
         { id: 'iron_alpha_wolf', name: 'Верховный вожак волков Железных островов', hp: 285, damage: 76, defense: 40, xp: 158, level: 92, type: 'animal', agility: 8, region: 'iron_islands' },
 
-        // Люди
         { id: 'iron_raider', name: 'Железный рейдер', hp: 125, damage: 36, defense: 16, xp: 78, level: 38, type: 'human', agility: 5, region: 'iron_islands' },
         { id: 'iron_mercenary', name: 'Железный наёмник', hp: 140, damage: 40, defense: 18, xp: 86, level: 42, type: 'human', agility: 5, region: 'iron_islands' },
         { id: 'iron_veteran_raider', name: 'Опытный железный рейдер', hp: 155, damage: 44, defense: 20, xp: 92, level: 46, type: 'human', agility: 5, region: 'iron_islands' },
@@ -319,7 +303,7 @@ const MOBS = {
     ],
 
     // ============================================================
-    // АЛКАШИ (для Квартала бедноты и Таверны)
+    // АЛКАШИ
     // ============================================================
     drunkards: [
         { id: 'drunk_fisherman', name: '🍺 Пьяный рыбак', hp: 15, damage: 2, defense: 0, xp: 2, level: 1, type: 'human', agility: 1, region: 'crownlands' },
@@ -330,59 +314,7 @@ const MOBS = {
         { id: 'drunk_knight', name: '🍺 Пьяный рыцарь', hp: 35, damage: 6, defense: 3, xp: 6, level: 5, type: 'human', agility: 2, region: 'crownlands' },
         { id: 'drunk_mercenary', name: '🍺 Пьяный наёмник', hp: 28, damage: 5, defense: 2, xp: 5, level: 4, type: 'human', agility: 2, region: 'crownlands' },
         { id: 'drunk_noble', name: '🍺 Пьяный дворянин', hp: 18, damage: 2, defense: 0, xp: 2, level: 1, type: 'human', agility: 1, region: 'crownlands' }
-    ],
-
-    // ============================================================
-    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-    // ============================================================
-
-    function getMobById(id) {
-        var allMobs = [];
-        for (var key in this) {
-            if (Array.isArray(this[key]) && key !== 'getMobById' && key !== 'getMobsByRegion' && key !== 'getMobsByLevelRange') {
-                allMobs = allMobs.concat(this[key]);
-            }
-        }
-        for (var i = 0; i < allMobs.length; i++) {
-            if (allMobs[i].id === id) return allMobs[i];
-        }
-        return null;
-    },
-
-    function getMobsByRegion(region) {
-        var regionMap = {
-            'crownlands': 'crownlands',
-            'north': 'north',
-            'westlands': 'westlands',
-            'reach': 'reach',
-            'riverlands': 'riverlands',
-            'stormlands': 'stormlands',
-            'dorne': 'dorne',
-            'vale': 'vale',
-            'iron_islands': 'iron_islands'
-        };
-        var key = regionMap[region];
-        if (key && this[key]) {
-            return this[key];
-        }
-        return [];
-    },
-
-    function getMobsByLevelRange(minLevel, maxLevel) {
-        var allMobs = [];
-        for (var key in this) {
-            if (Array.isArray(this[key]) && key !== 'getMobById' && key !== 'getMobsByRegion' && key !== 'getMobsByLevelRange') {
-                allMobs = allMobs.concat(this[key]);
-            }
-        }
-        var result = [];
-        for (var i = 0; i < allMobs.length; i++) {
-            if (allMobs[i].level >= minLevel && allMobs[i].level <= maxLevel) {
-                result.push(allMobs[i]);
-            }
-        }
-        return result;
-    }
+    ]
 };
 
 // ============================================================
@@ -390,13 +322,47 @@ const MOBS = {
 // ============================================================
 
 function getMobById(id) {
-    return MOBS.getMobById(id);
+    var allMobs = [];
+    for (var key in MOBS) {
+        if (Array.isArray(MOBS[key])) {
+            allMobs = allMobs.concat(MOBS[key]);
+        }
+    }
+    for (var i = 0; i < allMobs.length; i++) {
+        if (allMobs[i].id === id) return allMobs[i];
+    }
+    return null;
 }
 
 function getMobsByRegion(region) {
-    return MOBS.getMobsByRegion(region);
+    var regionMap = {
+        'crownlands': 'crownlands',
+        'north': 'north',
+        'westlands': 'westlands',
+        'reach': 'reach',
+        'riverlands': 'riverlands',
+        'stormlands': 'stormlands',
+        'dorne': 'dorne',
+        'vale': 'vale',
+        'iron_islands': 'iron_islands'
+    };
+    var key = regionMap[region];
+    if (key && MOBS[key]) return MOBS[key];
+    return [];
 }
 
 function getMobsByLevelRange(minLevel, maxLevel) {
-    return MOBS.getMobsByLevelRange(minLevel, maxLevel);
+    var allMobs = [];
+    for (var key in MOBS) {
+        if (Array.isArray(MOBS[key])) {
+            allMobs = allMobs.concat(MOBS[key]);
+        }
+    }
+    var result = [];
+    for (var i = 0; i < allMobs.length; i++) {
+        if (allMobs[i].level >= minLevel && allMobs[i].level <= maxLevel) {
+            result.push(allMobs[i]);
+        }
+    }
+    return result;
 }
