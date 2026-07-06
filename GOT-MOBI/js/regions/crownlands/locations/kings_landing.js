@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ТОЛЬКО УНИКАЛЬНАЯ ЛОГИКА
+// КОРОЛЕВСКАЯ ГАВАНЬ — ТОЛЬКО УНИКАЛЬНАЯ ЛОГИКА (БЕЗ ПОИСКА)
 // ============================================================
 
 // ============================================================
@@ -136,7 +136,7 @@ function updateStory() {
 }
 
 // ============================================================
-// 4. ACTIONS (ТОЛЬКО УНИКАЛЬНЫЕ КНОПКИ)
+// 4. ACTIONS (ТОЛЬКО УНИКАЛЬНЫЕ КНОПКИ, БЕЗ ПОИСКА)
 // ============================================================
 
 function updateActions() {
@@ -209,20 +209,11 @@ function updateActions() {
         actions = [{ id: 'magistrate_open', label: '📜 Магистрат' }].concat(actions);
     }
     
-    if (place === 'Ворота') {
-        if (!g.outside) {
-            actions = [{ id: 'leave_city', label: '🚪 Выйти' }].concat(actions);
-        } else {
-            actions = [{ id: 'enter_city', label: '🚶 Войти' }].concat(actions);
-        }
-    }
+    // ===== ВОРОТА (теперь через UI) =====
+    // Убрано: if (place === 'Ворота') — теперь в 05-ui.js
     
-    if (place === 'Дорога') {
-        actions = [
-            { id: 'enter_city', label: '🚶 Войти' },
-            { id: 'search', label: '🔍 Поиск' }
-        ].concat(actions);
-    }
+    // ===== ДОРОГА (поиск убран) =====
+    // Убрано: if (place === 'Дорога') — теперь в 05-ui.js
     
     if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
         var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
