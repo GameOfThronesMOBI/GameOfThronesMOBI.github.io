@@ -62,14 +62,13 @@
 <div id="modal-guild" class="modal-overlay hide" onclick="if(event.target===this) document.getElementById('modal-guild').classList.add('hide')"><div class="modal-box"><div class="modal-header"><h3>🏛️ ГИЛЬДИЯ ТОРГОВЦЕВ</h3><button class="close-btn" onclick="document.getElementById('modal-guild').classList.add('hide')">✕</button></div><div id="modal-guild-content"></div></div></div>
 <div id="modal-log" class="modal-overlay hide" onclick="if(event.target===this) closeLog()"><div class="modal-box"><div class="modal-header"><h3>📜 ЛОГ СОБЫТИЙ</h3><button class="close-btn" onclick="closeLog()">✕</button></div><div id="modal-log-content"></div></div></div>
 
-<!-- ============================================================ -->
+  <!-- ============================================================ -->
 <!-- 1. CORE — ЯДРО ИГРЫ -->
 <!-- ============================================================ -->
 <script src="js/core/01-config.js"></script>
 <script src="js/core/02-state.js"></script>
 <script src="js/core/03-utils.js"></script>
 <script src="js/core/04-storage.js"></script>
-<script src="js/core/05-ui.js"></script>
 
 <!-- ============================================================ -->
 <!-- 2. DATA — ДАННЫЕ -->
@@ -96,11 +95,20 @@
 <script src="js/regions/crownlands/locations/kings_landing.js"></script>
 
 <!-- ============================================================ -->
-<!-- 5. MAIN — ТОЧКА ВХОДА (ВСЕГДА ПОСЛЕДНИЙ!) -->
+<!-- 5. UI — ПОЛЬЗОВАТЕЛЬСКИЙ ИНТЕРФЕЙС (ПОСЛЕ ВСЕХ ИГРОВЫХ ФАЙЛОВ!) -->
+<!-- ============================================================ -->
+<script src="js/core/05-ui.js"></script>
+
+<!-- ============================================================ -->
+<!-- 6. MAIN — ТОЧКА ВХОДА (ВСЕГДА ПОСЛЕДНИЙ!) -->
 <!-- ============================================================ -->
 <script src="js/main.js"></script>
-    
+
+<!-- ============================================================ -->
+<!-- 7. ERUDA — ОТЛАДКА (САМЫЙ ПОСЛЕДНИЙ!) -->
+<!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script> 
+<script>eruda.init();</script>  
+
 </body>
 </html>
