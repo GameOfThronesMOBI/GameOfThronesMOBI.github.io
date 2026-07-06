@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/04-menu.js — МЕНЮ, ДОМА, СТОЛИЦЫ
+// js/game/04-menu.js — МЕНЮ, ДОМА, СТОЛИЦЫ (ОБНОВЛЁННАЯ ВЕРСИЯ)
 // ============================================================
 
 // ============================================================
@@ -38,8 +38,7 @@ var CAPITALS = {
         regionName: '❄️ Север',
         emoji: '🏙️',
         controller: null,
-        description: 'Крупнейший порт Севера. Центр торговли с Эссосом.',
-        income: 500
+        description: 'Крупнейший порт Севера. Центр торговли с Эссосом.'
     },
     westlands: {
         id: 'lannisport',
@@ -48,8 +47,7 @@ var CAPITALS = {
         regionName: '🦁 Западные земли',
         emoji: '🏙️',
         controller: null,
-        description: 'Третий по величине город Вестероса. Порт и золото.',
-        income: 800
+        description: 'Третий по величине город Вестероса. Порт и золото.'
     },
     reach: {
         id: 'oldtown',
@@ -58,8 +56,7 @@ var CAPITALS = {
         regionName: '🌹 Простор',
         emoji: '🏙️',
         controller: null,
-        description: 'Второй по величине город. Цитадель мейстеров и торговля.',
-        income: 700
+        description: 'Второй по величине город. Цитадель мейстеров и торговля.'
     },
     riverlands: {
         id: 'maidenpool',
@@ -68,8 +65,7 @@ var CAPITALS = {
         regionName: '🐟 Речные земли',
         emoji: '🏙️',
         controller: null,
-        description: 'Город на перекрёстке речных путей. Рынок и торговля.',
-        income: 400
+        description: 'Город на перекрёстке речных путей. Рынок и торговля.'
     },
     stormlands: {
         id: 'weeping_town',
@@ -78,8 +74,7 @@ var CAPITALS = {
         regionName: '⛈️ Штормовые земли',
         emoji: '🏙️',
         controller: null,
-        description: 'Портовый город на Дорнийском море. Торговля с югом.',
-        income: 350
+        description: 'Портовый город на Дорнийском море. Торговля с югом.'
     },
     dorne: {
         id: 'sandy_shore',
@@ -88,8 +83,7 @@ var CAPITALS = {
         regionName: '☀️ Дорн',
         emoji: '🏙️',
         controller: null,
-        description: 'Портовый город на юге Дорна. Торговля с Эссосом.',
-        income: 450
+        description: 'Портовый город на юге Дорна. Торговля с Эссосом.'
     },
     vale: {
         id: 'gulltown',
@@ -98,8 +92,7 @@ var CAPITALS = {
         regionName: '🦅 Долина',
         emoji: '🏙️',
         controller: null,
-        description: 'Крупнейший порт Долины. Торговля с Севером и Эссосом.',
-        income: 400
+        description: 'Крупнейший порт Долины. Торговля с Севером и Эссосом.'
     },
     iron_islands: {
         id: 'lordsport',
@@ -108,8 +101,7 @@ var CAPITALS = {
         regionName: '🐙 Железные острова',
         emoji: '🏙️',
         controller: null,
-        description: 'Крупнейший порт Железных островов на Пайке.',
-        income: 300
+        description: 'Крупнейший порт Железных островов на Пайке.'
     }
 };
 
@@ -118,8 +110,7 @@ var KINGS_LANDING = {
     name: 'Королевская Гавань',
     emoji: '👑',
     controller: null,
-    description: 'Столица Семи Королевств. Железный Трон. Кто владеет Гаванью — тот правит Вестеросом.',
-    income: 2000
+    description: 'Столица Семи Королевств. Железный Трон. Кто владеет Гаванью — тот правит Вестеросом.'
 };
 
 function openCapitals() {
@@ -130,7 +121,7 @@ function openCapitals() {
     if (menuModal) menuModal.classList.add('hide');
     
     var html = '<div class="modal-section"><h4>🏙️ СТОЛИЦЫ РЕГИОНОВ</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Захват столицы региона делает дом Великим. Все столицы нейтральны на старте.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Захват столицы делает дом Великим. Налог устанавливается владельцем (до 10% казны и ресурсов).</p>';
     html += '</div>';
     
     for (var key in CAPITALS) {
@@ -147,21 +138,19 @@ function openCapitals() {
         }
         
         html += '<div class="modal-section" style="border:1px solid #2a201a;border-radius:12px;padding:14px;margin:10px 0;background:#120e0b;">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
         html += '<div>';
         html += '<span style="font-size:20px;">' + capital.emoji + '</span> ';
         html += '<strong style="color:#c9b694;font-size:16px;">' + capital.name + '</strong>';
         html += '<br><span style="color:#6a5a48;font-size:12px;">' + capital.regionName + '</span>';
         html += '<br><span style="color:#6a5a48;font-size:12px;">' + capital.description + '</span>';
-        html += '<br><span style="color:#6a5a48;font-size:12px;">💰 Налог: ' + capital.income + ' зол./день</span>';
+        html += '<br><span style="color:#6a5a48;font-size:12px;">💰 Налог: устанавливается владельцем (до 10%)</span>';
         
         if (controllerHouse) {
-            html += '<br><span style="color:#e74c3c;font-size:13px;">🏰 Контролирует: ' + controllerHouse.sigil + ' ' + controllerHouse.name + ' (Великий Дом)</span>';
+            html += '<br><span style="color:#e74c3c;font-size:13px;">🏰 ' + controllerHouse.sigil + ' ' + controllerHouse.name + ' — ВЕЛИКИЙ ДОМ</span>';
         } else {
-            html += '<br><span style="color:#7ac98a;font-size:13px;">⚔️ НЕЙТРАЛЬНА — можно захватить!</span>';
+            html += '<br><span style="color:#7ac98a;font-size:13px;">⚔️ НЕЙТРАЛЬНА — свободна для захвата</span>';
         }
         
-        html += '</div>';
         html += '</div>';
         html += '</div>';
     }
@@ -195,7 +184,7 @@ function showKingsLanding() {
     html += '<h3 style="color:#ffd700;text-align:center;font-size:20px;">КОРОЛЕВСКАЯ ГАВАНЬ</h3>';
     html += '<p style="color:#ffd700;text-align:center;font-size:14px;">Железный Трон</p>';
     html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">' + KINGS_LANDING.description + '</p>';
-    html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">💰 Налог со всего королевства: ' + KINGS_LANDING.income + ' зол./день</p>';
+    html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">💰 Налог на все регионы: устанавливается Короной (до 10%)</p>';
     
     if (controllerHouse) {
         html += '<div style="text-align:center;margin-top:10px;">';
@@ -204,8 +193,8 @@ function showKingsLanding() {
         html += '</div>';
     } else {
         html += '<div style="text-align:center;margin-top:10px;">';
-        html += '<span style="color:#7ac98a;font-size:16px;">⚔️ НЕЙТРАЛЬНА</span>';
-        html += '<br><span style="color:#7ac98a;font-size:13px;">Железный Трон свободен!</span>';
+        html += '<span style="color:#7ac98a;font-size:16px;">⚔️ ТРОН СВОБОДЕН</span>';
+        html += '<br><span style="color:#7ac98a;font-size:13px;">Королевская Гавань ждёт своего завоевателя</span>';
         html += '</div>';
     }
     
@@ -257,17 +246,17 @@ function openHouses() {
         }
     }
     
-    // Определяем, кто владеет столицами и Королевской Гаванью
+    // Определяем владельцев столиц и Короны
     var greatHouses = {};
     for (var key in CAPITALS) {
         if (CAPITALS[key].controller) {
-            greatHouses[CAPITALS[key].controller] = 'great_house';
+            greatHouses[CAPITALS[key].controller] = key;
         }
     }
     var royalHouse = KINGS_LANDING.controller || null;
     
     var html = '<div class="modal-section"><h4>🏘️ ДОМА ВЕСТЕРОСА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Все дома независимы. Иерархия строится через захват столиц.</p>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Все дома стартуют независимыми. Захват столицы делает дом Великим, захват Королевской Гавани — Королём.</p>';
     html += '</div>';
     
     for (var regionKey in regions) {
@@ -285,20 +274,25 @@ function openHouses() {
             var sigil = house.sigil || '🏰';
             var displayName = house.name;
             var style = '';
+            var badge = '';
             
-            // Проверяем, владеет ли дом Королевской Гаванью
             if (royalHouse === house.id) {
                 style = 'color:#ffd700;font-weight:bold;';
-                displayName = '👑 ' + displayName;
-            }
-            // Проверяем, владеет ли дом столицей региона
-            else if (greatHouses[house.id]) {
+                badge = ' 👑';
+            } else if (greatHouses[house.id]) {
                 style = 'color:#e74c3c;font-weight:bold;';
-                displayName = '🏰 ' + displayName;
+                badge = ' 🏰';
+            }
+            
+            if (house.liege) {
+                var liegeHouse = HOUSES[house.liege];
+                if (liegeHouse) {
+                    badge += ' [вассал ' + liegeHouse.sigil + ']';
+                }
             }
             
             html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-            html += '<span class="label" style="' + style + '">' + sigil + ' ' + displayName + '</span>';
+            html += '<span class="label" style="' + style + '">' + sigil + ' ' + displayName + badge + '</span>';
             html += '<span class="value"><button class="btn btn-small" onclick="showHouseInfo(\'' + house.id + '\')">📜 Подробнее</button></span>';
             html += '</div>';
         });
@@ -349,7 +343,6 @@ function showHouseInfo(houseId) {
         'iron_islands': '🐙 Железные острова'
     };
     
-    // Определяем статус дома
     var isRoyal = KINGS_LANDING.controller === house.id;
     var isGreat = false;
     var capitalName = '';
@@ -380,7 +373,14 @@ function showHouseInfo(houseId) {
         html += '<p style="color:#ffd700;text-align:center;font-size:16px;font-weight:bold;">👑 КОРОЛЬ ВЕСТЕРОСА</p>';
     } else if (isGreat) {
         html += '<p style="color:#e74c3c;text-align:center;font-size:16px;font-weight:bold;">🏰 ВЕЛИКИЙ ДОМ</p>';
-        html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">Контролирует: ' + capitalName + '</p>';
+        html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">Контролирует столицу: ' + capitalName + '</p>';
+    }
+    
+    if (house.liege) {
+        var liegeHouse = HOUSES[house.liege];
+        if (liegeHouse) {
+            html += '<p style="color:#6a5a48;text-align:center;font-size:12px;">⚓ Вассал дома ' + liegeHouse.sigil + ' ' + liegeHouse.name + '</p>';
+        }
     }
     
     html += '</div>';
@@ -388,7 +388,14 @@ function showHouseInfo(houseId) {
     html += '<div class="modal-section">';
     html += '<div class="row"><span class="label">📍 Регион</span><span class="value">' + (regionNames[house.region] || house.region || '—') + '</span></div>';
     html += '<div class="row"><span class="label">🏰 Замок</span><span class="value">' + (house.castle || '—') + '</span></div>';
-    html += '<div class="row"><span class="label">👑 Сюзерен</span><span class="value">' + (house.liege || 'Нет') + '</span></div>';
+    html += '<div class="row"><span class="label">👑 Сюзерен</span><span class="value">';
+    if (house.liege) {
+        var liege = HOUSES[house.liege];
+        html += (liege ? liege.sigil + ' ' + liege.name : house.liege);
+    } else {
+        html += 'Нет (независимый дом)';
+    }
+    html += '</span></div>';
     html += '</div>';
     
     html += '<div class="modal-section"><h4>⚔️ АРМИЯ</h4>';
@@ -403,8 +410,8 @@ function showHouseInfo(houseId) {
     
     html += '<div class="modal-section"><h4>💰 ЭКОНОМИКА</h4>';
     html += '<div class="row"><span class="label">💰 Казна</span><span class="value">' + (house.treasury || 0) + ' зол.</span></div>';
-    html += '<div class="row"><span class="label">🤝 Верность</span><span class="value">' + (house.loyalty || 0) + '%</span></div>';
-    html += '<div class="row"><span class="label">🌟 Репутация</span><span class="value">' + (house.reputation || 0) + '%</span></div>';
+    html += '<div class="row"><span class="label">🤝 Верность (своих)</span><span class="value">' + (house.loyalty || 0) + '%</span></div>';
+    html += '<div class="row"><span class="label">🌟 Репутация (в мире)</span><span class="value">' + (house.reputation || 0) + '%</span></div>';
     html += '</div>';
     
     html += '<button class="btn btn-secondary" onclick="openHouses()" style="margin-top:10px;">Закрыть</button>';
