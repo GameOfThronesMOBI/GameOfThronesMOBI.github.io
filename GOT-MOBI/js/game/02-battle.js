@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/02-battle.js — БОЙ (БЕЗ ПОИСКА)
+// js/game/02-battle.js — БОЙ (ПОЛНАЯ ВЕРСИЯ С ПОИСКОМ)
 // ============================================================
 
 var battleState = null;
@@ -543,12 +543,73 @@ function dropLoot(g, mob) {
 }
 
 // ============================================================
+// ПОИСК
+// ============================================================
+
+window.doSearch = function() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var region = g.location.region || 'Королевские земли';
+    var place = g.location.place || 'Дорога';
+    var luck = Math.min(25, g.luck || 0);
+    var luckBonus = Math.floor(luck / 10);
+    
+    if (g.food < 20) {
+        setMessage('🍽️ Вы слишком голодны для поиска!');
+        return;
+    }
+    if (g.fatigue < 20) {
+        setMessage('😴 Вы слишком устали для поиска!');
+        return;
+    }
+    
+    var treasureChance = Math.min(4.5, 2 + luckBonus);
+    if (Math.random() * 100 < treasureChance) {
+        window.findTreasure();
+        return;
+    }
+    
+    var monsterChance = Math.min(47.5, 45 + luckBonus);
+    if (Math.random() * 100 < monsterChance) {
+        var mob = getRandomMobByRegionAndLevel(region, place);
+        if (mob) {
+            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
+            startBattle(mob);
+            return;
+        }
+    }
+    
+    setMessage('🔍 Вы никого не нашли.');
+};
+
+window.findTreasure = function() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var luck = Math.min(25, g.luck || 0);
+    var bonusLuck = Math.min(5, Math.floor(luck / 5));
+    
+    var goldAmount = 2 + Math.floor(Math.random() * 8) + bonusLuck;
+    g.copper += goldAmount;
+    convertCurrency(g);
+    setMessage('🪙 Вы нашли клад! +' + goldAmount + ' золота!');
+    addLog('🪙 ' + currentUser + ' нашёл клад: ' + goldAmount + ' золота');
+    updateMenu();
+    saveData();
+};
+
+// ============================================================
 // РЕГИСТРАЦИЯ В WINDOW
 // ============================================================
 
 window.startBattle = startBattle;
 window.battleAction = battleAction;
+window.doSearch = window.doSearch;
+window.findTreasure = window.findTreasure;
 window.getMobsForLocation = getMobsForLocation;
 window.getRandomMobByRegionAndLevel = getRandomMobByRegionAndLevel;
 
-console.log('⚔️ Боевая система загружена (без поиска)!');
+console.log('⚔️ Боевая система загружена (с поиском)!');
