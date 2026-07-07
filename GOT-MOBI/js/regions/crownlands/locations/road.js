@@ -23,7 +23,7 @@ function openMap() {
     html += '<div class="modal-section">';
     html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
     html += '<span class="label">🚪 Ворота</span>';
-    html += '<span class="value"><button class="btn btn-small" onclick="goToCity()">🚶 Войти</button></span>';
+    html += '<span class="value"><button class="btn btn-small" onclick="goToGates()">🚶 Идти к Воротам</button></span>';
     html += '</div>';
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
     content.innerHTML = html;
@@ -35,10 +35,10 @@ function closeMap() {
 }
 
 // ============================================================
-// 2. ВХОД В ГОРОД
+// 2. ИДТИ К ВОРОТАМ
 // ============================================================
 
-function goToCity() {
+function goToGates() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
@@ -49,7 +49,7 @@ function goToCity() {
     g.location.location = 'Королевская Гавань';
     g.outside = false;
     
-    setMessage('🚪 Вы вошли в Королевскую Гавань.');
+    setMessage('🚪 Вы подошли к Воротам Королевской Гавани.');
     closeMap();
     updateMenu();
     updateStory();
@@ -91,7 +91,7 @@ function updateActions() {
         { id: 'character', label: '👤 Персонаж' },
         { id: 'menu', label: '📋 Меню' },
         { id: 'map', label: '🗺️ Карта' },
-        { id: 'enter_city', label: '🚶 Войти' },
+        { id: 'go_to_gates', label: '🚶 Идти к Воротам' },
         { id: 'search', label: '🔍 Поиск' }
     ];
     
@@ -110,8 +110,8 @@ function updateActions() {
                     }
                     return;
                 }
-                if (actionId === 'enter_city') {
-                    goToCity();
+                if (actionId === 'go_to_gates') {
+                    goToGates();
                     return;
                 }
                 if (typeof gameAction === 'function') {
@@ -129,10 +129,6 @@ function updateActions() {
 // 5. РЕГИСТРАЦИЯ
 // ============================================================
 
-window.openMap = openMap;
-window.closeMap = closeMap;
-window.goToCity = goToCity;
-window.updateStory = updateStory;
-window.updateActions = updateActions;
+window.goToGates = goToGates;
 
 console.log('🛤️ Дорога загружена (ур.' + ROAD_LEVEL + ')');
