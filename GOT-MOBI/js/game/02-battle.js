@@ -1,8 +1,14 @@
 // ============================================================
-// js/game/02-battle.js — БОЙ (ПОЛНАЯ ВЕРСИЯ С ПОИСКОМ)
+// js/game/02-battle.js — БОЙ (ЧИСТАЯ ВЕРСИЯ, БЕЗ ПОИСКА)
 // ============================================================
 
+console.log('⚔️ Боевая система загружена');
+
 var battleState = null;
+
+// ============================================================
+// 1. МОБЫ ДЛЯ ЛОКАЦИИ
+// ============================================================
 
 function getMobsForLocation(region, place) {
     var regionMap = {
@@ -65,6 +71,10 @@ function getRandomMobByRegionAndLevel(region, place) {
     }
     return mobs[Math.floor(Math.random() * mobs.length)];
 }
+
+// ============================================================
+// 2. НАЧАЛО БОЯ
+// ============================================================
 
 function startBattle(mob) {
     var user = users[currentUser];
@@ -130,6 +140,10 @@ function saveBattleState() {
     }
 }
 
+// ============================================================
+// 3. ОТОБРАЖЕНИЕ БОЯ
+// ============================================================
+
 function renderBattle() {
     if (!battleState || !battleState.inProgress) return;
     
@@ -166,6 +180,10 @@ function renderBattle() {
     saveBattleState();
 }
 
+// ============================================================
+// 4. ДЕЙСТВИЯ В БОЮ
+// ============================================================
+
 function battleAction(action) {
     if (!battleState || !battleState.inProgress) {
         setMessage('❌ Бой не активен.');
@@ -180,14 +198,8 @@ function battleAction(action) {
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
-    if (action === 'battle_flee') {
-        attemptFlee();
-        return;
-    }
-    if (action === 'battle_attack') {
-        playerAttack();
-        return;
-    }
+    if (action === 'battle_flee') { attemptFlee(); return; }
+    if (action === 'battle_attack') { playerAttack(); return; }
     if (action === 'battle_mount') {
         if (battleState.horseAlive && !battleState.mounted && battleState.horseHp > 0) {
             battleState.mounted = true;
@@ -197,9 +209,7 @@ function battleAction(action) {
             saveBattleState();
         } else if (!battleState.horseAlive || battleState.horseHp <= 0) {
             setMessage('❌ Ваша лошадь мертва.');
-        } else {
-            setMessage('❌ Вы уже верхом.');
-        }
+        } else { setMessage('❌ Вы уже верхом.'); }
         return;
     }
     if (action === 'battle_dismount') {
@@ -209,12 +219,14 @@ function battleAction(action) {
             setMessage('🐴 Вы слезли с лошади.');
             renderBattle();
             saveBattleState();
-        } else {
-            setMessage('❌ Вы не верхом.');
-        }
+        } else { setMessage('❌ Вы не верхом.'); }
         return;
     }
 }
+
+// ============================================================
+// 5. АТАКА ИГРОКА
+// ============================================================
 
 function playerAttack() {
     var user = users[currentUser];
@@ -232,9 +244,7 @@ function playerAttack() {
         b.turn = 'mob';
         renderBattle();
         saveBattleState();
-        setTimeout(function() {
-            if (battleState && battleState.inProgress) mobTurn();
-        }, 3000);
+        setTimeout(function() { if (battleState && battleState.inProgress) mobTurn(); }, 3000);
         return;
     }
     
@@ -246,17 +256,15 @@ function playerAttack() {
         b.log.push('💥 КРИТИЧЕСКИЙ УДАР!');
     }
     
-    var pierceReduction = 0;
     if (totalStats.pierce > 0 && b.mobDefense) {
-        pierceReduction = Math.round(b.mobDefense * (totalStats.pierce / 100));
-        if (pierceReduction > 0) {
-            b.log.push('🛡️ Пробитие: -' + pierceReduction + ' защиты');
-        }
+        var pierceReduction = Math.round(b.mobDefense * (totalStats.pierce / 100));
+        if (pierceReduction > 0) b.log.push('🛡️ Пробитие: -' + pierceReduction + ' защиты');
+        var mobDefense = Math.max(0, b.mobDefense - pierceReduction);
+    } else {
+        var mobDefense = b.mobDefense;
     }
     
-    var mobDefense = Math.max(0, b.mobDefense - pierceReduction);
     finalDamage = Math.max(1, finalDamage - mobDefense);
-    
     b.mobHp = Math.max(0, b.mobHp - finalDamage);
     b.log.push('⚔️ Вы нанесли ' + finalDamage + ' урона.');
     
@@ -278,18 +286,17 @@ function playerAttack() {
         b.log.push('⚡ ДВОЙНОЙ УДАР! +' + secondDamage + ' урона.');
     }
     
-    if (b.mobHp <= 0) {
-        endBattle(true, 'Победа');
-        return;
-    }
+    if (b.mobHp <= 0) { endBattle(true, 'Победа'); return; }
     
     b.turn = 'mob';
     renderBattle();
     saveBattleState();
-    setTimeout(function() {
-        if (battleState && battleState.inProgress) mobTurn();
-    }, 3000);
+    setTimeout(function() { if (battleState && battleState.inProgress) mobTurn(); }, 3000);
 }
+
+// ============================================================
+// 6. ХОД МОБА
+// ============================================================
 
 function mobTurn() {
     if (!battleState || !battleState.inProgress) {
@@ -299,11 +306,7 @@ function mobTurn() {
     }
     
     var user = users[currentUser];
-    if (!user) {
-        battleState = null;
-        localStorage.removeItem('got_battle');
-        return;
-    }
+    if (!user) { battleState = null; localStorage.removeItem('got_battle'); return; }
     var g = user.game;
     var b = battleState;
     
@@ -319,10 +322,7 @@ function mobTurn() {
             var counterDamage = Math.max(1, Math.round(totalStats.damage * 0.5));
             b.mobHp = Math.max(0, b.mobHp - counterDamage);
             b.log.push('💫 КОНТРАТАКА! Урон: ' + counterDamage);
-            if (b.mobHp <= 0) {
-                endBattle(true, 'Победа');
-                return;
-            }
+            if (b.mobHp <= 0) { endBattle(true, 'Победа'); return; }
         }
         b.turn = 'player';
         renderBattle();
@@ -332,34 +332,33 @@ function mobTurn() {
     
     var finalDamage = Math.max(1, mobDamage);
     
-    var newHorseHp = b.horseHp;
     if (b.mounted && b.horseAlive && b.horseHp > 0) {
         var horseDamage = Math.floor(finalDamage * 0.3);
-        newHorseHp = Math.max(0, b.horseHp - horseDamage);
+        b.horseHp = Math.max(0, b.horseHp - horseDamage);
         finalDamage = Math.floor(finalDamage * 0.7);
-        b.log.push('🐴 Лошадь получила ' + horseDamage + ' урона (HP: ' + newHorseHp + '/' + b.horseMaxHp + ')');
-        if (newHorseHp <= 0) {
+        b.log.push('🐴 Лошадь получила ' + horseDamage + ' урона (HP: ' + b.horseHp + '/' + b.horseMaxHp + ')');
+        if (b.horseHp <= 0) {
             b.horseAlive = false;
             b.mounted = false;
             b.log.push('💀 Ваша лошадь пала в бою!');
             setMessage('💀 Ваша лошадь пала в бою!');
         }
-        b.horseHp = newHorseHp;
     }
     
     finalDamage = Math.max(1, finalDamage);
     b.playerHp = Math.max(0, b.playerHp - finalDamage);
     b.log.push('🐺 ' + b.mob.name + ' нанёс ' + finalDamage + ' урона');
     
-    if (b.playerHp <= 0) {
-        endBattle(false, 'Смерть');
-        return;
-    }
+    if (b.playerHp <= 0) { endBattle(false, 'Смерть'); return; }
     
     b.turn = 'player';
     renderBattle();
     saveBattleState();
 }
+
+// ============================================================
+// 7. ПОБЕГ
+// ============================================================
 
 function attemptFlee() {
     var b = battleState;
@@ -374,21 +373,19 @@ function attemptFlee() {
         b.turn = 'mob';
         renderBattle();
         saveBattleState();
-        setTimeout(function() {
-            if (battleState && battleState.inProgress) mobTurn();
-        }, 3000);
+        setTimeout(function() { if (battleState && battleState.inProgress) mobTurn(); }, 3000);
     }
 }
+
+// ============================================================
+// 8. ЗАВЕРШЕНИЕ БОЯ
+// ============================================================
 
 function endBattle(won, reason) {
     if (!battleState) return;
     
     var user = users[currentUser];
-    if (!user) {
-        battleState = null;
-        localStorage.removeItem('got_battle');
-        return;
-    }
+    if (!user) { battleState = null; localStorage.removeItem('got_battle'); return; }
     var g = user.game;
     var b = battleState;
     
@@ -399,9 +396,7 @@ function endBattle(won, reason) {
         var horse = g.equipment.horse;
         if (b.horseAlive && b.horseHp > 0) {
             horse.hp = horse.maxHp || 100;
-            if (b.horseHp < horse.maxHp) {
-                setMessage('🐴 Ваша лошадь восстановила силы.');
-            }
+            if (b.horseHp < horse.maxHp) setMessage('🐴 Ваша лошадь восстановила силы.');
         } else if (b.horseHp <= 0) {
             g.equipment.horse = null;
             setMessage('💀 Ваша лошадь погибла.');
@@ -418,12 +413,8 @@ function endBattle(won, reason) {
             g.xp -= g.nextLevelXp;
             g.level++;
             g.nextLevelXp = 100 + g.level * 10;
-            if (g.level <= 100) {
-                g.attributePoints++;
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
-            } else {
-                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
-            }
+            if (g.level <= 100) { g.attributePoints++; setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.'); }
+            else { setMessage('🎉 Вы достигли ' + g.level + ' уровня!'); }
         }
         
         g.stamina.xp = (g.stamina.xp || 0) + Math.round(1 * getXpMultiplier(g));
@@ -436,10 +427,7 @@ function endBattle(won, reason) {
             setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня! (+5 HP)');
         }
         
-        if (b.mob.type === 'animal') {
-            dropLoot(g, b.mob);
-        }
-        
+        if (b.mob.type === 'animal') dropLoot(g, b.mob);
         if (b.mob.type === 'human') {
             var coins = (b.mob.level * 3) + Math.floor(Math.random() * (b.mob.level * 3));
             g.copper += coins;
@@ -449,16 +437,13 @@ function endBattle(won, reason) {
         
         setMessage('⚔️ ПОБЕДА! +' + xpGain + ' XP');
         addLog('⚔️ ' + currentUser + ' победил ' + b.mob.name + ' (ур. ' + b.mob.level + ')');
-        
     } else {
         if (reason === 'Смерть') {
             setMessage('💀 Вас убил ' + b.mob.name + '. Вы возродились в таверне.');
             g.hp = g.maxHp;
             g.location.place = 'Таверна';
             g.location.location = 'Королевская Гавань';
-            g.food = 100;
-            g.thirst = 100;
-            g.fatigue = 100;
+            g.food = 100; g.thirst = 100; g.fatigue = 100;
             g.outside = false;
             addLog('💀 ' + currentUser + ' убит ' + b.mob.name);
         } else if (reason === 'Побег') {
@@ -471,11 +456,14 @@ function endBattle(won, reason) {
     isBusy = false;
     document.getElementById('busy-status').classList.add('hide');
     localStorage.removeItem('got_battle');
-    
     updateMenu();
     updateActions();
     saveData();
 }
+
+// ============================================================
+// 9. ДРОП
+// ============================================================
 
 function dropLoot(g, mob) {
     function rollSkinQ(ml) {
@@ -488,7 +476,6 @@ function dropLoot(g, mob) {
         if (r < 60) return 'Плохое';
         return 'Рваное';
     }
-    
     function getSkinC(ml) {
         if (ml >= 50) return 5 + Math.floor(Math.random() * 4);
         if (ml >= 40) return 4 + Math.floor(Math.random() * 3);
@@ -498,7 +485,6 @@ function dropLoot(g, mob) {
         if (ml >= 5) return 1 + Math.floor(Math.random() * 2);
         return 1;
     }
-    
     function getMeatC(ml) {
         if (ml >= 50) return 4 + Math.floor(Math.random() * 3);
         if (ml >= 30) return 3 + Math.floor(Math.random() * 3);
@@ -512,24 +498,12 @@ function dropLoot(g, mob) {
     var skinCount = getSkinC(mob.level) + hunterBonus;
     
     for (var i = 0; i < skinCount; i++) {
-        addToInventory(g, {
-            name: 'Шкура',
-            quality: skinQuality,
-            type: 'resource',
-            resourceType: 'leather',
-            count: 1
-        });
+        addToInventory(g, { name: 'Шкура', quality: skinQuality, type: 'resource', resourceType: 'leather', count: 1 });
     }
     
     var meatCount = getMeatC(mob.level);
     for (var i = 0; i < meatCount; i++) {
-        addToInventory(g, {
-            name: '🥩 Мясо',
-            quality: 'Обычное',
-            type: 'food',
-            effect: { food: 30 },
-            count: 1
-        });
+        addToInventory(g, { name: '🥩 Мясо', quality: 'Обычное', type: 'food', effect: { food: 30 }, count: 1 });
     }
     
     setMessage('🧵 Добыто: Шкура ×' + skinCount + ' (' + skinQuality + ')\n🍖 Мясо ×' + meatCount);
@@ -543,73 +517,12 @@ function dropLoot(g, mob) {
 }
 
 // ============================================================
-// ПОИСК
-// ============================================================
-
-window.doSearch = function() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    var region = g.location.region || 'Королевские земли';
-    var place = g.location.place || 'Дорога';
-    var luck = Math.min(25, g.luck || 0);
-    var luckBonus = Math.floor(luck / 10);
-    
-    if (g.food < 20) {
-        setMessage('🍽️ Вы слишком голодны для поиска!');
-        return;
-    }
-    if (g.fatigue < 20) {
-        setMessage('😴 Вы слишком устали для поиска!');
-        return;
-    }
-    
-    var treasureChance = Math.min(4.5, 2 + luckBonus);
-    if (Math.random() * 100 < treasureChance) {
-        window.findTreasure();
-        return;
-    }
-    
-    var monsterChance = Math.min(47.5, 45 + luckBonus);
-    if (Math.random() * 100 < monsterChance) {
-        var mob = getRandomMobByRegionAndLevel(region, place);
-        if (mob) {
-            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
-            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
-            startBattle(mob);
-            return;
-        }
-    }
-    
-    setMessage('🔍 Вы никого не нашли.');
-};
-
-window.findTreasure = function() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    var luck = Math.min(25, g.luck || 0);
-    var bonusLuck = Math.min(5, Math.floor(luck / 5));
-    
-    var goldAmount = 2 + Math.floor(Math.random() * 8) + bonusLuck;
-    g.copper += goldAmount;
-    convertCurrency(g);
-    setMessage('🪙 Вы нашли клад! +' + goldAmount + ' золота!');
-    addLog('🪙 ' + currentUser + ' нашёл клад: ' + goldAmount + ' золота');
-    updateMenu();
-    saveData();
-};
-
-// ============================================================
-// РЕГИСТРАЦИЯ В WINDOW
+// 10. РЕГИСТРАЦИЯ
 // ============================================================
 
 window.startBattle = startBattle;
 window.battleAction = battleAction;
-window.doSearch = window.doSearch;
-window.findTreasure = window.findTreasure;
 window.getMobsForLocation = getMobsForLocation;
 window.getRandomMobByRegionAndLevel = getRandomMobByRegionAndLevel;
 
-console.log('⚔️ Боевая система загружена (с поиском)!');
+console.log('⚔️ Боевая система загружена!');
