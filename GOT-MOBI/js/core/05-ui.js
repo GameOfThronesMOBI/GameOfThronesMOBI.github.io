@@ -1,11 +1,11 @@
 // ============================================================
-// js/core/05-ui.js — UI + ПОИСК (БЕЗ БОЕВКИ)
+// js/core/05-ui.js — UI + ПОИСК
 // ============================================================
 
 console.log('🔧 UI + Поиск загружены');
 
 // ============================================================
-// 1. ПОИСК (УПРОЩЁННЫЙ, БЕЗ БОЕВКИ)
+// 1. ПОИСК
 // ============================================================
 
 window.doSearch = function() {
@@ -26,7 +26,6 @@ window.doSearch = function() {
         return;
     }
     
-    // Клад
     var treasureChance = Math.min(4.5, 2 + luckBonus);
     if (Math.random() * 100 < treasureChance) {
         var goldAmount = 2 + Math.floor(Math.random() * 8) + luckBonus;
@@ -38,38 +37,19 @@ window.doSearch = function() {
         return;
     }
     
-    // Монстры
     var monsterChance = Math.min(47.5, 45 + luckBonus);
     if (Math.random() * 100 < monsterChance) {
-        // Ищем мобов
-        var mobs = [];
-        if (typeof MOBS !== 'undefined') {
-            var regionKey = ({
-                'Королевские земли': 'crownlands',
-                'Север': 'north',
-                'Западные земли': 'westlands',
-                'Простор': 'reach',
-                'Речные земли': 'riverlands',
-                'Штормовые земли': 'stormlands',
-                'Дорн': 'dorne',
-                'Долина': 'vale',
-                'Железные острова': 'iron_islands'
-            })[region] || 'crownlands';
-            
-            var regionMobs = MOBS[regionKey] || MOBS.crownlands || [];
-            var locationLevel = (typeof LOCATION_LEVELS !== 'undefined') ? (LOCATION_LEVELS[place] || 1) : 1;
-            var minLevel = Math.max(1, locationLevel - 3);
-            var maxLevel = locationLevel + 3;
-            
-            mobs = regionMobs.filter(function(m) {
-                return m.level >= minLevel && m.level <= maxLevel;
-            });
+        var mob = null;
+        if (typeof getRandomMobByRegionAndLevel === 'function') {
+            mob = getRandomMobByRegionAndLevel(region, place);
         }
-        
-        // Если мобы нашлись — встречаем случайного
-        if (mobs.length > 0) {
-            var mob = mobs[Math.floor(Math.random() * mobs.length)];
-            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')!\n\n❤️ HP: ' + mob.hp + '\n⚔️ Урон: ' + mob.damage + '\n🛡️ Защита: ' + mob.defense + '\n\n⚠️ Боевая система в разработке. Моб не атакует.');
+        if (mob) {
+            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')!');
+            if (typeof startBattle === 'function') {
+                startBattle(mob);
+            } else {
+                setMessage('❌ Боевая система не загружена.');
+            }
             return;
         }
     }
@@ -78,7 +58,7 @@ window.doSearch = function() {
 };
 
 // ============================================================
-// 2. КНОПКИ (UI)
+// 2. КНОПКИ
 // ============================================================
 
 function createActionButton(actionId, label) {
