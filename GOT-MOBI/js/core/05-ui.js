@@ -1,5 +1,5 @@
 // ============================================================
-// js/core/05-ui.js — UI + ПОИСК
+// js/core/05-ui.js — UI + ПОИСК + БОЙ
 // ============================================================
 
 console.log('🔧 UI + Поиск загружены');
@@ -71,6 +71,12 @@ function createActionButton(actionId, label) {
             window.doSearch();
             return;
         }
+        if (actionId === 'battle_attack' || actionId === 'battle_flee' || actionId === 'battle_mount' || actionId === 'battle_dismount') {
+            if (typeof window.battleAction === 'function') {
+                window.battleAction(actionId);
+            }
+            return;
+        }
         if (typeof gameAction === 'function') {
             gameAction(actionId);
         } else {
@@ -94,6 +100,26 @@ window.updateActions = function() {
     if (!user) return;
     var g = user.game;
     var place = g.location.place || 'Таверна';
+    
+    // ===== БОЙ =====
+    if (window._battle && window._battle.inProgress) {
+        var battleActions = [
+            { id: 'battle_attack', label: '⚔️ Атака' },
+            { id: 'battle_flee', label: '🏃 Побег' }
+        ];
+        if (window._battle.horseAlive && window._battle.horseHp > 0) {
+            if (window._battle.mounted) {
+                battleActions.push({ id: 'battle_dismount', label: '🐴 Слезть с лошади' });
+            } else {
+                battleActions.push({ id: 'battle_mount', label: '🐴 Сесть на лошадь' });
+            }
+        }
+        for (var i = 0; i < battleActions.length; i++) {
+            var btn = createActionButton(battleActions[i].id, battleActions[i].label);
+            container.appendChild(btn);
+        }
+        return;
+    }
     
     var actions = [
         { id: 'inventory', label: '🎒 Инвентарь' },
