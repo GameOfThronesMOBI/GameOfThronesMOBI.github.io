@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ВЕРСИЯ (БЕЗ ДОРОГИ)
+// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ВЕРСИЯ (С ДОРОГОЙ)
 // ============================================================
 
 // ============================================================
@@ -142,6 +142,9 @@ function updateActions() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
+    // Если игрок на Дороге — Гавань не управляет кнопками
+    if (place === 'Дорога') return;
+    
     container.innerHTML = '';
     var actions = [];
     
@@ -206,9 +209,7 @@ function updateActions() {
     
     if (place === 'Ворота') {
         if (!g.outside) {
-            actions = [{ id: 'leave_city', label: '🚪 Выйти' }].concat(actions);
-        } else {
-            actions = [{ id: 'enter_city', label: '🚶 Войти' }].concat(actions);
+            actions = [{ id: 'leave_city', label: '🚪 Выйти из города' }].concat(actions);
         }
     }
     
