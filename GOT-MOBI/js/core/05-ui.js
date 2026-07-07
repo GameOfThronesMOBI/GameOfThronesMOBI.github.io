@@ -1,146 +1,15 @@
 // ============================================================
-// js/core/05-ui.js — UI С ПОИСКОМ (ГОТОВО)
+// js/core/05-ui.js — UI + ПОИСК + БОЕВКА (ВСЁ В ОДНОМ)
 // ============================================================
 
-function createActionButton(actionId, label) {
-    var btn = document.createElement('button');
-    btn.className = 'btn-game';
-    btn.textContent = label;
-    
-    btn.onclick = function() {
-        // ===== ПОИСК =====
-        if (actionId === 'search') {
-            window.doSearch();
-            return;
-        }
-        
-        // ===== ВСЁ ОСТАЛЬНОЕ =====
-        if (typeof gameAction === 'function') {
-            gameAction(actionId);
-        } else {
-            setMessage('❌ Действие недоступно.');
-        }
-    };
-    
-    return btn;
-}
-
-window.updateActions = function() {
-    var container = document.getElementById('actions-container');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    var g = users[currentUser]?.game;
-    if (!g) return;
-    
-    var place = g.location.place || 'Таверна';
-    var actions = [
-        { id: 'inventory', label: '🎒 Инвентарь' },
-        { id: 'character', label: '👤 Персонаж' },
-        { id: 'menu', label: '📋 Меню' },
-        { id: 'map', label: '🗺️ Карта' }
-    ];
-    
-    if (place === 'Дорога') {
-        actions.unshift(
-            { id: 'enter_city', label: '🚶 Войти' },
-            { id: 'search', label: '🔍 Поиск' }
-        );
-    }
-    
-    if (place === 'Таверна') {
-        actions.unshift(
-            { id: 'tavern_eat', label: '🍞 Попросить еды' },
-            { id: 'rest', label: '🛏️ Отдохнуть' }
-        );
-    }
-    
-    if (place === 'Ворота') {
-        if (!g.outside) {
-            actions.unshift({ id: 'leave_city', label: '🚪 Выйти' });
-        } else {
-            actions.unshift({ id: 'enter_city', label: '🚶 Войти' });
-        }
-    }
-    
-    if (place === 'Дом') {
-        actions.unshift(
-            { id: 'home_rest', label: '🛏️ Отдохнуть' },
-            { id: 'home_storage', label: '📦 Склад' },
-            { id: 'home_leave', label: '🚪 Выйти' }
-        );
-    }
-    
-    for (var i = 0; i < actions.length; i++) {
-        var btn = createActionButton(actions[i].id, actions[i].label);
-        container.appendChild(btn);
-    }
-};
+console.log('🔧 UI + Боевка загружены');
 
 // ============================================================
-// ПОИСК (ВСТРОЕН В UI)
+// 1. БОЕВКА
 // ============================================================
 
-window.doSearch = function() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    
-    var region = g.location.region || 'Королевские земли';
-    var place = g.location.place || 'Дорога';
-    var luck = Math.min(25, g.luck || 0);
-    var luckBonus = Math.floor(luck / 10);
-    
-    if (g.food < 20) {
-        setMessage('🍽️ Вы слишком голодны для поиска!');
-        return;
-    }
-    if (g.fatigue < 20) {
-        setMessage('😴 Вы слишком устали для поиска!');
-        return;
-    }
-    
-    var treasureChance = Math.min(4.5, 2 + luckBonus);
-    if (Math.random() * 100 < treasureChance) {
-        findTreasure();
-        return;
-    }
-    
-    var monsterChance = Math.min(47.5, 45 + luckBonus);
-    if (Math.random() * 100 < monsterChance) {
-        var mob = getRandomMobByRegionAndLevel(region, place);
-        if (mob) {
-            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
-            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
-            startBattle(mob);
-            return;
-        }
-    }
-    
-    setMessage('🔍 Вы никого не нашли.');
-};
-
-window.findTreasure = function() {
-    var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
-    var g = user.game;
-    var luck = Math.min(25, g.luck || 0);
-    var bonusLuck = Math.min(5, Math.floor(luck / 5));
-    
-    var goldAmount = 2 + Math.floor(Math.random() * 8) + bonusLuck;
-    g.copper += goldAmount;
-    convertCurrency(g);
-    setMessage('🪙 Вы нашли клад! +' + goldAmount + ' золота!');
-    addLog('🪙 ' + currentUser + ' нашёл клад: ' + goldAmount + ' золота');
-    updateMenu();
-    saveData();
-};
-
-console.log('✅ UI с поиском загружен!');
-// ============================================================
-// БОЕВКА (КОПИЯ ИЗ 02-battle.js)
-// ============================================================
 var battleState = null;
+
 function getMobsForLocation(region, place) {
     var regionMap = {
         'Королевские земли': 'crownlands',
@@ -454,4 +323,391 @@ function attemptFlee() {
         saveBattleState();
         setTimeout(function() {
             if (battleState && battleState.inProgress) mobTurn();
-        }, 
+        }, 3000);
+    }
+}
+
+function endBattle(won, reason) {
+    if (!battleState) return;
+    var user = users[currentUser];
+    if (!user) {
+        battleState = null;
+        localStorage.removeItem('got_battle');
+        return;
+    }
+    var g = user.game;
+    var b = battleState;
+    g.hp = b.playerHp;
+    if (g.hp > g.maxHp) g.hp = g.maxHp;
+    if (g.equipment && g.equipment.horse) {
+        var horse = g.equipment.horse;
+        if (b.horseAlive && b.horseHp > 0) {
+            horse.hp = horse.maxHp || 100;
+            if (b.horseHp < horse.maxHp) {
+                setMessage('🐴 Ваша лошадь восстановила силы.');
+            }
+        } else if (b.horseHp <= 0) {
+            g.equipment.horse = null;
+            setMessage('💀 Ваша лошадь погибла.');
+            addLog('💀 ' + currentUser + ' потерял лошадь в бою');
+        }
+    }
+    if (won) {
+        var xpMultiplier = getXpMultiplier(g);
+        var xpGain = Math.round((b.mob.xp + Math.floor(Math.random() * 5)) * xpMultiplier);
+        g.xp += xpGain;
+        while (g.xp >= g.nextLevelXp) {
+            g.xp -= g.nextLevelXp;
+            g.level++;
+            g.nextLevelXp = 100 + g.level * 10;
+            if (g.level <= 100) {
+                g.attributePoints++;
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня! +1 очко атрибутов.');
+            } else {
+                setMessage('🎉 Вы достигли ' + g.level + ' уровня!');
+            }
+        }
+        g.stamina.xp = (g.stamina.xp || 0) + Math.round(1 * getXpMultiplier(g));
+        var staminaNeeded = g.stamina.level * 8 + 3;
+        while (g.stamina.xp >= staminaNeeded) {
+            g.stamina.xp -= staminaNeeded;
+            g.stamina.level = Math.min(333, g.stamina.level + 1);
+            g.maxHp = getMaxHp(g);
+            g.hp = Math.min(g.hp + 5, g.maxHp);
+            setMessage('💪 Выносливость повышена до ' + g.stamina.level + ' уровня! (+5 HP)');
+        }
+        if (b.mob.type === 'animal') {
+            dropLoot(g, b.mob);
+        }
+        if (b.mob.type === 'human') {
+            var coins = (b.mob.level * 3) + Math.floor(Math.random() * (b.mob.level * 3));
+            g.copper += coins;
+            convertCurrency(g);
+            setMessage('💰 Вы нашли ' + coins + ' МП у ' + b.mob.name);
+        }
+        setMessage('⚔️ ПОБЕДА! +' + xpGain + ' XP');
+        addLog('⚔️ ' + currentUser + ' победил ' + b.mob.name + ' (ур. ' + b.mob.level + ')');
+    } else {
+        if (reason === 'Смерть') {
+            setMessage('💀 Вас убил ' + b.mob.name + '. Вы возродились в таверне.');
+            g.hp = g.maxHp;
+            g.location.place = 'Таверна';
+            g.location.location = 'Королевская Гавань';
+            g.food = 100;
+            g.thirst = 100;
+            g.fatigue = 100;
+            g.outside = false;
+            addLog('💀 ' + currentUser + ' убит ' + b.mob.name);
+        } else if (reason === 'Побег') {
+            setMessage('🏃 Вы сбежали с поля боя.');
+        }
+    }
+    battleState.inProgress = false;
+    battleState = null;
+    isBusy = false;
+    document.getElementById('busy-status').classList.add('hide');
+    localStorage.removeItem('got_battle');
+    updateMenu();
+    updateActions();
+    saveData();
+}
+
+function dropLoot(g, mob) {
+    function rollSkinQ(ml) {
+        var r = Math.random() * 100;
+        if (ml >= 50 && r < 5) return 'Мастерское';
+        if (ml >= 40 && r < 10) return 'Качественное';
+        if (ml >= 30 && r < 15) return 'Хорошее';
+        if (ml >= 20 && r < 25) return 'Хорошее';
+        if (ml >= 10 && r < 40) return 'Обычное';
+        if (r < 60) return 'Плохое';
+        return 'Рваное';
+    }
+    function getSkinC(ml) {
+        if (ml >= 50) return 5 + Math.floor(Math.random() * 4);
+        if (ml >= 40) return 4 + Math.floor(Math.random() * 3);
+        if (ml >= 30) return 3 + Math.floor(Math.random() * 3);
+        if (ml >= 20) return 2 + Math.floor(Math.random() * 3);
+        if (ml >= 10) return 2 + Math.floor(Math.random() * 2);
+        if (ml >= 5) return 1 + Math.floor(Math.random() * 2);
+        return 1;
+    }
+    function getMeatC(ml) {
+        if (ml >= 50) return 4 + Math.floor(Math.random() * 3);
+        if (ml >= 30) return 3 + Math.floor(Math.random() * 3);
+        if (ml >= 15) return 2 + Math.floor(Math.random() * 3);
+        if (ml >= 5) return 1 + Math.floor(Math.random() * 2);
+        return 1;
+    }
+    var skinQuality = rollSkinQ(mob.level);
+    var hunterBonus = Math.floor((g.professions['Охотник'] || 1) / 10);
+    var skinCount = getSkinC(mob.level) + hunterBonus;
+    for (var i = 0; i < skinCount; i++) {
+        addToInventory(g, {
+            name: 'Шкура',
+            quality: skinQuality,
+            type: 'resource',
+            resourceType: 'leather',
+            count: 1
+        });
+    }
+    var meatCount = getMeatC(mob.level);
+    for (var i = 0; i < meatCount; i++) {
+        addToInventory(g, {
+            name: '🥩 Мясо',
+            quality: 'Обычное',
+            type: 'food',
+            effect: { food: 30 },
+            count: 1
+        });
+    }
+    setMessage('🧵 Добыто: Шкура ×' + skinCount + ' (' + skinQuality + ')\n🍖 Мясо ×' + meatCount);
+    g.professionXp['Охотник'] = (g.professionXp['Охотник'] || 0) + Math.round(3 * getXpMultiplier(g));
+    while (g.professionXp['Охотник'] >= g.professions['Охотник'] * 10) {
+        g.professionXp['Охотник'] -= g.professions['Охотник'] * 10;
+        g.professions['Охотник']++;
+        setMessage('👷 Охотник повышен до ' + g.professions['Охотник'] + ' уровня!');
+    }
+}
+
+// ============================================================
+// 2. ПОИСК
+// ============================================================
+
+window.doSearch = function() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var region = g.location.region || 'Королевские земли';
+    var place = g.location.place || 'Дорога';
+    var luck = Math.min(25, g.luck || 0);
+    var luckBonus = Math.floor(luck / 10);
+    
+    if (g.food < 20) {
+        setMessage('🍽️ Вы слишком голодны для поиска!');
+        return;
+    }
+    if (g.fatigue < 20) {
+        setMessage('😴 Вы слишком устали для поиска!');
+        return;
+    }
+    
+    var treasureChance = Math.min(4.5, 2 + luckBonus);
+    if (Math.random() * 100 < treasureChance) {
+        var goldAmount = 2 + Math.floor(Math.random() * 8) + luckBonus;
+        g.copper += goldAmount;
+        convertCurrency(g);
+        setMessage('🪙 Вы нашли клад! +' + goldAmount + ' золота!');
+        addLog('🪙 ' + currentUser + ' нашёл клад: ' + goldAmount + ' золота');
+        updateMenu();
+        saveData();
+        return;
+    }
+    
+    var monsterChance = Math.min(47.5, 45 + luckBonus);
+    if (Math.random() * 100 < monsterChance) {
+        var mob = getRandomMobByRegionAndLevel(region, place);
+        if (mob) {
+            setMessage('⚔️ Вы встретили ' + mob.name + ' (уровень ' + mob.level + ')');
+            addLog('⚔️ ' + currentUser + ' встретил ' + mob.name);
+            startBattle(mob);
+            return;
+        }
+    }
+    
+    setMessage('🔍 Вы никого не нашли.');
+};
+
+// ============================================================
+// 3. КНОПКИ (UI)
+// ============================================================
+
+function createActionButton(actionId, label) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-game';
+    btn.textContent = label;
+    
+    btn.onclick = function() {
+        // ===== ПОИСК (ПРЯМОЙ ВЫЗОВ) =====
+        if (actionId === 'search') {
+            window.doSearch();
+            return;
+        }
+        
+        // ===== ОСТАЛЬНЫЕ ДЕЙСТВИЯ =====
+        if (typeof gameAction === 'function') {
+            gameAction(actionId);
+        } else {
+            setMessage('❌ Действие недоступно.');
+        }
+    };
+    
+    return btn;
+}
+
+// ============================================================
+// 4. ОБНОВЛЕНИЕ КНОПОК
+// ============================================================
+
+window.updateActions = function() {
+    var container = document.getElementById('actions-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var place = g.location.place || 'Таверна';
+    
+    var actions = [
+        { id: 'inventory', label: '🎒 Инвентарь' },
+        { id: 'character', label: '👤 Персонаж' },
+        { id: 'menu', label: '📋 Меню' },
+        { id: 'map', label: '🗺️ Карта' }
+    ];
+    
+    // ===== ТАВЕРНА =====
+    if (place === 'Таверна') {
+        actions = [
+            { id: 'tavern_eat', label: '🍞 Попросить еды' },
+            { id: 'tavern_buy', label: '🛒 Торговля' },
+            { id: 'wash', label: '🧹 Помыть посуду' },
+            { id: 'sweep', label: '🧹 Подмести пол' },
+            { id: 'rest', label: '🛏️ Отдохнуть' },
+            { id: 'talk', label: '🗣️ Поговорить' }
+        ].concat(actions);
+    }
+    
+    // ===== РЫНОК =====
+    if (place === 'Рынок') {
+        actions = [{ id: 'market_stalls', label: '🏪 Рынок' }].concat(actions);
+    }
+    
+    // ===== КУЗНИЦА =====
+    if (place === 'Кузница') {
+        actions = [
+            { id: 'shop_resources', label: '⚒️ Кузница' },
+            { id: 'craft', label: '🔨 Крафт' }
+        ].concat(actions);
+    }
+    
+    // ===== ОРУЖЕЙНАЯ =====
+    if (place === 'Оружейная лавка') {
+        actions = [{ id: 'shop_weapons', label: '🗡️ Оружейная' }].concat(actions);
+    }
+    
+    // ===== КОЖЕВНИК =====
+    if (place === 'Кожевник') {
+        actions = [{ id: 'shop_leather', label: '🪡 Кожевник' }].concat(actions);
+    }
+    
+    // ===== БРОННИК =====
+    if (place === 'Бронник') {
+        actions = [{ id: 'shop_plate', label: '🛡️ Бронник' }].concat(actions);
+    }
+    
+    // ===== ПЛОТНИК =====
+    if (place === 'Плотник') {
+        actions = [{ id: 'shop_bows', label: '🪵 Плотник' }].concat(actions);
+    }
+    
+    // ===== КОНЮШНЯ =====
+    if (place === 'Конюшня') {
+        actions = [{ id: 'stable_open', label: '🐴 Конюшня' }].concat(actions);
+    }
+    
+    // ===== ГИЛЬДИЯ ТОРГОВЦЕВ =====
+    if (place === 'Гильдия торговцев') {
+        actions = [
+            { id: 'auction_list', label: '🏛️ Аукцион' },
+            { id: 'auction_my', label: '📦 Мои лоты' },
+            { id: 'auction_sell', label: '💰 Выставить' }
+        ].concat(actions);
+    }
+    
+    // ===== МАГИСТРАТ =====
+    if (place === 'Магистрат') {
+        actions = [{ id: 'magistrate_open', label: '📜 Магистрат' }].concat(actions);
+    }
+    
+    // ===== ВОРОТА =====
+    if (place === 'Ворота') {
+        if (!g.outside) {
+            actions = [{ id: 'leave_city', label: '🚪 Выйти' }].concat(actions);
+        } else {
+            actions = [{ id: 'enter_city', label: '🚶 Войти' }].concat(actions);
+        }
+    }
+    
+    // ===== ДОРОГА (ВХОД + ПОИСК) =====
+    if (place === 'Дорога') {
+        actions = [
+            { id: 'enter_city', label: '🚶 Войти' },
+            { id: 'search', label: '🔍 Поиск' }
+        ].concat(actions);
+    }
+    
+    // ===== КОР. КВАРТАЛ =====
+    if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
+        var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
+        if (hasHouse) {
+            actions = [{ id: 'housing_enter', label: '🏠 Зайти домой' }].concat(actions);
+        } else {
+            actions = [{ id: 'housing_view', label: '🏠 Купить жильё' }].concat(actions);
+        }
+    }
+    
+    // ===== ДОМ =====
+    if (place === 'Дом') {
+        actions = [
+            { id: 'home_rest', label: '🛏️ Отдохнуть' },
+            { id: 'home_storage', label: '📦 Склад' },
+            { id: 'home_leave', label: '🚪 Выйти из дома' }
+        ].concat(actions);
+    }
+    
+    // ===== СЕПТА =====
+    if (place === 'Великая септа') {
+        actions = [{ id: 'temple_open', label: '⛪ Септа' }].concat(actions);
+    }
+    
+    // ===== ПОРТ =====
+    if (place === 'Порт') {
+        actions = [{ id: 'port_travel', label: '⛵ Порт' }].concat(actions);
+    }
+    
+    // ===== ТЮРЬМА =====
+    if (place === 'Тюрьма') {
+        actions = [
+            { id: 'jail_pay', label: '💰 Заплатить штраф' },
+            { id: 'jail_wait', label: '⏳ Ждать освобождения' },
+            { id: 'jail_escape', label: '🏃 Попытаться сбежать' }
+        ].concat(actions);
+    }
+    
+    // ===== БИБЛИОТЕКА =====
+    if (place === 'Библиотека мейстеров') {
+        actions = [{ id: 'library_open', label: '📚 Библиотека' }].concat(actions);
+    }
+    
+    // ===== ГИЛЬДИЯ НАЁМНИКОВ =====
+    if (place === 'Гильдия наёмников') {
+        actions = [{ id: 'guildhall_open', label: '🗡️ Гильдия' }].concat(actions);
+    }
+    
+    // ===== БОРДЕЛЬ =====
+    if (place === 'Бордель') {
+        actions = [
+            { id: 'brothel_rest', label: '🛏️ Отдых' },
+            { id: 'brothel_dice', label: '🎲 Кости' }
+        ].concat(actions);
+    }
+    
+    // ===== СОЗДАЁМ КНОПКИ =====
+    for (var i = 0; i < actions.length; i++) {
+        var btn = createActionButton(actions[i].id, actions[i].label);
+        container.appendChild(btn);
+    }
+};
+
+console.log('✅ UI + Боевка загружены!');
