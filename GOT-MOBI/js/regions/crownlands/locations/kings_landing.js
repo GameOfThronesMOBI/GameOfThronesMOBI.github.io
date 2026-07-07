@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ТОЛЬКО УНИКАЛЬНАЯ ЛОГИКА (БЕЗ ПОИСКА)
+// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНАЯ ВЕРСИЯ (БЕЗ ДОРОГИ)
 // ============================================================
 
 // ============================================================
@@ -22,7 +22,7 @@ function openMap() {
         var b = BUILDINGS[i];
         var isCurrent = b.id === g.location.place;
         
-        if (g.outside && b.id !== 'Дорога' && b.id !== 'Ворота') continue;
+        if (g.outside && b.id !== 'Ворота') continue;
         if (!g.outside && b.id === 'Дорога') continue;
         
         html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
@@ -65,11 +65,7 @@ function goToBuilding(building) {
     g.location.place = building;
     g.location.location = 'Королевская Гавань';
     
-    if (building === 'Дорога') {
-        g.outside = true;
-        g.location.location = 'Дорога';
-        setMessage('🛤️ Вы вышли на тракт.');
-    } else if (building === 'Ворота') {
+    if (building === 'Ворота') {
         g.outside = false;
         setMessage('🚪 Вы у Ворот.');
     } else {
@@ -78,10 +74,10 @@ function goToBuilding(building) {
     }
     
     closeMap();
-    if (typeof updateMenu === 'function') updateMenu();
-    if (typeof updateStory === 'function') updateStory();
-    if (typeof updateActions === 'function') updateActions();
-    if (typeof saveData === 'function') saveData();
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
 }
 
 // ============================================================
@@ -120,7 +116,6 @@ function updateStory() {
         'Великая септа': '⛪ Великая Септа.',
         'Порт': '⛵ Порт.',
         'Тюрьма': '⛓️ Тюрьма.',
-        'Дорога': '🛤️ Королевский тракт.',
         'Библиотека мейстеров': '📚 Библиотека.',
         'Гильдия наёмников': '🗡️ Гильдия наёмников.',
         'Бордель': '💃 Бордель.'
@@ -136,7 +131,7 @@ function updateStory() {
 }
 
 // ============================================================
-// 4. ACTIONS (ТОЛЬКО УНИКАЛЬНЫЕ КНОПКИ, БЕЗ ПОИСКА)
+// 4. ACTIONS (КНОПКИ)
 // ============================================================
 
 function updateActions() {
@@ -209,11 +204,13 @@ function updateActions() {
         actions = [{ id: 'magistrate_open', label: '📜 Магистрат' }].concat(actions);
     }
     
-    // ===== ВОРОТА (теперь через UI) =====
-    // Убрано: if (place === 'Ворота') — теперь в 05-ui.js
-    
-    // ===== ДОРОГА (поиск убран) =====
-    // Убрано: if (place === 'Дорога') — теперь в 05-ui.js
+    if (place === 'Ворота') {
+        if (!g.outside) {
+            actions = [{ id: 'leave_city', label: '🚪 Выйти' }].concat(actions);
+        } else {
+            actions = [{ id: 'enter_city', label: '🚶 Войти' }].concat(actions);
+        }
+    }
     
     if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
         var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
@@ -1000,7 +997,6 @@ function openTemple() {
     }
     html += '</div>';
     
-    // ===== ЗЕЛЬЯ (В СЕПТЕ!) =====
     html += '<div class="modal-section"><h4>🧪 ЗЕЛЬЯ</h4>';
     var potions = [
         { id: 'health_small', name: '🧪 Малое зелье здоровья', price: 30, hp: 20 },
@@ -2717,7 +2713,7 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 19. РЕГИСТРАЦИЯ (ТОЛЬКО УНИКАЛЬНЫЕ ФУНКЦИИ!)
+// 19. РЕГИСТРАЦИЯ
 // ============================================================
 
 window.openMap = openMap;
@@ -2726,7 +2722,6 @@ window.goToBuilding = goToBuilding;
 window.updateStory = updateStory;
 window.updateActions = updateActions;
 
-// ЗДАНИЯ (ТОЛЬКО УНИКАЛЬНЫЕ)
 window.openStable = openStable;
 window.closeStable = closeStable;
 window.openTemple = openTemple;
@@ -2758,13 +2753,11 @@ window.waitJailTime = waitJailTime;
 window.attemptEscape = attemptEscape;
 window.freeFromJail = freeFromJail;
 
-// ЖИЛЬЁ
 window.buyHouse = buyHouse;
 window.sellHouse = sellHouse;
 window.payRent = payRent;
 window.checkRent = checkRent;
 
-// ЛАВКИ
 window.addToStall = addToStall;
 window.buyFromStall = buyFromStall;
 window.removeFromStall = removeFromStall;
@@ -2774,23 +2767,19 @@ window.confiscateStall = confiscateStall;
 window.buyStall = buyStall;
 window.leaveStall = leaveStall;
 
-// КНИГИ
 window.readBook = readBook;
 window.buyBook = buyBook;
 window.sellBook = sellBook;
 
-// КВЕСТЫ
 window.takeQuest = takeQuest;
 window.abandonQuest = abandonQuest;
 window.checkQuestProgress = checkQuestProgress;
 
-// КОСТИ
 window.createDiceGame = createDiceGame;
 window.joinDiceGame = joinDiceGame;
 window.playDicePvP = playDicePvP;
 window.finishDiceGame = finishDiceGame;
 
-// МАГИСТРАТ
 window.showMagistrateHousing = showMagistrateHousing;
 window.showMagistrateStalls = showMagistrateStalls;
 
