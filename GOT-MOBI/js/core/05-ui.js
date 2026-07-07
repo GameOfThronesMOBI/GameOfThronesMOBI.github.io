@@ -1,8 +1,8 @@
 // ============================================================
-// js/core/05-ui.js — UI + БОЕВКА + ПОИСК (НЕ ТРОГАЕТ ГАВАНЬ)
+// js/core/05-ui.js — БОЕВКА + ПОИСК (НЕ ТРОГАЕТ UI)
 // ============================================================
 
-console.log('🔧 UI + Боевка + Поиск загружаются...');
+console.log('🔧 Боевка + Поиск загружаются...');
 
 // ============================================================
 // 1. ПОЛНАЯ БОЕВКА
@@ -65,7 +65,7 @@ window.renderBattle = function() {
     if (b.log.length > 0) { msg += '\n\n📋 ' + b.log.slice(-3).join('\n'); }
     setMessage(msg);
     updateMenu();
-    window.updateActions();
+    showBattleButtons();
 };
 
 window.battleAction = function(action) {
@@ -129,7 +129,7 @@ window.endBattle = function(won, reason) {
     }
     window._battle = null; isBusy = false;
     document.getElementById('busy-status').classList.add('hide');
-    updateMenu(); window.updateActions(); saveData();
+    updateMenu(); updateActions(); saveData();
 };
 
 // ============================================================
@@ -159,66 +159,27 @@ window.doSearch = function() {
 };
 
 // ============================================================
-// 3. КНОПКИ
+// 3. КНОПКИ БОЯ (вызывается только во время боя)
 // ============================================================
 
-function createActionButton(actionId, label) {
-    var btn = document.createElement('button');
-    btn.className = 'btn-game';
-    btn.textContent = label;
-    btn.onclick = function() {
-        if (actionId === 'search') { window.doSearch(); return; }
-        if (actionId === 'battle_attack' || actionId === 'battle_flee' || actionId === 'battle_mount' || actionId === 'battle_dismount') {
-            if (typeof window.battleAction === 'function') window.battleAction(actionId);
-            return;
-        }
-        if (typeof gameAction === 'function') gameAction(actionId);
-        else setMessage('❌ Действие недоступно.');
-    };
-    return btn;
-}
-
-// ============================================================
-// 4. ОБНОВЛЕНИЕ КНОПОК — НЕ ТРОГАЕТ ГАВАНЬ
-// ============================================================
-
-window.updateActions = function() {
+function showBattleButtons() {
     var container = document.getElementById('actions-container');
     if (!container) return;
-    
-    // БОЙ
-    if (window._battle && window._battle.inProgress) {
-        container.innerHTML = '';
-        var ba = [{ id: 'battle_attack', label: '⚔️ Атака' }, { id: 'battle_flee', label: '🏃 Побег' }];
-        var b = window._battle;
-        if (b.horseAlive && b.horseHp > 0) {
-            ba.push(b.mounted ? { id: 'battle_dismount', label: '🐴 Слезть' } : { id: 'battle_mount', label: '🐴 Сесть' });
-        }
-        for (var i = 0; i < ba.length; i++) { container.appendChild(createActionButton(ba[i].id, ba[i].label)); }
-        return;
+    container.innerHTML = '';
+    var ba = [{ id: 'battle_attack', label: '⚔️ Атака' }, { id: 'battle_flee', label: '🏃 Побег' }];
+    var b = window._battle;
+    if (b && b.horseAlive && b.horseHp > 0) {
+        ba.push(b.mounted ? { id: 'battle_dismount', label: '🐴 Слезть' } : { id: 'battle_mount', label: '🐴 Сесть' });
     }
-    
-    // ГАВАНЬ — НЕ ТРОГАЕМ
-    var g = users[currentUser].game;
-    var place = g.location.place || 'Таверна';
-    var isCity = (place !== 'Дорога');
-    
-    // Если мы в Гавани — ничего не делаем, Гавань сама управляет кнопками
-    if (isCity) return;
-    
-    // ДОРОГА
-    if (place === 'Дорога') {
-        container.innerHTML = '';
-        var actions = [
-            { id: 'enter_city', label: '🚶 Войти' },
-            { id: 'search', label: '🔍 Поиск' },
-            { id: 'inventory', label: '🎒 Инвентарь' },
-            { id: 'character', label: '👤 Персонаж' },
-            { id: 'menu', label: '📋 Меню' },
-            { id: 'map', label: '🗺️ Карта' }
-        ];
-        for (var i = 0; i < actions.length; i++) { container.appendChild(createActionButton(actions[i].id, actions[i].label)); }
+    for (var i = 0; i < ba.length; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = ba[i].label;
+        btn.onclick = (function(id) { return function() { window.battleAction(id); }; })(ba[i].id);
+        container.appendChild(btn);
     }
-};
+}
 
-console.log('✅ UI + Боевка загружены! (Гавань не тронута)');
+// НЕ ПЕРЕОПРЕДЕЛЯЕМ updateActions! Гавань работает сама.
+
+console.log('✅ Боевка + Поиск загружены! (UI не тронут)');
