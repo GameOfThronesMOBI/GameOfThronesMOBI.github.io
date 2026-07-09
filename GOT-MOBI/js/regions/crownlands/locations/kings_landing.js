@@ -193,6 +193,44 @@ window.updateActions = function() {
     }
     
     container.innerHTML = '';
+    
+    // ===== КНОПКА "МЕСТА" ДЛЯ ГОРОДА =====
+    if (place === 'kings_landing') {
+        var placesBtn = document.createElement('button');
+        placesBtn.className = 'btn-game';
+        placesBtn.textContent = '🏘️ Места (' + BUILDINGS.length + ')';
+        placesBtn.onclick = function() {
+            var modal = document.getElementById('modal-places');
+            if (!modal) {
+                var overlay = document.createElement('div');
+                overlay.id = 'modal-places';
+                overlay.className = 'modal-overlay hide';
+                overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
+                overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+                document.body.appendChild(overlay);
+                modal = overlay;
+            }
+            var content = document.getElementById('modal-places-content');
+            var html = '<div class="modal-section"><h4>📍 Королевская Гавань</h4>';
+            html += '<p style="color:#6a5a48;font-size:12px;">Выберите место:</p>';
+            BUILDINGS.forEach(function(b) {
+                var isCurrent = (b.id === g.location.place);
+                html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+                html += '<span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
+                if (!isCurrent) {
+                    html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\'); closePlaces();">🚶 Идти</button></span>';
+                } else {
+                    html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+                }
+                html += '</div>';
+            });
+            html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
+            content.innerHTML = html;
+            modal.classList.remove('hide');
+        };
+        container.appendChild(placesBtn);
+    }
+    
     var actions = [];
     
     actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
