@@ -69,6 +69,7 @@
 <script src="js/core/02-state.js"></script>
 <script src="js/core/03-utils.js"></script>
 <script src="js/core/04-storage.js"></script>
+
 <!-- ============================================================ -->
 <!-- 2. DATA — ДАННЫЕ -->
 <!-- ============================================================ -->
@@ -82,24 +83,29 @@
 <script src="js/game/01-character.js"></script>
 <script src="js/game/03-inventory.js"></script>
 <script src="js/game/04-menu.js"></script>
-<script src="js/game/07-locations.js"></script>
 
 <!-- ============================================================ -->
 <!-- 4. REGIONS — КОРОЛЕВСКАЯ ГАВАНЬ -->
 <!-- ============================================================ -->
-<script src="js/regions/crownlands/locations/road.js"></script>
+<script src="js/regions/crownlands/areas.js"></script>
+<script src="js/regions/crownlands/transitions.js"></script>
 <script src="js/regions/crownlands/locations/kings_landing.js"></script>
+
 <!-- ============================================================ -->
-<!-- 6. MAIN — ТОЧКА ВХОДА (ВСЕГДА ПОСЛЕДНИЙ!) -->
+<!-- 5. MAIN — ТОЧКА ВХОДА -->
 <!-- ============================================================ -->
 <script src="js/main.js"></script>
-<script src="js/core/05-ui.js"></script>   
+
+<!-- ============================================================ -->
+<!-- 6. UI — БОЕВКА + ПОИСК (ПОСЛЕДНИЙ, ТОЛЬКО ТАК РАБОТАЕТ) -->
+<!-- ============================================================ -->
+<script src="js/core/05-ui.js"></script>
 
 <!-- ============================================================ -->
 <!-- 7. ERUDA — ОТЛАДКА (САМЫЙ ПОСЛЕДНИЙ!) -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>  
+<script>eruda.init();</script>
 
 </body>
 </html>
