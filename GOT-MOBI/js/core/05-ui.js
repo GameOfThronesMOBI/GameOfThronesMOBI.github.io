@@ -1,11 +1,70 @@
 // ============================================================
-// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + МЕСТА + КАРТА)
+// js/core/05-ui.js — ГЛОБАЛЬНАЯ СИСТЕМА МЕСТ + БОЕВКА
 // ============================================================
 
 console.log('🔧 UI загружается...');
 
 // ============================================================
-// 1. БОЕВКА
+// 1. ГЛОБАЛЬНАЯ СИСТЕМА МЕСТ
+// ============================================================
+
+function openPlaces() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var loc = KL_AREAS[place];
+    if (!loc || !loc.places || loc.places.length === 0) {
+        setMessage('📍 Здесь нет мест.');
+        return;
+    }
+    
+    var modal = document.getElementById('modal-places');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-places';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-places-content');
+    var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
+    html += '<div class="modal-section">';
+    loc.places.forEach(function(p) {
+        var isCurrent = (p === g.location.place);
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
+            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
+        html += '</div>';
+    });
+    html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function closePlaces() {
+    var modal = document.getElementById('modal-places');
+    if (modal) modal.classList.add('hide');
+}
+
+function goToPlace(placeName) {
+    var g = users[currentUser].game;
+    if (!g) return;
+    g.location.place = placeName;
+    setMessage('🚶 Вы перешли в ' + placeName);
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+// ============================================================
+// 2. БОЕВКА
 // ============================================================
 
 window._battle = null;
@@ -133,7 +192,7 @@ window.endBattle = function(won, reason) {
 };
 
 // ============================================================
-// 2. ПОИСК
+// 3. ПОИСК
 // ============================================================
 
 window.doSearch = function() {
@@ -171,7 +230,7 @@ window.doSearch = function() {
 };
 
 // ============================================================
-// 3. КНОПКИ БОЯ
+// 4. КНОПКИ БОЯ
 // ============================================================
 
 function showBattleButtons() {
@@ -193,7 +252,7 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 4. УНИВЕРСАЛЬНЫЙ updateActions
+// 5. УНИВЕРСАЛЬНЫЙ updateActions
 // ============================================================
 
 window.updateActions = function() {
@@ -203,7 +262,7 @@ window.updateActions = function() {
     if (!container) return;
     container.innerHTML = '';
     
-    // ===== 1. СТАНДАРТНЫЕ КНОПКИ =====
+    // ===== СТАНДАРТНЫЕ КНОПКИ =====
     var actions = [
         { id: 'search', label: '🔍 Поиск' },
         { id: 'inventory', label: '🎒 Инвентарь' },
@@ -211,95 +270,55 @@ window.updateActions = function() {
         { id: 'menu', label: '📋 Меню' }
     ];
     
-    // ===== 2. КНОПКА "МЕСТА" (УНИВЕРСАЛЬНАЯ) =====
-    var loc = window.KL_AREAS ? KL_AREAS[place] : null;
+    // ===== КНОПКА "МЕСТА" (ГЛОБАЛЬНО) =====
+    var loc = KL_AREAS[place];
     if (loc && loc.places && loc.places.length > 0) {
-        var placesBtn = document.createElement('button');
-        placesBtn.className = 'btn-game';
-        placesBtn.textContent = '🏘️ Места (' + loc.places.length + ')';
-        placesBtn.onclick = (function(locData) {
-            return function() {
-                var modal = document.getElementById('modal-places');
-                if (!modal) {
-                    var overlay = document.createElement('div');
-                    overlay.id = 'modal-places';
-                    overlay.className = 'modal-overlay hide';
-                    overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
-                    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
-                    document.body.appendChild(overlay);
-                    modal = overlay;
-                }
-                var content = document.getElementById('modal-places-content');
-                var html = '<div class="modal-section"><h4>📍 ' + locData.name + '</h4>';
-                html += '<p style="color:#6a5a48;font-size:12px;">Выберите место:</p>';
-                locData.places.forEach(function(p) {
-                    var isCurrent = (p === g.location.place);
-                    html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-                    html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
-                    if (!isCurrent) {
-                        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
-                    } else {
-                        html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-                    }
-                    html += '</div>';
-                });
-                html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
-                content.innerHTML = html;
-                modal.classList.remove('hide');
-            };
-        })(loc);
-        container.appendChild(placesBtn);
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = '🏘️ Места (' + loc.places.length + ')';
+        btn.onclick = openPlaces;
+        container.appendChild(btn);
     }
     
-    // ===== 3. КНОПКИ ПЕРЕМЕЩЕНИЯ =====
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[place] : null;
-    if (transitions) {
-        var dirLabels = {
-            'n': '⬆️ Север',
-            'ne': '↗️ СВ',
-            'e': '➡️ Восток',
-            'se': '↘️ ЮВ',
-            's': '⬇️ Юг',
-            'sw': '↙️ ЮЗ',
-            'w': '⬅️ Запад',
-            'nw': '↖️ СЗ'
-        };
-        for (var dir in transitions) {
-            if (transitions[dir]) {
-                var btn = document.createElement('button');
-                btn.className = 'btn-game';
-                btn.textContent = dirLabels[dir] || dir;
-                btn.onclick = (function(d) {
-                    return function() {
-                        if (typeof window.moveTo === 'function') {
-                            window.moveTo(d);
-                        } else {
-                            setMessage('❌ Система перемещений не загружена.');
-                        }
-                    };
-                })(dir);
-                container.appendChild(btn);
-            }
+    // ===== КНОПКИ ПЕРЕМЕЩЕНИЯ =====
+    var transitions = KL_TRANSITIONS[place] || {};
+    var dirLabels = {
+        'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток',
+        'se': '↘️ ЮВ', 's': '⬇️ Юг', 'sw': '↙️ ЮЗ',
+        'w': '⬅️ Запад', 'nw': '↖️ СЗ'
+    };
+    for (var dir in transitions) {
+        if (transitions[dir]) {
+            var btn = document.createElement('button');
+            btn.className = 'btn-game';
+            btn.textContent = dirLabels[dir] || dir;
+            btn.onclick = (function(d) {
+                return function() {
+                    if (typeof window.moveTo === 'function') {
+                        window.moveTo(d);
+                    } else {
+                        setMessage('❌ Система перемещений не загружена.');
+                    }
+                };
+            })(dir);
+            container.appendChild(btn);
         }
     }
     
-    // ===== 4. ВХОД В ЗАМОК (на перекрёстке) =====
+    // ===== ВХОД В ЗАМОК =====
     if (place === 'kl_crossroads') {
-        var enterCastle = document.createElement('button');
-        enterCastle.className = 'btn-game';
-        enterCastle.textContent = '🏰 Войти в замок';
-        enterCastle.onclick = function() {
+        var enterBtn = document.createElement('button');
+        enterBtn.className = 'btn-game';
+        enterBtn.textContent = '🏰 Войти в замок';
+        enterBtn.onclick = function() {
             g.location.place = 'kings_landing';
             setMessage('🏰 Вы вошли в Красный замок.');
-            updateMenu();
-            updateStory();
-            updateActions();
-            saveData();
+            updateMenu(); updateStory(); updateActions(); saveData();
         };
-        container.appendChild(enterCastle);
+        container.appendChild(enterBtn);
     }
     
-    // ===== 5. ВЫХОД ИЗ ЗАМКА =====
+    // ===== ВЫХОД ИЗ ЗАМКА =====
     if (place === 'kings_landing') {
         var exitBtn = document.createElement('button');
         exitBtn.className = 'btn-game';
@@ -307,15 +326,12 @@ window.updateActions = function() {
         exitBtn.onclick = function() {
             g.location.place = 'kl_crossroads';
             setMessage('🚪 Вы вышли из замка на перекрёсток.');
-            updateMenu();
-            updateStory();
-            updateActions();
-            saveData();
+            updateMenu(); updateStory(); updateActions(); saveData();
         };
         container.appendChild(exitBtn);
     }
     
-    // ===== 6. РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
+    // ===== РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
     for (var i = 0; i < actions.length; i++) {
         var a = actions[i];
         var btn = document.createElement('button');
@@ -341,26 +357,6 @@ window.updateActions = function() {
         container.appendChild(btn);
     }
 };
-
-// ============================================================
-// 5. ФУНКЦИИ ДЛЯ МЕСТ
-// ============================================================
-
-function goToPlace(placeName) {
-    var g = users[currentUser].game;
-    if (!g) return;
-    g.location.place = placeName;
-    setMessage('🚶 Вы перешли в ' + placeName);
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
-}
-
-function closePlaces() {
-    var modal = document.getElementById('modal-places');
-    if (modal) modal.classList.add('hide');
-}
 
 // ============================================================
 // 6. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
