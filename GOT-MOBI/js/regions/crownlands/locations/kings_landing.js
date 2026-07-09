@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНЫЙ ФАЙЛ (НЕЗАВИСИМЫЙ)
+// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНЫЙ ФАЙЛ С ИСПРАВЛЕНИЯМИ
 // ============================================================
 
 console.log('🏰 Королевская Гавань загружается...');
@@ -335,21 +335,9 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 4. РЕГИСТРАЦИЯ (ВСЕ ФУНКЦИИ)
+// 4. ДОМА
 // ============================================================
 
-window.BUILDINGS = BUILDINGS;
-window.openMap = openMap;
-window.closeMap = closeMap;
-window.goToBuilding = goToBuilding;
-window.updateStory = window.updateStory;
-window.updateActions = window.updateActions;
-
-// ============================================================
-// 5. ОСТАЛЬНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ)
-// ============================================================
-
-// ДОМА
 function buyHouse(type) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -634,7 +622,10 @@ function viewDistrict(district) {
     }
 }
 
-// СКЛАД
+// ============================================================
+// 5. СКЛАД
+// ============================================================
+
 function openStorage() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -849,7 +840,10 @@ function takeFromStorageHold(key) {
     openStorageHold();
 }
 
-// КОНЮШНЯ
+// ============================================================
+// 6. КОНЮШНЯ
+// ============================================================
+
 function openStable() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -986,7 +980,10 @@ function sellHorse() {
     updateMenu();
 }
 
-// СЕПТА
+// ============================================================
+// 7. СЕПТА
+// ============================================================
+
 function openTemple() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1186,7 +1183,10 @@ function buyPotion(potionId, price, hp, fatigue) {
     openTemple();
 }
 
-// БИБЛИОТЕКА
+// ============================================================
+// 8. БИБЛИОТЕКА
+// ============================================================
+
 function openLibrary() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1393,7 +1393,10 @@ function readBook(index) {
     }, readTimeMs);
 }
 
-// ГИЛЬДИЯ НАЁМНИКОВ
+// ============================================================
+// 9. ГИЛЬДИЯ НАЁМНИКОВ
+// ============================================================
+
 function openGuildHall() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1611,7 +1614,10 @@ function checkQuestProgress(type, target, count) {
     }
 }
 
-// БОРДЕЛЬ
+// ============================================================
+// 10. БОРДЕЛЬ
+// ============================================================
+
 function openBrothel() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1746,7 +1752,10 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
     openBrothel();
 }
 
-// РЫНОК (ЛАВКИ)
+// ============================================================
+// 11. РЫНОК (ЛАВКИ)
+// ============================================================
+
 function openMarket() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1995,7 +2004,10 @@ function removeFromStall(stallId, idx) {
     enterStall(stallId);
 }
 
-// ПОРТ
+// ============================================================
+// 12. ПОРТ
+// ============================================================
+
 function openPort() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2020,7 +2032,10 @@ function openPort() {
     alert(msg);
 }
 
-// МАГИСТРАТ
+// ============================================================
+// 13. МАГИСТРАТ
+// ============================================================
+
 function openMagistrate() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2342,7 +2357,10 @@ function confiscateStall() {
     showMagistrateStalls();
 }
 
-// КОНФИСКАТ
+// ============================================================
+// 14. КОНФИСКАТ
+// ============================================================
+
 function openConfiscated() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2424,7 +2442,10 @@ function returnFromConfiscate(entryIdx, itemIdx) {
     openConfiscated();
 }
 
-// КОСТИ
+// ============================================================
+// 15. КОСТИ
+// ============================================================
+
 function getActiveDiceGames() {
     var now = Date.now();
     var timeout = 5 * 60 * 1000;
@@ -2583,7 +2604,10 @@ function finishDiceGame(gameId) {
     openBrothel();
 }
 
-// ТЮРЬМА
+// ============================================================
+// 16. ТЮРЬМА
+// ============================================================
+
 function payJailFine() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2695,7 +2719,10 @@ function freeFromJail() {
     saveData();
 }
 
-// ВСПОМОГАТЕЛЬНЫЕ
+// ============================================================
+// 17. ВСПОМОГАТЕЛЬНЫЕ
+// ============================================================
+
 function parseCurrencyInput(input) {
     input = input.trim().toUpperCase();
     if (!input) return null;
@@ -2742,7 +2769,10 @@ function parseCurrencyInput(input) {
     return total;
 }
 
-// РЕГИСТРАЦИЯ (ВСЕ ФУНКЦИИ)
+// ============================================================
+// 18. РЕГИСТРАЦИЯ
+// ============================================================
+
 window.BUILDINGS = BUILDINGS;
 window.openMap = openMap;
 window.closeMap = closeMap;
