@@ -224,11 +224,13 @@ function gameAction(action) {
     if (action === 'map') { if (typeof openMap === 'function') { openMap(); return; } return; }
     
     // ВХОД/ВЫХОД ИЗ ГОРОДА
-    if (action === 'leave_city') {
-        g.location.place = 'Дорога'; g.location.location = 'Дорога'; g.outside = true;
-        setMessage('🛤️ Вы вышли на Королевский тракт.');
-        updateMenu(); updateStory(); updateActions(); saveData();
-        return;
+if (action === 'leave_city') {
+    g.location.place = 'kl_crossroads';
+    g.location.location = 'Королевская Гавань';
+    g.outside = false;
+    setMessage('🚪 Вы вышли из города на перекрёсток.');
+    updateMenu(); updateStory(); updateActions(); saveData();
+    return;
     }
     if (action === 'enter_city') {
         g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
