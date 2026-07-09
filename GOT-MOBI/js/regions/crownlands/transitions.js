@@ -1,269 +1,224 @@
-// ============================================================
-// КОРОЛЕВСКАЯ ГАВАНЬ — СЕТКА ПЕРЕХОДОВ
-// ============================================================
-
 const KL_TRANSITIONS = {
-    // ===== ЗАМОК (центр) =====
-    'kings_landing': {
+    // ===== ПЕРЕКРЁСТОК =====
+    'kl_crossroads': {
         n: 'kl_n_1',
         ne: 'kl_ne_1',
-        e: null,          // море
-        se: null,         // море
+        nw: 'kl_nw_1',
         s: 'kl_s_1',
-        sw: 'kl_sw_1',
-        w: null,          // море
-        nw: 'kl_nw_1'
+        sw: 'kl_sw_1'
+        // e, se, w — море/город
     },
 
-    // ===== 1-е КОЛЬЦО =====
-
-    // Север (n1)
+    // ===== СЕВЕР (дорога, 8 направлений) =====
     'kl_n_1': {
         n: 'kl_n_2',
+        s: 'kl_crossroads',
         ne: 'kl_ne_1',
+        nw: 'kl_nw_1',
         e: null,
-        se: null,
-        s: 'kings_landing',
-        sw: null,
-        w: 'kl_nw_1',
-        nw: 'kl_nw_2'
-    },
-
-    // Северо-восток (ne1)
-    'kl_ne_1': {
-        n: 'kl_ne_2',
-        ne: 'kl_ne_2',
-        e: null,
-        se: null,
-        s: null,
-        sw: 'kings_landing',
-        w: 'kl_n_1',
-        nw: 'kl_n_2'
-    },
-
-    // Северо-запад (nw1)
-    'kl_nw_1': {
-        n: 'kl_nw_2',
-        ne: 'kl_n_1',
-        e: null,
-        se: 'kings_landing',
-        s: null,
-        sw: null,
         w: null,
-        nw: 'kl_nw_2'
-    },
-
-    // Юг (s1)
-    'kl_s_1': {
-        n: 'kings_landing',
-        ne: null,
-        e: null,
         se: null,
-        s: 'kl_s_2',
-        sw: 'kl_sw_1',
-        w: null,
-        nw: null
+        sw: null
     },
-
-    // Юго-запад (sw1)
-    'kl_sw_1': {
-        n: null,
-        ne: 'kings_landing',
-        e: null,
-        se: 'kl_s_2',
-        s: 'kl_sw_2',
-        sw: 'kl_sw_2',
-        w: null,
-        nw: null
-    },
-
-    // ===== 2-е КОЛЬЦО =====
-
-    // Север (n2)
     'kl_n_2': {
         n: 'kl_n_3',
-        ne: 'kl_ne_2',
-        e: null,
-        se: null,
         s: 'kl_n_1',
-        sw: null,
-        w: 'kl_nw_2',
-        nw: 'kl_nw_3'
+        ne: 'kl_ne_2',
+        nw: 'kl_nw_2',
+        e: null,
+        w: null,
+        se: null,
+        sw: null
+    },
+    'kl_n_3': {
+        n: 'kl_n_4',
+        s: 'kl_n_2',
+        ne: 'kl_ne_3',
+        nw: 'kl_nw_3',
+        e: null,
+        w: null,
+        se: null,
+        sw: null
+    },
+    'kl_n_4': {
+        n: 'riverlands',
+        s: 'kl_n_3',
+        ne: 'kl_ne_4',
+        nw: 'kl_nw_4',
+        e: null,
+        w: null,
+        se: null,
+        sw: null
     },
 
-    // Северо-восток (ne2)
+    // ===== СЕВЕРО-ВОСТОК (берег, только 5 направлений) =====
+    'kl_ne_1': {
+        ne: 'kl_ne_2',
+        sw: 'kl_crossroads',
+        n: 'kl_n_1',
+        s: 'kl_s_1',
+        nw: 'kl_n_2'
+        // e, se, w — море
+    },
     'kl_ne_2': {
-        n: 'kl_ne_3',
         ne: 'kl_ne_3',
-        e: null,
-        se: null,
-        s: null,
         sw: 'kl_ne_1',
-        w: 'kl_n_2',
+        n: 'kl_n_2',
+        s: 'kl_s_2',
         nw: 'kl_n_3'
     },
-
-    // Северо-запад (nw2)
-    'kl_nw_2': {
-        n: 'kl_nw_3',
-        ne: 'kl_n_2',
-        e: null,
-        se: 'kl_nw_1',
-        s: null,
-        sw: null,
-        w: null,
-        nw: 'kl_nw_3'
-    },
-
-    // Юг (s2)
-    'kl_s_2': {
-        n: 'kl_s_1',
-        ne: null,
-        e: null,
-        se: null,
-        s: 'kl_s_3',
-        sw: 'kl_sw_2',
-        w: null,
-        nw: null
-    },
-
-    // Юго-запад (sw2)
-    'kl_sw_2': {
-        n: null,
-        ne: 'kl_sw_1',
-        e: null,
-        se: 'kl_s_3',
-        s: 'kl_sw_3',
-        sw: 'kl_sw_3',
-        w: null,
-        nw: null
-    },
-
-    // ===== 3-е КОЛЬЦО =====
-
-    // Север (n3) — граница
-    'kl_n_3': {
-        n: 'riverlands',     // выход в Речные земли
-        ne: 'kl_ne_3',
-        e: null,
-        se: null,
-        s: 'kl_n_2',
-        sw: null,
-        w: 'kl_nw_3',
-        nw: 'kl_nw_4'
-    },
-
-    // Северо-восток (ne3) — граница
     'kl_ne_3': {
-        n: 'kl_ne_4',
         ne: 'kl_ne_4',
-        e: null,
-        se: null,
-        s: null,
         sw: 'kl_ne_2',
-        w: 'kl_n_3',
+        n: 'kl_n_3',
+        s: 'kl_s_3',
         nw: 'kl_n_4'
     },
-
-    // Северо-запад (nw3) — граница
-    'kl_nw_3': {
-        n: 'kl_nw_4',
-        ne: 'kl_n_3',
-        e: null,
-        se: 'kl_nw_2',
-        s: null,
-        sw: null,
-        w: null,
-        nw: 'kl_nw_4'
-    },
-
-    // Юг (s3) — граница
-    'kl_s_3': {
-        n: 'kl_s_2',
-        ne: null,
-        e: null,
-        se: null,
-        s: 'stormlands',     // выход в Штормовые земли
-        sw: 'kl_sw_3',
-        w: null,
-        nw: null
-    },
-
-    // Юго-запад (sw3) — граница
-    'kl_sw_3': {
-        n: null,
-        ne: 'kl_sw_2',
-        e: null,
-        se: 'kl_s_4',
-        s: 'reach',          // выход в Простор
-        sw: 'kl_sw_4',
-        w: null,
-        nw: null
-    },
-
-    // ===== 4-е КОЛЬЦО (только для ne и nw — берег/лес) =====
-
-    // Северо-восток (ne4)
     'kl_ne_4': {
-        n: 'kl_ne_5',
         ne: 'kl_ne_5',
-        e: null,
-        se: null,
-        s: null,
         sw: 'kl_ne_3',
-        w: null,
-        nw: null
+        n: 'kl_n_4',
+        s: 'kl_s_4',
+        nw: 'kl_n_5'
     },
-
-    // Северо-запад (nw4)
-    'kl_nw_4': {
-        n: 'kl_nw_5',
-        ne: null,
-        e: null,
-        se: 'kl_nw_3',
-        s: null,
-        sw: null,
-        w: null,
-        nw: 'kl_nw_5'
-    },
-
-    // ===== 5-е КОЛЬЦО (только для ne и nw) =====
-
-    // Северо-восток (ne5)
     'kl_ne_5': {
-        n: 'kl_ne_6',
         ne: 'kl_ne_6',
-        e: null,
-        se: null,
-        s: null,
-        sw: 'kl_ne_4',
-        w: null,
-        nw: null
+        sw: 'kl_ne_4'
     },
-
-    // Северо-запад (nw5)
-    'kl_nw_5': {
-        n: 'kl_nw_6',
-        ne: null,
-        e: null,
-        se: 'kl_nw_4',
-        s: null,
-        sw: null,
-        w: null,
-        nw: 'kl_nw_6'
-    },
-
-    // ===== 6-е КОЛЬЦО (только для ne и nw) — тупики =====
-
-    // Северо-восток (ne6) — тупик
     'kl_ne_6': {
         sw: 'kl_ne_5'
-        // дальше море
     },
 
-    // Северо-запад (nw6) — тупик
+    // ===== СЕВЕРО-ЗАПАД (лес, 8 направлений) =====
+    'kl_nw_1': {
+        n: 'kl_nw_2',
+        s: 'kl_s_1',
+        ne: 'kl_n_1',
+        nw: 'kl_nw_2',
+        e: 'kl_n_1',
+        w: null,
+        se: 'kl_crossroads',
+        sw: null
+    },
+    'kl_nw_2': {
+        n: 'kl_nw_3',
+        s: 'kl_s_2',
+        ne: 'kl_n_2',
+        nw: 'kl_nw_3',
+        e: 'kl_n_2',
+        w: null,
+        se: 'kl_nw_1',
+        sw: null
+    },
+    'kl_nw_3': {
+        n: 'kl_nw_4',
+        s: 'kl_s_3',
+        ne: 'kl_n_3',
+        nw: 'kl_nw_4',
+        e: 'kl_n_3',
+        w: null,
+        se: 'kl_nw_2',
+        sw: null
+    },
+    'kl_nw_4': {
+        n: 'kl_nw_5',
+        s: 'kl_s_4',
+        ne: 'kl_n_4',
+        nw: 'kl_nw_5',
+        e: 'kl_n_4',
+        w: null,
+        se: 'kl_nw_3',
+        sw: null
+    },
+    'kl_nw_5': {
+        nw: 'kl_nw_6',
+        se: 'kl_nw_4'
+    },
     'kl_nw_6': {
         se: 'kl_nw_5'
-        // дальше лес
+    },
+
+    // ===== ЮГ (дорога, 8 направлений) =====
+    'kl_s_1': {
+        n: 'kl_crossroads',
+        s: 'kl_s_2',
+        ne: 'kl_ne_1',
+        nw: 'kl_nw_1',
+        e: 'kl_ne_1',
+        w: 'kl_nw_1',
+        se: null,
+        sw: 'kl_sw_1'
+    },
+    'kl_s_2': {
+        n: 'kl_s_1',
+        s: 'kl_s_3',
+        ne: 'kl_ne_2',
+        nw: 'kl_nw_2',
+        e: 'kl_ne_2',
+        w: 'kl_nw_2',
+        se: null,
+        sw: 'kl_sw_2'
+    },
+    'kl_s_3': {
+        n: 'kl_s_2',
+        s: 'kl_s_4',
+        ne: 'kl_ne_3',
+        nw: 'kl_nw_3',
+        e: 'kl_ne_3',
+        w: 'kl_nw_3',
+        se: null,
+        sw: 'kl_sw_3'
+    },
+    'kl_s_4': {
+        n: 'kl_s_3',
+        s: 'stormlands',
+        ne: 'kl_ne_4',
+        nw: 'kl_nw_4',
+        e: 'kl_ne_4',
+        w: 'kl_nw_4',
+        se: null,
+        sw: 'kl_sw_4'
+    },
+
+    // ===== ЮГО-ЗАПАД (дорога, 8 направлений) =====
+    'kl_sw_1': {
+        n: 'kl_n_1',
+        s: 'kl_sw_2',
+        ne: 'kl_crossroads',
+        nw: 'kl_s_1',
+        e: 'kl_s_1',
+        w: null,
+        se: 'kl_s_2',
+        sw: 'kl_sw_2'
+    },
+    'kl_sw_2': {
+        n: 'kl_n_2',
+        s: 'kl_sw_3',
+        ne: 'kl_sw_1',
+        nw: 'kl_s_2',
+        e: 'kl_s_2',
+        w: null,
+        se: 'kl_s_3',
+        sw: 'kl_sw_3'
+    },
+    'kl_sw_3': {
+        n: 'kl_n_3',
+        s: 'kl_sw_4',
+        ne: 'kl_sw_2',
+        nw: 'kl_s_3',
+        e: 'kl_s_3',
+        w: null,
+        se: 'kl_s_4',
+        sw: 'kl_sw_4'
+    },
+    'kl_sw_4': {
+        n: 'kl_n_4',
+        s: 'reach',
+        ne: 'kl_sw_3',
+        nw: 'kl_s_4',
+        e: 'kl_s_4',
+        w: null,
+        se: 'kl_s_5',
+        sw: 'reach'
     }
 };
