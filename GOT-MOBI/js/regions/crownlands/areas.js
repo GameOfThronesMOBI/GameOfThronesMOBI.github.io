@@ -1,9 +1,4 @@
-// ============================================================
-// js/regions/crownlands/areas.js — ТОЛЬКО ВНЕШНИЕ ЛОКАЦИИ
-// ============================================================
-
 const KL_AREAS = {
-    // ===== КОРОЛЕВСКАЯ ГАВАНЬ (ГОРОД, БЕЗ PLACES) =====
     kings_landing: {
         id: 'kings_landing',
         name: 'Королевская Гавань',
@@ -12,10 +7,7 @@ const KL_AREAS = {
         region: 'Королевские земли',
         area: 'Королевская Гавань',
         owner: 'crown'
-        // places УДАЛЕНЫ!
     },
-
-    // ===== ПЕРЕКРЁСТОК =====
     kl_crossroads: {
         id: 'kl_crossroads',
         name: 'Перекрёсток',
@@ -26,36 +18,26 @@ const KL_AREAS = {
         owner: 'crown',
         places: ['Придорожный камень', 'Столб с указателями']
     },
-
-    // ===== СЕВЕР (4) =====
     kl_n_1: { id: 'kl_n_1', name: 'Северный тракт', type: 'road', level: 5, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Придорожный камень', 'Старый колодец'] },
     kl_n_2: { id: 'kl_n_2', name: 'Северный тракт', type: 'road', level: 10, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Развилка', 'Привал'] },
     kl_n_3: { id: 'kl_n_3', name: 'Северный тракт', type: 'road', level: 15, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Смотровая вышка'] },
     kl_n_4: { id: 'kl_n_4', name: 'Северный тракт', type: 'road', level: 20, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Сторожевая башня'] },
-
-    // ===== СЕВЕРО-ВОСТОК (6) =====
     kl_ne_1: { id: 'kl_ne_1', name: 'Берег Чёрноводной', type: 'coast', level: 5, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Песчаный пляж'] },
     kl_ne_2: { id: 'kl_ne_2', name: 'Берег Чёрноводной', type: 'coast', level: 10, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Скалистый мыс'] },
     kl_ne_3: { id: 'kl_ne_3', name: 'Берег Чёрноводной', type: 'coast', level: 15, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Деревня', 'Причал'] },
     kl_ne_4: { id: 'kl_ne_4', name: 'Берег Чёрноводной', type: 'coast', level: 20, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Старая сторожевая башня'] },
     kl_ne_5: { id: 'kl_ne_5', name: 'Берег Чёрноводной', type: 'coast', level: 25, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Старый маяк'] },
     kl_ne_6: { id: 'kl_ne_6', name: 'Берег Чёрноводной', type: 'coast', level: 30, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Пещера контрабандистов'] },
-
-    // ===== СЕВЕРО-ЗАПАД (6) =====
     kl_nw_1: { id: 'kl_nw_1', name: 'Королевский лес', type: 'forest', level: 5, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Лесная тропа', 'Старый дуб'] },
     kl_nw_2: { id: 'kl_nw_2', name: 'Лесная поляна', type: 'forest', level: 10, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Деревня', 'Кострище'] },
     kl_nw_3: { id: 'kl_nw_3', name: 'Заброшенная мельница', type: 'forest', level: 15, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Мельничное колесо'] },
     kl_nw_4: { id: 'kl_nw_4', name: 'Перекрёсток у холмов', type: 'forest', level: 20, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Придорожный камень'] },
     kl_nw_5: { id: 'kl_nw_5', name: 'Королевский лес', type: 'forest', level: 25, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Глухомань'] },
     kl_nw_6: { id: 'kl_nw_6', name: 'Королевский лес', type: 'forest', level: 30, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Развалины старой крепости'] },
-
-    // ===== ЮГ (4) =====
     kl_s_1: { id: 'kl_s_1', name: 'Южный тракт', type: 'road', level: 5, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Привал'] },
     kl_s_2: { id: 'kl_s_2', name: 'Южный тракт', type: 'road', level: 10, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Развилка'] },
     kl_s_3: { id: 'kl_s_3', name: 'Южный тракт', type: 'road', level: 15, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Сторожевая вышка'] },
     kl_s_4: { id: 'kl_s_4', name: 'Южный тракт', type: 'road', level: 20, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Застава'] },
-
-    // ===== ЮГО-ЗАПАД (4) =====
     kl_sw_1: { id: 'kl_sw_1', name: 'Юго-западный тракт', type: 'road', level: 5, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Деревня', 'Привал'] },
     kl_sw_2: { id: 'kl_sw_2', name: 'Юго-западный тракт', type: 'road', level: 10, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Развилка'] },
     kl_sw_3: { id: 'kl_sw_3', name: 'Юго-западный тракт', type: 'road', level: 15, region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown', places: ['Смотровая вышка'] },
