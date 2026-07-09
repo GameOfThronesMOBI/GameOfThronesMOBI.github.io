@@ -1,5 +1,5 @@
 // ============================================================
-// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КОМПАС + КНОПКИ)
+// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + ВСЁ)
 // ============================================================
 
 console.log('🔧 UI загружается...');
@@ -141,7 +141,6 @@ window.doSearch = function() {
     var region = g.location.region || 'Королевские земли';
     var place = g.location.place || 'Дорога';
     
-    // Городские здания — поиска нет
     var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
                       'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
                       'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
@@ -204,52 +203,22 @@ window.updateActions = function() {
     if (!container) return;
     container.innerHTML = '';
     
-    // ===== СТАНДАРТНЫЕ КНОПКИ =====
+    // ===== 1. СТАНДАРТНЫЕ КНОПКИ =====
     var actions = [
         { id: 'search', label: '🔍 Поиск' },
         { id: 'inventory', label: '🎒 Инвентарь' },
         { id: 'character', label: '👤 Персонаж' },
-        { id: 'menu', label: '📋 Меню' }
+        { id: 'menu', label: '📋 Меню' },
+        { id: 'map', label: '🗺️ Карта' }
     ];
     
-    // ===== РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
-    for (var i = 0; i < actions.length; i++) {
-        var a = actions[i];
-        var btn = document.createElement('button');
-        btn.className = 'btn-game';
-        btn.textContent = a.label;
-        btn.onclick = (function(id) {
-            return function() {
-                if (id === 'search') {
-                    if (typeof window.doSearch === 'function') {
-                        window.doSearch();
-                    } else {
-                        setMessage('❌ Боевая система не загружена.');
-                    }
-                    return;
-                }
-                if (typeof gameAction === 'function') {
-                    gameAction(id);
-                } else {
-                    setMessage('❌ Действие временно недоступно.');
-                }
-            };
-        })(a.id);
-        container.appendChild(btn);
-    }
-    
-    // ===== КНОПКИ ПЕРЕМЕЩЕНИЯ (из transitions.js) =====
+    // ===== 2. КНОПКИ ПЕРЕМЕЩЕНИЯ =====
     var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[place] : null;
     if (transitions) {
         var dirLabels = {
-            'n': '⬆️ Север',
-            'ne': '↗️ Северо-восток',
-            'e': '➡️ Восток',
-            'se': '↘️ Юго-восток',
-            's': '⬇️ Юг',
-            'sw': '↙️ Юго-запад',
-            'w': '⬅️ Запад',
-            'nw': '↖️ Северо-запад'
+            'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток',
+            'se': '↘️ ЮВ', 's': '⬇️ Юг', 'sw': '↙️ ЮЗ',
+            'w': '⬅️ Запад', 'nw': '↖️ СЗ'
         };
         for (var dir in transitions) {
             if (transitions[dir]) {
@@ -270,14 +239,34 @@ window.updateActions = function() {
         }
     }
     
-    // ===== СПЕЦКНОПКИ ДЛЯ КОНКРЕТНЫХ ЛОКАЦИЙ =====
-    if (place === 'kl_crossroads') {
+    // ===== 3. КНОПКА "МЕСТА" =====
+    var loc = window.KL_AREAS ? KL_AREAS[place] : null;
+    if (loc && loc.places && loc.places.length > 0) {
+        var placesBtn = document.createElement('button');
+        placesBtn.className = 'btn-game';
+        placesBtn.textContent = '🏘️ Места (' + loc.places.length + ')';
+        placesBtn.onclick = (function(locData) {
+            return function() {
+                var msg = '📍 Места в ' + locData.name + ':\n\n';
+                locData.places.forEach(function(p, i) {
+                    msg += '  ' + (i + 1) + '. ' + p + '\n';
+                });
+                setMessage(msg);
+            };
+        })(loc);
+        container.appendChild(placesBtn);
+    }
+    
+    // ===== 4. КНОПКА "ВХОД В ГОРОД" (для дороги) =====
+    if (loc && loc.type === 'road') {
         var enterBtn = document.createElement('button');
         enterBtn.className = 'btn-game';
-        enterBtn.textContent = '🏰 Войти в замок';
+        enterBtn.textContent = '🚶 Войти в город';
         enterBtn.onclick = function() {
-            g.location.place = 'kings_landing';
-            setMessage('🏰 Вы вошли в Красный замок.');
+            g.location.place = 'Ворота';
+            g.location.location = 'Королевская Гавань';
+            g.outside = false;
+            setMessage('🚪 Вы вошли в Королевскую Гавань.');
             updateMenu();
             updateStory();
             updateActions();
@@ -286,6 +275,23 @@ window.updateActions = function() {
         container.appendChild(enterBtn);
     }
     
+    // ===== 5. ВХОД В ЗАМОК (на перекрёстке) =====
+    if (place === 'kl_crossroads') {
+        var enterCastle = document.createElement('button');
+        enterCastle.className = 'btn-game';
+        enterCastle.textContent = '🏰 Войти в замок';
+        enterCastle.onclick = function() {
+            g.location.place = 'kings_landing';
+            setMessage('🏰 Вы вошли в Красный замок.');
+            updateMenu();
+            updateStory();
+            updateActions();
+            saveData();
+        };
+        container.appendChild(enterCastle);
+    }
+    
+    // ===== 6. ВЫХОД ИЗ ЗАМКА =====
     if (place === 'kings_landing') {
         var exitBtn = document.createElement('button');
         exitBtn.className = 'btn-game';
@@ -300,6 +306,49 @@ window.updateActions = function() {
         };
         container.appendChild(exitBtn);
     }
+    
+    // ===== 7. РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
+    for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        btn.onclick = (function(id) {
+            return function() {
+                if (id === 'search') {
+                    if (typeof window.doSearch === 'function') {
+                        window.doSearch();
+                    } else {
+                        setMessage('❌ Боевая система не загружена.');
+                    }
+                    return;
+                }
+                if (id === 'map') {
+                    if (typeof window.openGlobalMap === 'function') {
+                        window.openGlobalMap();
+                    } else {
+                        setMessage('🗺️ Глобальная карта Вестероса в разработке.');
+                    }
+                    return;
+                }
+                if (typeof gameAction === 'function') {
+                    gameAction(id);
+                } else {
+                    setMessage('❌ Действие временно недоступно.');
+                }
+            };
+        })(a.id);
+        container.appendChild(btn);
+    }
 };
+
+// ============================================================
+// 5. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
+
+function setMessage(msg) {
+    var el = document.getElementById('game-message');
+    if (el) el.textContent = msg;
+}
 
 console.log('✅ UI полностью загружен!');
