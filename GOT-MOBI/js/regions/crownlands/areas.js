@@ -7,7 +7,23 @@
 // ============================================================
 
 const KL_AREAS = {
-    // ПЕРЕКРЁСТОК (связующая локация)
+    // КОРОЛЕВСКАЯ ГАВАНЬ (ГОРОД)
+    kings_landing: {
+        id: 'kings_landing',
+        name: 'Королевская Гавань',
+        type: 'city',
+        level: 1,
+        region: 'Королевские земли',
+        area: 'Королевская Гавань',
+        owner: 'crown',
+        places: ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 'Кожевник', 
+                 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев', 'Магистрат',
+                 'Ворота', 'Королевский квартал', 'Торговый квартал', 'Квартал бедноты',
+                 'Дом', 'Великая септа', 'Порт', 'Тюрьма', 'Библиотека мейстеров',
+                 'Гильдия наёмников', 'Бордель']
+    },
+
+    // ПЕРЕКРЁСТОК
     kl_crossroads: {
         id: 'kl_crossroads',
         name: 'Перекрёсток',
@@ -59,6 +75,9 @@ const KL_AREAS = {
 // ============================================================
 
 const KL_TRANSITIONS = {
+    // КОРОЛЕВСКАЯ ГАВАНЬ — переходы между зданиями (через места)
+    // Не нужны, так как переход через кнопку "Места"
+
     // ПЕРЕКРЁСТОК
     'kl_crossroads': {
         n: 'kl_n_1',
@@ -109,6 +128,7 @@ const KL_TRANSITIONS = {
 
 function getDescriptionByType(type, name) {
     var desc = {
+        'city': '🏙️ Город. Кипит жизнь.',
         'road': '🛤️ Дорога. Можно идти в разные стороны.',
         'forest': '🌲 Лес. Тихо и темно.',
         'coast': '🌊 Берег. Слышен шум волн.',
@@ -134,8 +154,16 @@ window.updateStory = function() {
     var textEl = document.getElementById('story-text');
     
     if (!loc) {
-        if (titleEl) titleEl.textContent = '📍 ' + place;
-        if (textEl) textEl.textContent = 'Вы находитесь в ' + place + '.';
+        // Если нет в KL_AREAS — значит это место внутри города (Таверна, Рынок и т.д.)
+        // Ищем в KL_AREAS['kings_landing'].places
+        var city = KL_AREAS['kings_landing'];
+        if (city && city.places && city.places.indexOf(place) !== -1) {
+            if (titleEl) titleEl.textContent = '📍 ' + place;
+            if (textEl) textEl.textContent = 'Вы в ' + place + '.';
+        } else {
+            if (titleEl) titleEl.textContent = '📍 ' + place;
+            if (textEl) textEl.textContent = 'Вы находитесь в ' + place + '.';
+        }
         return;
     }
     
@@ -153,11 +181,14 @@ function moveTo(direction) {
     
     var current = g.location.place;
     var transitions = KL_TRANSITIONS[current];
-    if (!transitions) return;
+    if (!transitions) {
+        setMessage('❌ Из этой локации нельзя никуда пойти.');
+        return;
+    }
     
     var next = transitions[direction];
     if (!next) {
-        setMessage('❌ Туда нельзя пойти.');
+        setMessage('❌ В этом направлении нет пути.');
         return;
     }
     
@@ -193,6 +224,47 @@ window.updateActions = function() {
     if (!container) return;
     container.innerHTML = '';
     
+    // ===== 1. КНОПКА "МЕСТА" (ДЛЯ ВСЕХ ЛОКАЦИЙ, ГДЕ ЕСТЬ places) =====
+    var loc = KL_AREAS[place];
+    if (loc && loc.places && loc.places.length > 0) {
+        var placesBtn = document.createElement('button');
+        placesBtn.className = 'btn-game';
+        placesBtn.textContent = '🏘️ Места (' + loc.places.length + ')';
+        placesBtn.onclick = (function(locData) {
+            return function() {
+                var modal = document.getElementById('modal-places');
+                if (!modal) {
+                    var overlay = document.createElement('div');
+                    overlay.id = 'modal-places';
+                    overlay.className = 'modal-overlay hide';
+                    overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
+                    overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+                    document.body.appendChild(overlay);
+                    modal = overlay;
+                }
+                var content = document.getElementById('modal-places-content');
+                var html = '<div class="modal-section"><h4>📍 ' + locData.name + '</h4>';
+                html += '<p style="color:#6a5a48;font-size:12px;">Выберите место:</p>';
+                locData.places.forEach(function(p) {
+                    var isCurrent = (p === g.location.place);
+                    html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+                    html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+                    if (!isCurrent) {
+                        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+                    } else {
+                        html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+                    }
+                    html += '</div>';
+                });
+                html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
+                content.innerHTML = html;
+                modal.classList.remove('hide');
+            };
+        })(loc);
+        container.appendChild(placesBtn);
+    }
+    
+    // ===== 2. КНОПКИ ПЕРЕМЕЩЕНИЯ (из transitions.js) =====
     var transitions = KL_TRANSITIONS[place] || {};
     var directions = {
         'n': '⬆️ Север',
@@ -205,7 +277,6 @@ window.updateActions = function() {
         'nw': '↖️ Северо-запад'
     };
     
-    // Кнопки переходов
     for (var dir in directions) {
         if (transitions[dir]) {
             var btn = document.createElement('button');
@@ -218,7 +289,7 @@ window.updateActions = function() {
         }
     }
     
-    // Кнопка "Войти в замок" (на перекрёстке)
+    // ===== 3. ВХОД В ЗАМОК (на перекрёстке) =====
     if (place === 'kl_crossroads') {
         var enterBtn = document.createElement('button');
         enterBtn.className = 'btn-game';
@@ -234,7 +305,7 @@ window.updateActions = function() {
         container.appendChild(enterBtn);
     }
     
-    // Кнопка "Выйти из замка" (в замке)
+    // ===== 4. ВЫХОД ИЗ ЗАМКА =====
     if (place === 'kings_landing') {
         var exitBtn = document.createElement('button');
         exitBtn.className = 'btn-game';
@@ -250,7 +321,7 @@ window.updateActions = function() {
         container.appendChild(exitBtn);
     }
     
-    // Стандартные действия (Поиск, Инвентарь, Персонаж, Меню)
+    // ===== 5. СТАНДАРТНЫЕ ДЕЙСТВИЯ =====
     var actions = [
         { id: 'search', label: '🔍 Поиск' },
         { id: 'inventory', label: '🎒 Инвентарь' },
@@ -278,7 +349,27 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 7. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
+// 7. ФУНКЦИИ ДЛЯ РАБОТЫ С МЕСТАМИ
+// ============================================================
+
+function goToPlace(placeName) {
+    var g = users[currentUser].game;
+    if (!g) return;
+    g.location.place = placeName;
+    setMessage('🚶 Вы перешли в ' + placeName);
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+}
+
+function closePlaces() {
+    var modal = document.getElementById('modal-places');
+    if (modal) modal.classList.add('hide');
+}
+
+// ============================================================
+// 8. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
 // ============================================================
 
 function getRegionByLocation(location) {
