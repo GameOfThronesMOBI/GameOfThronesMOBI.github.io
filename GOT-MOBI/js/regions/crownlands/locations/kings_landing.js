@@ -166,7 +166,7 @@ window.updateStory = function() {
 };
 
 // ============================================================
-// 3. ACTIONS (КНОПКИ) — ТОЛЬКО ДЛЯ ГОРОДА
+// 3. ACTIONS (КНОПКИ) — ТОЛЬКО ДЛЯ ГОРОДСКИХ ЗДАНИЙ
 // ============================================================
 
 var _kingsLandingPrevUpdateActions = window.updateActions;
@@ -179,58 +179,30 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
-    var cityPlaces = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) === -1 && place !== 'kings_landing') {
+    // ===== ЕСЛИ ЭТО kings_landing — ВЫЗЫВАЕМ УНИВЕРСАЛЬНЫЙ UI =====
+    if (place === 'kings_landing') {
         if (typeof _kingsLandingPrevUpdateActions === 'function') {
             _kingsLandingPrevUpdateActions();
         }
         return;
     }
     
-    container.innerHTML = '';
+    // ===== ЕСЛИ ЭТО НЕ ГОРОДСКОЕ ЗДАНИЕ — ВЫЗЫВАЕМ УНИВЕРСАЛЬНЫЙ UI =====
+    var cityPlaces = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
+                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
+                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
+                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
+                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
     
-    // ===== КНОПКА "МЕСТА" ДЛЯ ГОРОДА =====
-    if (place === 'kings_landing') {
-        var placesBtn = document.createElement('button');
-        placesBtn.className = 'btn-game';
-        placesBtn.textContent = '🏘️ Места (' + BUILDINGS.length + ')';
-        placesBtn.onclick = function() {
-            var modal = document.getElementById('modal-places');
-            if (!modal) {
-                var overlay = document.createElement('div');
-                overlay.id = 'modal-places';
-                overlay.className = 'modal-overlay hide';
-                overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
-                overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
-                document.body.appendChild(overlay);
-                modal = overlay;
-            }
-            var content = document.getElementById('modal-places-content');
-            var html = '<div class="modal-section"><h4>📍 Королевская Гавань</h4>';
-            html += '<p style="color:#6a5a48;font-size:12px;">Выберите место:</p>';
-            BUILDINGS.forEach(function(b) {
-                var isCurrent = (b.id === g.location.place);
-                html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-                html += '<span class="label">' + b.label + (isCurrent ? ' ⭐' : '') + '</span>';
-                if (!isCurrent) {
-                    html += '<span class="value"><button class="btn btn-small" onclick="goToBuilding(\'' + b.id + '\'); closePlaces();">🚶 Идти</button></span>';
-                } else {
-                    html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-                }
-                html += '</div>';
-            });
-            html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
-            content.innerHTML = html;
-            modal.classList.remove('hide');
-        };
-        container.appendChild(placesBtn);
+    if (cityPlaces.indexOf(place) === -1) {
+        if (typeof _kingsLandingPrevUpdateActions === 'function') {
+            _kingsLandingPrevUpdateActions();
+        }
+        return;
     }
     
+    // ===== ГОРОДСКИЕ ЗДАНИЯ (Таверна, Рынок и т.д.) =====
+    container.innerHTML = '';
     var actions = [];
     
     actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
@@ -363,9 +335,21 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 4. ДОМА
+// 4. РЕГИСТРАЦИЯ (ВСЕ ФУНКЦИИ)
 // ============================================================
 
+window.BUILDINGS = BUILDINGS;
+window.openMap = openMap;
+window.closeMap = closeMap;
+window.goToBuilding = goToBuilding;
+window.updateStory = window.updateStory;
+window.updateActions = window.updateActions;
+
+// ============================================================
+// 5. ОСТАЛЬНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ)
+// ============================================================
+
+// ДОМА
 function buyHouse(type) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -650,10 +634,7 @@ function viewDistrict(district) {
     }
 }
 
-// ============================================================
-// 5. СКЛАД
-// ============================================================
-
+// СКЛАД
 function openStorage() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -868,10 +849,7 @@ function takeFromStorageHold(key) {
     openStorageHold();
 }
 
-// ============================================================
-// 6. КОНЮШНЯ
-// ============================================================
-
+// КОНЮШНЯ
 function openStable() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1008,10 +986,7 @@ function sellHorse() {
     updateMenu();
 }
 
-// ============================================================
-// 7. СЕПТА
-// ============================================================
-
+// СЕПТА
 function openTemple() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1211,10 +1186,7 @@ function buyPotion(potionId, price, hp, fatigue) {
     openTemple();
 }
 
-// ============================================================
-// 8. БИБЛИОТЕКА
-// ============================================================
-
+// БИБЛИОТЕКА
 function openLibrary() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1421,10 +1393,7 @@ function readBook(index) {
     }, readTimeMs);
 }
 
-// ============================================================
-// 9. ГИЛЬДИЯ НАЁМНИКОВ
-// ============================================================
-
+// ГИЛЬДИЯ НАЁМНИКОВ
 function openGuildHall() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1642,10 +1611,7 @@ function checkQuestProgress(type, target, count) {
     }
 }
 
-// ============================================================
-// 10. БОРДЕЛЬ
-// ============================================================
-
+// БОРДЕЛЬ
 function openBrothel() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -1780,10 +1746,7 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
     openBrothel();
 }
 
-// ============================================================
-// 11. РЫНОК (ЛАВКИ)
-// ============================================================
-
+// РЫНОК (ЛАВКИ)
 function openMarket() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2032,10 +1995,7 @@ function removeFromStall(stallId, idx) {
     enterStall(stallId);
 }
 
-// ============================================================
-// 12. ПОРТ
-// ============================================================
-
+// ПОРТ
 function openPort() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2060,10 +2020,7 @@ function openPort() {
     alert(msg);
 }
 
-// ============================================================
-// 13. МАГИСТРАТ
-// ============================================================
-
+// МАГИСТРАТ
 function openMagistrate() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2385,10 +2342,7 @@ function confiscateStall() {
     showMagistrateStalls();
 }
 
-// ============================================================
-// 14. КОНФИСКАТ
-// ============================================================
-
+// КОНФИСКАТ
 function openConfiscated() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2470,10 +2424,7 @@ function returnFromConfiscate(entryIdx, itemIdx) {
     openConfiscated();
 }
 
-// ============================================================
-// 15. КОСТИ
-// ============================================================
-
+// КОСТИ
 function getActiveDiceGames() {
     var now = Date.now();
     var timeout = 5 * 60 * 1000;
@@ -2632,10 +2583,7 @@ function finishDiceGame(gameId) {
     openBrothel();
 }
 
-// ============================================================
-// 16. ТЮРЬМА
-// ============================================================
-
+// ТЮРЬМА
 function payJailFine() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -2747,10 +2695,7 @@ function freeFromJail() {
     saveData();
 }
 
-// ============================================================
-// 17. ВСПОМОГАТЕЛЬНЫЕ
-// ============================================================
-
+// ВСПОМОГАТЕЛЬНЫЕ
 function parseCurrencyInput(input) {
     input = input.trim().toUpperCase();
     if (!input) return null;
@@ -2797,10 +2742,7 @@ function parseCurrencyInput(input) {
     return total;
 }
 
-// ============================================================
-// 18. РЕГИСТРАЦИЯ
-// ============================================================
-
+// РЕГИСТРАЦИЯ (ВСЕ ФУНКЦИИ)
 window.BUILDINGS = BUILDINGS;
 window.openMap = openMap;
 window.closeMap = closeMap;
