@@ -1,11 +1,11 @@
 // ============================================================
-// js/core/05-ui.js — ГЛОБАЛЬНАЯ СИСТЕМА МЕСТ + БОЕВКА
+// js/core/05-ui.js — UI (БОЕВКА + ПОИСК + МЕСТА + КАРТА)
 // ============================================================
 
 console.log('🔧 UI загружается...');
 
 // ============================================================
-// 1. ГЛОБАЛЬНАЯ СИСТЕМА МЕСТ
+// 1. ГЛОБАЛЬНАЯ КНОПКА МЕСТ
 // ============================================================
 
 function openPlaces() {
@@ -32,17 +32,12 @@ function openPlaces() {
     var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
     html += '<div class="modal-section">';
     loc.places.forEach(function(p) {
-        var isCurrent = (p === g.location.place);
         html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
-        if (!isCurrent) {
-            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
-        } else {
-            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-        }
+        html += '<span class="label">' + p + '</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
         html += '</div>';
     });
-    html += '</div><button class="btn btn-secondary" onclick="closePlaces()">Закрыть</button>';
+    html += '</div><button class="btn" onclick="closePlaces()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -280,6 +275,21 @@ window.updateActions = function() {
         container.appendChild(btn);
     }
     
+    // ===== КНОПКА "КАРТА" (ДЛЯ ГОРОДА) =====
+    if (place === 'kings_landing' || place === 'Таверна' || place === 'Рынок' || place === 'Кузница') {
+        var mapBtn = document.createElement('button');
+        mapBtn.className = 'btn-game';
+        mapBtn.textContent = '🗺️ Карта';
+        mapBtn.onclick = function() {
+            if (typeof window.openMap === 'function') {
+                window.openMap();
+            } else {
+                setMessage('❌ Карта города не загружена.');
+            }
+        };
+        container.appendChild(mapBtn);
+    }
+    
     // ===== КНОПКИ ПЕРЕМЕЩЕНИЯ =====
     var transitions = KL_TRANSITIONS[place] || {};
     var dirLabels = {
@@ -303,32 +313,6 @@ window.updateActions = function() {
             })(dir);
             container.appendChild(btn);
         }
-    }
-    
-    // ===== ВХОД В ЗАМОК =====
-    if (place === 'kl_crossroads') {
-        var enterBtn = document.createElement('button');
-        enterBtn.className = 'btn-game';
-        enterBtn.textContent = '🏰 Войти в замок';
-        enterBtn.onclick = function() {
-            g.location.place = 'kings_landing';
-            setMessage('🏰 Вы вошли в Красный замок.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-        };
-        container.appendChild(enterBtn);
-    }
-    
-    // ===== ВЫХОД ИЗ ЗАМКА =====
-    if (place === 'kings_landing') {
-        var exitBtn = document.createElement('button');
-        exitBtn.className = 'btn-game';
-        exitBtn.textContent = '🚪 Выйти из замка';
-        exitBtn.onclick = function() {
-            g.location.place = 'kl_crossroads';
-            setMessage('🚪 Вы вышли из замка на перекрёсток.');
-            updateMenu(); updateStory(); updateActions(); saveData();
-        };
-        container.appendChild(exitBtn);
     }
     
     // ===== РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
