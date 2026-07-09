@@ -1,5 +1,5 @@
 // ============================================================
-// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КАРТА + МЕСТА)
+// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + МЕСТА + КАРТА)
 // ============================================================
 
 console.log('🔧 UI загружается...');
@@ -211,7 +211,7 @@ window.updateActions = function() {
         { id: 'menu', label: '📋 Меню' }
     ];
     
-    // ===== 2. КНОПКА "МЕСТА" (ДЛЯ ВСЕХ ЛОКАЦИЙ, ГДЕ ЕСТЬ places) =====
+    // ===== 2. КНОПКА "МЕСТА" (УНИВЕРСАЛЬНАЯ) =====
     var loc = window.KL_AREAS ? KL_AREAS[place] : null;
     if (loc && loc.places && loc.places.length > 0) {
         var placesBtn = document.createElement('button');
@@ -251,25 +251,36 @@ window.updateActions = function() {
         container.appendChild(placesBtn);
     }
     
-    // ===== 3. КАРТА (СТАРАЯ — ДЛЯ ГОРОДА) =====
-    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) !== -1) {
-        var mapBtn = document.createElement('button');
-        mapBtn.className = 'btn-game';
-        mapBtn.textContent = '🗺️ Карта';
-        mapBtn.onclick = function() {
-            if (typeof window.openMap === 'function') {
-                window.openMap();
-            } else {
-                setMessage('❌ Карта города не загружена.');
-            }
+    // ===== 3. КНОПКИ ПЕРЕМЕЩЕНИЯ =====
+    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[place] : null;
+    if (transitions) {
+        var dirLabels = {
+            'n': '⬆️ Север',
+            'ne': '↗️ СВ',
+            'e': '➡️ Восток',
+            'se': '↘️ ЮВ',
+            's': '⬇️ Юг',
+            'sw': '↙️ ЮЗ',
+            'w': '⬅️ Запад',
+            'nw': '↖️ СЗ'
         };
-        container.appendChild(mapBtn);
+        for (var dir in transitions) {
+            if (transitions[dir]) {
+                var btn = document.createElement('button');
+                btn.className = 'btn-game';
+                btn.textContent = dirLabels[dir] || dir;
+                btn.onclick = (function(d) {
+                    return function() {
+                        if (typeof window.moveTo === 'function') {
+                            window.moveTo(d);
+                        } else {
+                            setMessage('❌ Система перемещений не загружена.');
+                        }
+                    };
+                })(dir);
+                container.appendChild(btn);
+            }
+        }
     }
     
     // ===== 4. ВХОД В ЗАМОК (на перекрёстке) =====
@@ -332,7 +343,7 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 5. ФУНКЦИИ ДЛЯ РАБОТЫ С МЕСТАМИ
+// 5. ФУНКЦИИ ДЛЯ МЕСТ
 // ============================================================
 
 function goToPlace(placeName) {
