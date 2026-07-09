@@ -1,11 +1,11 @@
 // ============================================================
-// js/core/05-ui.js — БОЕВКА + ПОИСК (НЕ ТРОГАЕТ UI)
+// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КОМПАС + КНОПКИ)
 // ============================================================
 
-console.log('🔧 Боевка + Поиск загружаются...');
+console.log('🔧 UI загружается...');
 
 // ============================================================
-// 1. ПОЛНАЯ БОЕВКА
+// 1. БОЕВКА
 // ============================================================
 
 window._battle = null;
@@ -141,7 +141,7 @@ window.doSearch = function() {
     var region = g.location.region || 'Королевские земли';
     var place = g.location.place || 'Дорога';
     
-    // ===== НЕ ИЩЕМ МОБОВ В ГОРОДСКИХ ЗДАНИЯХ =====
+    // Городские здания — поиска нет
     var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
                       'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
                       'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
@@ -172,7 +172,7 @@ window.doSearch = function() {
 };
 
 // ============================================================
-// 3. КНОПКИ БОЯ (вызывается только во время боя)
+// 3. КНОПКИ БОЯ
 // ============================================================
 
 function showBattleButtons() {
@@ -193,6 +193,113 @@ function showBattleButtons() {
     }
 }
 
-// НЕ ПЕРЕОПРЕДЕЛЯЕМ updateActions! Гавань работает сама.
+// ============================================================
+// 4. УНИВЕРСАЛЬНЫЙ updateActions (ДЛЯ ВСЕХ ЛОКАЦИЙ)
+// ============================================================
 
-console.log('✅ Боевка + Поиск загружены! (UI не тронут)');
+window.updateActions = function() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var container = document.getElementById('actions-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // ===== СТАНДАРТНЫЕ КНОПКИ =====
+    var actions = [
+        { id: 'search', label: '🔍 Поиск' },
+        { id: 'inventory', label: '🎒 Инвентарь' },
+        { id: 'character', label: '👤 Персонаж' },
+        { id: 'menu', label: '📋 Меню' }
+    ];
+    
+    // ===== РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
+    for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        btn.onclick = (function(id) {
+            return function() {
+                if (id === 'search') {
+                    if (typeof window.doSearch === 'function') {
+                        window.doSearch();
+                    } else {
+                        setMessage('❌ Боевая система не загружена.');
+                    }
+                    return;
+                }
+                if (typeof gameAction === 'function') {
+                    gameAction(id);
+                } else {
+                    setMessage('❌ Действие временно недоступно.');
+                }
+            };
+        })(a.id);
+        container.appendChild(btn);
+    }
+    
+    // ===== КНОПКИ ПЕРЕМЕЩЕНИЯ (из transitions.js) =====
+    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[place] : null;
+    if (transitions) {
+        var dirLabels = {
+            'n': '⬆️ Север',
+            'ne': '↗️ Северо-восток',
+            'e': '➡️ Восток',
+            'se': '↘️ Юго-восток',
+            's': '⬇️ Юг',
+            'sw': '↙️ Юго-запад',
+            'w': '⬅️ Запад',
+            'nw': '↖️ Северо-запад'
+        };
+        for (var dir in transitions) {
+            if (transitions[dir]) {
+                var btn = document.createElement('button');
+                btn.className = 'btn-game';
+                btn.textContent = dirLabels[dir] || dir;
+                btn.onclick = (function(d) {
+                    return function() {
+                        if (typeof window.moveTo === 'function') {
+                            window.moveTo(d);
+                        } else {
+                            setMessage('❌ Система перемещений не загружена.');
+                        }
+                    };
+                })(dir);
+                container.appendChild(btn);
+            }
+        }
+    }
+    
+    // ===== СПЕЦКНОПКИ ДЛЯ КОНКРЕТНЫХ ЛОКАЦИЙ =====
+    if (place === 'kl_crossroads') {
+        var enterBtn = document.createElement('button');
+        enterBtn.className = 'btn-game';
+        enterBtn.textContent = '🏰 Войти в замок';
+        enterBtn.onclick = function() {
+            g.location.place = 'kings_landing';
+            setMessage('🏰 Вы вошли в Красный замок.');
+            updateMenu();
+            updateStory();
+            updateActions();
+            saveData();
+        };
+        container.appendChild(enterBtn);
+    }
+    
+    if (place === 'kings_landing') {
+        var exitBtn = document.createElement('button');
+        exitBtn.className = 'btn-game';
+        exitBtn.textContent = '🚪 Выйти из замка';
+        exitBtn.onclick = function() {
+            g.location.place = 'kl_crossroads';
+            setMessage('🚪 Вы вышли из замка на перекрёсток.');
+            updateMenu();
+            updateStory();
+            updateActions();
+            saveData();
+        };
+        container.appendChild(exitBtn);
+    }
+};
+
+console.log('✅ UI полностью загружен!');
