@@ -1,37 +1,15 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — ПОЛНЫЙ ФАЙЛ С ИСПРАВЛЕНИЯМИ
+// КОРОЛЕВСКАЯ ГАВАНЬ — НЕЗАВИСИМАЯ ЛОКАЦИЯ
 // ============================================================
 
-console.log('🏰 Королевская Гавань загружается...');
+// Сохраняем предыдущие обработчики (для Дороги или других локаций)
+var _kingsLandingPrevUpdateStory = window.updateStory;
+var _kingsLandingPrevUpdateActions = window.updateActions;
 
 // ============================================================
 // 1. КАРТА
 // ============================================================
-
-var BUILDINGS = [
-    { id: 'Таверна', label: '🍺 Таверна' },
-    { id: 'Рынок', label: '🏪 Рынок' },
-    { id: 'Кузница', label: '⚒️ Кузница' },
-    { id: 'Оружейная лавка', label: '🗡️ Оружейная лавка' },
-    { id: 'Кожевник', label: '🪡 Кожевник' },
-    { id: 'Бронник', label: '🛡️ Бронник' },
-    { id: 'Плотник', label: '🪵 Плотник' },
-    { id: 'Конюшня', label: '🐴 Конюшня' },
-    { id: 'Гильдия торговцев', label: '🏛️ Гильдия торговцев' },
-    { id: 'Магистрат', label: '📜 Магистрат' },
-    { id: 'Ворота', label: '🚪 Ворота' },
-    { id: 'Королевский квартал', label: '👑 Королевский квартал' },
-    { id: 'Торговый квартал', label: '🏙️ Торговый квартал' },
-    { id: 'Квартал бедноты', label: '🏚️ Квартал бедноты' },
-    { id: 'Дом', label: '🏠 Ваш дом' },
-    { id: 'Великая септа', label: '⛪ Великая Септа' },
-    { id: 'Порт', label: '⛵ Порт' },
-    { id: 'Тюрьма', label: '⛓️ Тюрьма' },
-    { id: 'Библиотека мейстеров', label: '📚 Библиотека' },
-    { id: 'Гильдия наёмников', label: '🗡️ Гильдия наёмников' },
-    { id: 'Бордель', label: '💃 Бордель' }
-];
 
 function openMap() {
     var user = users[currentUser];
@@ -48,6 +26,7 @@ function openMap() {
         var b = BUILDINGS[i];
         var isCurrent = b.id === g.location.place;
         
+        // Пропускаем Дорогу (она отдельная локация) и Дом (вход через район)
         if (b.id === 'Дорога' || b.id === 'Дом') continue;
         
         if (g.outside && b.id !== 'Ворота') continue;
@@ -71,6 +50,10 @@ function openMap() {
 function closeMap() {
     document.getElementById('modal-map').classList.add('hide');
 }
+
+// ============================================================
+// 2. ПЕРЕМЕЩЕНИЕ
+// ============================================================
 
 function goToBuilding(building) {
     var user = users[currentUser];
@@ -105,10 +88,8 @@ function goToBuilding(building) {
 }
 
 // ============================================================
-// 2. STORY
+// 3. STORY
 // ============================================================
-
-var _kingsLandingPrevUpdateStory = window.updateStory;
 
 window.updateStory = function() {
     var user = users[currentUser];
@@ -116,15 +97,10 @@ window.updateStory = function() {
     var g = user.game;
     var place = g.location.place;
     
-    var cityPlaces = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) === -1 && place !== 'kings_landing') {
+    // Если это Дорога — передаём управление предыдущему обработчику
+    if (place === 'Дорога') {
         if (typeof _kingsLandingPrevUpdateStory === 'function') {
-            _kingsLandingPrevUpdateStory();
+            return _kingsLandingPrevUpdateStory();
         }
         return;
     }
@@ -163,13 +139,15 @@ window.updateStory = function() {
     if (textEl) {
         textEl.textContent = texts[place] || 'Вы в ' + place + '.';
     }
+    
+    if (typeof updateActions === 'function') {
+        updateActions();
+    }
 };
 
 // ============================================================
-// 3. ACTIONS (КНОПКИ) — ТОЛЬКО ДЛЯ ГОРОДСКИХ ЗДАНИЙ
+// 4. ACTIONS (КНОПКИ)
 // ============================================================
-
-var _kingsLandingPrevUpdateActions = window.updateActions;
 
 window.updateActions = function() {
     var user = users[currentUser];
@@ -179,29 +157,14 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
-    // ===== ЕСЛИ ЭТО kings_landing — ВЫЗЫВАЕМ УНИВЕРСАЛЬНЫЙ UI =====
-    if (place === 'kings_landing') {
+    // Если это Дорога — передаём управление предыдущему обработчику
+    if (place === 'Дорога') {
         if (typeof _kingsLandingPrevUpdateActions === 'function') {
-            _kingsLandingPrevUpdateActions();
+            return _kingsLandingPrevUpdateActions();
         }
         return;
     }
     
-    // ===== ЕСЛИ ЭТО НЕ ГОРОДСКОЕ ЗДАНИЕ — ВЫЗЫВАЕМ УНИВЕРСАЛЬНЫЙ UI =====
-    var cityPlaces = ['Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) === -1) {
-        if (typeof _kingsLandingPrevUpdateActions === 'function') {
-            _kingsLandingPrevUpdateActions();
-        }
-        return;
-    }
-    
-    // ===== ГОРОДСКИЕ ЗДАНИЯ (Таверна, Рынок и т.д.) =====
     container.innerHTML = '';
     var actions = [];
     
@@ -335,7 +298,7 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 4. ДОМА
+// 5. ДОМА
 // ============================================================
 
 function buyHouse(type) {
@@ -623,7 +586,7 @@ function viewDistrict(district) {
 }
 
 // ============================================================
-// 5. СКЛАД
+// 6. СКЛАД
 // ============================================================
 
 function openStorage() {
@@ -841,7 +804,7 @@ function takeFromStorageHold(key) {
 }
 
 // ============================================================
-// 6. КОНЮШНЯ
+// 7. КОНЮШНЯ
 // ============================================================
 
 function openStable() {
@@ -981,7 +944,7 @@ function sellHorse() {
 }
 
 // ============================================================
-// 7. СЕПТА
+// 8. СЕПТА
 // ============================================================
 
 function openTemple() {
@@ -1184,7 +1147,7 @@ function buyPotion(potionId, price, hp, fatigue) {
 }
 
 // ============================================================
-// 8. БИБЛИОТЕКА
+// 9. БИБЛИОТЕКА
 // ============================================================
 
 function openLibrary() {
@@ -1394,7 +1357,7 @@ function readBook(index) {
 }
 
 // ============================================================
-// 9. ГИЛЬДИЯ НАЁМНИКОВ
+// 10. ГИЛЬДИЯ НАЁМНИКОВ
 // ============================================================
 
 function openGuildHall() {
@@ -1615,7 +1578,7 @@ function checkQuestProgress(type, target, count) {
 }
 
 // ============================================================
-// 10. БОРДЕЛЬ
+// 11. БОРДЕЛЬ
 // ============================================================
 
 function openBrothel() {
@@ -1753,7 +1716,7 @@ function useBrothelService(serviceId, price, fatigue, hp, buffData) {
 }
 
 // ============================================================
-// 11. РЫНОК (ЛАВКИ)
+// 12. РЫНОК (ЛАВКИ)
 // ============================================================
 
 function openMarket() {
@@ -2005,7 +1968,7 @@ function removeFromStall(stallId, idx) {
 }
 
 // ============================================================
-// 12. ПОРТ
+// 13. ПОРТ
 // ============================================================
 
 function openPort() {
@@ -2033,7 +1996,7 @@ function openPort() {
 }
 
 // ============================================================
-// 13. МАГИСТРАТ
+// 14. МАГИСТРАТ
 // ============================================================
 
 function openMagistrate() {
@@ -2358,7 +2321,7 @@ function confiscateStall() {
 }
 
 // ============================================================
-// 14. КОНФИСКАТ
+// 15. КОНФИСКАТ
 // ============================================================
 
 function openConfiscated() {
@@ -2443,7 +2406,7 @@ function returnFromConfiscate(entryIdx, itemIdx) {
 }
 
 // ============================================================
-// 15. КОСТИ
+// 16. КОСТИ
 // ============================================================
 
 function getActiveDiceGames() {
@@ -2605,7 +2568,7 @@ function finishDiceGame(gameId) {
 }
 
 // ============================================================
-// 16. ТЮРЬМА
+// 17. ТЮРЬМА
 // ============================================================
 
 function payJailFine() {
@@ -2720,7 +2683,7 @@ function freeFromJail() {
 }
 
 // ============================================================
-// 17. ВСПОМОГАТЕЛЬНЫЕ
+// 18. ВСПОМОГАТЕЛЬНЫЕ
 // ============================================================
 
 function parseCurrencyInput(input) {
@@ -2770,10 +2733,9 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
-// 18. РЕГИСТРАЦИЯ
+// 19. РЕГИСТРАЦИЯ
 // ============================================================
 
-window.BUILDINGS = BUILDINGS;
 window.openMap = openMap;
 window.closeMap = closeMap;
 window.goToBuilding = goToBuilding;
@@ -2841,4 +2803,4 @@ window.finishDiceGame = finishDiceGame;
 window.showMagistrateHousing = showMagistrateHousing;
 window.showMagistrateStalls = showMagistrateStalls;
 
-console.log('🏰 Королевская Гавань загружена (полный файл)!');
+console.log('🏰 Королевская Гавань загружена!');
