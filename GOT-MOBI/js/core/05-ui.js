@@ -200,5 +200,63 @@ function setMessage(msg) {
     var el = document.getElementById('game-message');
     if (el) el.textContent = msg;
 }
+// ============================================================
+// ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ КАРТЫ МЕСТ
+// ============================================================
 
+window.openPlaces = function() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var loc = KL_AREAS[place];
+    
+    if (!loc || !loc.places || loc.places.length === 0) {
+        setMessage('📍 Здесь нет мест.');
+        return;
+    }
+    
+    var modal = document.getElementById('modal-places');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-places';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-places-content');
+    var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
+    html += '<div class="modal-section">';
+    loc.places.forEach(function(p) {
+        var isCurrent = (p === g.location.place);
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
+            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
+        html += '</div>';
+    });
+    html += '</div><button class="btn" onclick="closePlaces()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+};
+
+window.closePlaces = function() {
+    var modal = document.getElementById('modal-places');
+    if (modal) modal.classList.add('hide');
+};
+
+window.goToPlace = function(placeName) {
+    var g = users[currentUser].game;
+    if (!g) return;
+    g.location.place = placeName;
+    setMessage('🚶 Вы перешли в ' + placeName);
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+};
 console.log('✅ UI загружен (только боевка и поиск)');
