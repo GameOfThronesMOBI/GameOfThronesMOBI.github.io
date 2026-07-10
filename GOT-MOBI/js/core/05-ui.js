@@ -1,70 +1,11 @@
 // ============================================================
-// js/core/05-ui.js — ГЛОБАЛЬНЫЕ КНОПКИ (БЕЗ КОНФЛИКТА С ГОРОДОМ)
+// js/core/05-ui.js — ТОЛЬКО БОЕВКА И ПОИСК (БЕЗ КНОПОК)
 // ============================================================
 
 console.log('🔧 UI загружается...');
 
 // ============================================================
-// 1. МЕСТА
-// ============================================================
-
-function openPlaces() {
-    var g = users[currentUser].game;
-    var place = g.location.place;
-    var loc = KL_AREAS[place];
-    if (!loc || !loc.places || loc.places.length === 0) {
-        setMessage('📍 Здесь нет мест.');
-        return;
-    }
-    
-    var modal = document.getElementById('modal-places');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-places';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-places-content');
-    var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
-    html += '<div class="modal-section">';
-    loc.places.forEach(function(p) {
-        var isCurrent = (p === g.location.place);
-        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
-        if (!isCurrent) {
-            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
-        } else {
-            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-        }
-        html += '</div>';
-    });
-    html += '</div><button class="btn" onclick="closePlaces()">Закрыть</button>';
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function closePlaces() {
-    var modal = document.getElementById('modal-places');
-    if (modal) modal.classList.add('hide');
-}
-
-function goToPlace(placeName) {
-    var g = users[currentUser].game;
-    if (!g) return;
-    g.location.place = placeName;
-    setMessage('🚶 Вы перешли в ' + placeName);
-    updateMenu();
-    updateStory();
-    updateActions();
-    saveData();
-}
-
-// ============================================================
-// 2. БОЕВКА
+// 1. БОЕВКА
 // ============================================================
 
 window._battle = null;
@@ -192,7 +133,7 @@ window.endBattle = function(won, reason) {
 };
 
 // ============================================================
-// 3. ПОИСК
+// 2. ПОИСК
 // ============================================================
 
 window.doSearch = function() {
@@ -230,7 +171,7 @@ window.doSearch = function() {
 };
 
 // ============================================================
-// 4. КНОПКИ БОЯ
+// 3. КНОПКИ БОЯ
 // ============================================================
 
 function showBattleButtons() {
@@ -252,81 +193,7 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 5. ГЛОБАЛЬНЫЕ КНОПКИ (БЕЗ КОНФЛИКТА)
-// ============================================================
-
-window.updateActions = function() {
-    var g = users[currentUser].game;
-    var place = g.location.place;
-    var container = document.getElementById('actions-container');
-    if (!container) return;
-    
-    // ===== ЕСЛИ ЭТО ГОРОДСКАЯ ЛОКАЦИЯ — НЕ ДОБАВЛЯЕМ ГЛОБАЛЬНЫЕ КНОПКИ =====
-    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) !== -1) {
-        // Городские кнопки уже есть — ничего не делаем
-        return;
-    }
-    
-    // ===== ДЛЯ НЕ-ГОРОДСКИХ ЛОКАЦИЙ — ДОБАВЛЯЕМ ГЛОБАЛЬНЫЕ КНОПКИ =====
-    var actions = [
-        { id: 'search', label: '🔍 Поиск' },
-        { id: 'inventory', label: '🎒 Инвентарь' },
-        { id: 'character', label: '👤 Персонаж' },
-        { id: 'menu', label: '📋 Меню' }
-    ];
-    
-    // ===== КНОПКА "МЕСТА" =====
-    var loc = KL_AREAS[place];
-    if (loc && loc.places && loc.places.length > 0) {
-        actions.push({ id: 'places', label: '🏘️ Места (' + loc.places.length + ')' });
-    }
-    
-    // ===== РЕНДЕРИМ =====
-    // Если container пустой — добавляем кнопки
-    if (container.children.length === 0) {
-        for (var i = 0; i < actions.length; i++) {
-            var a = actions[i];
-            var btn = document.createElement('button');
-            btn.className = 'btn-game';
-            btn.textContent = a.label;
-            btn.onclick = (function(id) {
-                return function() {
-                    if (id === 'search') {
-                        if (typeof window.doSearch === 'function') {
-                            window.doSearch();
-                        } else {
-                            setMessage('❌ Боевая система не загружена.');
-                        }
-                        return;
-                    }
-                    if (id === 'places') {
-                        if (typeof openPlaces === 'function') {
-                            openPlaces();
-                        } else {
-                            setMessage('❌ Система мест не загружена.');
-                        }
-                        return;
-                    }
-                    if (typeof gameAction === 'function') {
-                        gameAction(id);
-                    } else {
-                        setMessage('❌ Действие временно недоступно.');
-                    }
-                };
-            })(a.id);
-            container.appendChild(btn);
-        }
-    }
-};
-
-// ============================================================
-// 6. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+// 4. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 
 function setMessage(msg) {
@@ -334,4 +201,4 @@ function setMessage(msg) {
     if (el) el.textContent = msg;
 }
 
-console.log('✅ UI полностью загружен!');
+console.log('✅ UI загружен (только боевка и поиск)');
