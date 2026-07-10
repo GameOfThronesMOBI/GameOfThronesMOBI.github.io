@@ -1,11 +1,11 @@
 // ============================================================
-// js/core/05-ui.js — UI (БОЕВКА + ПОИСК + МЕСТА + КАРТА)
+// js/core/05-ui.js — ГЛОБАЛЬНЫЕ КНОПКИ (БЕЗ КОНФЛИКТА С ГОРОДОМ)
 // ============================================================
 
 console.log('🔧 UI загружается...');
 
 // ============================================================
-// 1. ГЛОБАЛЬНАЯ КНОПКА МЕСТ
+// 1. МЕСТА
 // ============================================================
 
 function openPlaces() {
@@ -32,9 +32,14 @@ function openPlaces() {
     var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
     html += '<div class="modal-section">';
     loc.places.forEach(function(p) {
+        var isCurrent = (p === g.location.place);
         html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + p + '</span>';
-        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
+            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
         html += '</div>';
     });
     html += '</div><button class="btn" onclick="closePlaces()">Закрыть</button>';
@@ -247,7 +252,7 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 5. УНИВЕРСАЛЬНЫЙ updateActions
+// 5. ГЛОБАЛЬНЫЕ КНОПКИ (БЕЗ КОНФЛИКТА)
 // ============================================================
 
 window.updateActions = function() {
@@ -255,9 +260,20 @@ window.updateActions = function() {
     var place = g.location.place;
     var container = document.getElementById('actions-container');
     if (!container) return;
-    container.innerHTML = '';
     
-    // ===== СТАНДАРТНЫЕ КНОПКИ =====
+    // ===== ЕСЛИ ЭТО ГОРОДСКАЯ ЛОКАЦИЯ — НЕ ДОБАВЛЯЕМ ГЛОБАЛЬНЫЕ КНОПКИ =====
+    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
+                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
+                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
+                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
+                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
+    
+    if (cityPlaces.indexOf(place) !== -1) {
+        // Городские кнопки уже есть — ничего не делаем
+        return;
+    }
+    
+    // ===== ДЛЯ НЕ-ГОРОДСКИХ ЛОКАЦИЙ — ДОБАВЛЯЕМ ГЛОБАЛЬНЫЕ КНОПКИ =====
     var actions = [
         { id: 'search', label: '🔍 Поиск' },
         { id: 'inventory', label: '🎒 Инвентарь' },
@@ -265,80 +281,47 @@ window.updateActions = function() {
         { id: 'menu', label: '📋 Меню' }
     ];
     
-    // ===== КНОПКА "МЕСТА" (ГЛОБАЛЬНО) =====
+    // ===== КНОПКА "МЕСТА" =====
     var loc = KL_AREAS[place];
     if (loc && loc.places && loc.places.length > 0) {
-        var btn = document.createElement('button');
-        btn.className = 'btn-game';
-        btn.textContent = '🏘️ Места (' + loc.places.length + ')';
-        btn.onclick = openPlaces;
-        container.appendChild(btn);
+        actions.push({ id: 'places', label: '🏘️ Места (' + loc.places.length + ')' });
     }
     
-    // ===== КНОПКА "КАРТА" (ДЛЯ ГОРОДА) =====
-    if (place === 'kings_landing' || place === 'Таверна' || place === 'Рынок' || place === 'Кузница') {
-        var mapBtn = document.createElement('button');
-        mapBtn.className = 'btn-game';
-        mapBtn.textContent = '🗺️ Карта';
-        mapBtn.onclick = function() {
-            if (typeof window.openMap === 'function') {
-                window.openMap();
-            } else {
-                setMessage('❌ Карта города не загружена.');
-            }
-        };
-        container.appendChild(mapBtn);
-    }
-    
-    // ===== КНОПКИ ПЕРЕМЕЩЕНИЯ =====
-    var transitions = KL_TRANSITIONS[place] || {};
-    var dirLabels = {
-        'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток',
-        'se': '↘️ ЮВ', 's': '⬇️ Юг', 'sw': '↙️ ЮЗ',
-        'w': '⬅️ Запад', 'nw': '↖️ СЗ'
-    };
-    for (var dir in transitions) {
-        if (transitions[dir]) {
+    // ===== РЕНДЕРИМ =====
+    // Если container пустой — добавляем кнопки
+    if (container.children.length === 0) {
+        for (var i = 0; i < actions.length; i++) {
+            var a = actions[i];
             var btn = document.createElement('button');
             btn.className = 'btn-game';
-            btn.textContent = dirLabels[dir] || dir;
-            btn.onclick = (function(d) {
+            btn.textContent = a.label;
+            btn.onclick = (function(id) {
                 return function() {
-                    if (typeof window.moveTo === 'function') {
-                        window.moveTo(d);
+                    if (id === 'search') {
+                        if (typeof window.doSearch === 'function') {
+                            window.doSearch();
+                        } else {
+                            setMessage('❌ Боевая система не загружена.');
+                        }
+                        return;
+                    }
+                    if (id === 'places') {
+                        if (typeof openPlaces === 'function') {
+                            openPlaces();
+                        } else {
+                            setMessage('❌ Система мест не загружена.');
+                        }
+                        return;
+                    }
+                    if (typeof gameAction === 'function') {
+                        gameAction(id);
                     } else {
-                        setMessage('❌ Система перемещений не загружена.');
+                        setMessage('❌ Действие временно недоступно.');
                     }
                 };
-            })(dir);
+            })(a.id);
             container.appendChild(btn);
         }
-    }
-    
-    // ===== РЕНДЕРИМ СТАНДАРТНЫЕ КНОПКИ =====
-    for (var i = 0; i < actions.length; i++) {
-        var a = actions[i];
-        var btn = document.createElement('button');
-        btn.className = 'btn-game';
-        btn.textContent = a.label;
-        btn.onclick = (function(id) {
-            return function() {
-                if (id === 'search') {
-                    if (typeof window.doSearch === 'function') {
-                        window.doSearch();
-                    } else {
-                        setMessage('❌ Боевая система не загружена.');
-                    }
-                    return;
-                }
-                if (typeof gameAction === 'function') {
-                    gameAction(id);
-                } else {
-                    setMessage('❌ Действие временно недоступно.');
-                }
-            };
-        })(a.id);
-        container.appendChild(btn);
     }
 };
 
