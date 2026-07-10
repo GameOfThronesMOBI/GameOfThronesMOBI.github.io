@@ -220,8 +220,30 @@ function gameAction(action) {
     if (!user) return;
     var g = user.game;
     
-    // КАРТА
-    if (action === 'map') { if (typeof openMap === 'function') { openMap(); return; } return; }
+    //карта
+if (action === 'map') {
+    var place = g.location.place;
+    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
+                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
+                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
+                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
+                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
+    
+    if (cityPlaces.indexOf(place) !== -1) {
+        if (typeof window.openMap === 'function') {
+            window.openMap();
+        } else {
+            setMessage('❌ Карта города не загружена.');
+        }
+    } else {
+        if (typeof window.openPlaces === 'function') {
+            window.openPlaces();
+        } else {
+            setMessage('❌ Карта мест не загружена.');
+        }
+    }
+    return;
+}
     
     // ВХОД/ВЫХОД ИЗ ГОРОДА
 if (action === 'leave_city') {
