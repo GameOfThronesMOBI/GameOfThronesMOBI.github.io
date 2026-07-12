@@ -1,5 +1,5 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ПОЛНЫЙ ФАЙЛ (ФИНАЛЬНАЯ ВЕРСИЯ)
+// js/regions/crownlands/areas.js — ФИНАЛЬНАЯ ВЕРСИЯ
 // ============================================================
 
 const KL_AREAS = {
@@ -133,7 +133,7 @@ const KL_AREAS = {
 };
 
 // ============================================================
-// КАРТА (ПЕРЕХОДЫ + МЕСТА)
+// КАРТА (ПЕРЕХОДЫ + МЕСТА + ЦЕНТР)
 // ============================================================
 
 window.openPlaces = function() {
@@ -202,6 +202,18 @@ window.openPlaces = function() {
     }
     html += '</div>';
     
+    // === ЦЕНТР ЛОКАЦИИ ===
+    var isAtCenter = (g.location.place === locationId);
+    html += '<div class="modal-section" style="margin-top:10px;"><h4>📍 Центр</h4>';
+    html += '<div class="row" style="padding:8px 0; border-bottom:2px solid #3d3026;">';
+    html += '<span class="label" style="color:#c9b694;">📍 ' + loc.name + '</span>';
+    if (!isAtCenter) {
+        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + locationId + '\'); closePlaces();">🚶 Вернуться</button></span>';
+    } else {
+        html += '<span class="value" style="color:#7ac98a;">⭐ Вы здесь</span>';
+    }
+    html += '</div></div>';
+    
     // === МЕСТА ===
     if (loc.places && loc.places.length > 0) {
         html += '<div class="modal-section" style="margin-top:10px;"><h4>🏘️ Места поблизости</h4>';
@@ -241,7 +253,7 @@ window.goToPlace = function(placeName) {
 };
 
 // ============================================================
-// ОБНОВЛЕНИЕ STORY (С АВТОВОССТАНОВЛЕНИЕМ locationId)
+// ОБНОВЛЕНИЕ STORY
 // ============================================================
 
 window.updateStory = function() {
@@ -249,7 +261,6 @@ window.updateStory = function() {
     var place = g.location.place;
     var loc = KL_AREAS[place];
     
-    // Принудительное восстановление locationId при загрузке
     if (!g.location.locationId || !KL_AREAS[g.location.locationId]) {
         if (KL_AREAS[place]) {
             g.location.locationId = place;
@@ -438,4 +449,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Внешние локации загружены (финальная версия)');
+console.log('✅ Внешние локации загружены');
