@@ -1,5 +1,5 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ПОЛНЫЙ ФАЙЛ (ЧИСТОВАЯ)
+// js/regions/crownlands/areas.js — ПОЛНЫЙ ФАЙЛ (ФИНАЛЬНАЯ ВЕРСИЯ)
 // ============================================================
 
 const KL_AREAS = {
@@ -241,13 +241,30 @@ window.goToPlace = function(placeName) {
 };
 
 // ============================================================
-// ОБНОВЛЕНИЕ STORY
+// ОБНОВЛЕНИЕ STORY (С АВТОВОССТАНОВЛЕНИЕМ locationId)
 // ============================================================
 
 window.updateStory = function() {
     var g = users[currentUser].game;
     var place = g.location.place;
     var loc = KL_AREAS[place];
+    
+    // Принудительное восстановление locationId при загрузке
+    if (!g.location.locationId || !KL_AREAS[g.location.locationId]) {
+        if (KL_AREAS[place]) {
+            g.location.locationId = place;
+            loc = KL_AREAS[place];
+        } else {
+            for (var id in KL_AREAS) {
+                var l = KL_AREAS[id];
+                if (l.places && l.places.indexOf(place) !== -1) {
+                    g.location.locationId = id;
+                    loc = KL_AREAS[id];
+                    break;
+                }
+            }
+        }
+    }
     
     if (!loc) {
         if (typeof _areasPrevUpdateStory === 'function') {
@@ -421,4 +438,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Внешние локации загружены (чистовая версия)');
+console.log('✅ Внешние локации загружены (финальная версия)');
