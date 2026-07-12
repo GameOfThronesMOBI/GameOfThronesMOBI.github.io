@@ -1,24 +1,14 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ВСЕ ВНЕШНИЕ ЛОКАЦИИ (ПОЛНАЯ ВЕРСИЯ)
+// js/regions/crownlands/areas.js — ПОЛНЫЙ ФАЙЛ (ЧИСТОВАЯ)
 // ============================================================
 
 const KL_AREAS = {
-    // ПЕРЕКРЁСТОК
     kl_crossroads: {
-        id: 'kl_crossroads',
-        name: 'Перекрёсток',
-        type: 'crossroads',
-        level: 1,
-        region: 'Королевские земли',
-        area: 'Королевская Гавань',
-        owner: 'crown',
+        id: 'kl_crossroads', name: 'Перекрёсток', type: 'crossroads', level: 1,
+        region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Придорожный камень', 'Столб с указателями'],
-        actions: [
-            { id: 'enter_castle', label: '🏰 Войти в замок' }
-        ]
+        actions: [{ id: 'enter_castle', label: '🏰 Войти в замок' }]
     },
-
-    // СЕВЕР (дорога)
     kl_n_1: {
         id: 'kl_n_1', name: 'Северный тракт', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -40,8 +30,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Сторожевая башня'], actions: []
     },
-
-    // СЕВЕРО-ВОСТОК (берег)
     kl_ne_1: {
         id: 'kl_ne_1', name: 'Берег Чёрноводной', type: 'coast', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -72,8 +60,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Пещера контрабандистов'], actions: []
     },
-
-    // СЕВЕРО-ЗАПАД (лес)
     kl_nw_1: {
         id: 'kl_nw_1', name: 'Королевский лес', type: 'forest', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -104,8 +90,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Развалины старой крепости'], actions: []
     },
-
-    // ЮГ (дорога)
     kl_s_1: {
         id: 'kl_s_1', name: 'Южный тракт', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -126,8 +110,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Застава'], actions: []
     },
-
-    // ЮГО-ЗАПАД (дорога)
     kl_sw_1: {
         id: 'kl_sw_1', name: 'Юго-западный тракт', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -151,24 +133,21 @@ const KL_AREAS = {
 };
 
 // ============================================================
-// КАРТА МЕСТ (ИСПРАВЛЕННАЯ — ИЩЕТ РОДИТЕЛЬСКУЮ ЛОКАЦИЮ)
+// КАРТА (ПЕРЕХОДЫ + МЕСТА)
 // ============================================================
 
 window.openPlaces = function() {
     var g = users[currentUser].game;
     var locationId = g.location.locationId;
     
-    // === ЗАПАСНОЙ ПОИСК: если locationId отсутствует или битый ===
     if (!locationId || !KL_AREAS[locationId]) {
-        // Проверяем: может мы стоим прямо на ID локации?
         if (KL_AREAS[g.location.place]) {
             locationId = g.location.place;
             g.location.locationId = locationId;
         } else {
-            // Ищем родительскую локацию по месту (place)
             for (var id in KL_AREAS) {
-                var loc = KL_AREAS[id];
-                if (loc.places && loc.places.indexOf(g.location.place) !== -1) {
+                var l = KL_AREAS[id];
+                if (l.places && l.places.indexOf(g.location.place) !== -1) {
                     locationId = id;
                     g.location.locationId = id;
                     break;
@@ -183,10 +162,7 @@ window.openPlaces = function() {
     }
 
     var loc = KL_AREAS[locationId];
-    if (!loc.places || loc.places.length === 0) {
-        setMessage('📍 Здесь нет примечательных мест.');
-        return;
-    }
+    var transitions = KL_TRANSITIONS[locationId] || {};
     
     var modal = document.getElementById('modal-places');
     if (!modal) {
@@ -194,40 +170,55 @@ window.openPlaces = function() {
         overlay.id = 'modal-places';
         overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗺️ КАРТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
     
     var content = document.getElementById('modal-places-content');
     var html = '<div class="modal-section"><h4>📍 ' + loc.name + ' (ур.' + (loc.level || 1) + ')</h4>';
-    html += '<div class="modal-section">';
     
-    // Кнопка возврата в центр локации
-    var isAtCenter = (g.location.place === locationId);
-    html += '<div class="row" style="padding:8px 0; border-bottom:2px solid #3d3026;">';
-    html += '<span class="label">📍 Центр локации</span>';
-    if (!isAtCenter) {
-        html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + locationId + '\'); closePlaces();">🚶 Вернуться</button></span>';
-    } else {
-        html += '<span class="value" style="color:#6a5a48;">⭐ Вы здесь</span>';
+    // === ПЕРЕХОДЫ ===
+    html += '<div class="modal-section"><h4>🚶 Куда пойти</h4>';
+    var dirLabels = {
+        'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток', 'se': '↘️ ЮВ',
+        's': '⬇️ Юг', 'sw': '↙️ ЮЗ', 'w': '⬅️ Запад', 'nw': '↖️ СЗ'
+    };
+    var hasTransitions = false;
+    for (var dir in dirLabels) {
+        var nextId = transitions[dir];
+        if (!nextId) continue;
+        hasTransitions = true;
+        var nextLoc = KL_AREAS[nextId];
+        var nextName = nextLoc ? nextLoc.name : nextId;
+        var nextLevel = nextLoc ? nextLoc.level : '?';
+        html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + dirLabels[dir] + ' — ' + nextName + ' (ур.' + nextLevel + ')</span>';
+        html += '<span class="value"><button class="btn btn-small" onclick="moveTo(\'' + dir + '\'); closePlaces();">🚶 Идти</button></span>';
+        html += '</div>';
+    }
+    if (!hasTransitions) {
+        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🚫 Нет доступных направлений.</p>';
     }
     html += '</div>';
     
-    // Список мест
-    loc.places.forEach(function(p) {
-        var isCurrent = (p === g.location.place);
-        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
-        if (!isCurrent) {
-            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
-        } else {
-            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
-        }
+    // === МЕСТА ===
+    if (loc.places && loc.places.length > 0) {
+        html += '<div class="modal-section" style="margin-top:10px;"><h4>🏘️ Места поблизости</h4>';
+        loc.places.forEach(function(p) {
+            var isCurrent = (p === g.location.place);
+            html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+            html += '<span class="label">📍 ' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+            if (!isCurrent) {
+                html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+            } else {
+                html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+            }
+            html += '</div>';
+        });
         html += '</div>';
-    });
+    }
     
-    html += '</div>';
     html += '<button class="btn" onclick="closePlaces()" style="margin-top:8px;">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
@@ -250,7 +241,7 @@ window.goToPlace = function(placeName) {
 };
 
 // ============================================================
-// ОБНОВЛЕНИЕ STORY И ACTIONS
+// ОБНОВЛЕНИЕ STORY
 // ============================================================
 
 window.updateStory = function() {
@@ -282,6 +273,10 @@ window.updateStory = function() {
     }
 };
 
+// ============================================================
+// ОБНОВЛЕНИЕ ACTIONS
+// ============================================================
+
 window.updateActions = function() {
     var g = users[currentUser].game;
     var place = g.location.place;
@@ -296,13 +291,11 @@ window.updateActions = function() {
         return;
     }
     
-    // Сохраняем ID текущей локации
     g.location.locationId = place;
     
     container.innerHTML = '';
     var localActions = loc.actions || [];
     
-    // Кнопки перемещения
     var transitions = KL_TRANSITIONS[place] || {};
     var dirLabels = {
         'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток', 'se': '↘️ ЮВ',
@@ -327,7 +320,6 @@ window.updateActions = function() {
         }
     }
     
-    // Рендерим локальные кнопки
     for (var i = 0; i < localActions.length; i++) {
         var a = localActions[i];
         var btn = document.createElement('button');
@@ -359,7 +351,6 @@ window.updateActions = function() {
         container.appendChild(btn);
     }
     
-    // Глобальные кнопки
     var globalActions = [
         { id: 'map', label: '🗺️ Карта' },
         { id: 'world', label: '🌍 Мир' },
@@ -430,4 +421,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Внешние локации загружены (полная версия + фикс карты)');
+console.log('✅ Внешние локации загружены (чистовая версия)');
