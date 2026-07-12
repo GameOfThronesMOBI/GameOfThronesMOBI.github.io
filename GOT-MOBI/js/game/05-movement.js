@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — ПОЛНАЯ СИСТЕМА ПЕРЕМЕЩЕНИЙ + КОМПАС
+// movement.js — ПОЛНАЯ СИСТЕМА ПЕРЕМЕЩЕНИЙ + КОМПАС (ФИКС)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -14,15 +14,15 @@ function openCompass() {
     var g = user.game;
     var place = g.location.place;
     
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[place] : null;
+    var current = g.location.locationId || g.location.place;
+    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
     
-    var loc = window.KL_AREAS ? KL_AREAS[place] : null;
+    var loc = window.KL_AREAS ? KL_AREAS[current] : null;
     
-    // Владелец локации
     var ownerName = '';
     if (loc && loc.owner) {
         if (loc.owner === 'crown') {
@@ -50,7 +50,7 @@ function openCompass() {
     var content = document.getElementById('modal-compass-content');
     
     var html = '<div class="modal-section"><h4>🧭 КОМПАС</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">📍 Текущая локация: <strong>' + place + '</strong>';
+    html += '<p style="color:#6a5a48;font-size:12px;">📍 Текущая локация: <strong>' + (loc ? loc.name : current) + '</strong>';
     if (ownerName) {
         html += ' | ' + ownerName;
     }
@@ -110,14 +110,14 @@ function closeCompass() {
 }
 
 // ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ (moveTo)
+// 3. ПЕРЕМЕЩЕНИЕ (moveTo) — ИСПРАВЛЕНО
 // ============================================================
 
 function moveTo(direction) {
     var g = users[currentUser].game;
     if (!g) return;
     
-    var current = g.location.place;
+    var current = g.location.locationId || g.location.place;
     var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
@@ -130,7 +130,6 @@ function moveTo(direction) {
         return;
     }
     
-    // Проверка: есть ли локация в KL_AREAS
     var isLoc = false;
     if (window.KL_AREAS) {
         for (var id in KL_AREAS) {
@@ -138,7 +137,6 @@ function moveTo(direction) {
         }
     }
     
-    // Если это не локация из KL_AREAS — переход в другой регион
     if (!isLoc && next !== 'kl_crossroads' && !KL_TRANSITIONS[next]) {
         var regionMap = {
             'riverlands': 'Речные земли',
@@ -152,6 +150,7 @@ function moveTo(direction) {
         };
         g.location.region = regionMap[next] || 'Королевские земли';
         g.location.place = next;
+        g.location.locationId = next;
         setMessage('🚶 Вы перешли в ' + next);
         updateMenu();
         updateStory();
@@ -160,8 +159,8 @@ function moveTo(direction) {
         return;
     }
     
-    // Обычный переход внутри области
     g.location.place = next;
+    g.location.locationId = next;
     setMessage('🚶 Вы пошли на ' + direction);
     updateMenu();
     updateStory();
