@@ -98,7 +98,7 @@ window.updateStory = function() {
     var place = g.location.place;
     
     // Если это Дорога — передаём управление предыдущему обработчику
-    if (place === 'Дорога') {
+    if (place === 'Дорога' || (typeof KL_AREAS !== 'undefined' && KL_AREAS[place])) {
         if (typeof _kingsLandingPrevUpdateStory === 'function') {
             return _kingsLandingPrevUpdateStory();
         }
@@ -158,7 +158,7 @@ window.updateActions = function() {
     if (!container) return;
     
     // Если это Дорога — передаём управление предыдущему обработчику
-    if (place === 'Дорога') {
+    if (place === 'Дорога' || (typeof KL_AREAS !== 'undefined' && KL_AREAS[place])) {
         if (typeof _kingsLandingPrevUpdateActions === 'function') {
             return _kingsLandingPrevUpdateActions();
         }
