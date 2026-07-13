@@ -1,18 +1,17 @@
 // ============================================================
-// movement.js — ПОЛНАЯ СИСТЕМА ПЕРЕМЕЩЕНИЙ + КОМПАС (ФИКС)
+// movement.js — ПОЛНАЯ СИСТЕМА ПЕРЕМЕЩЕНИЙ + КОМПАС (РОЗА ВЕТРОВ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
 
 // ============================================================
-// 1. ОТКРЫТЬ КОМПАС
+// 1. ОТКРЫТЬ КОМПАС (РОЗА ВЕТРОВ)
 // ============================================================
 
 function openCompass() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    var place = g.location.place;
     
     var current = g.location.locationId || g.location.place;
     var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
@@ -50,46 +49,49 @@ function openCompass() {
     var content = document.getElementById('modal-compass-content');
     
     var html = '<div class="modal-section"><h4>🧭 КОМПАС</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;">📍 Текущая локация: <strong>' + (loc ? loc.name : current) + '</strong>';
-    if (ownerName) {
-        html += ' | ' + ownerName;
-    }
+    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">📍 ' + (loc ? loc.name : current);
+    if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
-    html += '<p style="color:#6a5a48;font-size:12px;">Выберите направление:</p>';
-    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;">';
+    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">Выберите направление:</p>';
+    
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:6px;max-width:280px;margin:10px auto;">';
     
     var dirLabels = {
         'nw': '↖️ СЗ',
-        'n': '⬆️ С',
+        'n': '⬆️ Север',
         'ne': '↗️ СВ',
-        'w': '⬅️ З',
-        'e': '➡️ В',
+        'w': '⬅️ Запад',
+        'e': '➡️ Восток',
         'sw': '↙️ ЮЗ',
-        's': '⬇️ Ю',
+        's': '⬇️ Юг',
         'se': '↘️ ЮВ'
     };
     
-    var directions = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
+    var grid = [
+        ['nw', 'n', 'ne'],
+        ['w', null, 'e'],
+        ['sw', 's', 'se']
+    ];
     
-    for (var i = 0; i < directions.length; i++) {
-        var dir = directions[i];
-        var next = transitions[dir];
-        var label = dirLabels[dir] || dir;
-        
-        if (next) {
-            var nextLoc = window.KL_AREAS ? KL_AREAS[next] : null;
-            var nextName = nextLoc ? nextLoc.name : next;
-            var nextOwner = '';
-            if (nextLoc && nextLoc.owner) {
-                if (nextLoc.owner === 'crown') {
-                    nextOwner = '👑';
-                } else if (window.HOUSES && HOUSES[nextLoc.owner]) {
-                    nextOwner = HOUSES[nextLoc.owner].sigil;
-                }
+    for (var row = 0; row < 3; row++) {
+        for (var col = 0; col < 3; col++) {
+            var dir = grid[row][col];
+            
+            if (dir === null) {
+                html += '<div style="display:flex;align-items:center;justify-content:center;background:#1a1410;border:1px solid #3d3026;border-radius:50%;aspect-ratio:1;font-size:24px;">📍</div>';
+                continue;
             }
-            html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:10px;font-size:14px;">' + label + '<br><span style="font-size:10px;color:#6a5a48;">' + nextOwner + ' ' + nextName + '</span></button>';
-        } else {
-            html += '<div style="padding:10px;background:#120e0b;border:1px solid #2a201a;border-radius:8px;text-align:center;color:#3d3026;font-size:14px;">' + label + '<br><span style="font-size:10px;">🚫</span></div>';
+            
+            var next = transitions[dir];
+            var label = dirLabels[dir] || dir;
+            
+            if (next) {
+                var nextLoc = window.KL_AREAS ? KL_AREAS[next] : null;
+                var nextName = nextLoc ? nextLoc.name : next;
+                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:8px;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;">' + label + '<br><span style="font-size:9px;color:#6a5a48;">' + nextName + '</span></button>';
+            } else {
+                html += '<div style="display:flex;align-items:center;justify-content:center;background:#120e0b;border:1px solid #1a1410;border-radius:8px;color:#3d3026;font-size:13px;aspect-ratio:1;">' + label + '</div>';
+            }
         }
     }
     
@@ -110,7 +112,7 @@ function closeCompass() {
 }
 
 // ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ (moveTo) — ИСПРАВЛЕНО
+// 3. ПЕРЕМЕЩЕНИЕ (moveTo)
 // ============================================================
 
 function moveTo(direction) {
