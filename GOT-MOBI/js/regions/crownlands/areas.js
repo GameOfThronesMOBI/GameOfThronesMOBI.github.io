@@ -1,5 +1,5 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ФИНАЛЬНАЯ ВЕРСИЯ
+// js/regions/crownlands/areas.js — ФИНАЛ (КАРТА БЕЗ ПЕРЕХОДОВ)
 // ============================================================
 
 const KL_AREAS = {
@@ -133,7 +133,7 @@ const KL_AREAS = {
 };
 
 // ============================================================
-// КАРТА (ПЕРЕХОДЫ + МЕСТА + ЦЕНТР)
+// КАРТА (ТОЛЬКО МЕСТА + ЦЕНТР, БЕЗ ПЕРЕХОДОВ)
 // ============================================================
 
 window.openPlaces = function() {
@@ -162,7 +162,6 @@ window.openPlaces = function() {
     }
 
     var loc = KL_AREAS[locationId];
-    var transitions = KL_TRANSITIONS[locationId] || {};
     
     var modal = document.getElementById('modal-places');
     if (!modal) {
@@ -178,33 +177,9 @@ window.openPlaces = function() {
     var content = document.getElementById('modal-places-content');
     var html = '<div class="modal-section"><h4>📍 ' + loc.name + ' (ур.' + (loc.level || 1) + ')</h4>';
     
-    // === ПЕРЕХОДЫ ===
-    html += '<div class="modal-section"><h4>🚶 Куда пойти</h4>';
-    var dirLabels = {
-        'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток', 'se': '↘️ ЮВ',
-        's': '⬇️ Юг', 'sw': '↙️ ЮЗ', 'w': '⬅️ Запад', 'nw': '↖️ СЗ'
-    };
-    var hasTransitions = false;
-    for (var dir in dirLabels) {
-        var nextId = transitions[dir];
-        if (!nextId) continue;
-        hasTransitions = true;
-        var nextLoc = KL_AREAS[nextId];
-        var nextName = nextLoc ? nextLoc.name : nextId;
-        var nextLevel = nextLoc ? nextLoc.level : '?';
-        html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">' + dirLabels[dir] + ' — ' + nextName + ' (ур.' + nextLevel + ')</span>';
-        html += '<span class="value"><button class="btn btn-small" onclick="moveTo(\'' + dir + '\'); closePlaces();">🚶 Идти</button></span>';
-        html += '</div>';
-    }
-    if (!hasTransitions) {
-        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🚫 Нет доступных направлений.</p>';
-    }
-    html += '</div>';
-    
-    // === ЦЕНТР ЛОКАЦИИ ===
+    // ЦЕНТР ЛОКАЦИИ
     var isAtCenter = (g.location.place === locationId);
-    html += '<div class="modal-section" style="margin-top:10px;"><h4>📍 Центр</h4>';
+    html += '<div class="modal-section"><h4>📍 Центр</h4>';
     html += '<div class="row" style="padding:8px 0; border-bottom:2px solid #3d3026;">';
     html += '<span class="label" style="color:#c9b694;">📍 ' + loc.name + '</span>';
     if (!isAtCenter) {
@@ -214,7 +189,7 @@ window.openPlaces = function() {
     }
     html += '</div></div>';
     
-    // === МЕСТА ===
+    // МЕСТА
     if (loc.places && loc.places.length > 0) {
         html += '<div class="modal-section" style="margin-top:10px;"><h4>🏘️ Места поблизости</h4>';
         loc.places.forEach(function(p) {
@@ -302,7 +277,7 @@ window.updateStory = function() {
 };
 
 // ============================================================
-// ОБНОВЛЕНИЕ ACTIONS
+// ОБНОВЛЕНИЕ ACTIONS (БЕЗ КНОПОК НАПРАВЛЕНИЙ)
 // ============================================================
 
 window.updateActions = function() {
@@ -323,30 +298,6 @@ window.updateActions = function() {
     
     container.innerHTML = '';
     var localActions = loc.actions || [];
-    
-    var transitions = KL_TRANSITIONS[place] || {};
-    var dirLabels = {
-        'n': '⬆️ Север', 'ne': '↗️ СВ', 'e': '➡️ Восток', 'se': '↘️ ЮВ',
-        's': '⬇️ Юг', 'sw': '↙️ ЮЗ', 'w': '⬅️ Запад', 'nw': '↖️ СЗ'
-    };
-    
-    for (var dir in transitions) {
-        if (transitions[dir]) {
-            localActions.push({
-                id: 'move_' + dir,
-                label: dirLabels[dir] || dir,
-                action: function(d) {
-                    return function() {
-                        if (typeof window.moveTo === 'function') {
-                            window.moveTo(d);
-                        } else {
-                            setMessage('❌ Система перемещений не загружена.');
-                        }
-                    };
-                }(dir)
-            });
-        }
-    }
     
     for (var i = 0; i < localActions.length; i++) {
         var a = localActions[i];
@@ -381,7 +332,6 @@ window.updateActions = function() {
     
     var globalActions = [
         { id: 'map', label: '🗺️ Карта' },
-        { id: 'world', label: '🌍 Мир' },
         { id: 'compass', label: '🧭 Компас' },
         { id: 'search', label: '🔍 Поиск' },
         { id: 'inventory', label: '🎒 Инвентарь' },
@@ -401,14 +351,6 @@ window.updateActions = function() {
                         openPlaces();
                     } else {
                         setMessage('❌ Карта мест не загружена.');
-                    }
-                    return;
-                }
-                if (id === 'world') {
-                    if (typeof openWorldMap === 'function') {
-                        openWorldMap();
-                    } else {
-                        setMessage('🌍 Глобальная карта в разработке.');
                     }
                     return;
                 }
