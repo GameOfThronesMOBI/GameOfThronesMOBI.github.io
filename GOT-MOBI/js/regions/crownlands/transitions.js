@@ -1,4 +1,4 @@
-const KL_TRANSITIONS = {
+var KL_TRANSITIONS = {
     // ===== ПЕРЕКРЁСТОК =====
     'kl_crossroads': {
         n: 'kl_n_1',
