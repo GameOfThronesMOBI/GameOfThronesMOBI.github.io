@@ -1,9 +1,8 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ВСЕ 29 ЗОН БЕЗ ПРОПУСКОВ
+// js/regions/crownlands/areas.js — ВСЕ 29 ЗОН (ФИНАЛ)
 // ============================================================
 
 const KL_AREAS = {
-    // 🔄 ПЕРЕКРЁСТОК
     kl_crossroads: {
         id: 'kl_crossroads', name: 'Перекрёсток у Гавани', type: 'crossroads', level: 1,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -11,8 +10,6 @@ const KL_AREAS = {
         actions: [{ id: 'enter_castle', label: '🏰 Войти в замок' }],
         zoneNumber: 0
     },
-
-    // ⬆️ СЕВЕРНАЯ ДОРОГА (4 зоны)
     kl_n_1: {
         id: 'kl_n_1', name: 'Королевский тракт: Северные ворота', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -35,8 +32,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Пограничный камень'], actions: [], zoneNumber: 4
     },
-
-    // ↗️ СЕВЕРО-ВОСТОЧНЫЙ БЕРЕГ (4 зоны)
     kl_ne_1: {
         id: 'kl_ne_1', name: 'Берег Чёрноводной: Песчаный пляж', type: 'coast', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -57,8 +52,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Заброшенный маяк'], actions: [], zoneNumber: 4
     },
-
-    // ↘️ ЮГО-ВОСТОЧНЫЙ БЕРЕГ (4 зоны)
     kl_se_1: {
         id: 'kl_se_1', name: 'Южный берег: Песчаная коса', type: 'coast', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -79,8 +72,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Пещера в скалах'], actions: [], zoneNumber: 4
     },
-
-    // ⬇️ ЮЖНАЯ ДОРОГА (4 зоны)
     kl_s_1: {
         id: 'kl_s_1', name: 'Королевский тракт: Южные ворота', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -101,8 +92,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Пограничный камень'], actions: [], zoneNumber: 4
     },
-
-    // ↙️ ЮГО-ЗАПАДНАЯ РЕКА (4 зоны)
     kl_sw_1: {
         id: 'kl_sw_1', name: 'Черноводная: Речной берег', type: 'coast', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -123,8 +112,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Каменный мост'], actions: [], zoneNumber: 4
     },
-
-    // ⬅️ ЗАПАДНАЯ ДОРОГА (4 зоны)
     kl_w_1: {
         id: 'kl_w_1', name: 'Золотая дорога: Западные ворота', type: 'road', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -145,8 +132,6 @@ const KL_AREAS = {
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Пограничный камень'], actions: [], zoneNumber: 4
     },
-
-    // ↖️ СЕВЕРО-ЗАПАДНЫЙ ЛЕС (4 зоны)
     kl_nw_1: {
         id: 'kl_nw_1', name: 'Королевский лес: Лесная тропа', type: 'forest', level: 5,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
@@ -170,7 +155,7 @@ const KL_AREAS = {
 };
 
 // ============================================================
-// КАРТА (ТОЛЬКО МЕСТА + ЦЕНТР)
+// КАРТА
 // ============================================================
 
 window.openPlaces = function() {
@@ -389,48 +374,31 @@ window.updateActions = function() {
         btn.onclick = (function(id) {
             return function() {
                 if (id === 'map') {
-                    if (typeof openPlaces === 'function') {
-                        openPlaces();
-                    } else {
-                        setMessage('❌ Карта мест не загружена.');
-                    }
+                    if (typeof openPlaces === 'function') openPlaces();
+                    else setMessage('❌ Карта мест не загружена.');
                     return;
                 }
                 if (id === 'compass') {
-                    if (typeof openCompass === 'function') {
-                        openCompass();
-                    } else {
-                        setMessage('❌ Компас не загружен.');
-                    }
+                    if (typeof openCompass === 'function') openCompass();
+                    else setMessage('❌ Компас не загружен.');
                     return;
                 }
                 if (id === 'search') {
-                    if (typeof window.doSearch === 'function') {
-                        window.doSearch();
-                    } else {
-                        setMessage('❌ Боевая система не загружена.');
-                    }
+                    if (typeof window.doSearch === 'function') window.doSearch();
+                    else setMessage('❌ Боевая система не загружена.');
                     return;
                 }
-                if (typeof gameAction === 'function') {
-                    gameAction(id);
-                } else {
-                    setMessage('❌ Действие временно недоступно.');
-                }
+                if (typeof gameAction === 'function') gameAction(id);
+                else setMessage('❌ Действие временно недоступно.');
             };
         })(ga.id);
         container.appendChild(btn);
     }
 };
 
-// ============================================================
-// РЕГИСТРАЦИЯ
-// ============================================================
-
 var _areasPrevUpdateStory = window.updateStory;
 var _areasPrevUpdateActions = window.updateActions;
-
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Внешние локации загружены (29 зон, без пропусков)');
+console.log('✅ Внешние локации загружены (29 зон)');
