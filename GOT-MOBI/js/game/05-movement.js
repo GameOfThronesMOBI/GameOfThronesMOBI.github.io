@@ -112,7 +112,7 @@ function closeCompass() {
 }
 
 // ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ (moveTo)
+// 3. ПЕРЕМЕЩЕНИЕ (moveTo) — РАБОЧАЯ ВЕРСИЯ
 // ============================================================
 
 function moveTo(direction) {
@@ -132,38 +132,12 @@ function moveTo(direction) {
         return;
     }
     
-    var isLoc = false;
-    if (window.KL_AREAS) {
-        for (var id in KL_AREAS) {
-            if (id === next) { isLoc = true; break; }
-        }
-    }
-    
-    if (!isLoc && next !== 'kl_crossroads' && !KL_TRANSITIONS[next]) {
-        var regionMap = {
-            'riverlands': 'Речные земли',
-            'stormlands': 'Штормовые земли',
-            'reach': 'Простор',
-            'north': 'Север',
-            'westlands': 'Западные земли',
-            'vale': 'Долина',
-            'dorne': 'Дорн',
-            'iron_islands': 'Железные острова'
-        };
-        g.location.region = regionMap[next] || 'Королевские земли';
-        g.location.place = next;
-        g.location.locationId = next;
-        setMessage('🚶 Вы перешли в ' + next);
-        updateMenu();
-        updateStory();
-        updateActions();
-        saveData();
-        return;
-    }
+    var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+    var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
     g.location.locationId = next;
-    setMessage('🚶 Вы пошли на ' + direction);
+    setMessage('🚶 Вы перешли в ' + nextName);
     updateMenu();
     updateStory();
     updateActions();
