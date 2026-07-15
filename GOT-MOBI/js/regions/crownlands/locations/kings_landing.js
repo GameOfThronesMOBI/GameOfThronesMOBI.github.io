@@ -1,9 +1,8 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing.js
-// КОРОЛЕВСКАЯ ГАВАНЬ — НЕЗАВИСИМАЯ ЛОКАЦИЯ
+// КОРОЛЕВСКАЯ ГАВАНЬ — НЕЗАВИСИМАЯ ЛОКАЦИЯ (ПОЛНЫЙ ФАЙЛ)
 // ============================================================
 
-// Сохраняем предыдущие обработчики (для Дороги или других локаций)
 var _kingsLandingPrevUpdateStory = window.updateStory;
 var _kingsLandingPrevUpdateActions = window.updateActions;
 
@@ -26,9 +25,7 @@ function openMap() {
         var b = BUILDINGS[i];
         var isCurrent = b.id === g.location.place;
         
-        // Пропускаем Дорогу (она отдельная локация) и Дом (вход через район)
         if (b.id === 'Дорога' || b.id === 'Дом') continue;
-        
         if (g.outside && b.id !== 'Ворота') continue;
         if (!g.outside && b.id === 'Дорога') continue;
         
@@ -97,7 +94,6 @@ window.updateStory = function() {
     var g = user.game;
     var place = g.location.place;
     
-    // Если это Дорога — передаём управление предыдущему обработчику
     if (place === 'Дорога' || (typeof KL_AREAS !== 'undefined' && KL_AREAS[place])) {
         if (typeof _kingsLandingPrevUpdateStory === 'function') {
             return _kingsLandingPrevUpdateStory();
@@ -116,9 +112,7 @@ window.updateStory = function() {
         'Таверна': '🍺 Добро пожаловать в таверну!',
         'Рынок': '🏪 Центральный рынок.',
         'Кузница': '⚒️ Вы в кузнице.',
-        'Оружейная лавка': '🗡️ Оружейная лавка.',
         'Кожевник': '🪡 Кожевник.',
-        'Бронник': '🛡️ Бронник.',
         'Плотник': '🪵 Плотник.',
         'Конюшня': '🐴 Конюшня.',
         'Гильдия торговцев': '🏛️ Гильдия торговцев.',
@@ -157,7 +151,6 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
-    // Если это Дорога — передаём управление предыдущему обработчику
     if (place === 'Дорога' || (typeof KL_AREAS !== 'undefined' && KL_AREAS[place])) {
         if (typeof _kingsLandingPrevUpdateActions === 'function') {
             return _kingsLandingPrevUpdateActions();
@@ -190,25 +183,25 @@ window.updateActions = function() {
     
     if (place === 'Кузница') {
         actions = [
-            { id: 'shop_resources', label: '⚒️ Кузница' },
-            { id: 'craft', label: '🔨 Крафт' }
+            { id: 'shop_weapons', label: '🗡️ Оружие' },
+            { id: 'shop_plate', label: '🛡️ Латная броня' },
+            { id: 'shop_resources', label: '⚒️ Ресурсы' },
+            { id: 'craft', label: '🔨 Крафт стали' }
         ].concat(actions);
     }
     
-    if (place === 'Оружейная лавка') {
-        actions = [{ id: 'shop_weapons', label: '🗡️ Оружейная' }].concat(actions);
-    }
-    
     if (place === 'Кожевник') {
-        actions = [{ id: 'shop_leather', label: '🪡 Кожевник' }].concat(actions);
-    }
-    
-    if (place === 'Бронник') {
-        actions = [{ id: 'shop_plate', label: '🛡️ Бронник' }].concat(actions);
+        actions = [
+            { id: 'shop_leather', label: '🪡 Кожаная броня' },
+            { id: 'craft_leather', label: '🔨 Крафт кожи' }
+        ].concat(actions);
     }
     
     if (place === 'Плотник') {
-        actions = [{ id: 'shop_bows', label: '🪵 Плотник' }].concat(actions);
+        actions = [
+            { id: 'shop_bows', label: '🏹 Луки и арбалеты' },
+            { id: 'craft_wood', label: '🔨 Крафт дерева' }
+        ].concat(actions);
     }
     
     if (place === 'Конюшня') {
@@ -233,6 +226,12 @@ window.updateActions = function() {
     
     if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
         var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
+        if (place === 'Квартал бедноты') {
+            actions = [
+                { id: 'sweep_streets', label: '🧹 Уборка улиц (8 мин, +10 МП)' },
+                { id: 'search', label: '🔍 Поиск' }
+            ].concat(actions);
+        }
         if (hasHouse) {
             actions = [{ id: 'housing_enter', label: '🏠 Зайти домой' }].concat(actions);
         } else {
