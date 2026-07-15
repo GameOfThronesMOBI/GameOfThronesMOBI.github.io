@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ОРИГИНАЛ (БЕЗ БОЕВОЙ СИСТЕМЫ)
+// MAIN.JS — ОРИГИНАЛ (БЕЗ БОЕВОЙ СИСТЕМЫ) — ОБНОВЛЁННЫЙ
 // ============================================================
 
 function handleRegister() {
@@ -220,43 +220,51 @@ function gameAction(action) {
     if (!user) return;
     var g = user.game;
     
-    //карта
-if (action === 'map') {
-    var place = g.location.place;
-    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
-    
-    if (cityPlaces.indexOf(place) !== -1) {
-        if (typeof window.openMap === 'function') {
-            window.openMap();
+    // КАРТА
+    if (action === 'map') {
+        var place = g.location.place;
+        var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Кожевник', 'Плотник', 
+                          'Конюшня', 'Гильдия торговцев', 'Магистрат', 'Ворота', 'Ворота Красного замка',
+                          'Королевский квартал', 'Торговый квартал', 'Квартал бедноты', 'Дом',
+                          'Великая септа', 'Порт', 'Тюрьма', 'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
+        
+        if (cityPlaces.indexOf(place) !== -1) {
+            if (typeof window.openMap === 'function') {
+                window.openMap();
+            } else {
+                setMessage('❌ Карта города не загружена.');
+            }
         } else {
-            setMessage('❌ Карта города не загружена.');
+            if (typeof window.openPlaces === 'function') {
+                window.openPlaces();
+            } else {
+                setMessage('❌ Карта мест не загружена.');
+            }
         }
-    } else {
-        if (typeof window.openPlaces === 'function') {
-            window.openPlaces();
-        } else {
-            setMessage('❌ Карта мест не загружена.');
-        }
+        return;
     }
-    return;
-}
     
     // ВХОД/ВЫХОД ИЗ ГОРОДА
-if (action === 'leave_city') {
-    g.location.place = 'kl_crossroads';
-    g.location.location = 'Королевская Гавань';
-    g.outside = false;
-    setMessage('🚪 Вы вышли из города на перекрёсток.');
-    updateMenu(); updateStory(); updateActions(); saveData();
-    return;
+    if (action === 'leave_city') {
+        g.location.place = 'kl_crossroads';
+        g.location.location = 'Королевская Гавань';
+        g.outside = false;
+        setMessage('🚪 Вы вышли из города на перекрёсток.');
+        updateMenu(); updateStory(); updateActions(); saveData();
+        return;
     }
     if (action === 'enter_city') {
         g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
         setMessage('🚪 Вы вошли в Королевскую Гавань.');
+        updateMenu(); updateStory(); updateActions(); saveData();
+        return;
+    }
+    
+    // ВХОД В ЗАМОК
+    if (action === 'enter_castle') {
+        g.location.place = 'castle_gate';
+        g.location.location = 'Красный замок';
+        setMessage('🏰 Вы вошли в Красный замок.');
         updateMenu(); updateStory(); updateActions(); saveData();
         return;
     }
@@ -281,6 +289,7 @@ if (action === 'leave_city') {
     if (action === 'tavern_buy') { if (typeof openTavernTrade === 'function') { openTavernTrade(); return; } return; }
     if (action === 'wash') { startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); }); return; }
     if (action === 'sweep') { startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); }); return; }
+    if (action === 'sweep_streets') { startBusy('Убираете улицы', 8, function() { g.copper += 10; convertCurrency(g); setMessage('🧹 +10 МП.'); updateMenu(); saveData(); }); return; }
     if (action === 'rest') {
         if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
         g.fatigue = Math.min(100, g.fatigue + 30);
@@ -301,7 +310,10 @@ if (action === 'leave_city') {
     if (action === 'shop_plate') { if (typeof openShop === 'function') { openShop('Бронник'); return; } return; }
     if (action === 'shop_bows') { if (typeof openShop === 'function') { openShop('Плотник'); return; } return; }
     if (action === 'shop_resources') { if (typeof openShop === 'function') { openShop('Кузница'); return; } return; }
+    if (action === 'shop_trade') { if (typeof openShop === 'function') { openShop('Торговля'); return; } return; }
     if (action === 'craft') { if (typeof openCraftMenu === 'function') { openCraftMenu(); return; } return; }
+    if (action === 'craft_leather') { if (typeof openCraftLeatherMenu === 'function') { openCraftLeatherMenu(); return; } return; }
+    if (action === 'craft_wood') { if (typeof openCraftWoodMenu === 'function') { openCraftWoodMenu(); return; } return; }
     
     // КОНЮШНЯ
     if (action === 'stable_open' || action === 'stable_buy' || action === 'stable_sell') {
