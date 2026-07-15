@@ -182,27 +182,37 @@ window.updateActions = function() {
     }
     
     if (place === 'Кузница') {
-        actions = [
-            { id: 'shop_weapons', label: '🗡️ Оружие' },
-            { id: 'shop_plate', label: '🛡️ Латная броня' },
-            { id: 'shop_resources', label: '⚒️ Ресурсы' },
-            { id: 'craft', label: '🔨 Крафт стали' }
-        ].concat(actions);
-    }
+    var rowDiv = document.createElement('div');
+    rowDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+    [{ id:'shop_resources', label:'⚒️ Ресурсы' },{ id:'craft', label:'🔨 Крафт' },{ id:'shop_trade', label:'🛒 Торговля' }].forEach(function(bt) {
+        var btn = document.createElement('button'); btn.className = 'btn-game'; btn.textContent = bt.label;
+        btn.onclick = (function(id){ return function(){ gameAction(id); }; })(bt.id);
+        rowDiv.appendChild(btn);
+    });
+    container.appendChild(rowDiv);
+}
     
     if (place === 'Кожевник') {
-        actions = [
-            { id: 'shop_leather', label: '🪡 Кожаная броня' },
-            { id: 'craft_leather', label: '🔨 Крафт кожи' }
-        ].concat(actions);
-    }
+    var rowDiv = document.createElement('div');
+    rowDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+    [{ id:'shop_resources', label:'⚒️ Ресурсы' },{ id:'craft', label:'🔨 Крафт' },{ id:'shop_trade', label:'🛒 Торговля' }].forEach(function(bt) {
+        var btn = document.createElement('button'); btn.className = 'btn-game'; btn.textContent = bt.label;
+        btn.onclick = (function(id){ return function(){ gameAction(id); }; })(bt.id);
+        rowDiv.appendChild(btn);
+    });
+    container.appendChild(rowDiv);
+}
     
     if (place === 'Плотник') {
-        actions = [
-            { id: 'shop_bows', label: '🏹 Луки и арбалеты' },
-            { id: 'craft_wood', label: '🔨 Крафт дерева' }
-        ].concat(actions);
-    }
+    var rowDiv = document.createElement('div');
+    rowDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+    [{ id:'shop_resources', label:'⚒️ Ресурсы' },{ id:'craft', label:'🔨 Крафт' },{ id:'shop_trade', label:'🛒 Торговля' }].forEach(function(bt) {
+        var btn = document.createElement('button'); btn.className = 'btn-game'; btn.textContent = bt.label;
+        btn.onclick = (function(id){ return function(){ gameAction(id); }; })(bt.id);
+        rowDiv.appendChild(btn);
+    });
+    container.appendChild(rowDiv);
+}
     
     if (place === 'Конюшня') {
         actions = [{ id: 'stable_open', label: '🐴 Конюшня' }].concat(actions);
