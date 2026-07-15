@@ -1,5 +1,5 @@
 // ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ОБНОВЛЁННАЯ)
 // ============================================================
 
 function hash(str) {
@@ -263,18 +263,10 @@ function getTraderStock(place, itemKey) {
 }
 
 function initTraderStock() {
-    const shops = ['Оружейная лавка', 'Кожевник', 'Бронник', 'Плотник', 'Кузница'];
+    const shops = ['Кожевник', 'Плотник', 'Кузница'];
     shops.forEach(function(shop) {
         if (!traderInventory[shop]) traderInventory[shop] = {};
-        if (shop === 'Оружейная лавка') {
-            ['sword','spear','axe','mace','dagger','shield'].forEach(function(type) {
-                ALL_ITEMS.weapons[type].forEach(function(item) {
-                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
-                        traderInventory[shop][item.name + '|' + q] = 1;
-                    });
-                });
-            });
-        }
+        
         if (shop === 'Кожевник') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(q) {
                 traderInventory[shop]['Кожа|' + q] = 10;
@@ -287,18 +279,7 @@ function initTraderStock() {
                 });
             });
         }
-        if (shop === 'Бронник') {
-            ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(q) {
-                traderInventory[shop]['Сталь|' + q] = 5;
-            });
-            Object.keys(ALL_ITEMS.plate).forEach(function(type) {
-                ALL_ITEMS.plate[type].forEach(function(item) {
-                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
-                        traderInventory[shop][item.name + '|' + q] = 1;
-                    });
-                });
-            });
-        }
+        
         if (shop === 'Плотник') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(q) {
                 traderInventory[shop]['Дерево|' + q] = 10;
@@ -311,7 +292,25 @@ function initTraderStock() {
                 });
             });
         }
+        
         if (shop === 'Кузница') {
+            // Оружие
+            ['sword','spear','axe','mace','dagger','shield'].forEach(function(type) {
+                ALL_ITEMS.weapons[type].forEach(function(item) {
+                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
+                        traderInventory[shop][item.name + '|' + q] = 1;
+                    });
+                });
+            });
+            // Латная броня
+            Object.keys(ALL_ITEMS.plate).forEach(function(type) {
+                ALL_ITEMS.plate[type].forEach(function(item) {
+                    ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
+                        traderInventory[shop][item.name + '|' + q] = 1;
+                    });
+                });
+            });
+            // Ресурсы
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(q) {
                 traderInventory[shop]['Руда железная|' + q] = 15;
             });
