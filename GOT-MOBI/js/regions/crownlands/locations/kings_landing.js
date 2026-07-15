@@ -233,7 +233,9 @@ window.updateActions = function() {
     if (place === 'Ворота') {
         actions = [{ id: 'leave_city', label: '🚪 Выйти из города' }].concat(actions);
     }
-    
+    if (place === 'Ворота Красного замка') {
+    actions = [{ id: 'enter_castle', label: '🏰 Войти в замок' }].concat(actions);
+    }
     if (place === 'Королевский квартал' || place === 'Торговый квартал' || place === 'Квартал бедноты') {
         var hasHouse = g.housing && g.housing.type && HOUSING_TYPES[g.housing.type] && HOUSING_TYPES[g.housing.type].district === place;
         if (place === 'Квартал бедноты') {
