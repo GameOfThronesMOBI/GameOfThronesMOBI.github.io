@@ -195,10 +195,11 @@ window.updateActions = function() {
     if (place === 'Кожевник') {
     var rowDiv = document.createElement('div');
     rowDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
-    [{ id:'shop_resources', label:'⚒️ Ресурсы' },{ id:'craft', label:'🔨 Крафт' },{ id:'shop_trade', label:'🛒 Торговля' }].forEach(function(bt) {
+    [{ id:'a', label:'⚒️ Ресурсы', action: function(){ openShop('Кожевник'); } },
+     { id:'b', label:'🔨 Крафт', action: function(){ openCraftLeatherMenu(); } },
+     { id:'c', label:'🛒 Торговля', action: function(){ openShop('Торговля'); } }].forEach(function(bt) {
         var btn = document.createElement('button'); btn.className = 'btn-game'; btn.textContent = bt.label;
-        btn.onclick = (function(id){ return function(){ gameAction(id); }; })(bt.id);
-        rowDiv.appendChild(btn);
+        btn.onclick = bt.action; rowDiv.appendChild(btn);
     });
     container.appendChild(rowDiv);
 }
@@ -206,10 +207,11 @@ window.updateActions = function() {
     if (place === 'Плотник') {
     var rowDiv = document.createElement('div');
     rowDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
-    [{ id:'shop_resources', label:'⚒️ Ресурсы' },{ id:'craft', label:'🔨 Крафт' },{ id:'shop_trade', label:'🛒 Торговля' }].forEach(function(bt) {
+    [{ id:'a', label:'⚒️ Ресурсы', action: function(){ openShop('Плотник'); } },
+     { id:'b', label:'🔨 Крафт', action: function(){ openCraftWoodMenu(); } },
+     { id:'c', label:'🛒 Торговля', action: function(){ openShop('Торговля'); } }].forEach(function(bt) {
         var btn = document.createElement('button'); btn.className = 'btn-game'; btn.textContent = bt.label;
-        btn.onclick = (function(id){ return function(){ gameAction(id); }; })(bt.id);
-        rowDiv.appendChild(btn);
+        btn.onclick = bt.action; rowDiv.appendChild(btn);
     });
     container.appendChild(rowDiv);
 }
