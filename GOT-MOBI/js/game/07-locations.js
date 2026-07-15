@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/07-locations.js — ТОРГОВЛЯ, КРАФТ, АУКЦИОН
+// js/game/07-locations.js — ТОРГОВЛЯ, КРАФТ, АУКЦИОН (ПОЛНЫЙ ФАЙЛ)
 // ============================================================
 
 function openShop(shopType) {
@@ -25,7 +25,6 @@ function openShop(shopType) {
     html += '<div id="shop-category-content"></div>';
     html += '</div>';
     
-    // ===== ПРОДАЖА =====
     html += '<div class="modal-section"><h4>💰 ПРОДАТЬ</h4>';
     var sellItems = getSellableItems(g, shopType);
     if (sellItems.length === 0) {
@@ -50,34 +49,9 @@ function openShop(shopType) {
 }
 
 function getShopCategories(shopType) {
-    if (shopType === 'Оружейная лавка') {
-        return [
-            { id: 'sword', label: '🗡️ Мечи' },
-            { id: 'spear', label: '🔱 Копья' },
-            { id: 'axe', label: '🪓 Топоры' },
-            { id: 'mace', label: '🔨 Булавы' },
-            { id: 'dagger', label: '🔪 Кинжалы' },
-            { id: 'shield', label: '🛡️ Щиты' },
-            { id: 'bow', label: '🏹 Луки' },
-            { id: 'crossbow', label: '🎯 Арбалеты' }
-        ];
-    }
     if (shopType === 'Кожевник') {
         return [
             { id: 'leather', label: '🧵 Кожа (ресурс)' },
-            { id: 'helmet', label: '🪖 Шлемы' },
-            { id: 'chestplate', label: '🦺 Нагрудники' },
-            { id: 'shoulders', label: '💪 Наплечники' },
-            { id: 'leggings', label: '👖 Поножи' },
-            { id: 'boots', label: '👢 Сапоги' },
-            { id: 'gloves', label: '🧤 Перчатки' },
-            { id: 'belt', label: '🎗️ Пояса' },
-            { id: 'cloak', label: '🧥 Плащи' }
-        ];
-    }
-    if (shopType === 'Бронник') {
-        return [
-            { id: 'steel', label: '⚒️ Сталь (ресурс)' },
             { id: 'helmet', label: '🪖 Шлемы' },
             { id: 'chestplate', label: '🦺 Нагрудники' },
             { id: 'shoulders', label: '💪 Наплечники' },
@@ -97,6 +71,20 @@ function getShopCategories(shopType) {
     }
     if (shopType === 'Кузница') {
         return [
+            { id: 'sword', label: '🗡️ Мечи' },
+            { id: 'spear', label: '🔱 Копья' },
+            { id: 'axe', label: '🪓 Топоры' },
+            { id: 'mace', label: '🔨 Булавы' },
+            { id: 'dagger', label: '🔪 Кинжалы' },
+            { id: 'shield', label: '🛡️ Щиты' },
+            { id: 'helmet', label: '🪖 Шлемы' },
+            { id: 'chestplate', label: '🦺 Нагрудники' },
+            { id: 'shoulders', label: '💪 Наплечники' },
+            { id: 'leggings', label: '👖 Поножи' },
+            { id: 'boots', label: '👢 Сапоги' },
+            { id: 'gloves', label: '🧤 Перчатки' },
+            { id: 'belt', label: '🎗️ Пояса' },
+            { id: 'cloak', label: '🧥 Плащи' },
             { id: 'iron', label: '⛏️ Руда' },
             { id: 'coal', label: '🔥 Уголь' },
             { id: 'steel', label: '⚒️ Сталь' },
@@ -179,43 +167,6 @@ function getCategoryItems(shopType, categoryId) {
     if (!user) return items;
     var g = user.game;
     
-    if (shopType === 'Оружейная лавка') {
-        if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
-            ALL_ITEMS.weapons[categoryId].forEach(function(w) {
-                var itemQualities = getQualitiesForLevel(w.level);
-                itemQualities.forEach(function(quality) {
-                    var q = QUALITIES[quality] || QUALITIES['Обычное'];
-                    var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
-                    var price = Math.round(basePrice * q.multiplier);
-                    var key = w.name + '|' + quality;
-                    var stats = '';
-                    if (w.baseDamage) {
-                        var finalDmg = Math.round(w.baseDamage * q.multiplier);
-                        stats = '⚔️ ' + finalDmg + ' урона';
-                    }
-                    if (w.defense) {
-                        var finalDef = Math.round(w.defense * q.multiplier);
-                        stats = '🛡️ ' + finalDef + ' защиты';
-                    }
-                    if (w.baseDamage && w.defense) {
-                        var finalDmg = Math.round(w.baseDamage * q.multiplier);
-                        var finalDef = Math.round(w.defense * q.multiplier);
-                        stats = '⚔️ ' + finalDmg + ' | 🛡️ ' + finalDef;
-                    }
-                    items.push({
-                        name: w.name,
-                        quality: quality,
-                        price: price,
-                        key: key,
-                        stats: stats,
-                        level: w.level,
-                        stock: 99
-                    });
-                });
-            });
-        }
-    }
-    
     if (shopType === 'Кожевник') {
         if (categoryId === 'leather') {
             var leatherQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
@@ -237,57 +188,6 @@ function getCategoryItems(shopType, categoryId) {
         } else {
             if (ALL_ITEMS && ALL_ITEMS.leather && ALL_ITEMS.leather[categoryId]) {
                 ALL_ITEMS.leather[categoryId].forEach(function(w) {
-                    var itemQualities = getQualitiesForLevel(w.level);
-                    itemQualities.forEach(function(quality) {
-                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
-                        var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
-                        var price = Math.round(basePrice * q.multiplier);
-                        var key = w.name + '|' + quality;
-                        var stats = '';
-                        if (w.baseDefense) {
-                            var finalDef = Math.round(w.baseDefense * q.multiplier);
-                            stats = '🛡️ ' + finalDef + ' защиты';
-                        }
-                        if (w.speedPercent) {
-                            stats += ' | 🏃 +' + w.speedPercent + '% скорости';
-                        }
-                        if (!stats) stats = '🛡️ 0 защиты';
-                        items.push({
-                            name: w.name,
-                            quality: quality,
-                            price: price,
-                            key: key,
-                            stats: stats,
-                            level: w.level,
-                            stock: 99
-                        });
-                    });
-                });
-            }
-        }
-    }
-    
-    if (shopType === 'Бронник') {
-        if (categoryId === 'steel') {
-            var steelQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
-            steelQualities.forEach(function(quality) {
-                var q = QUALITIES[quality] || QUALITIES['Обычное'];
-                var basePrice = 20;
-                var price = Math.round(basePrice * q.multiplier);
-                var key = 'Сталь|' + quality;
-                items.push({
-                    name: '⚒️ Сталь',
-                    quality: quality,
-                    price: price,
-                    key: key,
-                    stats: '📦 ресурс',
-                    level: 1,
-                    stock: 99
-                });
-            });
-        } else {
-            if (ALL_ITEMS && ALL_ITEMS.plate && ALL_ITEMS.plate[categoryId]) {
-                ALL_ITEMS.plate[categoryId].forEach(function(w) {
                     var itemQualities = getQualitiesForLevel(w.level);
                     itemQualities.forEach(function(quality) {
                         var q = QUALITIES[quality] || QUALITIES['Обычное'];
@@ -367,6 +267,66 @@ function getCategoryItems(shopType, categoryId) {
     }
     
     if (shopType === 'Кузница') {
+        if (['sword','spear','axe','mace','dagger','shield'].indexOf(categoryId) !== -1) {
+            if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
+                ALL_ITEMS.weapons[categoryId].forEach(function(w) {
+                    var itemQualities = getQualitiesForLevel(w.level);
+                    itemQualities.forEach(function(quality) {
+                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                        var basePrice = 5 + w.level * 2 + (w.baseDamage || 0);
+                        var price = Math.round(basePrice * q.multiplier);
+                        var key = w.name + '|' + quality;
+                        var stats = '';
+                        if (w.baseDamage) {
+                            var finalDmg = Math.round(w.baseDamage * q.multiplier);
+                            stats = '⚔️ ' + finalDmg + ' урона';
+                        }
+                        if (w.defense) {
+                            var finalDef = Math.round(w.defense * q.multiplier);
+                            stats = '🛡️ ' + finalDef + ' защиты';
+                        }
+                        if (!stats) stats = '⚔️ 0 урона';
+                        items.push({
+                            name: w.name,
+                            quality: quality,
+                            price: price,
+                            key: key,
+                            stats: stats,
+                            level: w.level,
+                            stock: 99
+                        });
+                    });
+                });
+            }
+        }
+        if (['helmet','chestplate','shoulders','leggings','boots','gloves','belt','cloak'].indexOf(categoryId) !== -1) {
+            if (ALL_ITEMS && ALL_ITEMS.plate && ALL_ITEMS.plate[categoryId]) {
+                ALL_ITEMS.plate[categoryId].forEach(function(w) {
+                    var itemQualities = getQualitiesForLevel(w.level);
+                    itemQualities.forEach(function(quality) {
+                        var q = QUALITIES[quality] || QUALITIES['Обычное'];
+                        var basePrice = 5 + w.level * 2 + (w.baseDefense || 0);
+                        var price = Math.round(basePrice * q.multiplier);
+                        var key = w.name + '|' + quality;
+                        var stats = '';
+                        if (w.baseDefense) {
+                            var finalDef = Math.round(w.baseDefense * q.multiplier);
+                            stats = '🛡️ ' + finalDef + ' защиты';
+                        }
+                        if (!stats) stats = '🛡️ 0 защиты';
+                        items.push({
+                            name: w.name,
+                            quality: quality,
+                            price: price,
+                            key: key,
+                            stats: stats,
+                            level: w.level,
+                            stock: 99
+                        });
+                    });
+                });
+            }
+        }
         var resourceNames = {
             'iron': { name: '⛏️ Руда железная', basePrice: 8 },
             'coal': { name: '🔥 Уголь', basePrice: 4 },
@@ -374,7 +334,6 @@ function getCategoryItems(shopType, categoryId) {
             'valyrian_ore': { name: '💎 Руда 14 огней', basePrice: 50000 },
             'valyrian_steel': { name: '🌟 Валирийская сталь', basePrice: 100000 }
         };
-        
         var res = resourceNames[categoryId];
         if (res) {
             var resQualities = ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'];
@@ -594,11 +553,9 @@ function buyFromShop(shopType, itemKey, price) {
 function getSellableItems(g, shopType) {
     var items = [];
     var shopTypes = {
-        'Оружейная лавка': ['sword','spear','axe','mace','dagger','shield','bow','crossbow'],
         'Кожевник': ['leather'],
-        'Бронник': ['plate'],
         'Плотник': ['bow','crossbow','wood'],
-        'Кузница': ['iron','coal','steel','valyrian_ore','valyrian_steel','leather','wood']
+        'Кузница': ['sword','spear','axe','mace','dagger','shield','plate','iron','coal','steel','valyrian_ore','valyrian_steel','leather','wood']
     };
     
     var allowedTypes = shopTypes[shopType] || [];
@@ -679,6 +636,10 @@ function sellToShop(shopType, index) {
     openShop(shopType);
 }
 
+// ============================================================
+// КРАФТ
+// ============================================================
+
 function openCraftMenu() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
@@ -694,7 +655,7 @@ function openCraftMenu() {
         if (item.resourceType === 'steel') steelCount += (item.count || 1);
     });
     
-    var html = '<div class="modal-section"><h4>🔨 КРАФТ</h4>';
+    var html = '<div class="modal-section"><h4>🔨 КРАФТ СТАЛИ</h4>';
     html += '<p style="color:#6a5a48;">Ваши ресурсы:</p>';
     html += '<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
     html += '⛏️ Руда: ' + ironCount + '<br>';
@@ -721,36 +682,20 @@ function craftSteel() {
     var removedIron = 0, removedCoal = 0;
     for (var i = g.inventory.length - 1; i >= 0; i--) {
         if (g.inventory[i].resourceType === 'iron' && removedIron < 2) {
-            if (g.inventory[i].count && g.inventory[i].count > 1) {
-                g.inventory[i].count--;
-                removedIron++;
-                if (g.inventory[i].count === 0) g.inventory.splice(i, 1);
-            } else {
-                g.inventory.splice(i, 1);
-                removedIron++;
-            }
+            if (g.inventory[i].count && g.inventory[i].count > 1) { g.inventory[i].count--; removedIron++; if (g.inventory[i].count === 0) g.inventory.splice(i, 1); }
+            else { g.inventory.splice(i, 1); removedIron++; }
         }
         if (g.inventory[i].resourceType === 'coal' && removedCoal < 1) {
-            if (g.inventory[i].count && g.inventory[i].count > 1) {
-                g.inventory[i].count--;
-                removedCoal++;
-                if (g.inventory[i].count === 0) g.inventory.splice(i, 1);
-            } else {
-                g.inventory.splice(i, 1);
-                removedCoal++;
-            }
+            if (g.inventory[i].count && g.inventory[i].count > 1) { g.inventory[i].count--; removedCoal++; if (g.inventory[i].count === 0) g.inventory.splice(i, 1); }
+            else { g.inventory.splice(i, 1); removedCoal++; }
         }
     }
     
-    if (removedIron < 2 || removedCoal < 1) {
-        setMessage('❌ Не хватает ресурсов.');
-        return;
-    }
+    if (removedIron < 2 || removedCoal < 1) { setMessage('❌ Не хватает ресурсов.'); return; }
     
     var smithLevel = g.professions['Кузнец'] || 1;
     var roll = Math.random() * 100;
     var quality = 'Обычное';
-    
     if (smithLevel >= 30 && roll < 5) quality = 'Легендарное';
     else if (smithLevel >= 20 && roll < 15) quality = 'Мастерское';
     else if (smithLevel >= 10 && roll < 35) quality = 'Качественное';
@@ -758,25 +703,159 @@ function craftSteel() {
     else if (roll < 80) quality = 'Обычное';
     else quality = 'Плохое';
     
-    addToInventory(g, {
-        name: 'Сталь',
-        quality: quality,
-        type: 'resource',
-        resourceType: 'steel',
-        count: 1
-    });
-    
+    addToInventory(g, { name: 'Сталь', quality: quality, type: 'resource', resourceType: 'steel', count: 1 });
     g.professionXp['Кузнец'] = (g.professionXp['Кузнец'] || 0) + Math.round(3);
     while (g.professionXp['Кузнец'] >= g.professions['Кузнец'] * 10) {
         g.professionXp['Кузнец'] -= g.professions['Кузнец'] * 10;
         g.professions['Кузнец']++;
         setMessage('👷 Кузнец повышен до ' + g.professions['Кузнец'] + ' уровня!');
     }
-    
     saveData();
     setMessage('✅ Вы скрафтили сталь (' + quality + ')!');
     openCraftMenu();
 }
+
+function openCraftLeatherMenu() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var modal = document.getElementById('modal-trade');
+    var content = document.getElementById('modal-trade-content');
+    
+    var skinCount = 0, leatherCount = 0;
+    g.inventory.forEach(function(item) {
+        if (item.resourceType === 'leather' && item.name === 'Шкура') skinCount += (item.count || 1);
+        if (item.resourceType === 'leather' && item.name === 'Кожа') leatherCount += (item.count || 1);
+    });
+    
+    var html = '<div class="modal-section"><h4>🔨 КРАФТ КОЖИ</h4>';
+    html += '<p style="color:#6a5a48;">Ваши ресурсы:</p>';
+    html += '<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
+    html += '🧵 Шкуры: ' + skinCount + '<br>';
+    html += '🧵 Кожа: ' + leatherCount;
+    html += '</div></div>';
+    
+    html += '<div class="modal-section"><h4>🧵 Выделать кожу</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Требуется: 3 шкуры</p>';
+    var canCraft = skinCount >= 3;
+    html += '<button class="btn" onclick="craftLeather()" ' + (canCraft ? '' : 'disabled') + '>' + (canCraft ? '✅ Создать кожу' : '❌ Не хватает шкур') + '</button>';
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function craftLeather() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var removedSkins = 0;
+    for (var i = g.inventory.length - 1; i >= 0; i--) {
+        if (g.inventory[i].resourceType === 'leather' && g.inventory[i].name === 'Шкура' && removedSkins < 3) {
+            if (g.inventory[i].count && g.inventory[i].count > 1) { g.inventory[i].count--; removedSkins++; if (g.inventory[i].count === 0) g.inventory.splice(i, 1); }
+            else { g.inventory.splice(i, 1); removedSkins++; }
+        }
+    }
+    
+    if (removedSkins < 3) { setMessage('❌ Не хватает шкур.'); return; }
+    
+    var leatherLevel = g.professions['Кожевник'] || 1;
+    var roll = Math.random() * 100;
+    var quality = 'Обычное';
+    if (leatherLevel >= 30 && roll < 5) quality = 'Легендарное';
+    else if (leatherLevel >= 20 && roll < 15) quality = 'Мастерское';
+    else if (leatherLevel >= 10 && roll < 35) quality = 'Качественное';
+    else if (leatherLevel >= 5 && roll < 60) quality = 'Хорошее';
+    else if (roll < 80) quality = 'Обычное';
+    else quality = 'Плохое';
+    
+    addToInventory(g, { name: 'Кожа', quality: quality, type: 'resource', resourceType: 'leather', count: 1 });
+    g.professionXp['Кожевник'] = (g.professionXp['Кожевник'] || 0) + Math.round(3);
+    while (g.professionXp['Кожевник'] >= g.professions['Кожевник'] * 10) {
+        g.professionXp['Кожевник'] -= g.professions['Кожевник'] * 10;
+        g.professions['Кожевник']++;
+        setMessage('👷 Кожевник повышен до ' + g.professions['Кожевник'] + ' уровня!');
+    }
+    saveData();
+    setMessage('✅ Вы выделяли кожу (' + quality + ')!');
+    openCraftLeatherMenu();
+}
+
+function openCraftWoodMenu() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var modal = document.getElementById('modal-trade');
+    var content = document.getElementById('modal-trade-content');
+    
+    var woodCount = 0, plankCount = 0;
+    g.inventory.forEach(function(item) {
+        if (item.resourceType === 'wood' && item.name === 'Дерево') woodCount += (item.count || 1);
+        if (item.name === 'Доски') plankCount += (item.count || 1);
+    });
+    
+    var html = '<div class="modal-section"><h4>🔨 КРАФТ ДЕРЕВА</h4>';
+    html += '<p style="color:#6a5a48;">Ваши ресурсы:</p>';
+    html += '<div style="color:#b8a890;font-size:13px;margin-bottom:10px;">';
+    html += '🪵 Дерево: ' + woodCount + '<br>';
+    html += '🪵 Доски: ' + plankCount;
+    html += '</div></div>';
+    
+    html += '<div class="modal-section"><h4>🪵 Распилить доски</h4>';
+    html += '<p style="color:#6a5a48;font-size:12px;">Требуется: 2 дерева</p>';
+    var canCraft = woodCount >= 2;
+    html += '<button class="btn" onclick="craftWood()" ' + (canCraft ? '' : 'disabled') + '>' + (canCraft ? '✅ Создать доски' : '❌ Не хватает дерева') + '</button>';
+    html += '</div>';
+    
+    html += '<button class="btn" onclick="closeTrade()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function craftWood() {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    
+    var removedWood = 0;
+    for (var i = g.inventory.length - 1; i >= 0; i--) {
+        if (g.inventory[i].resourceType === 'wood' && g.inventory[i].name === 'Дерево' && removedWood < 2) {
+            if (g.inventory[i].count && g.inventory[i].count > 1) { g.inventory[i].count--; removedWood++; if (g.inventory[i].count === 0) g.inventory.splice(i, 1); }
+            else { g.inventory.splice(i, 1); removedWood++; }
+        }
+    }
+    
+    if (removedWood < 2) { setMessage('❌ Не хватает дерева.'); return; }
+    
+    var woodLevel = g.professions['Плотник'] || 1;
+    var roll = Math.random() * 100;
+    var quality = 'Обычное';
+    if (woodLevel >= 30 && roll < 5) quality = 'Легендарное';
+    else if (woodLevel >= 20 && roll < 15) quality = 'Мастерское';
+    else if (woodLevel >= 10 && roll < 35) quality = 'Качественное';
+    else if (woodLevel >= 5 && roll < 60) quality = 'Хорошее';
+    else if (roll < 80) quality = 'Обычное';
+    else quality = 'Плохое';
+    
+    addToInventory(g, { name: 'Доски', quality: quality, type: 'resource', resourceType: 'wood', count: 1 });
+    g.professionXp['Плотник'] = (g.professionXp['Плотник'] || 0) + Math.round(3);
+    while (g.professionXp['Плотник'] >= g.professions['Плотник'] * 10) {
+        g.professionXp['Плотник'] -= g.professions['Плотник'] * 10;
+        g.professions['Плотник']++;
+        setMessage('👷 Плотник повышен до ' + g.professions['Плотник'] + ' уровня!');
+    }
+    saveData();
+    setMessage('✅ Вы распилили доски (' + quality + ')!');
+    openCraftWoodMenu();
+}
+
+// ============================================================
+// ТАВЕРНА
+// ============================================================
 
 function openTavernTrade() {
     var user = users[currentUser];
@@ -852,31 +931,19 @@ function buyFromConsumable(itemName, price, category) {
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
     
-    if (!spendMoney(g, price)) {
-        setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price));
-        return;
-    }
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег! Нужно: ' + formatCurrency(price)); return; }
     
     var item = { name: itemName, quality: 'Обычное', count: 1 };
-    
     if (category === 'food') {
         item.type = 'food';
         if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.food) {
-            CONSUMABLES.food.forEach(function(f) {
-                if (f.name === itemName && f.effect) {
-                    item.effect = f.effect;
-                }
-            });
+            CONSUMABLES.food.forEach(function(f) { if (f.name === itemName && f.effect) item.effect = f.effect; });
         }
         if (!item.effect) item.effect = { food: 20 };
     } else if (category === 'drink') {
         item.type = 'food';
         if (typeof CONSUMABLES !== 'undefined' && CONSUMABLES.drinks) {
-            CONSUMABLES.drinks.forEach(function(d) {
-                if (d.name === itemName && d.effect) {
-                    item.effect = d.effect;
-                }
-            });
+            CONSUMABLES.drinks.forEach(function(d) { if (d.name === itemName && d.effect) item.effect = d.effect; });
         }
         if (!item.effect) item.effect = { thirst: 10 };
     }
@@ -891,24 +958,22 @@ function sellTavernItem(index, price) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (index >= g.inventory.length) {
-        setMessage('❌ Предмет не найден.');
-        return;
-    }
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     
     var item = g.inventory[index];
     var count = item.count || 1;
     var totalPrice = price * count;
-    
     g.copper += totalPrice;
     convertCurrency(g);
     g.inventory.splice(index, 1);
-    
     saveData();
     setMessage('💰 Вы продали ' + item.name + ' за ' + formatCurrency(totalPrice));
     openTavernTrade();
 }
+
+// ============================================================
+// АУКЦИОН
+// ============================================================
 
 function openGuild() {
     var user = users[currentUser];
@@ -929,13 +994,10 @@ function openGuild() {
     html += '<button class="btn" onclick="closeGuild()">Закрыть</button>';
     content.innerHTML = html;
     modal.classList.remove('hide');
-    
     showGuildListings();
 }
 
-function closeGuild() {
-    document.getElementById('modal-guild').classList.add('hide');
-}
+function closeGuild() { document.getElementById('modal-guild').classList.add('hide'); }
 
 function showGuildListings() {
     var container = document.getElementById('guild-content');
@@ -958,9 +1020,7 @@ function showGuildListings() {
 function showGuildMyListings() {
     var container = document.getElementById('guild-content');
     var myListings = [];
-    marketListings.forEach(function(l) {
-        if (l.seller === currentUser) myListings.push(l);
-    });
+    marketListings.forEach(function(l) { if (l.seller === currentUser) myListings.push(l); });
     var html = '<h4>📦 Мои лоты</h4>';
     if (myListings.length === 0) {
         html += '<p style="color:#6a5a48;">У вас нет активных лотов.</p>';
@@ -982,7 +1042,6 @@ function showGuildSell() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
     var container = document.getElementById('guild-content');
     var html = '<h4>💰 Выставить предмет</h4>';
     if (g.inventory.length === 0) {
@@ -1005,75 +1064,33 @@ function sellItemToMarket(itemIndex) {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (itemIndex >= g.inventory.length) {
-        setMessage('❌ Предмет не найден.');
-        return;
-    }
-    
+    if (itemIndex >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     var item = g.inventory[itemIndex];
-    var priceInput = prompt(
-        'Введите цену:\n' +
-        'Примеры:\n' +
-        '• 100 (медь)\n' +
-        '• 5 ЗОЛ (золото)\n' +
-        '• 2 СО (серебро)\n' +
-        '• 1 ЗОЛ 50 МП'
-    );
-    
+    var priceInput = prompt('Введите цену:\nПримеры:\n• 100 (медь)\n• 5 ЗОЛ (золото)\n• 2 СО (серебро)\n• 1 ЗОЛ 50 МП');
     if (!priceInput) { setMessage('❌ Отменено.'); return; }
     var price = parseCurrencyInput(priceInput);
     if (price === null || price < 1) { setMessage('❌ Цена должна быть не менее 1 МП.'); return; }
-    
     var commission = Math.ceil(price * 0.01);
-    if (!spendMoney(g, commission)) {
-        setMessage('❌ Недостаточно денег для комиссии (' + formatCurrency(commission) + ').');
-        return;
-    }
-    
+    if (!spendMoney(g, commission)) { setMessage('❌ Недостаточно денег для комиссии (' + formatCurrency(commission) + ').'); return; }
     var itemCopy = JSON.parse(JSON.stringify(item));
     g.inventory.splice(itemIndex, 1);
-    marketListings.push({
-        item: itemCopy,
-        price: price,
-        seller: currentUser,
-        listedAt: Date.now()
-    });
-    
+    marketListings.push({ item: itemCopy, price: price, seller: currentUser, listedAt: Date.now() });
     saveData();
     setMessage('✅ Вы выставили ' + item.name + ' на продажу за ' + formatCurrency(price));
     openGuild();
 }
 
 function buyListing(index) {
-    if (index >= marketListings.length) {
-        setMessage('❌ Лот не найден.');
-        return;
-    }
-    
+    if (index >= marketListings.length) { setMessage('❌ Лот не найден.'); return; }
     var listing = marketListings[index];
-    if (listing.seller === currentUser) {
-        setMessage('❌ Вы не можете купить свой лот.');
-        return;
-    }
-    
+    if (listing.seller === currentUser) { setMessage('❌ Вы не можете купить свой лот.'); return; }
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
-    if (!spendMoney(g, listing.price)) {
-        setMessage('❌ Недостаточно денег для покупки.');
-        return;
-    }
-    
+    if (!spendMoney(g, listing.price)) { setMessage('❌ Недостаточно денег для покупки.'); return; }
     addToInventory(g, listing.item);
     var seller = users[listing.seller];
-    if (seller) {
-        seller.game.copper += listing.price;
-        convertCurrency(seller.game);
-        saveData();
-    }
-    
+    if (seller) { seller.game.copper += listing.price; convertCurrency(seller.game); saveData(); }
     marketListings.splice(index, 1);
     saveData();
     setMessage('✅ Вы купили ' + listing.item.name + ' за ' + formatCurrency(listing.price));
@@ -1081,21 +1098,12 @@ function buyListing(index) {
 }
 
 function removeListing(index) {
-    if (index >= marketListings.length) {
-        setMessage('❌ Лот не найден.');
-        return;
-    }
-    
+    if (index >= marketListings.length) { setMessage('❌ Лот не найден.'); return; }
     var listing = marketListings[index];
-    if (listing.seller !== currentUser) {
-        setMessage('❌ Это не ваш лот.');
-        return;
-    }
-    
+    if (listing.seller !== currentUser) { setMessage('❌ Это не ваш лот.'); return; }
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-    
     addToInventory(g, listing.item);
     marketListings.splice(index, 1);
     saveData();
@@ -1112,7 +1120,6 @@ function parseCurrencyInput(input) {
     input = input.trim().toUpperCase();
     if (!input) return null;
     if (/^\d+$/.test(input)) return parseInt(input);
-    
     var total = 0;
     var patterns = [
         { regex: /(\d+)\s*ЗОЛ(ОТО)?/i, multiplier: 210 * 56 },
@@ -1122,7 +1129,6 @@ function parseCurrencyInput(input) {
         { regex: /(\d+)\s*S(ILVER)?/i, multiplier: 56 },
         { regex: /(\d+)\s*C(OPPER)?/i, multiplier: 1 }
     ];
-    
     for (var pi = 0; pi < patterns.length; pi++) {
         var pattern = patterns[pi];
         var regex = new RegExp(pattern.regex.source, 'gi');
@@ -1132,24 +1138,17 @@ function parseCurrencyInput(input) {
             if (!isNaN(value)) total += value * pattern.multiplier;
         }
     }
-    
     if (total > 0) return total;
-    
     var parts = input.split(' ');
     for (var i = 0; i < parts.length; i++) {
         var part = parts[i];
         var num = parseInt(part);
         if (isNaN(num)) continue;
         var next = i + 1 < parts.length ? parts[i + 1] : '';
-        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') {
-            total += num * 210 * 56; i++;
-        } else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') {
-            total += num * 56; i++;
-        } else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') {
-            total += num; i++;
-        } else {
-            total += num;
-        }
+        if (next === 'ЗОЛ' || next === 'ЗОЛОТО' || next === 'GOLD' || next === 'G') { total += num * 210 * 56; i++; }
+        else if (next === 'СО' || next === 'СЕРЕБРО' || next === 'SILVER' || next === 'S') { total += num * 56; i++; }
+        else if (next === 'МП' || next === 'МЕДЬ' || next === 'COPPER' || next === 'C') { total += num; i++; }
+        else { total += num; }
     }
     return total;
 }
@@ -1160,6 +1159,8 @@ function parseCurrencyInput(input) {
 
 window.openShop = openShop;
 window.openCraftMenu = openCraftMenu;
+window.openCraftLeatherMenu = openCraftLeatherMenu;
+window.openCraftWoodMenu = openCraftWoodMenu;
 window.openGuild = openGuild;
 window.openTavernTrade = openTavernTrade;
 window.closeTrade = closeTrade;
@@ -1172,6 +1173,8 @@ window.sellToShop = sellToShop;
 window.buyFromConsumable = buyFromConsumable;
 window.sellTavernItem = sellTavernItem;
 window.craftSteel = craftSteel;
+window.craftLeather = craftLeather;
+window.craftWood = craftWood;
 window.showGuildListings = showGuildListings;
 window.showGuildMyListings = showGuildMyListings;
 window.showGuildSell = showGuildSell;
