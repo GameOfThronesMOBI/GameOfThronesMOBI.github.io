@@ -18,20 +18,17 @@ var HOUSE_RANKS = {
     knight: { name: '⚔️ Рыцарь', order: 12, description: 'Элитный воин, начальное звание.', canAssign: [] }
 };
 
-// Максимальное количество
 var RANK_LIMITS = {
     lord: 1, heir: 1, war_master: 1, castellan: 1, steward: 1,
     treasurer: 1, maester: 1, whisperer: 1,
     knight_commander: 2,
-    captain_officer: -1, // -1 = без лимита
-    sergeant: -1, knight: -1
+    captain_officer: -1, sergeant: -1, knight: -1
 };
 
-// Приглашения в дома
 var invitations = {};
 
 // ============================================================
-// 1. МОЙ ДОМ (вызывается из главного меню)
+// 1. МОЙ ДОМ
 // ============================================================
 
 window.openMyHouse = function() {
@@ -45,7 +42,6 @@ window.openMyHouse = function() {
     var html = '<div class="modal-section"><h4>🏰 МОЙ ДОМ</h4>';
     
     if (!g.house) {
-        // Нет дома — только приглашения
         html += '<p style="color:#6a5a48;">Вы не состоите в доме.</p>';
         html += '<div class="modal-section"><h4>📨 ПРИГЛАШЕНИЯ</h4>';
         var invs = invitations[currentUser] || [];
@@ -62,7 +58,6 @@ window.openMyHouse = function() {
         }
         html += '</div>';
     } else {
-        // Есть дом
         var house = HOUSES[g.house];
         if (house) {
             html += '<div style="text-align:center;margin-bottom:10px;">';
@@ -74,10 +69,12 @@ window.openMyHouse = function() {
             }
             html += '</div>';
             
-            // Вкладки
             html += '<div class="tabs">';
             html += '<button class="tab-btn active" onclick="showHouseTab(\'info\')">📜 Инфо</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'members\')">👥 Участники</button>';
+            html += '<button class="tab-btn" onclick="showHouseTab(\'lands\')">🏘️ Владения</button>';
+            html += '<button class="tab-btn" onclick="showHouseTab(\'treasury\')">💰 Казна</button>';
+            html += '<button class="tab-btn" onclick="showHouseTab(\'chronicle\')">📜 Летопись</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'invite\')">📨 Пригласить</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'sent\')">📤 Отправленные</button>';
             html += '</div>';
@@ -108,7 +105,6 @@ window.showHouseTab = function(tab) {
     if (!house) return;
     var html = '';
     
-    // ИНФО
     if (tab === 'info') {
         html += '<div class="modal-section">';
         html += '<div class="row"><span class="label">📍 Регион</span><span class="value">' + (house.region || '—') + '</span></div>';
@@ -121,7 +117,6 @@ window.showHouseTab = function(tab) {
         html += '</div>';
     }
     
-    // УЧАСТНИКИ
     if (tab === 'members') {
         html += '<div class="modal-section"><h4>👥 УЧАСТНИКИ</h4>';
         var members = getHouseMembers(g.house);
@@ -144,7 +139,44 @@ window.showHouseTab = function(tab) {
         html += '</div>';
     }
     
-    // ПРИГЛАСИТЬ
+    if (tab === 'lands') {
+        html += '<div class="modal-section"><h4>🏘️ ВЛАДЕНИЯ</h4>';
+        var lands = getHouseLands(g.house);
+        if (lands.length === 0) {
+            html += '<p style="color:#6a5a48;">Нет владений.</p>';
+        } else {
+            lands.forEach(function(land) {
+                html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
+                html += '<span class="label">📍 ' + land.name + '</span><span class="value">' + land.type + ' | ур.' + land.level + '</span>';
+                html += '</div>';
+            });
+        }
+        html += '<p style="color:#6a5a48;font-size:11px;">Захватывайте локации чтобы увеличить доход.</p>';
+        html += '</div>';
+    }
+    
+    if (tab === 'treasury') {
+        html += '<div class="modal-section"><h4>💰 КАЗНА</h4>';
+        html += '<div class="row"><span class="label">💰 Золото</span><span class="value">' + (house.treasury || 0) + '</span></div>';
+        html += '<div class="row"><span class="label">📊 Доход в час</span><span class="value" style="color:#7ac98a;">+' + getHouseIncome(g.house) + ' зол.</span></div>';
+        html += '<div class="row"><span class="label">📉 Расход в час</span><span class="value" style="color:#c96a5a;">-' + getHouseExpense(g.house) + ' зол.</span></div>';
+        html += '<p style="color:#6a5a48;font-size:11px;">Доход зависит от владений и налогов. Расход — от армии и замка.</p>';
+        html += '</div>';
+    }
+    
+    if (tab === 'chronicle') {
+        html += '<div class="modal-section"><h4>📜 ЛЕТОПИСЬ</h4>';
+        var chronicle = getHouseChronicle(g.house);
+        if (chronicle.length === 0) {
+            html += '<p style="color:#6a5a48;">Пусто.</p>';
+        } else {
+            chronicle.forEach(function(entry) {
+                html += '<div style="padding:4px 0; border-bottom:1px solid #1a1410; font-size:12px; color:#b8a890;">' + entry + '</div>';
+            });
+        }
+        html += '</div>';
+    }
+    
     if (tab === 'invite') {
         html += '<div class="modal-section"><h4>📨 ПРИГЛАСИТЬ ИГРОКА</h4>';
         if (!g.houseRank || !HOUSE_RANKS[g.houseRank] || HOUSE_RANKS[g.houseRank].canAssign.length === 0) {
@@ -156,7 +188,6 @@ window.showHouseTab = function(tab) {
         html += '</div>';
     }
     
-    // ОТПРАВЛЕННЫЕ
     if (tab === 'sent') {
         html += '<div class="modal-section"><h4>📤 ОТПРАВЛЕННЫЕ ПРИГЛАШЕНИЯ</h4>';
         var sent = [];
@@ -212,6 +243,40 @@ function canManageMember(targetName) {
     if (!myRank || !HOUSE_RANKS[myRank]) return false;
     if (!targetRank || !HOUSE_RANKS[targetRank]) return true;
     return HOUSE_RANKS[myRank].order < HOUSE_RANKS[targetRank].order;
+}
+
+function getHouseLands(houseId) {
+    var lands = [];
+    for (var id in KL_AREAS) {
+        if (KL_AREAS[id].owner === houseId) {
+            lands.push({ name: KL_AREAS[id].name, type: KL_AREAS[id].type, level: KL_AREAS[id].level });
+        }
+    }
+    return lands;
+}
+
+function getHouseIncome(houseId) {
+    var lands = getHouseLands(houseId);
+    var income = 0;
+    lands.forEach(function(land) { income += land.level * 2; });
+    return income;
+}
+
+function getHouseExpense(houseId) {
+    var house = HOUSES[houseId];
+    if (!house) return 0;
+    var troops = (house.army.infantry || 0) + (house.army.cavalry || 0) * 2 + (house.army.ships || 0) * 5;
+    return Math.floor(troops / 10);
+}
+
+function getHouseChronicle(houseId) {
+    var log = [];
+    for (var i = 0; i < gameLog.length; i++) {
+        if (gameLog[i].indexOf('[' + houseId + ']') !== -1 || gameLog[i].indexOf(HOUSES[houseId] ? HOUSES[houseId].name : '') !== -1) {
+            log.push(gameLog[i]);
+        }
+    }
+    return log.slice(-20);
 }
 
 // ============================================================
@@ -293,7 +358,6 @@ function assignRank(playerName) {
     if (!myRank || !HOUSE_RANKS[myRank]) { setMessage('❌ У вас нет прав.'); return; }
     var canAssign = HOUSE_RANKS[myRank].canAssign;
     
-    // Собираем доступные роли
     var options = [];
     canAssign.forEach(function(rank) {
         if (RANK_LIMITS[rank] && RANK_LIMITS[rank] > 0) {
@@ -308,7 +372,6 @@ function assignRank(playerName) {
     
     if (options.length === 0) { setMessage('❌ Нет доступных ролей.'); return; }
     
-    // Модальное окно
     var modal = document.getElementById('modal-rank');
     if (!modal) {
         var overlay = document.createElement('div');
@@ -342,7 +405,6 @@ function confirmAssignRank(playerName, newRank) {
     var target = users[playerName];
     if (!target || target.game.house !== user.game.house) { setMessage('❌ Игрок не в вашем доме.'); closeRankModal(); return; }
     
-    // Если назначаем лордом — старый лорд становится наследником
     if (newRank === 'lord') {
         for (var name in users) {
             if (users[name].game.house === user.game.house && users[name].game.houseRank === 'lord') {
