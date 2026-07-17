@@ -325,8 +325,26 @@ function openCharacter() {
     
     html += '<div class="modal-section"><h4>📋 ОСНОВНОЕ</h4>';
     html += '<div class="row"><span class="label">Имя</span><span class="value">' + currentUser + '</span></div>';
+    
+    // Пол
+    var genderEmoji = g.gender === 'male' ? '♂️' : (g.gender === 'female' ? '♀️' : '❓');
+    var genderText = g.gender === 'male' ? 'Мужской' : (g.gender === 'female' ? 'Женский' : 'Не указан');
+    html += '<div class="row"><span class="label">👤 Пол</span><span class="value">' + genderEmoji + ' ' + genderText + '</span></div>';
+    
     html += '<div class="row"><span class="label">Национальность</span><span class="value">' + user.nationality + '</span></div>';
     html += '<div class="row"><span class="label">Дом</span><span class="value">' + (g.house || 'Нет') + '</span></div>';
+    
+    // Титул
+    var title = '';
+    if (g.house && g.houseRank && HOUSE_RANKS && HOUSE_RANKS[g.houseRank]) {
+        title = HOUSE_RANKS[g.houseRank].name;
+    } else if (g.house) {
+        title = 'Член дома';
+    } else {
+        title = 'Без дома';
+    }
+    html += '<div class="row"><span class="label">🎖️ Титул</span><span class="value">' + title + '</span></div>';
+    
     html += '<div class="row"><span class="label">Уровень</span><span class="value">' + g.level + ' (' + g.xp + '/' + g.nextLevelXp + ')</span></div>';
     html += '<div class="row"><span class="label">Очки атрибутов</span><span class="value">' + g.attributePoints + '</span></div>';
     html += '<div class="row"><span class="label">HP</span><span class="value">' + Math.round(g.hp) + '/' + g.maxHp + '</span></div>';
