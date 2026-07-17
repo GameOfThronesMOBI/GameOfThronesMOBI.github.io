@@ -16,6 +16,8 @@ let resourceInterval = null;
 let autoSaveInterval = null;
 let gameLog = [];
 let houseLogs = {};
+let loginAttempts = {};
+let loginBlockedUntil = {};
 let housingMarket = {
     'night': { total: 400, occupied: 0 },
     'room': { total: 300, occupied: 0 },
