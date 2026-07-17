@@ -16,6 +16,7 @@
         <div class="form-group"><label>Имя персонажа</label><input type="text" id="login-name" placeholder="Введите имя"></div>
         <div class="form-group"><label>Пароль</label><input type="password" id="login-password" placeholder="Введите пароль"></div>
         <button class="btn btn-primary" onclick="handleLogin()">⚔️ ВОЙТИ</button>
+        <button class="btn btn-secondary" onclick="forgotPassword()" style="margin-top:4px;">🔑 Забыл пароль?</button>
         <div class="divider">— ИЛИ —</div>
         <button class="btn btn-secondary" onclick="showPage('register')">📜 СОЗДАТЬ ПЕРСОНАЖА</button>
     </div>
@@ -27,6 +28,7 @@
         <div id="register-form">
             <div class="form-group"><label>Имя персонажа</label><input type="text" id="reg-name" placeholder="например: Эддард"><small>Минимум 2 символа</small></div>
             <div class="form-group"><label>Пароль</label><input type="password" id="reg-password" placeholder="Придумайте пароль"><small>Минимум 4 символа</small></div>
+            <div class="form-group"><label>Пол</label><select id="reg-gender"><option value="">▼ Выберите</option><option value="male">♂️ Мужской</option><option value="female">♀️ Женский</option></select></div>
             <div class="form-group"><label>Национальность</label><select id="reg-nationality"><option value="">▼ Выберите</option><option value="Северные земли">❄️ Северные земли</option><option value="Речные земли">🌊 Речные земли</option><option value="Долина">🏔️ Долина</option><option value="Западные земли">💰 Западные земли</option><option value="Простор">🌾 Простор</option><option value="Штормовые земли">⛈️ Штормовые земли</option><option value="Дорн">☀️ Дорн</option></select></div>
             <div class="form-group"><label>Секретное слово</label><input type="text" id="reg-secret" placeholder="Для восстановления пароля"></div>
             <button class="btn btn-primary" onclick="handleRegister()">🔥 ЗАРЕГИСТРИРОВАТЬСЯ</button>
