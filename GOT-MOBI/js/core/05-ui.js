@@ -1,5 +1,5 @@
 // ============================================================
-// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КАРТА МЕСТ)
+// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КАРТА МЕСТ) — ИСПРАВЛЕНО
 // ============================================================
 
 console.log('🔧 UI загружается...');
@@ -11,10 +11,34 @@ console.log('🔧 UI загружается...');
 window._battle = null;
 
 window.getMobsForLocation = function(region, place) {
-    var m = {'Королевские земли':'crownlands','Север':'north','Западные земли':'westlands','Простор':'reach','Речные земли':'riverlands','Штормовые земли':'stormlands','Дорн':'dorne','Долина':'vale','Железные острова':'iron_islands'};
+    // Квартал бедноты — только алкаши
+    if (place === 'Квартал бедноты') {
+        return MOBS.drunkards || [];
+    }
+    
+    // Городские локации — без мобов
+    var cityPlaces = ['Таверна','Рынок','Кузница','Кожевник','Плотник','Конюшня','Гильдия торговцев',
+                      'Магистрат','Ворота','Ворота Красного замка','Королевский квартал','Торговый квартал',
+                      'Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель'];
+    if (cityPlaces.indexOf(place) !== -1) {
+        return [];
+    }
+    
+    // Внешние локации
+    var m = {'Королевские земли':'crownlands','Север':'north','Западные земли':'westlands','Простор':'reach',
+             'Речные земли':'riverlands','Штормовые земли':'stormlands','Дорн':'dorne','Долина':'vale',
+             'Железные острова':'iron_islands'};
     var k = m[region] || 'crownlands';
     var mobs = MOBS[k] || MOBS.crownlands || [];
-    var lvl = LOCATION_LEVELS[place] || 1;
+    
+    // Уровень локации: сначала из KL_AREAS, потом из LOCATION_LEVELS
+    var lvl = 1;
+    if (KL_AREAS && KL_AREAS[place]) {
+        lvl = KL_AREAS[place].level;
+    } else if (LOCATION_LEVELS[place]) {
+        lvl = LOCATION_LEVELS[place];
+    }
+    
     var min = Math.max(1, lvl - 3), max = lvl + 3;
     var f = mobs.filter(function(m) { return m.level >= min && m.level <= max; });
     return f.length > 0 ? f : mobs.slice(0, 5);
@@ -141,11 +165,9 @@ window.doSearch = function() {
     var region = g.location.region || 'Королевские земли';
     var place = g.location.place || 'Дорога';
     
-    var cityPlaces = ['kings_landing', 'Таверна', 'Рынок', 'Кузница', 'Оружейная лавка', 
-                      'Кожевник', 'Бронник', 'Плотник', 'Конюшня', 'Гильдия торговцев',
-                      'Магистрат', 'Ворота', 'Королевский квартал', 'Торговый квартал',
-                      'Квартал бедноты', 'Дом', 'Великая септа', 'Порт', 'Тюрьма',
-                      'Библиотека мейстеров', 'Гильдия наёмников', 'Бордель'];
+    var cityPlaces = ['Таверна','Рынок','Кузница','Кожевник','Плотник','Конюшня','Гильдия торговцев',
+                      'Магистрат','Ворота','Ворота Красного замка','Королевский квартал','Торговый квартал',
+                      'Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель'];
     
     if (cityPlaces.indexOf(place) !== -1) {
         setMessage('🏙️ В городе не водится дичь.');
@@ -193,7 +215,67 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 5. ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+// 4. КАРТА МЕСТ (ГЛОБАЛЬНАЯ)
+// ============================================================
+
+window.openPlaces = function() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var loc = KL_AREAS[place];
+    
+    if (!loc || !loc.places || loc.places.length === 0) {
+        setMessage('📍 Здесь нет мест.');
+        return;
+    }
+    
+    var modal = document.getElementById('modal-places');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-places';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closePlaces(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏘️ МЕСТА</h3><button class="close-btn" onclick="closePlaces()">✕</button></div><div id="modal-places-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-places-content');
+    var html = '<div class="modal-section"><h4>📍 ' + loc.name + '</h4>';
+    html += '<div class="modal-section">';
+    loc.places.forEach(function(p) {
+        var isCurrent = (p === g.location.place);
+        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
+        html += '<span class="label">' + p + (isCurrent ? ' ⭐' : '') + '</span>';
+        if (!isCurrent) {
+            html += '<span class="value"><button class="btn btn-small" onclick="goToPlace(\'' + p + '\'); closePlaces();">🚶 Идти</button></span>';
+        } else {
+            html += '<span class="value" style="color:#6a5a48;">Вы здесь</span>';
+        }
+        html += '</div>';
+    });
+    html += '</div><button class="btn" onclick="closePlaces()">Закрыть</button>';
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+};
+
+window.closePlaces = function() {
+    var modal = document.getElementById('modal-places');
+    if (modal) modal.classList.add('hide');
+};
+
+window.goToPlace = function(placeName) {
+    var g = users[currentUser].game;
+    if (!g) return;
+    g.location.place = placeName;
+    setMessage('🚶 Вы подошли к ' + placeName);
+    updateMenu();
+    updateStory();
+    updateActions();
+    saveData();
+};
+
+// ============================================================
+// 5. ДОПОЛНИТЕЛЬНЫЕ
 // ============================================================
 
 function setMessage(msg) {
