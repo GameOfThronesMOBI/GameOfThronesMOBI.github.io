@@ -87,6 +87,22 @@ function addLog(msg) {
     saveData();
 }
 
+// ============================================================
+// ЛЕТОПИСЬ ДОМА
+// ============================================================
+
+function addHouseLog(houseId, msg) {
+    if (!houseId) return;
+    if (!houseLogs[houseId]) houseLogs[houseId] = [];
+    var now = new Date();
+    var time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    houseLogs[houseId].push('[' + time + '] ' + msg);
+    if (houseLogs[houseId].length > 50) houseLogs[houseId] = houseLogs[houseId].slice(-50);
+    saveData();
+}
+
+// ============================================================
+
 function getTimeLeft(timestamp, daysPaid) {
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
@@ -294,7 +310,6 @@ function initTraderStock() {
         }
         
         if (shop === 'Кузница') {
-            // Оружие
             ['sword','spear','axe','mace','dagger','shield'].forEach(function(type) {
                 ALL_ITEMS.weapons[type].forEach(function(item) {
                     ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
@@ -302,7 +317,6 @@ function initTraderStock() {
                     });
                 });
             });
-            // Латная броня
             Object.keys(ALL_ITEMS.plate).forEach(function(type) {
                 ALL_ITEMS.plate[type].forEach(function(item) {
                     ['Плохое','Обычное','Хорошее','Качественное'].forEach(function(q) {
@@ -310,7 +324,6 @@ function initTraderStock() {
                     });
                 });
             });
-            // Ресурсы
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(q) {
                 traderInventory[shop]['Руда железная|' + q] = 15;
             });
