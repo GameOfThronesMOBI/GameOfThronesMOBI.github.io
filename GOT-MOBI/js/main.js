@@ -7,6 +7,7 @@ function handleRegister() {
     var password = document.getElementById('reg-password').value;
     var nationality = document.getElementById('reg-nationality').value;
     var secret = document.getElementById('reg-secret').value.trim();
+    var gender = document.getElementById('reg-gender').value;
     var errEl = document.getElementById('register-error');
     var okEl = document.getElementById('register-success');
     var formEl = document.getElementById('register-form');
@@ -15,7 +16,7 @@ function handleRegister() {
     okEl.classList.add('hide');
     formEl.classList.remove('hide');
     
-    if (!name || !password || !nationality || !secret) {
+    if (!name || !password || !nationality || !secret || !gender) {
         errEl.textContent = '❌ Заполните все поля';
         errEl.classList.remove('hide');
         return;
@@ -30,7 +31,8 @@ function handleRegister() {
     ['sword', 'spear', 'mace', 'axe', 'bow', 'crossbow', 'shield', 'dagger'].forEach(function(s) { skills[s] = { level: 1, xp: 0 }; });
     
     users[name] = {
-        password: hash(password),
+        password: password,
+        passwordHash: hash(password),
         nationality: nationality,
         secret: hash(secret),
         created: now,
@@ -71,7 +73,8 @@ function handleRegister() {
             brothelRoom: false,
             lastTavernEat: 0,
             house: null,
-            isLord: false
+            isLord: false,
+            gender: gender
         }
     };
     
@@ -93,19 +96,51 @@ function handleLogin() {
     var errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
     
-    if (!name || !password) { errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
-    
-    var user = users[name];
-    if (!user || user.password !== hash(password)) {
-        errEl.textContent = '❌ Неверное имя или пароль';
+    // Проверка блокировки
+    if (loginBlockedUntil[name] && Date.now() < loginBlockedUntil[name]) {
+        var minutesLeft = Math.ceil((loginBlockedUntil[name] - Date.now()) / 60000);
+        errEl.textContent = '⏳ Слишком много попыток. Попробуйте через ' + minutesLeft + ' мин.';
         errEl.classList.remove('hide');
         return;
     }
     
+    if (!name || !password) { errEl.textContent = '❌ Заполните все поля'; errEl.classList.remove('hide'); return; }
+    
+    var user = users[name];
+    if (!user || user.password !== password) {
+        loginAttempts[name] = (loginAttempts[name] || 0) + 1;
+        if (loginAttempts[name] >= 3) {
+            loginBlockedUntil[name] = Date.now() + 5 * 60 * 1000;
+            loginAttempts[name] = 0;
+            saveLoginData();
+            errEl.textContent = '⏳ 3 неверные попытки. Вход заблокирован на 5 минут.';
+        } else {
+            errEl.textContent = '❌ Неверное имя или пароль. Осталось попыток: ' + (3 - loginAttempts[name]);
+        }
+        errEl.classList.remove('hide');
+        saveLoginData();
+        return;
+    }
+    
+    loginAttempts[name] = 0;
+    saveLoginData();
     localStorage.setItem('got_user', name);
     currentUser = name;
     addLog('👤 ' + name + ' вошёл в игру');
     enterGame(name);
+}
+
+function forgotPassword() {
+    var loginName = prompt('Введите логин для восстановления:');
+    if (!loginName) return;
+    if (!users[loginName]) { setMessage('❌ Персонаж не найден.'); return; }
+    
+    var secret = prompt('Введите секретное слово:');
+    if (!secret) return;
+    if (users[loginName].secret !== hash(secret)) { setMessage('❌ Неверное секретное слово.'); return; }
+    
+    alert('Ваш пароль: ' + users[loginName].password);
+    setMessage('🔑 Пароль показан в окне.');
 }
 
 function fixOldAccount(user) {
@@ -132,7 +167,8 @@ function fixOldAccount(user) {
             brothelBuffs: [], brothelRoom: false,
             lastTavernEat: 0,
             house: null,
-            isLord: false
+            isLord: false,
+            gender: null
         };
         return user;
     }
@@ -140,6 +176,7 @@ function fixOldAccount(user) {
     if (g.lastTavernEat === undefined) g.lastTavernEat = 0;
     if (g.house === undefined) g.house = null;
     if (g.isLord === undefined) g.isLord = false;
+    if (g.gender === undefined) g.gender = null;
     return user;
 }
 
