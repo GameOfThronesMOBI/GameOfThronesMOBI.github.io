@@ -58,7 +58,7 @@ const KL_AREAS = {
 };
 
 // ============================================================
-// ПОЛЯРНЫЙ ГЕНЕРАТОР ПЕРЕХОДОВ
+// ПОЛЯРНЫЙ ГЕНЕРАТОР ПЕРЕХОДОВ (ИСПРАВЛЕННЫЙ)
 // ============================================================
 
 var DIRS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
@@ -66,7 +66,6 @@ var DIR_INDEX = {};
 DIRS.forEach(function(d, i) { DIR_INDEX[d] = i; });
 
 function findZone(dir, ring) {
-    if (ring === 0) return 'kl_crossroads';
     for (var id in KL_AREAS) {
         if (KL_AREAS[id].dir === dir && KL_AREAS[id].ring === ring) return id;
     }
@@ -89,23 +88,28 @@ for (var id in KL_AREAS) {
         var r = z.ring;
         
         // Прямые (вперёд/назад по лучу)
-        KL_TRANSITIONS[id]['n'] = findZone(z.dir, r - 1);
-        KL_TRANSITIONS[id]['s'] = findZone(z.dir, r + 1);
+        KL_TRANSITIONS[id]['forward'] = findZone(z.dir, r + 1);
+        KL_TRANSITIONS[id]['backward'] = (r === 1) ? 'kl_crossroads' : findZone(z.dir, r - 1);
         
         // По кольцу (соседние лучи)
-        KL_TRANSITIONS[id]['e'] = findZone(DIRS[(di + 1) % 8], r);
-        KL_TRANSITIONS[id]['w'] = findZone(DIRS[(di + 7) % 8], r);
+        KL_TRANSITIONS[id]['cw'] = findZone(DIRS[(di + 1) % 8], r);
+        KL_TRANSITIONS[id]['ccw'] = findZone(DIRS[(di + 7) % 8], r);
         
         // Диагонали
-        KL_TRANSITIONS[id]['ne'] = findZone(DIRS[(di + 1) % 8], r - 1);
-        KL_TRANSITIONS[id]['se'] = findZone(DIRS[(di + 1) % 8], r + 1);
-        KL_TRANSITIONS[id]['sw'] = findZone(DIRS[(di + 7) % 8], r + 1);
-        KL_TRANSITIONS[id]['nw'] = findZone(DIRS[(di + 7) % 8], r - 1);
-    }
-    
-    // Если восток (dir='e') — все переходы null (море)
-    if (z.dir === 'e' || (z.ring === 0 && !KL_TRANSITIONS[id]['e'])) {
-        // nothing, e уже null
+        KL_TRANSITIONS[id]['forward_cw'] = findZone(DIRS[(di + 1) % 8], r + 1);
+        KL_TRANSITIONS[id]['forward_ccw'] = findZone(DIRS[(di + 7) % 8], r + 1);
+        KL_TRANSITIONS[id]['backward_cw'] = (r === 1) ? 'kl_crossroads' : findZone(DIRS[(di + 1) % 8], r - 1);
+        KL_TRANSITIONS[id]['backward_ccw'] = (r === 1) ? 'kl_crossroads' : findZone(DIRS[(di + 7) % 8], r - 1);
+        
+        // Маппинг на стандартные направления для компаса
+        KL_TRANSITIONS[id]['n'] = (z.dir === 'n' || z.dir === 'ne' || z.dir === 'nw') ? KL_TRANSITIONS[id]['backward'] : KL_TRANSITIONS[id]['backward_cw'] || KL_TRANSITIONS[id]['backward_ccw'];
+        KL_TRANSITIONS[id]['s'] = (z.dir === 's' || z.dir === 'se' || z.dir === 'sw') ? KL_TRANSITIONS[id]['backward'] : KL_TRANSITIONS[id]['forward_cw'] || KL_TRANSITIONS[id]['forward_ccw'];
+        KL_TRANSITIONS[id]['e'] = (z.dir === 'ne' || z.dir === 'e' || z.dir === 'se') ? KL_TRANSITIONS[id]['cw'] : KL_TRANSITIONS[id]['forward_cw'] || KL_TRANSITIONS[id]['backward_cw'];
+        KL_TRANSITIONS[id]['w'] = (z.dir === 'nw' || z.dir === 'w' || z.dir === 'sw') ? KL_TRANSITIONS[id]['ccw'] : KL_TRANSITIONS[id]['forward_ccw'] || KL_TRANSITIONS[id]['backward_ccw'];
+        KL_TRANSITIONS[id]['ne'] = KL_TRANSITIONS[id]['forward_cw'] || KL_TRANSITIONS[id]['cw'] || KL_TRANSITIONS[id]['backward'];
+        KL_TRANSITIONS[id]['se'] = KL_TRANSITIONS[id]['forward_ccw'] || KL_TRANSITIONS[id]['cw'] || KL_TRANSITIONS[id]['backward'];
+        KL_TRANSITIONS[id]['sw'] = KL_TRANSITIONS[id]['backward_cw'] || KL_TRANSITIONS[id]['ccw'] || KL_TRANSITIONS[id]['forward'];
+        KL_TRANSITIONS[id]['nw'] = KL_TRANSITIONS[id]['backward_ccw'] || KL_TRANSITIONS[id]['ccw'] || KL_TRANSITIONS[id]['forward'];
     }
 }
 
