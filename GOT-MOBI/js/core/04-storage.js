@@ -70,6 +70,27 @@ function saveMarketStalls() {
     localStorage.setItem('got_market_stalls', JSON.stringify(marketStalls));
 }
 
+function loadLoginData() {
+    try {
+        const raw = localStorage.getItem('got_login_data');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            loginAttempts = parsed.attempts || {};
+            loginBlockedUntil = parsed.blocked || {};
+        }
+    } catch(e) {
+        loginAttempts = {};
+        loginBlockedUntil = {};
+    }
+}
+
+function saveLoginData() {
+    localStorage.setItem('got_login_data', JSON.stringify({
+        attempts: loginAttempts,
+        blocked: loginBlockedUntil
+    }));
+}
+
 function loadData() {
     try { const raw = localStorage.getItem('got_users'); if (raw) users = JSON.parse(raw); } catch(e) { users = {}; }
     try { const raw = localStorage.getItem('got_market'); if (raw) marketListings = JSON.parse(raw); } catch(e) { marketListings = []; }
@@ -81,6 +102,7 @@ function loadData() {
     loadHousingMarket();
     loadHorseMarket();
     loadMarketStalls();
+    loadLoginData();
     if (Object.keys(traderInventory).length === 0) initTraderStock();
 }
 
@@ -96,4 +118,5 @@ function saveData() {
     saveHousingMarket();
     saveHorseMarket();
     saveMarketStalls();
+    saveLoginData();
 }
