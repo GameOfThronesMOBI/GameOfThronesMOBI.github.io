@@ -1,21 +1,20 @@
 // ============================================================
-// js/game/06-diplomacy.js — МОЙ ДОМ, ПРИГЛАШЕНИЯ, РОЛИ (ПОЛНЫЙ ФАЙЛ)
+// js/game/06-diplomacy.js — МОЙ ДОМ, ПРИГЛАШЕНИЯ, РОЛИ (С ЛЕТОПИСЬЮ)
 // ============================================================
 
-// Иерархия званий
 var HOUSE_RANKS = {
-    lord: { name: '👑 Лорд/Леди', order: 1, description: 'Глава дома. Суд, налоги, вассалы.', canAssign: ['heir','war_master','castellan','steward','treasurer','maester','whisperer','knight_commander','captain_officer','sergeant','knight'] },
-    heir: { name: '🏴 Наследник', order: 2, description: 'Преемник лорда. Второе лицо дома.', canAssign: ['war_master','castellan','steward','treasurer','maester','whisperer','knight_commander','captain_officer','sergeant','knight'] },
-    war_master: { name: '⚔️ Мастер над войной', order: 3, description: 'Оборона, гарнизон, тренировка.', canAssign: ['knight_commander','captain_officer','sergeant','knight'] },
-    castellan: { name: '🏰 Кастелян', order: 4, description: 'Управление замком в отсутствие лорда.', canAssign: [] },
-    steward: { name: '🍞 Стюард', order: 5, description: 'Хозяйство, припасы, прислуга.', canAssign: [] },
-    treasurer: { name: '💰 Казначей', order: 6, description: 'Доходы, налоги, распределение средств.', canAssign: [] },
-    maester: { name: '📜 Мейстер', order: 7, description: 'Советник, врач, вороны.', canAssign: [] },
-    whisperer: { name: '🕵️ Мастер над шептунами', order: 8, description: 'Разведка, шпионаж.', canAssign: [] },
-    knight_commander: { name: '⭐ Рыцарь-командор', order: 9, description: 'Командует крылом армии (до 2).', canAssign: ['captain_officer','sergeant','knight'] },
-    captain_officer: { name: '🗡️ Капитан', order: 10, description: 'Командует ротой (100-200 чел).', canAssign: ['sergeant','knight'] },
-    sergeant: { name: '🛡️ Сержант', order: 11, description: 'Командует отрядом (20-50 чел).', canAssign: [] },
-    knight: { name: '⚔️ Рыцарь', order: 12, description: 'Элитный воин, начальное звание.', canAssign: [] }
+    lord: { name: '👑 Лорд/Леди', order: 1, description: 'Глава дома.', canAssign: ['heir','war_master','castellan','steward','treasurer','maester','whisperer','knight_commander','captain_officer','sergeant','knight'] },
+    heir: { name: '🏴 Наследник', order: 2, description: 'Преемник лорда.', canAssign: ['war_master','castellan','steward','treasurer','maester','whisperer','knight_commander','captain_officer','sergeant','knight'] },
+    war_master: { name: '⚔️ Мастер над войной', order: 3, description: 'Оборона и гарнизон.', canAssign: ['knight_commander','captain_officer','sergeant','knight'] },
+    castellan: { name: '🏰 Кастелян', order: 4, description: 'Управление замком.', canAssign: [] },
+    steward: { name: '🍞 Стюард', order: 5, description: 'Хозяйство и припасы.', canAssign: [] },
+    treasurer: { name: '💰 Казначей', order: 6, description: 'Доходы и налоги.', canAssign: [] },
+    maester: { name: '📜 Мейстер', order: 7, description: 'Советник и врач.', canAssign: [] },
+    whisperer: { name: '🕵️ Мастер над шептунами', order: 8, description: 'Разведка.', canAssign: [] },
+    knight_commander: { name: '⭐ Рыцарь-командор', order: 9, description: 'Командует крылом.', canAssign: ['captain_officer','sergeant','knight'] },
+    captain_officer: { name: '🗡️ Капитан', order: 10, description: 'Командует ротой.', canAssign: ['sergeant','knight'] },
+    sergeant: { name: '🛡️ Сержант', order: 11, description: 'Командует отрядом.', canAssign: [] },
+    knight: { name: '⚔️ Рыцарь', order: 12, description: 'Элитный воин.', canAssign: [] }
 };
 
 var RANK_LIMITS = {
@@ -64,9 +63,7 @@ window.openMyHouse = function() {
             html += '<span style="font-size:32px;">' + house.sigil + '</span><br>';
             html += '<strong style="color:#c9b694;font-size:18px;">' + house.name + '</strong><br>';
             html += '<span style="color:#6a5a48;">' + (house.motto || '') + '</span>';
-            if (g.houseRank) {
-                html += '<br><span style="color:#ffd700;">' + (HOUSE_RANKS[g.houseRank] ? HOUSE_RANKS[g.houseRank].name : g.houseRank) + '</span>';
-            }
+            if (g.houseRank) html += '<br><span style="color:#ffd700;">' + (HOUSE_RANKS[g.houseRank] ? HOUSE_RANKS[g.houseRank].name : g.houseRank) + '</span>';
             html += '</div>';
             
             html += '<div class="tabs">';
@@ -270,13 +267,7 @@ function getHouseExpense(houseId) {
 }
 
 function getHouseChronicle(houseId) {
-    var log = [];
-    for (var i = 0; i < gameLog.length; i++) {
-        if (gameLog[i].indexOf('[' + houseId + ']') !== -1 || gameLog[i].indexOf(HOUSES[houseId] ? HOUSES[houseId].name : '') !== -1) {
-            log.push(gameLog[i]);
-        }
-    }
-    return log.slice(-20);
+    return houseLogs[houseId] || [];
 }
 
 // ============================================================
@@ -296,6 +287,7 @@ function invitePlayer() {
     }
     invitations[name].push({ houseId: houseId, from: currentUser });
     saveInvitations();
+    addHouseLog(houseId, '📨 Приглашение отправлено игроку ' + name);
     setMessage('✅ Приглашение отправлено игроку ' + name + '.');
     showHouseTab('sent');
 }
@@ -307,6 +299,7 @@ function cancelInvite(playerName) {
     invitations[playerName] = invitations[playerName].filter(function(inv) { return inv.houseId !== houseId; });
     if (invitations[playerName].length === 0) delete invitations[playerName];
     saveInvitations();
+    addHouseLog(houseId, '❌ Приглашение для ' + playerName + ' отменено');
     setMessage('❌ Приглашение для ' + playerName + ' отменено.');
     showHouseTab('sent');
 }
@@ -318,12 +311,14 @@ function acceptInvite(houseId) {
     for (var name in users) {
         if (users[name].game.house === houseId && users[name].game.houseRank === 'lord') { hasLord = true; break; }
     }
+    var rank = hasLord ? 'knight' : 'lord';
     if (!hasLord) { user.game.houseRank = 'lord'; }
     else { user.game.houseRank = 'knight'; }
     invitations[currentUser] = (invitations[currentUser] || []).filter(function(inv) { return inv.houseId !== houseId; });
     if (invitations[currentUser].length === 0) delete invitations[currentUser];
     saveInvitations();
     saveData();
+    addHouseLog(houseId, '👤 ' + currentUser + ' вступил в дом как ' + (HOUSE_RANKS[rank] ? HOUSE_RANKS[rank].name : rank));
     setMessage('✅ Вы вступили в дом ' + (HOUSES[houseId] ? HOUSES[houseId].name : houseId) + '!');
     closeHouses();
     openMyHouse();
@@ -333,6 +328,7 @@ function declineInvite(houseId) {
     invitations[currentUser] = (invitations[currentUser] || []).filter(function(inv) { return inv.houseId !== houseId; });
     if (invitations[currentUser].length === 0) delete invitations[currentUser];
     saveInvitations();
+    addHouseLog(houseId, '❌ ' + currentUser + ' отклонил приглашение');
     setMessage('❌ Вы отклонили приглашение.');
     openMyHouse();
 }
@@ -340,9 +336,11 @@ function declineInvite(houseId) {
 function leaveHouse() {
     if (!confirm('Вы уверены, что хотите покинуть дом?')) return;
     var user = users[currentUser];
+    var houseId = user.game.house;
     user.game.house = null;
     user.game.houseRank = null;
     saveData();
+    addHouseLog(houseId, '🚪 ' + currentUser + ' покинул дом');
     setMessage('🚪 Вы покинули дом.');
     closeHouses();
     openMyHouse();
@@ -416,6 +414,7 @@ function confirmAssignRank(playerName, newRank) {
     
     target.game.houseRank = newRank;
     saveData();
+    addHouseLog(user.game.house, '📋 ' + playerName + ' назначен: ' + HOUSE_RANKS[newRank].name);
     setMessage('✅ ' + playerName + ' назначен: ' + HOUSE_RANKS[newRank].name);
     closeRankModal();
     showHouseTab('members');
@@ -454,4 +453,4 @@ window.confirmAssignRank = confirmAssignRank;
 window.closeRankModal = closeRankModal;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Мой дом + Роли загружены!');
+console.log('🏰 Дипломатия + Мой дом + Роли + Летопись загружены!');
