@@ -1,5 +1,5 @@
 // ============================================================
-// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КАРТА МЕСТ) — ИСПРАВЛЕНО
+// js/core/05-ui.js — ПОЛНЫЙ UI (БОЕВКА + ПОИСК + КАРТА МЕСТ) — ФИНАЛ
 // ============================================================
 
 console.log('🔧 UI загружается...');
@@ -31,7 +31,6 @@ window.getMobsForLocation = function(region, place) {
     var k = m[region] || 'crownlands';
     var mobs = MOBS[k] || MOBS.crownlands || [];
     
-    // Уровень локации: сначала из KL_AREAS, потом из LOCATION_LEVELS
     var lvl = 1;
     if (KL_AREAS && KL_AREAS[place]) {
         lvl = KL_AREAS[place].level;
@@ -146,7 +145,24 @@ window.endBattle = function(won, reason) {
         g.xp += xp;
         while (g.xp >= g.nextLevelXp) { g.xp -= g.nextLevelXp; g.level++; g.nextLevelXp = 100 + g.level*10; if (g.level<=100) g.attributePoints++; }
         if (b.mob.type==='animal') { var sc = 2+Math.floor(Math.random()*3); for (var i=0;i<sc;i++) addToInventory(g,{name:'Шкура',quality:'Обычное',type:'resource',resourceType:'leather',count:1}); setMessage('⚔️ ПОБЕДА! +'+xp+' XP\n🧵 Шкура ×'+sc); }
-        if (b.mob.type==='human') { var coins = b.mob.level*3 + Math.floor(Math.random()*b.mob.level*3); g.copper += coins; convertCurrency(g); setMessage('⚔️ ПОБЕДА! +'+xp+' XP\n💰 +'+coins+' МП'); }
+        if (b.mob.type==='human') {
+            var coins = b.mob.level*3 + Math.floor(Math.random()*b.mob.level*3);
+            g.copper += coins;
+            convertCurrency(g);
+            setMessage('⚔️ ПОБЕДА! +'+xp+' XP\n💰 +'+coins+' МП');
+            
+            // Шанс попасть в тюрьму за убийство в Квартале бедноты (20%)
+            if (g.location.place === 'Квартал бедноты' && Math.random() * 100 < 20) {
+                if (!g.jail) g.jail = {};
+                g.jail.enterTime = Date.now();
+                g.jail.previousLocation = g.location.place;
+                g.jail.previousLocationFull = g.location.location;
+                g.location.place = 'Тюрьма';
+                g.location.location = 'Королевская Гавань';
+                setMessage('⛓️ Стража схватила вас! Вы в тюрьме за убийство.');
+                updateStory();
+            }
+        }
     } else {
         if (reason==='Смерть') { g.hp=g.maxHp; g.location.place='Таверна'; g.location.location='Королевская Гавань'; g.food=100; g.thirst=100; g.fatigue=100; g.outside=false; setMessage('💀 Вы возродились в таверне.'); updateStory(); }
         else { setMessage('🏃 Вы сбежали.'); }
@@ -215,7 +231,7 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 4. КАРТА МЕСТ (ГЛОБАЛЬНАЯ)
+// 4. КАРТА МЕСТ
 // ============================================================
 
 window.openPlaces = function() {
@@ -273,10 +289,6 @@ window.goToPlace = function(placeName) {
     updateActions();
     saveData();
 };
-
-// ============================================================
-// 5. ДОПОЛНИТЕЛЬНЫЕ
-// ============================================================
 
 function setMessage(msg) {
     var el = document.getElementById('game-message');
