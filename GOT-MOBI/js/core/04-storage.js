@@ -75,6 +75,7 @@ function loadData() {
     try { const raw = localStorage.getItem('got_market'); if (raw) marketListings = JSON.parse(raw); } catch(e) { marketListings = []; }
     try { const raw = localStorage.getItem('got_trader'); if (raw) traderInventory = JSON.parse(raw); } catch(e) { traderInventory = {}; }
     try { const raw = localStorage.getItem('got_log'); if (raw) gameLog = JSON.parse(raw); } catch(e) { gameLog = []; }
+    try { const raw = localStorage.getItem('got_house_logs'); if (raw) houseLogs = JSON.parse(raw); } catch(e) { houseLogs = {}; }
     try { const raw = localStorage.getItem('got_confiscated'); if (raw) confiscatedItems = JSON.parse(raw); } catch(e) { confiscatedItems = []; }
     try { const raw = localStorage.getItem('got_dice_games'); if (raw) { diceGames = JSON.parse(raw); } } catch(e) { diceGames = {}; }
     loadHousingMarket();
@@ -89,9 +90,10 @@ function saveData() {
     localStorage.setItem('got_trader', JSON.stringify(traderInventory));
     localStorage.setItem('got_confiscated', JSON.stringify(confiscatedItems));
     localStorage.setItem('got_dice_games', JSON.stringify(diceGames));
+    localStorage.setItem('got_house_logs', JSON.stringify(houseLogs));
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
     saveHousingMarket();
     saveHorseMarket();
     saveMarketStalls();
-      }
+}
