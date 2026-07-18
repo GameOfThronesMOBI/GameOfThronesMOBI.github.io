@@ -342,26 +342,17 @@ function buildWorldTransitions() {
     WORLD_TRANSITIONS = {};
     for (var id in WORLD_AREAS) {
         var z = WORLD_AREAS[id];
-        if (z.type === 'transit') continue;
         WORLD_TRANSITIONS[id] = {};
         for (var d in _dirs) {
             var nx = z.x + _dirs[d][0];
             var ny = z.y + _dirs[d][1];
-            var target = null;
-            for (var step = 0; step < 5; step++) {
-                target = null;
-                for (var tid in WORLD_AREAS) {
-                    if (WORLD_AREAS[tid].x === nx && WORLD_AREAS[tid].y === ny) {
-                        target = tid;
-                        break;
-                    }
+            WORLD_TRANSITIONS[id][d] = null;
+            for (var tid in WORLD_AREAS) {
+                if (WORLD_AREAS[tid].x === nx && WORLD_AREAS[tid].y === ny) {
+                    WORLD_TRANSITIONS[id][d] = tid;
+                    break;
                 }
-                if (!target) break;
-                if (WORLD_AREAS[target].type !== 'transit') break;
-                nx += _dirs[d][0];
-                ny += _dirs[d][1];
             }
-            WORLD_TRANSITIONS[id][d] = (target && WORLD_AREAS[target].type !== 'transit') ? target : null;
         }
     }
     console.log('✅ WORLD_TRANSITIONS построен (' + Object.keys(WORLD_AREAS).length + ' зон)');
