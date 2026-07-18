@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС БЕЗ ТРАНЗИТНЫХ ЗОН (ФИНАЛ)
+// movement.js — КОМПАС С ПРОПУСКОМ ТРАНЗИТНЫХ ЗОН (РАБОЧИЙ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -98,16 +98,18 @@ function openCompass() {
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
                 
-                // Пропускаем транзитные зоны
-                if (nextLoc && nextLoc.type === 'transit') {
-                    // Ищем следующую не-транзитную зону в том же направлении
+                // Пропускаем транзитные зоны — ищем следующую основную в том же направлении
+                while (nextLoc && nextLoc.type === 'transit') {
                     var nextTransitions = WORLD_TRANSITIONS[next];
                     if (nextTransitions && nextTransitions[dir]) {
                         next = nextTransitions[dir];
                         nextLoc = WORLD_AREAS[next];
+                    } else {
+                        break;
                     }
                 }
                 
+                // Если после всех пропусков всё ещё транзит — не показываем
                 if (nextLoc && nextLoc.type === 'transit') continue;
                 
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
@@ -123,7 +125,7 @@ function openCompass() {
                 
                 var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
                 
-                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
+                html += '<button class="btn btn-game" onclick="moveToDirection(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
                 html += '<span style="font-size:14px;">' + dirLabels[dir] + '</span>';
                 if (emoji) html += '<span style="font-size:14px;">' + emoji + '</span>';
                 html += '<span style="font-size:8px;color:#c9b694;">' + nextName + '</span>';
@@ -148,7 +150,7 @@ function closeCompass() {
     if (modal) modal.classList.add('hide');
 }
 
-function moveTo(direction) {
+function moveToDirection(direction) {
     var g = users[currentUser].game;
     if (!g) return;
     
@@ -167,11 +169,13 @@ function moveTo(direction) {
     
     // Проскакиваем транзитные зоны
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
-    if (nextLoc && nextLoc.type === 'transit') {
+    while (nextLoc && nextLoc.type === 'transit') {
         var nextTransitions = WORLD_TRANSITIONS[next];
         if (nextTransitions && nextTransitions[direction]) {
             next = nextTransitions[direction];
             nextLoc = WORLD_AREAS[next];
+        } else {
+            break;
         }
     }
     
@@ -186,8 +190,13 @@ function moveTo(direction) {
     saveData();
 }
 
+function moveTo(direction) {
+    moveToDirection(direction);
+}
+
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
 window.moveTo = moveTo;
+window.moveToDirection = moveToDirection;
 
 console.log('✅ Система перемещений загружена!');
