@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ФИНАЛ (БЕЗ ГЛОБАЛЬНЫХ КНОПОК)
+// MAIN.JS — ФИНАЛ (ЛОКАЛЬНАЯ СЕТКА)
 // ============================================================
 
 function handleRegister() {
@@ -205,7 +205,6 @@ function enterGame(name) {
     if (!g.location.locationId) g.location.locationId = g.location.place;
     
     if (typeof normalizeInventory === 'function') normalizeInventory(g);
-    if (typeof buildWorldTransitions === 'function') buildWorldTransitions();
     
     updateMenu();
     updateStory();
@@ -236,8 +235,8 @@ function updateMenu() {
     document.getElementById('menu-period').textContent = time.emoji + ' ' + time.period;
     
     var locName = g.location.place;
-    if (WORLD_AREAS && WORLD_AREAS[g.location.place]) {
-        locName = WORLD_AREAS[g.location.place].name;
+    if (typeof KL_AREAS !== 'undefined' && KL_AREAS[g.location.place]) {
+        locName = KL_AREAS[g.location.place].name;
     }
     document.getElementById('menu-location').textContent = locName + (g.outside ? ' 🌲' : ' 🏰');
     document.getElementById('menu-location-level').textContent = ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')';
@@ -279,7 +278,7 @@ function gameAction(action) {
             } else {
                 setMessage('❌ Карта города не загружена.');
             }
-        } else if (WORLD_AREAS && WORLD_AREAS[place]) {
+        } else if (typeof KL_AREAS !== 'undefined' && KL_AREAS[place]) {
             if (typeof window.openCompass === 'function') {
                 window.openCompass();
             } else {
