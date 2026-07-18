@@ -1,48 +1,23 @@
 // ============================================================
-// movement.js — КОМПАС С ЭМОДЗИ, ДОМАМИ И КООРДИНАТАМИ (ФИНАЛ)
+// movement.js — КОМПАС БЕЗ ТРАНЗИТНЫХ ЗОН (ФИНАЛ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
 
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
-    
-    // 👑 Королевская Гавань
     if (nextId === 'kl_0_0') return '👑';
-    
-    // 🏘️ Деревня (в приоритете)
     if (loc.places && loc.places.some(function(p) { return p === 'Деревня'; })) return '🏘️';
-    
-    // ⛏️ Шахта
     if (loc.places && loc.places.some(function(p) { return p === 'Шахта'; })) return '⛏️';
-    
-    // 🏰 Замок
     if (loc.type === 'castle') return '🏰';
-    
-    // 🌲 Лес
     if (loc.type === 'forest') return '🌲';
-    
-    // 🛤️ Дорога
     if (loc.type === 'road') return '🛤️';
-    
-    // ⛰️ Горы
     if (loc.type === 'mountain') return '⛰️';
-    
-    // 🌊 Берег
     if (loc.type === 'coast') return '🌊';
-    
-    // 🌊 Река
     if (loc.type === 'river') return '🌊';
-    
-    // 🌾 Равнина
     if (loc.type === 'plain') return '🌾';
-    
-    // 🌇 Город
     if (loc.type === 'city') return '🌇';
-    
-    // 🌫️ Транзит — не показываем
     if (loc.type === 'transit') return '';
-    
     return '📍';
 }
 
@@ -122,6 +97,19 @@ function openCompass() {
             
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+                
+                // Пропускаем транзитные зоны
+                if (nextLoc && nextLoc.type === 'transit') {
+                    // Ищем следующую не-транзитную зону в том же направлении
+                    var nextTransitions = WORLD_TRANSITIONS[next];
+                    if (nextTransitions && nextTransitions[dir]) {
+                        next = nextTransitions[dir];
+                        nextLoc = WORLD_AREAS[next];
+                    }
+                }
+                
+                if (nextLoc && nextLoc.type === 'transit') continue;
+                
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
                 
@@ -177,7 +165,16 @@ function moveTo(direction) {
         return;
     }
     
+    // Проскакиваем транзитные зоны
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+    if (nextLoc && nextLoc.type === 'transit') {
+        var nextTransitions = WORLD_TRANSITIONS[next];
+        if (nextTransitions && nextTransitions[direction]) {
+            next = nextTransitions[direction];
+            nextLoc = WORLD_AREAS[next];
+        }
+    }
+    
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
