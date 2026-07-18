@@ -1,5 +1,5 @@
 // ============================================================
-// js/regions/crownlands/areas.js — ЗВЕЗДА ВЕТРОВ: 8 ЛУЧЕЙ × 4 КОЛЬЦА (33 ЗОНЫ)
+// js/regions/crownlands/areas.js — ЗВЕЗДА ВЕТРОВ: 8 ЛУЧЕЙ × 4 КОЛЬЦА (57 ЗОН)
 // ============================================================
 
 const KL_AREAS = {
@@ -59,66 +59,67 @@ const KL_AREAS = {
     'kl_-1_-1': { id:'kl_-1_-1', name:'Королевский лес: Лесная тропа', type:'forest', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старый дуб'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:1, x:-1, y:-1 },
     'kl_-2_-2': { id:'kl_-2_-2', name:'Королевский лес: Поляна', type:'forest', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Деревня','Кострище'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:2, x:-2, y:-2 },
     'kl_-3_-3': { id:'kl_-3_-3', name:'Королевский лес: Мельничный ручей', type:'forest', level:25, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Заброшенная мельница'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:3, x:-3, y:-3 },
-    'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 }
+    'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 },
+
+    // ============================================================
+    // ТРАНЗИТНЫЕ ЗОНЫ (соединение лучей)
+    // ============================================================
+
+    // Сектор Север — Северо-восток
+    'kl_1_-2': { id:'kl_1_-2', name:'Прибрежные холмы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:1, y:-2 },
+    'kl_1_-3': { id:'kl_1_-3', name:'Прибрежные холмы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:1, y:-3 },
+    'kl_2_-3': { id:'kl_2_-3', name:'Прибрежные холмы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:2, y:-3 },
+    'kl_1_-4': { id:'kl_1_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:1, y:-4 },
+    'kl_2_-4': { id:'kl_2_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:2, y:-4 },
+    'kl_3_-4': { id:'kl_3_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:3, y:-4 },
+
+    // Сектор Северо-восток — Восток
+    'kl_2_-1': { id:'kl_2_-1', name:'Мелководье', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:1, x:2, y:-1 },
+    'kl_3_-2': { id:'kl_3_-2', name:'Мелководье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:3, y:-2 },
+    'kl_4_-3': { id:'kl_4_-3', name:'Мелководье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:4, y:-3 },
+
+    // Сектор Восток — Юго-восток
+    'kl_2_1': { id:'kl_2_1', name:'Мелководье', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:1, x:2, y:1 },
+    'kl_3_2': { id:'kl_3_2', name:'Мелководье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:3, y:2 },
+    'kl_4_3': { id:'kl_4_3', name:'Мелководье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:4, y:3 },
+
+    // Сектор Юго-восток — Юг
+    'kl_1_2': { id:'kl_1_2', name:'Прибрежные дюны', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:1, y:2 },
+    'kl_1_3': { id:'kl_1_3', name:'Прибрежные дюны', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:1, y:3 },
+    'kl_2_3': { id:'kl_2_3', name:'Прибрежные дюны', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:2, y:3 },
+    'kl_1_4': { id:'kl_1_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:1, y:4 },
+    'kl_2_4': { id:'kl_2_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:2, y:4 },
+    'kl_3_4': { id:'kl_3_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:3, y:4 },
+
+    // Сектор Юг — Юго-запад
+    'kl_-1_2': { id:'kl_-1_2', name:'Речная долина', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:-1, y:2 },
+    'kl_-1_3': { id:'kl_-1_3', name:'Речная долина', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-1, y:3 },
+    'kl_-2_3': { id:'kl_-2_3', name:'Речная долина', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-2, y:3 },
+    'kl_-1_4': { id:'kl_-1_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-1, y:4 },
+    'kl_-2_4': { id:'kl_-2_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-2, y:4 },
+    'kl_-3_4': { id:'kl_-3_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-3, y:4 },
+
+    // Сектор Юго-запад — Запад
+    'kl_-2_1': { id:'kl_-2_1', name:'Пойма реки', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:1, x:-2, y:1 },
+    'kl_-3_2': { id:'kl_-3_2', name:'Пойма реки', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:-3, y:2 },
+    'kl_-4_3': { id:'kl_-4_3', name:'Пойма реки', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-4, y:3 },
+
+    // Сектор Запад — Северо-запад
+    'kl_-2_-1': { id:'kl_-2_-1', name:'Опушка леса', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:1, x:-2, y:-1 },
+    'kl_-3_-2': { id:'kl_-3_-2', name:'Опушка леса', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:-3, y:-2 },
+    'kl_-4_-3': { id:'kl_-4_-3', name:'Опушка леса', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-4, y:-3 },
+
+    // Сектор Северо-запад — Север
+    'kl_-1_-2': { id:'kl_-1_-2', name:'Предлесье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:2, x:-1, y:-2 },
+    'kl_-1_-3': { id:'kl_-1_-3', name:'Предлесье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-1, y:-3 },
+    'kl_-2_-3': { id:'kl_-2_-3', name:'Предлесье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:3, x:-2, y:-3 },
+    'kl_-1_-4': { id:'kl_-1_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-1, y:-4 },
+    'kl_-2_-4': { id:'kl_-2_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-2, y:-4 },
+    'kl_-3_-4': { id:'kl_-3_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'none', places:[], actions:[], zoneNumber:4, x:-3, y:-4 }
 };
 
 // ============================================================
-// ТРАНЗИТНЫЕ ЗОНЫ (соединение лучей)
-// ============================================================
-
-// Сектор Север — Северо-восток
-'kl_1_-2': { id:'kl_1_-2', name:'Прибрежные холмы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:1, y:-2 },
-'kl_1_-3': { id:'kl_1_-3', name:'Прибрежные холмы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:1, y:-3 },
-'kl_2_-3': { id:'kl_2_-3', name:'Прибрежные холмы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:2, y:-3 },
-'kl_1_-4': { id:'kl_1_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:1, y:-4 },
-'kl_2_-4': { id:'kl_2_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:2, y:-4 },
-'kl_3_-4': { id:'kl_3_-4', name:'Прибрежные холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:3, y:-4 },
-
-// Сектор Северо-восток — Восток
-'kl_2_-1': { id:'kl_2_-1', name:'Мелководье', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:1, x:2, y:-1 },
-'kl_3_-2': { id:'kl_3_-2', name:'Мелководье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:3, y:-2 },
-'kl_4_-3': { id:'kl_4_-3', name:'Мелководье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:4, y:-3 },
-
-// Сектор Восток — Юго-восток
-'kl_2_1': { id:'kl_2_1', name:'Мелководье', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:1, x:2, y:1 },
-'kl_3_2': { id:'kl_3_2', name:'Мелководье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:3, y:2 },
-'kl_4_3': { id:'kl_4_3', name:'Мелководье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:4, y:3 },
-
-// Сектор Юго-восток — Юг
-'kl_1_2': { id:'kl_1_2', name:'Прибрежные дюны', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:1, y:2 },
-'kl_1_3': { id:'kl_1_3', name:'Прибрежные дюны', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:1, y:3 },
-'kl_2_3': { id:'kl_2_3', name:'Прибрежные дюны', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:2, y:3 },
-'kl_1_4': { id:'kl_1_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:1, y:4 },
-'kl_2_4': { id:'kl_2_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:2, y:4 },
-'kl_3_4': { id:'kl_3_4', name:'Прибрежные дюны', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:3, y:4 },
-
-// Сектор Юг — Юго-запад
-'kl_-1_2': { id:'kl_-1_2', name:'Речная долина', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:-1, y:2 },
-'kl_-1_3': { id:'kl_-1_3', name:'Речная долина', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-1, y:3 },
-'kl_-2_3': { id:'kl_-2_3', name:'Речная долина', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-2, y:3 },
-'kl_-1_4': { id:'kl_-1_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-1, y:4 },
-'kl_-2_4': { id:'kl_-2_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-2, y:4 },
-'kl_-3_4': { id:'kl_-3_4', name:'Речная долина', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-3, y:4 },
-
-// Сектор Юго-запад — Запад
-'kl_-2_1': { id:'kl_-2_1', name:'Пойма реки', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:1, x:-2, y:1 },
-'kl_-3_2': { id:'kl_-3_2', name:'Пойма реки', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:-3, y:2 },
-'kl_-4_3': { id:'kl_-4_3', name:'Пойма реки', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-4, y:3 },
-
-// Сектор Запад — Северо-запад
-'kl_-2_-1': { id:'kl_-2_-1', name:'Опушка леса', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:1, x:-2, y:-1 },
-'kl_-3_-2': { id:'kl_-3_-2', name:'Опушка леса', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:-3, y:-2 },
-'kl_-4_-3': { id:'kl_-4_-3', name:'Опушка леса', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-4, y:-3 },
-
-// Сектор Северо-запад — Север
-'kl_-1_-2': { id:'kl_-1_-2', name:'Предлесье', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:2, x:-1, y:-2 },
-'kl_-1_-3': { id:'kl_-1_-3', name:'Предлесье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-1, y:-3 },
-'kl_-2_-3': { id:'kl_-2_-3', name:'Предлесье', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:3, x:-2, y:-3 },
-'kl_-1_-4': { id:'kl_-1_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-1, y:-4 },
-'kl_-2_-4': { id:'kl_-2_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-2, y:-4 },
-'kl_-3_-4': { id:'kl_-3_-4', name:'Предлесье', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], zoneNumber:4, x:-3, y:-4 },
-// ============================================================
-// ГЕНЕРАТОР ПЕРЕХОДОВ (шахматное расстояние, 8 направлений)
+// ГЕНЕРАТОР ПЕРЕХОДОВ
 // ============================================================
 
 var KL_TRANSITIONS = {};
@@ -201,7 +202,7 @@ window.updateStory = function() {
     if (!g.location.locationId || !KL_AREAS[g.location.locationId]) g.location.locationId = place;
     if (!loc) { if (typeof _areasPrevUpdateStory === 'function') return _areasPrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
-    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река' };
+    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река', transit:'🌫️ Переход' };
     document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
 };
 
@@ -238,4 +239,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Координатная сетка загружена (33 зоны, 8 лучей × 4 кольца)');
+console.log('✅ Координатная сетка загружена (57 зон, 8 лучей × 4 кольца + транзитные)');
