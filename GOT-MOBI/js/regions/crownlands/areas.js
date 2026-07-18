@@ -2,7 +2,8 @@
 // js/regions/crownlands/areas.js — 81 ЗОНА (9×9)
 // ============================================================
 
-const CROWNLANDS_AREAS = {
+// ==================== ОСНОВНЫЕ ЗОНЫ (33) ====================
+const KL_AREAS = {
 
     // Центр
     'kl_0_0': { id:'kl_0_0', name:'Перекрёсток у Гавани', type:'crossroads', level:1, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Придорожный камень','Столб с указателями'], actions:[{id:'enter_city',label:'🚶 Войти в город'}], zoneNumber:0, x:0, y:0 },
@@ -56,7 +57,8 @@ const CROWNLANDS_AREAS = {
     'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 }
 };
 
-const CROWNLANDS_TRANSIT = {
+// ==================== ТРАНЗИТНЫЕ ЗОНЫ (48) ====================
+const KL_TRANSIT = {
     'kl_1_-2':{id:'kl_1_-2',name:'Прибрежные холмы',type:'transit',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:2,x:1,y:-2},
     'kl_1_-3':{id:'kl_1_-3',name:'Прибрежные холмы',type:'transit',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:3,x:1,y:-3},
     'kl_2_-3':{id:'kl_2_-3',name:'Прибрежные холмы',type:'transit',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:3,x:2,y:-3},
@@ -107,8 +109,31 @@ const CROWNLANDS_TRANSIT = {
     'kl_-3_-4':{id:'kl_-3_-4',name:'Предлесье',type:'transit',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:4,x:-3,y:-4}
 };
 
-Object.assign(CROWNLANDS_AREAS, CROWNLANDS_TRANSIT);
-Object.assign(WORLD_AREAS, CROWNLANDS_AREAS);
+Object.assign(KL_AREAS, KL_TRANSIT);
+
+// ============================================================
+// ГЕНЕРАТОР ПЕРЕХОДОВ
+// ============================================================
+
+var KL_TRANSITIONS = {};
+var _dirs = { n:[0,-1], ne:[1,-1], e:[1,0], se:[1,1], s:[0,1], sw:[-1,1], w:[-1,0], nw:[-1,-1] };
+
+function _findByCoords(x, y) {
+    for (var id in KL_AREAS) {
+        if (KL_AREAS[id].x === x && KL_AREAS[id].y === y) return id;
+    }
+    return null;
+}
+
+for (var id in KL_AREAS) {
+    var z = KL_AREAS[id];
+    KL_TRANSITIONS[id] = {};
+    for (var d in _dirs) {
+        var nx = z.x + _dirs[d][0];
+        var ny = z.y + _dirs[d][1];
+        KL_TRANSITIONS[id][d] = _findByCoords(nx, ny);
+    }
+}
 
 // ============================================================
 // КАРТА
@@ -117,8 +142,8 @@ Object.assign(WORLD_AREAS, CROWNLANDS_AREAS);
 window.openPlaces = function() {
     var g = users[currentUser].game;
     var locationId = g.location.locationId || g.location.place;
-    if (!locationId || !WORLD_AREAS[locationId]) { setMessage('📍 Вы не на внешней локации.'); return; }
-    var loc = WORLD_AREAS[locationId];
+    if (!locationId || !KL_AREAS[locationId]) { setMessage('📍 Вы не на внешней локации.'); return; }
+    var loc = KL_AREAS[locationId];
     var modal = document.getElementById('modal-places');
     if (!modal) {
         var overlay = document.createElement('div'); overlay.id='modal-places'; overlay.className='modal-overlay hide';
@@ -152,7 +177,7 @@ window.openPlaces = function() {
 window.closePlaces = function() { var m = document.getElementById('modal-places'); if (m) m.classList.add('hide'); };
 window.goToPlace = function(placeName) {
     var g = users[currentUser].game; if (!g) return;
-    var loc = WORLD_AREAS[placeName]; g.location.place = placeName;
+    var loc = KL_AREAS[placeName]; g.location.place = placeName;
     setMessage('🚶 Вы подошли к ' + (loc ? loc.name : placeName));
     updateMenu(); updateStory(); updateActions(); saveData();
 };
@@ -162,8 +187,8 @@ window.goToPlace = function(placeName) {
 // ============================================================
 
 window.updateStory = function() {
-    var g = users[currentUser].game; var place = g.location.place; var loc = WORLD_AREAS[place];
-    if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
+    var g = users[currentUser].game; var place = g.location.place; var loc = KL_AREAS[place];
+    if (!g.location.locationId || !KL_AREAS[g.location.locationId]) g.location.locationId = place;
     if (!loc) { if (typeof _areasPrevUpdateStory === 'function') return _areasPrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
     var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река', transit:'🌫️ Переход' };
@@ -175,7 +200,7 @@ window.updateStory = function() {
 // ============================================================
 
 window.updateActions = function() {
-    var g = users[currentUser].game; var place = g.location.place; var loc = WORLD_AREAS[place];
+    var g = users[currentUser].game; var place = g.location.place; var loc = KL_AREAS[place];
     var container = document.getElementById('actions-container'); if (!container) return;
     if (!loc) { if (typeof _areasPrevUpdateActions === 'function') return _areasPrevUpdateActions(); return; }
     g.location.locationId = place;
@@ -201,4 +226,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Королевская Гавань загружена (33 основные + 48 транзитных = 81 зона)');
+console.log('✅ Координатная сетка загружена (33 основные + 48 транзитных = 81 зона, 9×9)');
