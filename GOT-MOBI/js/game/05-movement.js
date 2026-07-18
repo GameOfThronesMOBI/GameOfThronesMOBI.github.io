@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС С ПРОПУСКОМ ТРАНЗИТНЫХ ЗОН (РАБОЧИЙ)
+// movement.js — КОМПАС БЕЗ ТРАНЗИТНЫХ ЗОН (ФИНАЛ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -98,18 +98,16 @@ function openCompass() {
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
                 
-                // Пропускаем транзитные зоны — ищем следующую основную в том же направлении
-                while (nextLoc && nextLoc.type === 'transit') {
+                // Если цель транзитная — ищем следующую за ней в том же направлении
+                if (nextLoc && nextLoc.type === 'transit') {
                     var nextTransitions = WORLD_TRANSITIONS[next];
                     if (nextTransitions && nextTransitions[dir]) {
                         next = nextTransitions[dir];
                         nextLoc = WORLD_AREAS[next];
-                    } else {
-                        break;
                     }
                 }
                 
-                // Если после всех пропусков всё ещё транзит — не показываем
+                // Если после одного шага всё ещё транзит — не показываем
                 if (nextLoc && nextLoc.type === 'transit') continue;
                 
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
@@ -167,15 +165,13 @@ function moveToDirection(direction) {
         return;
     }
     
-    // Проскакиваем транзитные зоны
+    // Проскакиваем одну транзитную зону
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
-    while (nextLoc && nextLoc.type === 'transit') {
+    if (nextLoc && nextLoc.type === 'transit') {
         var nextTransitions = WORLD_TRANSITIONS[next];
         if (nextTransitions && nextTransitions[direction]) {
             next = nextTransitions[direction];
             nextLoc = WORLD_AREAS[next];
-        } else {
-            break;
         }
     }
     
