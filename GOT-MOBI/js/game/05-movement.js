@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — ЧИСТЫЙ КОМПАС (БЕЗ ПРОПУСКОВ, ТРАНЗИТЫ НЕ ВИДНЫ)
+// movement.js — КОМПАС ДЛЯ ЛОКАЛЬНОЙ СЕТКИ (KL_AREAS / KL_TRANSITIONS)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -27,13 +27,13 @@ function openCompass() {
     var g = user.game;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
+    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
     
-    var loc = window.WORLD_AREAS ? WORLD_AREAS[current] : null;
+    var loc = window.KL_AREAS ? KL_AREAS[current] : null;
     
     var ownerName = '';
     if (loc && loc.owner) {
@@ -96,7 +96,21 @@ function openCompass() {
             var next = transitions[dir];
             
             if (next) {
-                var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+                var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+                
+                // Пропускаем транзитные зоны (1 шаг)
+                if (nextLoc && nextLoc.type === 'transit') {
+                    var t1 = KL_TRANSITIONS[next];
+                    if (t1 && t1[dir]) { next = t1[dir]; nextLoc = KL_AREAS[next]; }
+                }
+                // Пропускаем транзитные зоны (2 шаг)
+                if (nextLoc && nextLoc.type === 'transit') {
+                    var t2 = KL_TRANSITIONS[next];
+                    if (t2 && t2[dir]) { next = t2[dir]; nextLoc = KL_AREAS[next]; }
+                }
+                
+                if (nextLoc && nextLoc.type === 'transit') continue;
+                
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
                 
@@ -140,7 +154,7 @@ function moveTo(direction) {
     if (!g) return;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
+    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
@@ -152,7 +166,16 @@ function moveTo(direction) {
         return;
     }
     
-    var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+    var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+    if (nextLoc && nextLoc.type === 'transit') {
+        var t1 = KL_TRANSITIONS[next];
+        if (t1 && t1[direction]) { next = t1[direction]; nextLoc = KL_AREAS[next]; }
+    }
+    if (nextLoc && nextLoc.type === 'transit') {
+        var t2 = KL_TRANSITIONS[next];
+        if (t2 && t2[direction]) { next = t2[direction]; nextLoc = KL_AREAS[next]; }
+    }
+    
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
