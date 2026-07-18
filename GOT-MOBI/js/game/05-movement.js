@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС С ДВОЙНЫМ ПРОПУСКОМ ТРАНЗИТНЫХ ЗОН
+// movement.js — КОМПАС БЕЗ continue (ФИНАЛ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -101,21 +101,13 @@ function openCompass() {
                 // Пропуск 1
                 if (nextLoc && nextLoc.type === 'transit') {
                     var t1 = WORLD_TRANSITIONS[next];
-                    if (t1 && t1[dir]) {
-                        next = t1[dir];
-                        nextLoc = WORLD_AREAS[next];
-                    }
+                    if (t1 && t1[dir]) { next = t1[dir]; nextLoc = WORLD_AREAS[next]; }
                 }
                 // Пропуск 2
                 if (nextLoc && nextLoc.type === 'transit') {
                     var t2 = WORLD_TRANSITIONS[next];
-                    if (t2 && t2[dir]) {
-                        next = t2[dir];
-                        nextLoc = WORLD_AREAS[next];
-                    }
+                    if (t2 && t2[dir]) { next = t2[dir]; nextLoc = WORLD_AREAS[next]; }
                 }
-                
-                if (nextLoc && nextLoc.type === 'transit') continue;
                 
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
@@ -173,21 +165,13 @@ function moveToDirection(direction) {
     }
     
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
-    // Пропуск 1
     if (nextLoc && nextLoc.type === 'transit') {
         var t1 = WORLD_TRANSITIONS[next];
-        if (t1 && t1[direction]) {
-            next = t1[direction];
-            nextLoc = WORLD_AREAS[next];
-        }
+        if (t1 && t1[direction]) { next = t1[direction]; nextLoc = WORLD_AREAS[next]; }
     }
-    // Пропуск 2
     if (nextLoc && nextLoc.type === 'transit') {
         var t2 = WORLD_TRANSITIONS[next];
-        if (t2 && t2[direction]) {
-            next = t2[direction];
-            nextLoc = WORLD_AREAS[next];
-        }
+        if (t2 && t2[direction]) { next = t2[direction]; nextLoc = WORLD_AREAS[next]; }
     }
     
     var nextName = nextLoc ? nextLoc.name : next;
