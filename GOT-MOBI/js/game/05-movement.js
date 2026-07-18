@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС (БЕЗ ТРАНЗИТОВ, БЕЗ ГЛОБАЛЬНОЙ СИСТЕМЫ)
+// movement.js — КОМПАС (ГЛОБАЛЬНЫЙ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -26,13 +26,13 @@ function openCompass() {
     var g = user.game;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
+    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
     
-    var loc = window.KL_AREAS ? KL_AREAS[current] : null;
+    var loc = window.WORLD_AREAS ? WORLD_AREAS[current] : null;
     
     var ownerName = '';
     if (loc && loc.owner) {
@@ -95,7 +95,7 @@ function openCompass() {
             var next = transitions[dir];
             
             if (next) {
-                var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+                var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
                 
@@ -139,7 +139,7 @@ function moveTo(direction) {
     if (!g) return;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
+    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
@@ -151,7 +151,7 @@ function moveTo(direction) {
         return;
     }
     
-    var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+    var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
