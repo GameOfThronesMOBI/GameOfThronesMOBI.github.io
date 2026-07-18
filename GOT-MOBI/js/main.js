@@ -51,7 +51,7 @@ function handleRegister() {
             activeProfession: 'Охотник',
             lastProfessionChange: 0,
             inventory: [],
-            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна' },
+            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null },
             outside: false,
             death: null,
             lastReset: null,
@@ -96,7 +96,6 @@ function handleLogin() {
     var errEl = document.getElementById('login-error');
     errEl.classList.add('hide');
     
-    // Проверка блокировки
     if (loginBlockedUntil[name] && Date.now() < loginBlockedUntil[name]) {
         var minutesLeft = Math.ceil((loginBlockedUntil[name] - Date.now()) / 60000);
         errEl.textContent = '⏳ Слишком много попыток. Попробуйте через ' + minutesLeft + ' мин.';
@@ -155,7 +154,7 @@ function fixOldAccount(user) {
             professions: { 'Шахтёр': 1, 'Лесоруб': 1, 'Охотник': 1, 'Кузнец': 1 },
             professionXp: { 'Шахтёр': 0, 'Лесоруб': 0, 'Охотник': 0, 'Кузнец': 0 },
             activeProfession: 'Охотник', lastProfessionChange: 0, inventory: [],
-            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна' },
+            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null },
             outside: false, death: null, lastReset: null, lastActive: Date.now(), online: true,
             lastResourceUpdate: Date.now(), luck: 0, lastHeal: null, lastPrayer: null,
             blessing: { active: false, expires: 0 }, jail: null,
@@ -177,6 +176,7 @@ function fixOldAccount(user) {
     if (g.house === undefined) g.house = null;
     if (g.isLord === undefined) g.isLord = false;
     if (g.gender === undefined) g.gender = null;
+    if (g.location.locationId === undefined) g.location.locationId = null;
     return user;
 }
 
@@ -202,8 +202,10 @@ function enterGame(name) {
     g.lastResourceUpdate = Date.now();
     g.maxHp = getMaxHp(g);
     if (g.hp > g.maxHp) g.hp = g.maxHp;
+    if (!g.location.locationId) g.location.locationId = g.location.place;
     
     if (typeof normalizeInventory === 'function') normalizeInventory(g);
+    if (typeof buildWorldTransitions === 'function') buildWorldTransitions();
     
     updateMenu();
     updateStory();
@@ -232,8 +234,14 @@ function updateMenu() {
     
     document.getElementById('menu-time').textContent = time.timeStr;
     document.getElementById('menu-period').textContent = time.emoji + ' ' + time.period;
-    document.getElementById('menu-location').textContent = g.location.place + (g.outside ? ' 🌲' : ' 🏰');
+    
+    var locName = g.location.place;
+    if (WORLD_AREAS && WORLD_AREAS[g.location.place]) {
+        locName = WORLD_AREAS[g.location.place].name;
+    }
+    document.getElementById('menu-location').textContent = locName + (g.outside ? ' 🌲' : ' 🏰');
     document.getElementById('menu-location-level').textContent = ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')';
+    
     document.getElementById('menu-hp').textContent = Math.round(g.hp);
     document.getElementById('menu-hp-max').textContent = Math.round(g.maxHp);
     document.getElementById('menu-level').textContent = g.level;
@@ -271,6 +279,12 @@ function gameAction(action) {
             } else {
                 setMessage('❌ Карта города не загружена.');
             }
+        } else if (WORLD_AREAS && WORLD_AREAS[place]) {
+            if (typeof window.openCompass === 'function') {
+                window.openCompass();
+            } else {
+                setMessage('❌ Компас не загружен.');
+            }
         } else {
             if (typeof window.openPlaces === 'function') {
                 window.openPlaces();
@@ -281,11 +295,19 @@ function gameAction(action) {
         return;
     }
     
+    // КОМПАС
+    if (action === 'compass') {
+        if (typeof openCompass === 'function') { openCompass(); return; }
+        setMessage('❌ Компас не загружен.');
+        return;
+    }
+    
     // ВХОД/ВЫХОД ИЗ ГОРОДА
     if (action === 'leave_city') {
-        g.location.place = 'kl_crossroads';
+        g.location.place = 'kl_0_0';
+        g.location.locationId = 'kl_0_0';
         g.location.location = 'Королевская Гавань';
-        g.outside = false;
+        g.outside = true;
         setMessage('🚪 Вы вышли из города на перекрёсток.');
         updateMenu(); updateStory(); updateActions(); saveData();
         return;
