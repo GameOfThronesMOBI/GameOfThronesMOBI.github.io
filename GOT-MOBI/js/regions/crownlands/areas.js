@@ -27,10 +27,10 @@ const CROWNLANDS_AREAS = {
     'kl_-4_0': { id:'kl_-4_0', name:'Золотой тракт 4: Граница Простора', type:'road', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Пограничный камень'], actions:[], zoneNumber:4, x:-4, y:0 },
 
     // ==================== ВОСТОК — Мелководье Чёрноводной ====================
-    'kl_1_0': { id:'kl_1_0', name:'Мелководье Чёрноводной', type:'coast', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старая лагуна'], actions:[], resourceType:'coast', resources:['Рыба','Соль'], zoneNumber:1, x:1, y:0 },
-    'kl_2_0': { id:'kl_2_0', name:'Мелководье Чёрноводной', type:'coast', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший корабль'], actions:[], resourceType:'coast', resources:['Рыба','Соль'], zoneNumber:2, x:2, y:0 },
-    'kl_3_0': { id:'kl_3_0', name:'Мелководье Чёрноводной', type:'coast', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Остов галеры'], actions:[], resourceType:'coast', resources:['Рыба','Соль'], zoneNumber:3, x:3, y:0 },
-    'kl_4_0': { id:'kl_4_0', name:'Мелководье Чёрноводной', type:'coast', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший дромон'], actions:[], resourceType:'coast', resources:['Рыба','Соль'], zoneNumber:4, x:4, y:0 },
+    'kl_1_0': { id:'kl_1_0', name:'Мелководье Чёрноводной', type:'coast', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старая лагуна'], actions:[], resourceType:'shallows', resources:['Рыба','Соль'], zoneNumber:1, x:1, y:0 },
+    'kl_2_0': { id:'kl_2_0', name:'Мелководье Чёрноводной', type:'coast', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший корабль'], actions:[], resourceType:'shallows', resources:['Рыба','Соль'], zoneNumber:2, x:2, y:0 },
+    'kl_3_0': { id:'kl_3_0', name:'Мелководье Чёрноводной', type:'coast', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Остов галеры'], actions:[], resourceType:'shallows', resources:['Рыба','Соль'], zoneNumber:3, x:3, y:0 },
+    'kl_4_0': { id:'kl_4_0', name:'Мелководье Чёрноводной', type:'coast', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший дромон'], actions:[], resourceType:'shallows', resources:['Рыба','Соль'], zoneNumber:4, x:4, y:0 },
 
     // ==================== СЕВЕРО-ВОСТОК — Берег Чёрноводной ====================
     'kl_1_-1': { id:'kl_1_-1', name:'Песчаный пляж', type:'coast', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', resources:['Рыба','Соль'], zoneNumber:1, x:1, y:-1 },
@@ -64,21 +64,21 @@ const CROWNLANDS_AREAS = {
     'kl_2_-4':{id:'kl_2_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:2,y:-4},
     'kl_3_-4':{id:'kl_3_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:3,y:-4},
 
-    // ==================== Сектор СЕВЕРО-ВОСТОК — ВОСТОК ====================
-    'kl_2_-1':{id:'kl_2_-1',name:'Мелководье',type:'coast',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:1,x:2,y:-1},
-    'kl_3_-2':{id:'kl_3_-2',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:-2},
-    'kl_4_-3':{id:'kl_4_-3',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:-3},
-    'kl_3_-1':{id:'kl_3_-1',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:-1},
-    'kl_4_-2':{id:'kl_4_-2',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:-2},
-    'kl_4_-1':{id:'kl_4_-1',name:'Мелководье',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:4,x:4,y:-1},
+    // ==================== Сектор СЕВЕРО-ВОСТОК — ВОСТОК (Мелководье) ====================
+    'kl_2_-1':{id:'kl_2_-1',name:'Мелководье',type:'coast',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:1,x:2,y:-1},
+    'kl_3_-2':{id:'kl_3_-2',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:-2},
+    'kl_4_-3':{id:'kl_4_-3',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:-3},
+    'kl_3_-1':{id:'kl_3_-1',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:-1},
+    'kl_4_-2':{id:'kl_4_-2',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:-2},
+    'kl_4_-1':{id:'kl_4_-1',name:'Мелководье',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:4,x:4,y:-1},
 
-    // ==================== Сектор ВОСТОК — ЮГО-ВОСТОК ====================
-    'kl_2_1':{id:'kl_2_1',name:'Мелководье',type:'coast',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:1,x:2,y:1},
-    'kl_3_2':{id:'kl_3_2',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:2},
-    'kl_4_3':{id:'kl_4_3',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:3},
-    'kl_3_1':{id:'kl_3_1',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:1},
-    'kl_4_2':{id:'kl_4_2',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:2},
-    'kl_4_1':{id:'kl_4_1',name:'Мелководье',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:4,x:4,y:1},
+    // ==================== Сектор ВОСТОК — ЮГО-ВОСТОК (Мелководье) ====================
+    'kl_2_1':{id:'kl_2_1',name:'Мелководье',type:'coast',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:1,x:2,y:1},
+    'kl_3_2':{id:'kl_3_2',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:2},
+    'kl_4_3':{id:'kl_4_3',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:3},
+    'kl_3_1':{id:'kl_3_1',name:'Мелководье',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:2,x:3,y:1},
+    'kl_4_2':{id:'kl_4_2',name:'Мелководье',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:3,x:4,y:2},
+    'kl_4_1':{id:'kl_4_1',name:'Мелководье',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'shallows',resources:['Рыба','Соль'],zoneNumber:4,x:4,y:1},
 
     // ==================== Сектор ЮГО-ВОСТОК — ЮГ ====================
     'kl_1_2':{id:'kl_1_2',name:'Прибрежные дюны',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:1,y:2},
@@ -220,7 +220,7 @@ window.updateStory = function() {
     if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
     if (!loc) { if (typeof _areasPrevUpdateStory === 'function') return _areasPrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
-    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река', mountain:'⛰️ Горы', plain:'🌾 Равнина' };
+    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🏖️ Берег', crossroads:'🔄 Перекрёсток', river:'🏞️ Река', mountain:'⛰️ Горы', plain:'🌾 Равнина' };
     document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
 };
 
