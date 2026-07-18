@@ -87,10 +87,6 @@ function addLog(msg) {
     saveData();
 }
 
-// ============================================================
-// ЛЕТОПИСЬ ДОМА
-// ============================================================
-
 function addHouseLog(houseId, msg) {
     if (!houseId) return;
     if (!houseLogs[houseId]) houseLogs[houseId] = [];
@@ -100,8 +96,6 @@ function addHouseLog(houseId, msg) {
     if (houseLogs[houseId].length > 50) houseLogs[houseId] = houseLogs[houseId].slice(-50);
     saveData();
 }
-
-// ============================================================
 
 function getTimeLeft(timestamp, daysPaid) {
     const now = Date.now();
@@ -338,4 +332,28 @@ function initTraderStock() {
         }
     });
     saveData();
+}
+
+// ============================================================
+// ГЛОБАЛЬНЫЙ ГЕНЕРАТОР ПЕРЕХОДОВ
+// ============================================================
+
+function buildWorldTransitions() {
+    WORLD_TRANSITIONS = {};
+    for (var id in WORLD_AREAS) {
+        var z = WORLD_AREAS[id];
+        WORLD_TRANSITIONS[id] = {};
+        for (var d in _dirs) {
+            var nx = z.x + _dirs[d][0];
+            var ny = z.y + _dirs[d][1];
+            WORLD_TRANSITIONS[id][d] = null;
+            for (var tid in WORLD_AREAS) {
+                if (WORLD_AREAS[tid].x === nx && WORLD_AREAS[tid].y === ny) {
+                    WORLD_TRANSITIONS[id][d] = tid;
+                    break;
+                }
+            }
+        }
+    }
+    console.log('✅ WORLD_TRANSITIONS построен (' + Object.keys(WORLD_AREAS).length + ' зон)');
 }
