@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ОРИГИНАЛ (БЕЗ БОЕВОЙ СИСТЕМЫ) — ОБНОВЛЁННЫЙ
+// MAIN.JS — ФИНАЛ
 // ============================================================
 
 function handleRegister() {
@@ -256,7 +256,7 @@ function updateMenu() {
 function gameAction(action) {
     setMessage('');
     
-    if (isBusy && action !== 'refresh' && action !== 'map' && action !== 'inventory' && action !== 'character' && action !== 'menu') {
+    if (isBusy && action !== 'refresh' && action !== 'map' && action !== 'compass' && action !== 'search' && action !== 'inventory' && action !== 'character' && action !== 'menu') {
         setMessage('⏳ Вы заняты. Завершите текущее действие.');
         return;
     }
