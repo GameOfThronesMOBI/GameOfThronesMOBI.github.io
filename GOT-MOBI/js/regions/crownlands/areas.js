@@ -63,40 +63,66 @@ const KL_AREAS = {
     'kl_-1_-4': { id:'kl_-1_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'mountain', zoneNumber:4, x:-1, y:-4 },
 
     // ============================================================
-    // ТРАНЗИТНЫЕ ЗОНЫ (соединяют лучи, не показываются в компасе)
-    // ============================================================
+// ТРАНЗИТНЫЕ ЗОНЫ (соединяют лучи, не показываются в компасе)
+// ============================================================
 
-    // Кольцо 2
-    'kl_2_-2': { id:'kl_2_-2', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:2, y:-2 },
-    'kl_2_2': { id:'kl_2_2', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:2, y:2 },
-    'kl_-2_2': { id:'kl_-2_2', name:'Речные отмели', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:2, x:-2, y:2 },
-    'kl_-2_-2': { id:'kl_-2_-2', name:'Лесная чаща', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:2, x:-2, y:-2 },
+// Кольцо 1 — соединение лучей
+'kl_2_-1': { id:'kl_2_-1', name:'Прибрежная отмель', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:1, x:2, y:-1 },
+'kl_2_1': { id:'kl_2_1', name:'Прибрежная отмель', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:1, x:2, y:1 },
+'kl_-2_1': { id:'kl_-2_1', name:'Речная заводь', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:1, x:-2, y:1 },
+'kl_-2_-1': { id:'kl_-2_-1', name:'Лесная опушка', type:'transit', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:1, x:-2, y:-1 },
 
-    // Кольцо 3
-    'kl_2_-3': { id:'kl_2_-3', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:2, y:-3 },
-    'kl_3_-2': { id:'kl_3_-2', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:3, y:-2 },
-    'kl_3_2': { id:'kl_3_2', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:3, y:2 },
-    'kl_2_3': { id:'kl_2_3', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:2, y:3 },
-    'kl_-2_3': { id:'kl_-2_3', name:'Речные пороги', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:3, x:-2, y:3 },
-    'kl_-3_2': { id:'kl_-3_2', name:'Речные пороги', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:3, x:-3, y:2 },
-    'kl_-3_-2': { id:'kl_-3_-2', name:'Лесные дебри', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:3, x:-3, y:-2 },
-    'kl_-2_-3': { id:'kl_-2_-3', name:'Лесные дебри', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:3, x:-2, y:-3 },
+// Кольцо 2 — соединение лучей
+'kl_2_-2': { id:'kl_2_-2', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:2, y:-2 },
+'kl_3_-1': { id:'kl_3_-1', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:3, y:-1 },
+'kl_3_1': { id:'kl_3_1', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:3, y:1 },
+'kl_2_2': { id:'kl_2_2', name:'Прибрежные скалы', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:2, x:2, y:2 },
+'kl_-2_2': { id:'kl_-2_2', name:'Речные отмели', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:2, x:-2, y:2 },
+'kl_-3_1': { id:'kl_-3_1', name:'Речные отмели', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:2, x:-3, y:1 },
+'kl_-3_-1': { id:'kl_-3_-1', name:'Лесная глушь', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:2, x:-3, y:-1 },
+'kl_-2_-2': { id:'kl_-2_-2', name:'Лесная чаща', type:'transit', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:2, x:-2, y:-2 },
 
-    // Кольцо 4
-    'kl_2_-4': { id:'kl_2_-4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:2, y:-4 },
-    'kl_3_-3': { id:'kl_3_-3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:-3 },
-    'kl_4_-2': { id:'kl_4_-2', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:-2 },
-    'kl_4_2': { id:'kl_4_2', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:2 },
-    'kl_3_3': { id:'kl_3_3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:3 },
-    'kl_2_4': { id:'kl_2_4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:2, y:4 },
-    'kl_-2_4': { id:'kl_-2_4', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-2, y:4 },
-    'kl_-3_3': { id:'kl_-3_3', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:3 },
-    'kl_-4_2': { id:'kl_-4_2', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:2 },
-    'kl_-4_-2': { id:'kl_-4_-2', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:-2 },
-    'kl_-3_-3': { id:'kl_-3_-3', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:-3 },
-    'kl_-2_-4': { id:'kl_-2_-4', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-2, y:-4 }
-};
+// Кольцо 3 — соединение лучей
+'kl_2_-3': { id:'kl_2_-3', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:2, y:-3 },
+'kl_3_-2': { id:'kl_3_-2', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:3, y:-2 },
+'kl_4_-1': { id:'kl_4_-1', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:4, y:-1 },
+'kl_4_1': { id:'kl_4_1', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:4, y:1 },
+'kl_3_2': { id:'kl_3_2', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:3, y:2 },
+'kl_2_3': { id:'kl_2_3', name:'Прибрежные утёсы', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:3, x:2, y:3 },
+'kl_-2_3': { id:'kl_-2_3', name:'Речные пороги', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:3, x:-2, y:3 },
+'kl_-3_2': { id:'kl_-3_2', name:'Речные пороги', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:3, x:-3, y:2 },
+'kl_-4_1': { id:'kl_-4_1', name:'Речные пороги', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'river', zoneNumber:3, x:-4, y:1 },
+'kl_-4_-1': { id:'kl_-4_-1', name:'Лесная чащоба', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:3, x:-4, y:-1 },
+'kl_-3_-2': { id:'kl_-3_-2', name:'Лесные дебри', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:3, x:-3, y:-2 },
+'kl_-2_-3': { id:'kl_-2_-3', name:'Лесные дебри', type:'transit', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'forest', zoneNumber:3, x:-2, y:-3 },
 
+// Кольцо 4 — соединение лучей
+'kl_2_-4': { id:'kl_2_-4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:2, y:-4 },
+'kl_3_-3': { id:'kl_3_-3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:-3 },
+'kl_4_-2': { id:'kl_4_-2', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:-2 },
+'kl_4_2': { id:'kl_4_2', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:2 },
+'kl_3_3': { id:'kl_3_3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:3 },
+'kl_2_4': { id:'kl_2_4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:2, y:4 },
+'kl_-2_4': { id:'kl_-2_4', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-2, y:4 },
+'kl_-3_3': { id:'kl_-3_3', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:3 },
+'kl_-4_2': { id:'kl_-4_2', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:2 },
+'kl_-4_-2': { id:'kl_-4_-2', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:-2 },
+'kl_-3_-3': { id:'kl_-3_-3', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:-3 },
+'kl_-2_-4': { id:'kl_-2_-4', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-2, y:-4 },
+'kl_3_-4': { id:'kl_3_-4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:-4 },
+'kl_4_-3': { id:'kl_4_-3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:-3 },
+'kl_4_3': { id:'kl_4_3', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:3 },
+'kl_3_4': { id:'kl_3_4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:3, y:4 },
+'kl_-3_4': { id:'kl_-3_4', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:4 },
+'kl_-4_3': { id:'kl_-4_3', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:3 },
+'kl_-4_-3': { id:'kl_-4_-3', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:-3 },
+'kl_-3_-4': { id:'kl_-3_-4', name:'Дальний лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-3, y:-4 },
+
+// Крайние углы
+'kl_-4_-4': { id:'kl_-4_-4', name:'Дремучий лес', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:-4 },
+'kl_4_-4': { id:'kl_4_-4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:-4 },
+'kl_4_4': { id:'kl_4_4', name:'Дальние скалы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:4, y:4 },
+'kl_-4_4': { id:'kl_-4_4', name:'Дальние холмы', type:'transit', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'mountain', zoneNumber:4, x:-4, y:4 },
 // ============================================================
 // ГЕНЕРАТОР ПЕРЕХОДОВ
 // ============================================================
