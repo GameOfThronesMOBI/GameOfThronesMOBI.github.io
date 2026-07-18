@@ -1,5 +1,5 @@
 // ============================================================
-// js/regions/crownlands/areas.js — КООРДИНАТНАЯ СЕТКА (29 ЗОН)
+// js/regions/crownlands/areas.js — КООРДИНАТНАЯ СЕТКА (33 ЗОНЫ)
 // ============================================================
 
 const KL_AREAS = {
@@ -25,6 +25,12 @@ const KL_AREAS = {
     'kl_1_-2': { id:'kl_1_-2', name:'Берег Чёрноводной: Скалистый мыс', type:'coast', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Рыбацкие лодки'], actions:[], resourceType:'coast', zoneNumber:2, x:1, y:-2 },
     'kl_1_-3': { id:'kl_1_-3', name:'Берег Чёрноводной: Причал', type:'coast', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Деревня','Старый причал'], actions:[], resourceType:'coast', zoneNumber:3, x:1, y:-3 },
     'kl_1_-4': { id:'kl_1_-4', name:'Берег Чёрноводной: Старый маяк', type:'coast', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Заброшенный маяк'], actions:[], resourceType:'coast', zoneNumber:4, x:1, y:-4 },
+
+    // ➡️ ВОСТОК — Мелководье Чёрноводной (x=1..4, y=0)
+    'kl_1_0': { id:'kl_1_0', name:'Мелководье Чёрноводной', type:'coast', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старая лагуна'], actions:[], resourceType:'coast', zoneNumber:1, x:1, y:0 },
+    'kl_2_0': { id:'kl_2_0', name:'Мелководье Чёрноводной', type:'coast', level:10, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший корабль'], actions:[], resourceType:'coast', zoneNumber:2, x:2, y:0 },
+    'kl_3_0': { id:'kl_3_0', name:'Мелководье Чёрноводной', type:'coast', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Остов галеры'], actions:[], resourceType:'coast', zoneNumber:3, x:3, y:0 },
+    'kl_4_0': { id:'kl_4_0', name:'Мелководье Чёрноводной', type:'coast', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Затонувший дромон'], actions:[], resourceType:'coast', zoneNumber:4, x:4, y:0 },
 
     // ↘️ ЮГО-ВОСТОЧНЫЙ БЕРЕГ (x=1)
     'kl_1_1': { id:'kl_1_1', name:'Южный берег: Песчаная коса', type:'coast', level:5, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:[], actions:[], resourceType:'coast', zoneNumber:1, x:1, y:1 },
@@ -178,4 +184,4 @@ var _areasPrevUpdateActions = window.updateActions;
 window.updateStory = window.updateStory;
 window.updateActions = window.updateActions;
 
-console.log('✅ Координатная сетка загружена (29 зон)');
+console.log('✅ Координатная сетка загружена (33 зоны)');
