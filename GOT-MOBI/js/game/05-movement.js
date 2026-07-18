@@ -1,8 +1,50 @@
 // ============================================================
-// movement.js — КОМПАС С СЕТКОЙ 3×3 (КАК БЫЛО)
+// movement.js — КОМПАС С ЭМОДЗИ ЛОКАЦИЙ, ДОМАМИ И КООРДИНАТАМИ
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
+
+function getLocationEmoji(loc, nextId) {
+    if (!loc) return '📍';
+    
+    // 👑 Королевская Гавань
+    if (nextId === 'kl_0_0') return '👑';
+    
+    // 🏘️ Деревня (в приоритете)
+    if (loc.places && loc.places.some(function(p) { return p === 'Деревня'; })) return '🏘️';
+    
+    // ⛏️ Шахта
+    if (loc.places && loc.places.some(function(p) { return p === 'Шахта'; })) return '⛏️';
+    
+    // 🏰 Замок
+    if (loc.type === 'castle') return '🏰';
+    
+    // 🌲 Лес
+    if (loc.type === 'forest') return '🌲';
+    
+    // 🛤️ Дорога
+    if (loc.type === 'road') return '🛤️';
+    
+    // ⛰️ Горы
+    if (loc.type === 'mountain') return '⛰️';
+    
+    // 🌊 Берег
+    if (loc.type === 'coast') return '🌊';
+    
+    // 🌊 Река
+    if (loc.type === 'river') return '🌊';
+    
+    // 🌾 Равнина
+    if (loc.type === 'plain') return '🌾';
+    
+    // 🌇 Город
+    if (loc.type === 'city') return '🌇';
+    
+    // 🌫️ Транзит
+    if (loc.type === 'transit') return '';
+    
+    return '📍';
+}
 
 function openCompass() {
     var user = users[currentUser];
@@ -10,13 +52,13 @@ function openCompass() {
     var g = user.game;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
+    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
     
-    var loc = window.KL_AREAS ? KL_AREAS[current] : null;
+    var loc = window.WORLD_AREAS ? WORLD_AREAS[current] : null;
     
     var ownerName = '';
     if (loc && loc.owner) {
@@ -45,22 +87,32 @@ function openCompass() {
     var content = document.getElementById('modal-compass-content');
     
     var html = '<div class="modal-section"><h4>🧭 КОМПАС</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">📍 ' + (loc ? loc.name : current);
+    html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">📍 ' + (loc ? loc.name : current);
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
-    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">Выберите направление:</p>';
     
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:6px;max-width:280px;margin:10px auto;">';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:4px;max-width:300px;margin:10px auto;">';
     
     var dirLabels = {
-        'nw': '↖️ СЗ',
-        'n': '⬆️ Север',
-        'ne': '↗️ СВ',
-        'w': '⬅️ Запад',
-        'e': '➡️ Восток',
-        'sw': '↙️ ЮЗ',
-        's': '⬇️ Юг',
-        'se': '↘️ ЮВ'
+        'nw': '↖️',
+        'n': '⬆️',
+        'ne': '↗️',
+        'w': '⬅️',
+        'e': '➡️',
+        'sw': '↙️',
+        's': '⬇️',
+        'se': '↘️'
+    };
+    
+    var dirNames = {
+        'nw': 'СЗ',
+        'n': 'Север',
+        'ne': 'СВ',
+        'w': 'Запад',
+        'e': 'Восток',
+        'sw': 'ЮЗ',
+        's': 'Юг',
+        'se': 'ЮВ'
     };
     
     var grid = [
@@ -74,19 +126,37 @@ function openCompass() {
             var dir = grid[row][col];
             
             if (dir === null) {
-                html += '<div style="display:flex;align-items:center;justify-content:center;background:#1a1410;border:1px solid #3d3026;border-radius:50%;aspect-ratio:1;font-size:24px;">📍</div>';
+                var centerEmoji = getLocationEmoji(loc, current);
+                if (centerEmoji === '') centerEmoji = '📍';
+                html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1410;border:1px solid #3d3026;border-radius:12px;aspect-ratio:1;font-size:20px;padding:2px;">' + centerEmoji + '<br><span style="font-size:7px;color:#3d3026;">' + (loc ? loc.x + ',' + loc.y : '') + '</span></div>';
                 continue;
             }
             
             var next = transitions[dir];
-            var label = dirLabels[dir] || dir;
             
             if (next) {
-                var nextLoc = window.KL_AREAS ? KL_AREAS[next] : null;
+                var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+                var emoji = getLocationEmoji(nextLoc, next);
+                if (emoji === '') emoji = '';
                 var nextName = nextLoc ? nextLoc.name : next;
-                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:8px;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;">' + label + '<br><span style="font-size:9px;color:#6a5a48;">' + nextName + '</span></button>';
+                var houseInfo = '';
+                if (nextLoc && nextLoc.owner && nextLoc.owner !== 'crown' && nextLoc.owner !== 'none') {
+                    var house = HOUSES ? HOUSES[nextLoc.owner] : null;
+                    if (house) {
+                        houseInfo = '<br><span style="font-size:7px;color:#ffd700;">' + house.sigil + ' ' + house.name + '</span>';
+                    }
+                }
+                var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
+                
+                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
+                html += '<span style="font-size:14px;">' + dirLabels[dir] + '</span>';
+                if (emoji) html += '<span style="font-size:14px;">' + emoji + '</span>';
+                html += '<span style="font-size:8px;color:#c9b694;">' + nextName + '</span>';
+                html += houseInfo;
+                html += '<span style="font-size:6px;color:#3d3026;">' + coords + '</span>';
+                html += '</button>';
             } else {
-                html += '<div style="display:flex;align-items:center;justify-content:center;background:#120e0b;border:1px solid #1a1410;border-radius:8px;color:#3d3026;font-size:13px;aspect-ratio:1;">' + label + '</div>';
+                html += '<div style="display:flex;align-items:center;justify-content:center;background:#120e0b;border:1px solid #1a1410;border-radius:8px;color:#3d3026;font-size:16px;aspect-ratio:1;">' + dirLabels[dir] + '</div>';
             }
         }
     }
@@ -108,7 +178,7 @@ function moveTo(direction) {
     if (!g) return;
     
     var current = g.location.locationId || g.location.place;
-    var transitions = window.KL_TRANSITIONS ? KL_TRANSITIONS[current] : null;
+    var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
@@ -120,7 +190,7 @@ function moveTo(direction) {
         return;
     }
     
-    var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+    var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
