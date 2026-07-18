@@ -11,12 +11,10 @@ console.log('🔧 UI загружается...');
 window._battle = null;
 
 window.getMobsForLocation = function(region, place) {
-    // Квартал бедноты — только алкаши
     if (place === 'Квартал бедноты') {
         return MOBS.drunkards || [];
     }
     
-    // Городские локации — без мобов
     var cityPlaces = ['Таверна','Рынок','Кузница','Кожевник','Плотник','Конюшня','Гильдия торговцев',
                       'Магистрат','Ворота','Ворота Красного замка','Королевский квартал','Торговый квартал',
                       'Дом','Великая септа','Порт','Тюрьма','Библиотека мейстеров','Гильдия наёмников','Бордель'];
@@ -24,7 +22,6 @@ window.getMobsForLocation = function(region, place) {
         return [];
     }
     
-    // Внешние локации
     var m = {'Королевские земли':'crownlands','Север':'north','Западные земли':'westlands','Простор':'reach',
              'Речные земли':'riverlands','Штормовые земли':'stormlands','Дорн':'dorne','Долина':'vale',
              'Железные острова':'iron_islands'};
@@ -32,8 +29,8 @@ window.getMobsForLocation = function(region, place) {
     var mobs = MOBS[k] || MOBS.crownlands || [];
     
     var lvl = 1;
-    if (KL_AREAS && KL_AREAS[place]) {
-        lvl = KL_AREAS[place].level;
+    if (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[place]) {
+        lvl = WORLD_AREAS[place].level;
     } else if (LOCATION_LEVELS[place]) {
         lvl = LOCATION_LEVELS[place];
     }
@@ -151,7 +148,6 @@ window.endBattle = function(won, reason) {
             convertCurrency(g);
             setMessage('⚔️ ПОБЕДА! +'+xp+' XP\n💰 +'+coins+' МП');
             
-            // Шанс попасть в тюрьму за убийство в Квартале бедноты (20%)
             if (g.location.place === 'Квартал бедноты' && Math.random() * 100 < 20) {
                 if (!g.jail) g.jail = {};
                 g.jail.enterTime = Date.now();
@@ -231,13 +227,13 @@ function showBattleButtons() {
 }
 
 // ============================================================
-// 4. КАРТА МЕСТ
+// 4. КАРТА МЕСТ (устарела, оставлена для совместимости)
 // ============================================================
 
-window.openPlaces = function() {
+window.openPlaces_OLD = function() {
     var g = users[currentUser].game;
     var place = g.location.place;
-    var loc = KL_AREAS[place];
+    var loc = (typeof WORLD_AREAS !== 'undefined') ? WORLD_AREAS[place] : null;
     
     if (!loc || !loc.places || loc.places.length === 0) {
         setMessage('📍 Здесь нет мест.');
@@ -282,8 +278,18 @@ window.closePlaces = function() {
 window.goToPlace = function(placeName) {
     var g = users[currentUser].game;
     if (!g) return;
-    g.location.place = placeName;
-    setMessage('🚶 Вы подошли к ' + placeName);
+    var loc = (typeof WORLD_AREAS !== 'undefined') ? WORLD_AREAS[placeName] : null;
+    if (loc) {
+        g.location.parentZone = placeName;
+        g.location.place = placeName;
+        setMessage('🚶 Вы подошли к ' + loc.name);
+    } else {
+        if (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[g.location.place]) {
+            g.location.parentZone = g.location.place;
+        }
+        g.location.place = placeName;
+        setMessage('🚶 Вы подошли к ' + placeName);
+    }
     updateMenu();
     updateStory();
     updateActions();
