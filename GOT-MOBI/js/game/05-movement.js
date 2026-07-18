@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС БЕЗ ТРАНЗИТНЫХ ЗОН (ФИНАЛ)
+// movement.js — КОМПАС С ДВОЙНЫМ ПРОПУСКОМ ТРАНЗИТНЫХ ЗОН
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -98,16 +98,23 @@ function openCompass() {
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
                 
-                // Если цель транзитная — ищем следующую за ней в том же направлении
+                // Пропуск 1
                 if (nextLoc && nextLoc.type === 'transit') {
-                    var nextTransitions = WORLD_TRANSITIONS[next];
-                    if (nextTransitions && nextTransitions[dir]) {
-                        next = nextTransitions[dir];
+                    var t1 = WORLD_TRANSITIONS[next];
+                    if (t1 && t1[dir]) {
+                        next = t1[dir];
+                        nextLoc = WORLD_AREAS[next];
+                    }
+                }
+                // Пропуск 2
+                if (nextLoc && nextLoc.type === 'transit') {
+                    var t2 = WORLD_TRANSITIONS[next];
+                    if (t2 && t2[dir]) {
+                        next = t2[dir];
                         nextLoc = WORLD_AREAS[next];
                     }
                 }
                 
-                // Если после одного шага всё ещё транзит — не показываем
                 if (nextLoc && nextLoc.type === 'transit') continue;
                 
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
@@ -165,12 +172,20 @@ function moveToDirection(direction) {
         return;
     }
     
-    // Проскакиваем одну транзитную зону
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
+    // Пропуск 1
     if (nextLoc && nextLoc.type === 'transit') {
-        var nextTransitions = WORLD_TRANSITIONS[next];
-        if (nextTransitions && nextTransitions[direction]) {
-            next = nextTransitions[direction];
+        var t1 = WORLD_TRANSITIONS[next];
+        if (t1 && t1[direction]) {
+            next = t1[direction];
+            nextLoc = WORLD_AREAS[next];
+        }
+    }
+    // Пропуск 2
+    if (nextLoc && nextLoc.type === 'transit') {
+        var t2 = WORLD_TRANSITIONS[next];
+        if (t2 && t2[direction]) {
+            next = t2[direction];
             nextLoc = WORLD_AREAS[next];
         }
     }
