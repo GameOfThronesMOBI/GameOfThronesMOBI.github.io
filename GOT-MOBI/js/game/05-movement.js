@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС (ГЛОБАЛЬНЫЙ, WORLD_*)
+// movement.js — КОМПАС (ГЛОБАЛЬНЫЙ, WORLD_*) ФИНАЛ
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -13,8 +13,11 @@ function getLocationEmoji(loc, nextId) {
     if (loc.type === 'forest') return '🌲';
     if (loc.type === 'road') return '🛤️';
     if (loc.type === 'mountain') return '⛰️';
-    if (loc.type === 'coast') return '🌊';
-    if (loc.type === 'river') return '🌊';
+    if (loc.type === 'coast') {
+        if (loc.resourceType === 'shallows') return '🌊';
+        return '🏖️';
+    }
+    if (loc.type === 'river') return '🏞️';
     if (loc.type === 'plain') return '🌾';
     if (loc.type === 'city') return '🌇';
     return '📍';
