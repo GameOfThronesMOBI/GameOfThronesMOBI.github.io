@@ -2,7 +2,7 @@
 // js/regions/crownlands/areas.js — 81 ЗОНА (9×9)
 // ============================================================
 
-const KL_AREAS = {
+const CROWNLANDS_AREAS = {
 
     // Центр
     'kl_0_0': { id:'kl_0_0', name:'Перекрёсток у Гавани', type:'crossroads', level:1, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Придорожный камень','Столб с указателями'], actions:[{id:'enter_city',label:'🚶 Войти в город'}], zoneNumber:0, x:0, y:0 },
@@ -56,7 +56,7 @@ const KL_AREAS = {
     'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 }
 };
 
-const KL_TRANSIT = {
+const CROWNLANDS_TRANSIT = {
     'kl_1_-2':{id:'kl_1_-2',name:'Прибрежные холмы',type:'transit',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:2,x:1,y:-2},
     'kl_1_-3':{id:'kl_1_-3',name:'Прибрежные холмы',type:'transit',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:3,x:1,y:-3},
     'kl_2_-3':{id:'kl_2_-3',name:'Прибрежные холмы',type:'transit',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:3,x:2,y:-3},
@@ -107,9 +107,8 @@ const KL_TRANSIT = {
     'kl_-3_-4':{id:'kl_-3_-4',name:'Предлесье',type:'transit',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'none',places:[],actions:[],zoneNumber:4,x:-3,y:-4}
 };
 
-// Добавляем в глобальный мир
-Object.assign(WORLD_AREAS, KL_AREAS);
-Object.assign(WORLD_AREAS, KL_TRANSIT);
+Object.assign(CROWNLANDS_AREAS, CROWNLANDS_TRANSIT);
+Object.assign(WORLD_AREAS, CROWNLANDS_AREAS);
 
 // ============================================================
 // КАРТА
