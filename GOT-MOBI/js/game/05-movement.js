@@ -1,12 +1,8 @@
 // ============================================================
-// movement.js — ПОЛНАЯ СИСТЕМА ПЕРЕМЕЩЕНИЙ + КОМПАС (РОЗА ВЕТРОВ)
+// movement.js — КОМПАС С СЕТКОЙ 3×3 (КАК БЫЛО)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
-
-// ============================================================
-// 1. ОТКРЫТЬ КОМПАС (РОЗА ВЕТРОВ)
-// ============================================================
 
 function openCompass() {
     var user = users[currentUser];
@@ -54,6 +50,8 @@ function openCompass() {
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">Выберите направление:</p>';
     
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:6px;max-width:280px;margin:10px auto;">';
+    
     var dirLabels = {
         'nw': '↖️ СЗ',
         'n': '⬆️ Север',
@@ -65,63 +63,47 @@ function openCompass() {
         'se': '↘️ ЮВ'
     };
     
-    var hasAny = false;
+    var grid = [
+        ['nw', 'n', 'ne'],
+        ['w', null, 'e'],
+        ['sw', 's', 'se']
+    ];
     
-    for (var d in dirLabels) {
-        var targetId = transitions[d];
-        if (targetId) {
-            var targetLoc = KL_AREAS[targetId];
-            // Если цель — транзитная зона, ищем следующую за ней в том же направлении
-            if (targetLoc && targetLoc.type === 'transit') {
-                var nextTransitions = KL_TRANSITIONS[targetId];
-                if (nextTransitions && nextTransitions[d]) {
-                    targetId = nextTransitions[d];
-                    targetLoc = KL_AREAS[targetId];
-                }
+    for (var row = 0; row < 3; row++) {
+        for (var col = 0; col < 3; col++) {
+            var dir = grid[row][col];
+            
+            if (dir === null) {
+                html += '<div style="display:flex;align-items:center;justify-content:center;background:#1a1410;border:1px solid #3d3026;border-radius:50%;aspect-ratio:1;font-size:24px;">📍</div>';
+                continue;
             }
             
-            if (targetLoc && targetLoc.type === 'transit') {
-                // Если дальше тоже транзитная — пропускаем и её
-                var nextTransitions2 = KL_TRANSITIONS[targetId];
-                if (nextTransitions2 && nextTransitions2[d]) {
-                    targetId = nextTransitions2[d];
-                    targetLoc = KL_AREAS[targetId];
-                }
+            var next = transitions[dir];
+            var label = dirLabels[dir] || dir;
+            
+            if (next) {
+                var nextLoc = window.KL_AREAS ? KL_AREAS[next] : null;
+                var nextName = nextLoc ? nextLoc.name : next;
+                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:8px;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;">' + label + '<br><span style="font-size:9px;color:#6a5a48;">' + nextName + '</span></button>';
+            } else {
+                html += '<div style="display:flex;align-items:center;justify-content:center;background:#120e0b;border:1px solid #1a1410;border-radius:8px;color:#3d3026;font-size:13px;aspect-ratio:1;">' + label + '</div>';
             }
-            
-            // Если после всех пропусков цель всё ещё транзитная или не найдена — пропускаем
-            if (!targetLoc || targetLoc.type === 'transit') continue;
-            
-            hasAny = true;
-            var nextName = targetLoc ? targetLoc.name : targetId;
-            html += '<button class="btn btn-game" onclick="moveToDirection(\'' + d + '\'); closeCompass();" style="padding:12px;font-size:14px;margin:4px 0;">' + dirLabels[d] + ' — ' + nextName + '</button>';
         }
     }
     
-    if (!hasAny) {
-        html += '<p style="color:#6a5a48;text-align:center;">Нет доступных направлений.</p>';
-    }
-    
+    html += '</div></div>';
     html += '<button class="btn btn-secondary" onclick="closeCompass()" style="margin-top:10px;">Закрыть</button>';
     
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
 
-// ============================================================
-// 2. ЗАКРЫТЬ КОМПАС
-// ============================================================
-
 function closeCompass() {
     var modal = document.getElementById('modal-compass');
     if (modal) modal.classList.add('hide');
 }
 
-// ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ С ПРОПУСКОМ ТРАНЗИТНЫХ ЗОН
-// ============================================================
-
-function moveToDirection(direction) {
+function moveTo(direction) {
     var g = users[currentUser].game;
     if (!g) return;
     
@@ -132,64 +114,26 @@ function moveToDirection(direction) {
         return;
     }
     
-    var targetId = transitions[direction];
-    if (!targetId) {
+    var next = transitions[direction];
+    if (!next) {
         setMessage('❌ В этом направлении нет пути.');
         return;
     }
     
-    // Проходим транзитные зоны автоматически
-    var steps = 0;
-    var maxSteps = 3; // Максимум 3 шага (кольца 2, 3, 4)
+    var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
+    var nextName = nextLoc ? nextLoc.name : next;
     
-    while (targetId && steps < maxSteps) {
-        var targetLoc = KL_AREAS[targetId];
-        if (targetLoc && targetLoc.type === 'transit') {
-            var nextTransitions = KL_TRANSITIONS[targetId];
-            if (nextTransitions && nextTransitions[direction]) {
-                targetId = nextTransitions[direction];
-                steps++;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    
-    var finalLoc = KL_AREAS[targetId];
-    var finalName = finalLoc ? finalLoc.name : targetId;
-    
-    g.location.place = targetId;
-    g.location.locationId = targetId;
-    
-    if (steps > 0) {
-        setMessage('🚶 Вы прошли ' + (steps + 1) + ' зоны и достигли ' + finalName);
-    } else {
-        setMessage('🚶 Вы перешли в ' + finalName);
-    }
-    
+    g.location.place = next;
+    g.location.locationId = next;
+    setMessage('🚶 Вы перешли в ' + nextName);
     updateMenu();
     updateStory();
     updateActions();
     saveData();
 }
 
-// ============================================================
-// 4. ОБЫЧНОЕ ПЕРЕМЕЩЕНИЕ (moveTo) — ОСТАВЛЯЕМ ДЛЯ СОВМЕСТИМОСТИ
-// ============================================================
-
-function moveTo(direction) {
-    moveToDirection(direction);
-}
-
-// ============================================================
-// 5. РЕГИСТРАЦИЯ
-// ============================================================
-
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
 window.moveTo = moveTo;
-window.moveToDirection = moveToDirection;
 
 console.log('✅ Система перемещений загружена!');
