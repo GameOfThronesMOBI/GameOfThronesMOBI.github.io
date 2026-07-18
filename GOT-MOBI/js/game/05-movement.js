@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС ДЛЯ ЛОКАЛЬНОЙ СЕТКИ (KL_AREAS / KL_TRANSITIONS)
+// movement.js — КОМПАС (БЕЗ ТРАНЗИТОВ, БЕЗ ГЛОБАЛЬНОЙ СИСТЕМЫ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -17,7 +17,6 @@ function getLocationEmoji(loc, nextId) {
     if (loc.type === 'river') return '🌊';
     if (loc.type === 'plain') return '🌾';
     if (loc.type === 'city') return '🌇';
-    if (loc.type === 'transit') return '';
     return '📍';
 }
 
@@ -97,20 +96,6 @@ function openCompass() {
             
             if (next) {
                 var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
-                
-                // Пропускаем транзитные зоны (1 шаг)
-                if (nextLoc && nextLoc.type === 'transit') {
-                    var t1 = KL_TRANSITIONS[next];
-                    if (t1 && t1[dir]) { next = t1[dir]; nextLoc = KL_AREAS[next]; }
-                }
-                // Пропускаем транзитные зоны (2 шаг)
-                if (nextLoc && nextLoc.type === 'transit') {
-                    var t2 = KL_TRANSITIONS[next];
-                    if (t2 && t2[dir]) { next = t2[dir]; nextLoc = KL_AREAS[next]; }
-                }
-                
-                if (nextLoc && nextLoc.type === 'transit') continue;
-                
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
                 
@@ -167,15 +152,6 @@ function moveTo(direction) {
     }
     
     var nextLoc = KL_AREAS ? KL_AREAS[next] : null;
-    if (nextLoc && nextLoc.type === 'transit') {
-        var t1 = KL_TRANSITIONS[next];
-        if (t1 && t1[direction]) { next = t1[direction]; nextLoc = KL_AREAS[next]; }
-    }
-    if (nextLoc && nextLoc.type === 'transit') {
-        var t2 = KL_TRANSITIONS[next];
-        if (t2 && t2[direction]) { next = t2[direction]; nextLoc = KL_AREAS[next]; }
-    }
-    
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
