@@ -57,13 +57,13 @@ const CROWNLANDS_AREAS = {
 
     // ==================== ЗАПОЛНЕНИЕ МЕЖДУ ЛУЧАМИ ====================
 
-    // Сектор СЕВЕР — СЕВЕРО-ВОСТОК (Прибрежные холмы)
-    'kl_1_-2':{id:'kl_1_-2',name:'Прибрежные холмы',type:'coast',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:2,x:1,y:-2},
-    'kl_1_-3':{id:'kl_1_-3',name:'Прибрежные холмы',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:1,y:-3},
-    'kl_2_-3':{id:'kl_2_-3',name:'Прибрежные холмы',type:'coast',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:3,x:2,y:-3},
-    'kl_1_-4':{id:'kl_1_-4',name:'Прибрежные холмы',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:4,x:1,y:-4},
-    'kl_2_-4':{id:'kl_2_-4',name:'Прибрежные холмы',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:4,x:2,y:-4},
-    'kl_3_-4':{id:'kl_3_-4',name:'Прибрежные холмы',type:'coast',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:4,x:3,y:-4},
+    // Сектор СЕВЕР — СЕВЕРО-ВОСТОК (Прибрежные холмы → горы)
+    'kl_1_-2':{id:'kl_1_-2',name:'Прибрежные холмы',type:'mountain',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:2,x:1,y:-2},
+    'kl_1_-3':{id:'kl_1_-3',name:'Прибрежные холмы',type:'mountain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:3,x:1,y:-3},
+    'kl_2_-3':{id:'kl_2_-3',name:'Прибрежные холмы',type:'mountain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:3,x:2,y:-3},
+    'kl_1_-4':{id:'kl_1_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:1,y:-4},
+    'kl_2_-4':{id:'kl_2_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:2,y:-4},
+    'kl_3_-4':{id:'kl_3_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:3,y:-4},
 
     // Сектор СЕВЕРО-ВОСТОК — ВОСТОК (Мелководье)
     'kl_2_-1':{id:'kl_2_-1',name:'Мелководье',type:'coast',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'coast',resources:['Рыба','Соль'],zoneNumber:1,x:2,y:-1},
@@ -113,13 +113,13 @@ const CROWNLANDS_AREAS = {
     'kl_-4_-2':{id:'kl_-4_-2',name:'Опушка леса',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-4,y:-2},
     'kl_-4_-1':{id:'kl_-4_-1',name:'Опушка леса',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-4,y:-1},
 
-    // Сектор СЕВЕРО-ЗАПАД — СЕВЕР (Предлесье)
-    'kl_-1_-2':{id:'kl_-1_-2',name:'Предлесье',type:'forest',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:2,x:-1,y:-2},
-    'kl_-1_-3':{id:'kl_-1_-3',name:'Предлесье',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-1,y:-3},
-    'kl_-2_-3':{id:'kl_-2_-3',name:'Предлесье',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-2,y:-3},
-    'kl_-1_-4':{id:'kl_-1_-4',name:'Предлесье',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-1,y:-4},
-    'kl_-2_-4':{id:'kl_-2_-4',name:'Предлесье',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-2,y:-4},
-    'kl_-3_-4':{id:'kl_-3_-4',name:'Предлесье',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-3,y:-4}
+    // Сектор СЕВЕРО-ЗАПАД — СЕВЕР (Предлесье → равнина)
+    'kl_-1_-2':{id:'kl_-1_-2',name:'Предлесье',type:'plain',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:2,x:-1,y:-2},
+    'kl_-1_-3':{id:'kl_-1_-3',name:'Предлесье',type:'plain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:3,x:-1,y:-3},
+    'kl_-2_-3':{id:'kl_-2_-3',name:'Предлесье',type:'plain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:3,x:-2,y:-3},
+    'kl_-1_-4':{id:'kl_-1_-4',name:'Предлесье',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:-1,y:-4},
+    'kl_-2_-4':{id:'kl_-2_-4',name:'Предлесье',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:-2,y:-4},
+    'kl_-3_-4':{id:'kl_-3_-4',name:'Предлесье',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:-3,y:-4}
 };
 
 // Добавляем в глобальный мир
@@ -181,7 +181,7 @@ window.updateStory = function() {
     if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
     if (!loc) { if (typeof _areasPrevUpdateStory === 'function') return _areasPrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
-    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река' };
+    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🌊 Берег', crossroads:'🔄 Перекрёсток', river:'🌊 Река', mountain:'⛰️ Горы', plain:'🌾 Равнина' };
     document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
 };
 
