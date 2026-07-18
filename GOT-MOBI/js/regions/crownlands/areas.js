@@ -6,7 +6,7 @@ const KL_AREAS = {
 
     // 🔄 ЦЕНТР
     'kl_0_0': {
-        id: 'kl_0_0', name: 'Перекрёсток у Гавани', type: 'crossroads', level: 1,
+        id: 'kl_crossroads', name: 'Перекрёсток у Гавани', type: 'crossroads', level: 1,
         region: 'Королевские земли', area: 'Королевская Гавань', owner: 'crown',
         places: ['Придорожный камень', 'Столб с указателями'],
         actions: [{ id: 'enter_city', label: '🚶 Войти в город' }],
