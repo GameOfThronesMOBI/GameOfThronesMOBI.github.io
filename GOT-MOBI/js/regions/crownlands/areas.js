@@ -206,7 +206,7 @@ window.updateActions = function() {
 
 var _areasPrevUpdateStory = window.updateStory;
 var _areasPrevUpdateActions = window.updateActions;
-window.updateStory = window.updateStory;
-window.updateActions = window.updateActions;
+window.updateStory = updateStory;
+window.updateActions = updateActions;
 
 console.log('✅ Королевская Гавань загружена (81 зона, 9×9)');
