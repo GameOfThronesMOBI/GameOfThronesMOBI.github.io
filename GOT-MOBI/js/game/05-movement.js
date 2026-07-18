@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС БЕЗ continue (ФИНАЛ)
+// movement.js — ЧИСТЫЙ КОМПАС (БЕЗ ПРОПУСКОВ, ТРАНЗИТЫ НЕ ВИДНЫ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -97,18 +97,6 @@ function openCompass() {
             
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
-                
-                // Пропуск 1
-                if (nextLoc && nextLoc.type === 'transit') {
-                    var t1 = WORLD_TRANSITIONS[next];
-                    if (t1 && t1[dir]) { next = t1[dir]; nextLoc = WORLD_AREAS[next]; }
-                }
-                // Пропуск 2
-                if (nextLoc && nextLoc.type === 'transit') {
-                    var t2 = WORLD_TRANSITIONS[next];
-                    if (t2 && t2[dir]) { next = t2[dir]; nextLoc = WORLD_AREAS[next]; }
-                }
-                
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
                 
@@ -122,7 +110,7 @@ function openCompass() {
                 
                 var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
                 
-                html += '<button class="btn btn-game" onclick="moveToDirection(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
+                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
                 html += '<span style="font-size:14px;">' + dirLabels[dir] + '</span>';
                 if (emoji) html += '<span style="font-size:14px;">' + emoji + '</span>';
                 html += '<span style="font-size:8px;color:#c9b694;">' + nextName + '</span>';
@@ -147,7 +135,7 @@ function closeCompass() {
     if (modal) modal.classList.add('hide');
 }
 
-function moveToDirection(direction) {
+function moveTo(direction) {
     var g = users[currentUser].game;
     if (!g) return;
     
@@ -165,15 +153,6 @@ function moveToDirection(direction) {
     }
     
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
-    if (nextLoc && nextLoc.type === 'transit') {
-        var t1 = WORLD_TRANSITIONS[next];
-        if (t1 && t1[direction]) { next = t1[direction]; nextLoc = WORLD_AREAS[next]; }
-    }
-    if (nextLoc && nextLoc.type === 'transit') {
-        var t2 = WORLD_TRANSITIONS[next];
-        if (t2 && t2[direction]) { next = t2[direction]; nextLoc = WORLD_AREAS[next]; }
-    }
-    
     var nextName = nextLoc ? nextLoc.name : next;
     
     g.location.place = next;
@@ -185,13 +164,8 @@ function moveToDirection(direction) {
     saveData();
 }
 
-function moveTo(direction) {
-    moveToDirection(direction);
-}
-
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
 window.moveTo = moveTo;
-window.moveToDirection = moveToDirection;
 
 console.log('✅ Система перемещений загружена!');
