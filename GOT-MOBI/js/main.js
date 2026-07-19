@@ -231,19 +231,12 @@ function enterGame(name) {
         var remaining = Math.ceil((g.busyUntil - Date.now()) / 60000);
         var actionName = g.busyAction || 'Действие';
         var callback = function() {
-            // Выдача награды в зависимости от типа действия
             if (g.busyAction === 'Добыча' && g.busyData) {
                 var parent = WORLD_AREAS[g.busyData.parentZone];
                 if (parent) {
                     var result = rollResource(parent, g.professions[g.busyData.profession] || 1);
                     if (result) {
-                        addToInventory(g, {
-                            name: result.name,
-                            quality: result.quality || 'Обычное',
-                            type: 'resource',
-                            resourceType: parent.resourceType,
-                            count: result.count
-                        });
+                        addToInventory(g, { name: result.name, quality: result.quality || 'Обычное', type: 'resource', resourceType: parent.resourceType, count: result.count });
                         setMessage('⛏️ Добыто: ' + result.name + ' (' + (result.quality || 'Обычное') + ') ×' + result.count);
                         g.professionXp[g.busyData.profession] = (g.professionXp[g.busyData.profession] || 0) + result.count;
                         while (g.professionXp[g.busyData.profession] >= g.professions[g.busyData.profession] * 10) {
@@ -254,8 +247,8 @@ function enterGame(name) {
                     }
                 }
             }
-            if (g.busyAction === 'Уборка') {
-                var coins = g.busyData ? g.busyData.coins : 1;
+            if (g.busyAction === 'Уборка' && g.busyData) {
+                var coins = g.busyData.coins || 1;
                 g.copper += coins;
                 convertCurrency(g);
                 setMessage('🧹 +' + coins + ' МП.');
@@ -269,7 +262,7 @@ function enterGame(name) {
             updateMenu();
             updateActions();
         };
-        startBusy(actionName, remaining, callback);
+        startBusy(actionName, remaining, callback, g.busyAction, g.busyData);
     }
     
     updateOnline();
@@ -701,4 +694,4 @@ if (savedUser && users[savedUser]) {
     enterGame(savedUser);
 } else {
     showPage('login');
-                            }
+}
