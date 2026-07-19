@@ -7,8 +7,9 @@ console.log('🧭 Система перемещений загружается..
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
     if (nextId === 'kl_0_0') return '👑';
-    if (loc.places && loc.places.some(function(p) { return p === 'Деревня'; })) return '🏘️';
+    if (loc.places && loc.places.some(function(p) { return p === 'Лесосека'; })) return '🪓';
     if (loc.places && loc.places.some(function(p) { return p === 'Шахта'; })) return '⛏️';
+    if (loc.places && loc.places.some(function(p) { return p === 'Деревня'; })) return '🏘️';
     if (loc.type === 'castle') return '🏰';
     if (loc.type === 'forest') return '🌲';
     if (loc.type === 'road') return '🛤️';
