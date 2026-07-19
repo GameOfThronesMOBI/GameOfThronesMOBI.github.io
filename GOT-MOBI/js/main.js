@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ФИНАЛ (ГЛОБАЛЬНАЯ СЕТКА) + ТАЙМЕР + ПРЕРЫВАНИЕ
+// MAIN.JS — ФИНАЛ (ГЛОБАЛЬНАЯ СЕТКА) + ТАЙМЕР + НАГРАДА
 // ============================================================
 
 function handleRegister() {
@@ -75,7 +75,9 @@ function handleRegister() {
             house: null,
             isLord: false,
             gender: gender,
-            busyUntil: null
+            busyUntil: null,
+            busyAction: null,
+            busyData: null
         }
     };
     
@@ -169,7 +171,9 @@ function fixOldAccount(user) {
             house: null,
             isLord: false,
             gender: null,
-            busyUntil: null
+            busyUntil: null,
+            busyAction: null,
+            busyData: null
         };
         return user;
     }
@@ -181,6 +185,8 @@ function fixOldAccount(user) {
     if (g.location.locationId === undefined) g.location.locationId = null;
     if (g.location.parentZone === undefined) g.location.parentZone = null;
     if (g.busyUntil === undefined) g.busyUntil = null;
+    if (g.busyAction === undefined) g.busyAction = null;
+    if (g.busyData === undefined) g.busyData = null;
     return user;
 }
 
@@ -217,6 +223,7 @@ function enterGame(name) {
     
     isBusy = false;
     if (busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+    if (busyInterval) { clearInterval(busyInterval); busyInterval = null; }
     document.getElementById('busy-status').classList.add('hide');
     
     // Восстановление таймера после перезагрузки
@@ -224,15 +231,43 @@ function enterGame(name) {
         var remaining = Math.ceil((g.busyUntil - Date.now()) / 60000);
         var actionName = g.busyAction || 'Действие';
         var callback = function() {
+            // Выдача награды в зависимости от типа действия
+            if (g.busyAction === 'Добыча' && g.busyData) {
+                var parent = WORLD_AREAS[g.busyData.parentZone];
+                if (parent) {
+                    var result = rollResource(parent, g.professions[g.busyData.profession] || 1);
+                    if (result) {
+                        addToInventory(g, {
+                            name: result.name,
+                            quality: result.quality || 'Обычное',
+                            type: 'resource',
+                            resourceType: parent.resourceType,
+                            count: result.count
+                        });
+                        setMessage('⛏️ Добыто: ' + result.name + ' (' + (result.quality || 'Обычное') + ') ×' + result.count);
+                        g.professionXp[g.busyData.profession] = (g.professionXp[g.busyData.profession] || 0) + result.count;
+                        while (g.professionXp[g.busyData.profession] >= g.professions[g.busyData.profession] * 10) {
+                            g.professionXp[g.busyData.profession] -= g.professions[g.busyData.profession] * 10;
+                            g.professions[g.busyData.profession]++;
+                            setMessage('👷 ' + g.busyData.profession + ' повышен до ' + g.professions[g.busyData.profession] + ' уровня!');
+                        }
+                    }
+                }
+            }
+            if (g.busyAction === 'Уборка') {
+                var coins = g.busyData ? g.busyData.coins : 1;
+                g.copper += coins;
+                convertCurrency(g);
+                setMessage('🧹 +' + coins + ' МП.');
+            }
             g.busyUntil = null;
             g.busyAction = null;
+            g.busyData = null;
             saveData();
-            // Здесь нужен оригинальный callback, но он не сохранён
-            // Поэтому просто завершаем занятость
             isBusy = false;
             document.getElementById('busy-status').classList.add('hide');
+            updateMenu();
             updateActions();
-            setMessage('Действие завершено.');
         };
         startBusy(actionName, remaining, callback);
     }
@@ -370,9 +405,9 @@ function gameAction(action) {
     }
     
     if (action === 'tavern_buy') { if (typeof openTavernTrade === 'function') { openTavernTrade(); return; } return; }
-    if (action === 'wash') { startBusy('Моете посуду', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); }); return; }
-    if (action === 'sweep') { startBusy('Подметаете пол', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); }); return; }
-    if (action === 'sweep_streets') { startBusy('Убираете улицы', 8, function() { g.copper += 10; convertCurrency(g); setMessage('🧹 +10 МП.'); updateMenu(); saveData(); }); return; }
+    if (action === 'wash') { startBusy('Мытьё посуды', 1, function() { g.copper += 1; convertCurrency(g); setMessage('🧹 +1 МП.'); updateMenu(); saveData(); }, 'Уборка', { coins: 1 }); return; }
+    if (action === 'sweep') { startBusy('Подметание пола', 5, function() { g.copper += 5; convertCurrency(g); setMessage('🧹 +5 МП.'); updateMenu(); saveData(); }, 'Уборка', { coins: 5 }); return; }
+    if (action === 'sweep_streets') { startBusy('Уборка улиц', 8, function() { g.copper += 10; convertCurrency(g); setMessage('🧹 +10 МП.'); updateMenu(); saveData(); }, 'Уборка', { coins: 10 }); return; }
     if (action === 'rest') {
         if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег (10 МП).'); return; }
         g.fatigue = Math.min(100, g.fatigue + 30);
@@ -528,18 +563,25 @@ function gameAction(action) {
 
 var busyInterval = null;
 
-function startBusy(actionName, minutes, callback) {
+function startBusy(actionName, minutes, callback, busyAction, busyData) {
     if (isBusy) return;
     var user = users[currentUser];
     if (!user) return;
     var g = user.game;
     
-    isBusy = true;
-    var totalSeconds = minutes * 60;
-    g.busyUntil = Date.now() + totalSeconds * 1000;
-    g.busyAction = actionName;
+    // Если таймер уже есть и не истек — используем его время
+    if (g.busyUntil && g.busyUntil > Date.now()) {
+        minutes = Math.ceil((g.busyUntil - Date.now()) / 60000);
+    } else {
+        var totalSeconds = minutes * 60;
+        g.busyUntil = Date.now() + totalSeconds * 1000;
+    }
+    
+    g.busyAction = busyAction || actionName;
+    g.busyData = busyData || null;
     saveData();
     
+    isBusy = true;
     var statusEl = document.getElementById('busy-status');
     statusEl.classList.remove('hide');
     
@@ -566,6 +608,7 @@ function startBusy(actionName, minutes, callback) {
         busyTimer = null;
         g.busyUntil = null;
         g.busyAction = null;
+        g.busyData = null;
         saveData();
         if (callback) callback();
         updateActions();
@@ -584,6 +627,7 @@ function startBusy(actionName, minutes, callback) {
         statusEl.classList.add('hide');
         g.busyUntil = null;
         g.busyAction = null;
+        g.busyData = null;
         saveData();
         updateActions();
         setMessage('Действие прервано.');
@@ -657,4 +701,4 @@ if (savedUser && users[savedUser]) {
     enterGame(savedUser);
 } else {
     showPage('login');
-}
+                            }
