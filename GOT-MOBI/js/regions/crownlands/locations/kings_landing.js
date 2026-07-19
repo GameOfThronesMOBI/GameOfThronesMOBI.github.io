@@ -1319,17 +1319,10 @@ function readBook(index) {
     var baseTime = 30;
     var intelligence = Math.min(30, g.stats.intelligence || 1);
     var readTimeMinutes = Math.max(5, baseTime - intelligence);
-    var readTimeMs = readTimeMinutes * 60 * 1000;
     
     setMessage('⏳ Чтение книги займёт ' + readTimeMinutes + ' мин.');
     
-    if (busyTimer) clearTimeout(busyTimer);
-    isBusy = true;
-    document.getElementById('busy-status').classList.remove('hide');
-    document.getElementById('busy-status').textContent = '📖 Чтение книги... (' + readTimeMinutes + ' мин)';
-    updateActions();
-    
-    busyTimer = setTimeout(function() {
+    startBusy('Чтение книги', readTimeMinutes, function() {
         var xpMultiplier = 1 + (g.stats.intelligence / 100);
         var xpGain = Math.round(item.xp * xpMultiplier);
         
@@ -1361,13 +1354,9 @@ function readBook(index) {
         setMessage('📖 Вы прочитали книгу! +' + xpGain + ' XP');
         updateMenu();
         openLibrary();
-        
-        isBusy = false;
-        document.getElementById('busy-status').classList.add('hide');
-        busyTimer = null;
         updateActions();
-    }, readTimeMs);
-}
+    }, 'Чтение', { bookIndex: index });
+    }
 
 // ============================================================
 // 10. ГИЛЬДИЯ НАЁМНИКОВ
