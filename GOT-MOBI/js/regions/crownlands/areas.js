@@ -58,6 +58,9 @@ const CROWNLANDS_AREAS = {
     'kl_-3_4':{id:'kl_-3_4',name:'Равнина',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:-3,y:4},
     'kl_-2_4':{id:'kl_-2_4',name:'Равнина',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:-2,y:4},
 
+    // ==================== ЮГО-ЗАПАД — Речной берег ====================
+    'kl_-1_1':{id:'kl_-1_1',name:'Речной берег',type:'river',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'river',resources:['Рыба','Вода'],zoneNumber:1,x:-1,y:1},
+
     // ==================== ЮГО-ЗАПАД — Пойма реки ====================
     'kl_-3_1':{id:'kl_-3_1',name:'Пойма реки',type:'river',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'river',resources:['Рыба','Вода'],zoneNumber:1,x:-3,y:1},
     'kl_-2_2':{id:'kl_-2_2',name:'Пойма реки',type:'river',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Деревня','Причал'],actions:[],resourceType:'river',resources:['Рыба','Вода'],zoneNumber:2,x:-2,y:2},
@@ -124,9 +127,7 @@ const CROWNLANDS_AREAS = {
 Object.assign(WORLD_AREAS, CROWNLANDS_AREAS);
 window.WORLD_AREAS = WORLD_AREAS;
 
-// ============================================================
-// СОХРАНЯЕМ ПРЕДЫДУЩИЕ ОБРАБОТЧИКИ (ДО ПЕРЕОПРЕДЕЛЕНИЯ)
-// ============================================================
+// Сохраняем предыдущие обработчики ДО переопределения
 var _areasPrevUpdateStory = window.updateStory;
 var _areasPrevUpdateActions = window.updateActions;
 
@@ -270,9 +271,6 @@ window.updateActions = function() {
     });
 };
 
-// ============================================================
-// ПЕРЕОПРЕДЕЛЯЕМ
-// ============================================================
 window.updateStory = updateStory;
 window.updateActions = updateActions;
 
