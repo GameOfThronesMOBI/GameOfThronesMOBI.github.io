@@ -388,6 +388,12 @@ var HOUSES = {
         army: { infantry: 130, cavalry: 40, ships: 0 }, treasury: 380, loyalty: 85, reputation: 70,
         motto: 'Молния и гром', color: '#f1c40f'
     },
+    grandison: {
+    id: 'grandison', name: 'Грандисоны', sigil: '🦁', region: 'stormlands', type: 'independent',
+    castle: 'Грандвью', castleId: 'grandview', liege: null,
+    army: { infantry: 100, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 80, reputation: 65,
+    motto: 'Бодрствуй и охраняй', color: '#f1c40f'
+},
     caron: {
         id: 'caron', name: 'Карроны', sigil: '🎵', region: 'stormlands', type: 'independent',
         castle: 'Каррон', castleId: 'caron', liege: null,
