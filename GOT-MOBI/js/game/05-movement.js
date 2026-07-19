@@ -160,6 +160,7 @@ function moveTo(direction) {
     
     g.location.place = next;
     g.location.locationId = next;
+    g.location.parentZone = null;
     setMessage('🚶 Вы перешли в ' + nextName);
     updateMenu();
     updateStory();
