@@ -2,8 +2,6 @@
 // js/regions/stormlands/areas/buckler.js — БАКЛЕРЫ (9×9, 81 ЗОНА)
 // ============================================================
 
-if (!window.WORLD_AREAS) window.WORLD_AREAS = {};
-
 const BUCKLER_AREAS = {
 
     // ==================== РЯД 0 (Северная граница с КЛ) ====================
@@ -107,7 +105,7 @@ const BUCKLER_AREAS = {
 };
 
 // Добавляем в глобальный мир
-Object.assign(window.WORLD_AREAS, BUCKLER_AREAS);
+Object.assign(WORLD_AREAS, BUCKLER_AREAS);
 
 // Строим переходы
 if (typeof buildWorldTransitions === 'function') {
