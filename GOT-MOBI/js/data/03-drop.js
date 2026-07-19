@@ -11,6 +11,10 @@ function getQualityChances(level) {
     return { 'Обычное': 100 };
 }
 
+function getGatherTime(professionLevel) {
+    return Math.max(1, 5 * (1 - (professionLevel || 0) * 0.005));
+}
+
 function rollResource(loc, professionLevel) {
     var res = loc.resources;
     if (!res || res.length === 0) return null;
@@ -34,7 +38,6 @@ function rollResource(loc, professionLevel) {
     var bonus = (professionLevel || 0) * 0.2; // +0.2% за уровень профессии
     
     if (bonus > 0) {
-        // Распределяем бонус между всеми качествами выше Обычного
         var qualitiesAbove = [];
         for (var q in chances) {
             if (q !== 'Обычное') qualitiesAbove.push(q);
