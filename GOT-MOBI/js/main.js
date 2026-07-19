@@ -296,6 +296,8 @@ function enterGame(name) {
         };
         startBusy(actionName, remaining, callback, g.busyAction, g.busyData);
     }
+
+setMessage('busyData: ' + JSON.stringify(g.busyData));
     
     updateOnline();
     saveData();
