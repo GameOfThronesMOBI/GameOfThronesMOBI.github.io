@@ -231,6 +231,7 @@ function enterGame(name) {
         var remaining = Math.ceil((g.busyUntil - Date.now()) / 60000);
         var actionName = g.busyAction || 'Действие';
         var callback = function() {
+            setMessage('CALLBACK!');
             if (g.busyAction === 'Добыча' && g.busyData) {
                 var parent = WORLD_AREAS[g.busyData.parentZone];
                 if (parent) {
