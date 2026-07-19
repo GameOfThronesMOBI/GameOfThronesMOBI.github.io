@@ -1,5 +1,5 @@
 // ============================================================
-// MAIN.JS — ФИНАЛ (ЛОКАЛЬНАЯ СЕТКА)
+// MAIN.JS — ФИНАЛ (ГЛОБАЛЬНАЯ СЕТКА)
 // ============================================================
 
 function handleRegister() {
@@ -51,7 +51,7 @@ function handleRegister() {
             activeProfession: 'Охотник',
             lastProfessionChange: 0,
             inventory: [],
-            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null },
+            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null, parentZone: null },
             outside: false,
             death: null,
             lastReset: null,
@@ -154,7 +154,7 @@ function fixOldAccount(user) {
             professions: { 'Шахтёр': 1, 'Лесоруб': 1, 'Охотник': 1, 'Кузнец': 1 },
             professionXp: { 'Шахтёр': 0, 'Лесоруб': 0, 'Охотник': 0, 'Кузнец': 0 },
             activeProfession: 'Охотник', lastProfessionChange: 0, inventory: [],
-            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null },
+            location: { region: 'Королевские земли', location: 'Королевская Гавань', place: 'Таверна', locationId: null, parentZone: null },
             outside: false, death: null, lastReset: null, lastActive: Date.now(), online: true,
             lastResourceUpdate: Date.now(), luck: 0, lastHeal: null, lastPrayer: null,
             blessing: { active: false, expires: 0 }, jail: null,
@@ -177,6 +177,7 @@ function fixOldAccount(user) {
     if (g.isLord === undefined) g.isLord = false;
     if (g.gender === undefined) g.gender = null;
     if (g.location.locationId === undefined) g.location.locationId = null;
+    if (g.location.parentZone === undefined) g.location.parentZone = null;
     return user;
 }
 
@@ -235,8 +236,8 @@ function updateMenu() {
     document.getElementById('menu-period').textContent = time.emoji + ' ' + time.period;
     
     var locName = g.location.place;
-    if (typeof KL_AREAS !== 'undefined' && KL_AREAS[g.location.place]) {
-        locName = KL_AREAS[g.location.place].name;
+    if (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[g.location.place]) {
+        locName = WORLD_AREAS[g.location.place].name;
     }
     document.getElementById('menu-location').textContent = locName + (g.outside ? ' 🌲' : ' 🏰');
     document.getElementById('menu-location-level').textContent = ' (ур. ' + (LOCATION_LEVELS[g.location.place] || 1) + ')';
@@ -278,7 +279,7 @@ function gameAction(action) {
             } else {
                 setMessage('❌ Карта города не загружена.');
             }
-        } else if (typeof KL_AREAS !== 'undefined' && KL_AREAS[place]) {
+        } else if (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[place]) {
             if (typeof window.openCompass === 'function') {
                 window.openCompass();
             } else {
@@ -305,6 +306,7 @@ function gameAction(action) {
     if (action === 'leave_city') {
         g.location.place = 'kl_0_0';
         g.location.locationId = 'kl_0_0';
+        g.location.parentZone = null;
         g.location.location = 'Королевская Гавань';
         g.outside = true;
         setMessage('🚪 Вы вышли из города на перекрёсток.');
@@ -313,6 +315,7 @@ function gameAction(action) {
     }
     if (action === 'enter_city') {
         g.location.place = 'Ворота'; g.location.location = 'Королевская Гавань'; g.outside = false;
+        g.location.parentZone = null;
         setMessage('🚪 Вы вошли в Королевскую Гавань.');
         updateMenu(); updateStory(); updateActions(); saveData();
         return;
@@ -322,6 +325,7 @@ function gameAction(action) {
     if (action === 'enter_castle') {
         g.location.place = 'castle_gate';
         g.location.location = 'Красный замок';
+        g.location.parentZone = null;
         setMessage('🏰 Вы вошли в Красный замок.');
         updateMenu(); updateStory(); updateActions(); saveData();
         return;
@@ -415,6 +419,7 @@ function gameAction(action) {
             g.location.place = 'Таверна';
             g.location.location = 'Королевская Гавань';
         }
+        g.location.parentZone = null;
         updateMenu(); updateStory(); updateActions(); saveData();
         return;
     }
