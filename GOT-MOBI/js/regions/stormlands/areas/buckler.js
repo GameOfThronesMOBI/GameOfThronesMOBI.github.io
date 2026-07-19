@@ -118,7 +118,7 @@ var _bucklerPrevUpdateStory = window.updateStory;
 window.updateStory = function() {
     var g = users[currentUser].game; var place = g.location.place; var loc = WORLD_AREAS[place];
     if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
-    if (!loc) { if (typeof _bucklerPrevUpdateStory === 'function') return _bucklerPrevUpdateStory(); return; }
+    if (!loc || loc.area !== 'Баклеры') { if (typeof _bucklerPrevUpdateStory === 'function') return _bucklerPrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
     var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🏖️ Берег', crossroads:'🔄 Перекрёсток', river:'🏞️ Река', mountain:'⛰️ Горы', plain:'🌾 Равнина', castle:'🏰 Замок' };
     document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
@@ -138,7 +138,7 @@ window.updateActions = function() {
         loc = WORLD_AREAS[g.location.parentZone];
     }
     
-    if (!loc) { if (typeof _bucklerPrevUpdateActions === 'function') return _bucklerPrevUpdateActions(); return; }
+    if (!loc || loc.area !== 'Баклеры') { if (typeof _bucklerPrevUpdateActions === 'function') return _bucklerPrevUpdateActions(); return; }
     
     g.location.locationId = g.location.parentZone || place;
     container.innerHTML = '';
