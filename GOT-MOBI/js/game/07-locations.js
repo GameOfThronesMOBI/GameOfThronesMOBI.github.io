@@ -1292,6 +1292,44 @@ function parseCurrencyInput(input) {
 }
 
 // ============================================================
+// ДОБЫЧА РЕСУРСОВ (ШАХТА, ЛЕС)
+// ============================================================
+
+function gatherResource(profession, resourceType) {
+    var user = users[currentUser];
+    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    var g = user.game;
+    var parent = WORLD_AREAS[g.location.parentZone];
+    if (!parent) { setMessage('❌ Родительская зона не найдена.'); return; }
+    
+    var profLevel = g.professions[profession] || 1;
+    var time = getGatherTime(profLevel);
+    
+    startBusy('Добыча', time, function() {
+        var result = rollResource(parent, profLevel);
+        if (result) {
+            addToInventory(g, {
+                name: result.name,
+                quality: result.quality || 'Обычное',
+                type: 'resource',
+                resourceType: parent.resourceType,
+                count: result.count
+            });
+            setMessage('⛏️ Добыто: ' + result.name + ' (' + (result.quality || 'Обычное') + ') ×' + result.count);
+            g.professionXp[profession] = (g.professionXp[profession] || 0) + result.count;
+            while (g.professionXp[profession] >= g.professions[profession] * 10) {
+                g.professionXp[profession] -= g.professions[profession] * 10;
+                g.professions[profession]++;
+                setMessage('👷 ' + profession + ' повышен до ' + g.professions[profession] + ' уровня!');
+            }
+        }
+        updateMenu(); saveData();
+    });
+}
+
+window.gatherResource = gatherResource;
+
+// ============================================================
 // РЕГИСТРАЦИЯ
 // ============================================================
 
