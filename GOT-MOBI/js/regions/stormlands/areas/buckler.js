@@ -108,58 +108,8 @@ const BUCKLER_AREAS = {
 Object.assign(WORLD_AREAS, BUCKLER_AREAS);
 
 // Строим переходы
-buildWorldTransitions();
-
-// ============================================================
-// STORY
-// ============================================================
-
-var _bucklerPrevUpdateStory = window.updateStory;
-window.updateStory = function() {
-    var g = users[currentUser].game; var place = g.location.place; var loc = WORLD_AREAS[place];
-    if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
-    if (!loc || loc.area !== 'Баклеры') { if (typeof _bucklerPrevUpdateStory === 'function') return _bucklerPrevUpdateStory(); return; }
-    document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
-    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🏖️ Берег', crossroads:'🔄 Перекрёсток', river:'🏞️ Река', mountain:'⛰️ Горы', plain:'🌾 Равнина', castle:'🏰 Замок' };
-    document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
-};
-
-// ============================================================
-// ACTIONS
-// ============================================================
-
-var _bucklerPrevUpdateActions = window.updateActions;
-window.updateActions = function() {
-    var g = users[currentUser].game; var place = g.location.place;
-    var container = document.getElementById('actions-container'); if (!container) return;
-    
-    var loc = WORLD_AREAS[place];
-    if (!loc && g.location.parentZone) {
-        loc = WORLD_AREAS[g.location.parentZone];
-    }
-    
-    if (!loc || loc.area !== 'Баклеры') { if (typeof _bucklerPrevUpdateActions === 'function') return _bucklerPrevUpdateActions(); return; }
-    
-    g.location.locationId = g.location.parentZone || place;
-    container.innerHTML = '';
-    var actions = (loc.actions || []).slice();
-    
-    if (loc.places && loc.places.indexOf('Шахта') !== -1 && g.location.place === 'Шахта') {
-        actions.push({ id: 'mine', label: '⛏️ Добывать' });
-    }
-    if (loc.places && loc.places.indexOf('Лесосека') !== -1 && g.location.place === 'Лесосека') {
-        actions.push({ id: 'woodcut', label: '🪓 Рубить лес' });
-    }
-    
-    actions.push({ id:'map', label:'🗺️ Карта' },{ id:'compass', label:'🧭 Компас' },{ id:'search', label:'🔍 Поиск' },
-                 { id:'inventory', label:'🎒 Инвентарь' },{ id:'character', label:'👤 Персонаж' },{ id:'menu', label:'📋 Меню' });
-    actions.forEach(function(a) {
-        var btn = document.createElement('button'); btn.className='btn-game'; btn.textContent=a.label;
-        btn.onclick = (function(id){ return function(){
-            if (typeof gameAction==='function') gameAction(id); else setMessage('❌ Действие недоступно.');
-        }; })(a.id);
-        container.appendChild(btn);
-    });
-};
+if (typeof buildWorldTransitions === 'function') {
+    buildWorldTransitions();
+}
 
 console.log('✅ Баклеры загружены (81 зона, 9×9)');
