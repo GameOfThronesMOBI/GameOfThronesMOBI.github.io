@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing_castle.js
-// КРАСНЫЙ ЗАМОК — 10 ЗДАНИЙ (НЕЗАВИСИМЫЙ)
+// КРАСНЫЙ ЗАМОК — 10 ЗДАНИЙ
 // ============================================================
 
 var _castlePrevUpdateStory = window.updateStory;
@@ -121,12 +121,15 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
-    // Если зона не замковая — выходим, не трогаем цепочку
     var isCastle = false;
     for (var i = 0; i < CASTLE_BUILDINGS.length; i++) {
         if (CASTLE_BUILDINGS[i].id === place) { isCastle = true; break; }
     }
-    if (!isCastle) return;
+    
+    if (!isCastle) {
+        if (typeof _castlePrevUpdateActions === 'function') return _castlePrevUpdateActions();
+        return;
+    }
     
     container.innerHTML = '';
     var actions = [];
@@ -186,10 +189,6 @@ window.updateActions = function() {
         container.appendChild(btn);
     }
 };
-
-// ============================================================
-// РЕГИСТРАЦИЯ
-// ============================================================
 
 window.openCastleMap = openCastleMap;
 window.goToCastleBuilding = goToCastleBuilding;
