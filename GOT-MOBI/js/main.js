@@ -445,6 +445,10 @@ function gameAction(action) {
     // ПОРТ
     if (action === 'port_travel') { if (typeof openPort === 'function') { openPort(); return; } return; }
     
+    // ДОБЫЧА
+    if (action === 'mine') { if (typeof gatherResource === 'function') { gatherResource('Шахтёр', 'mountain'); } return; }
+    if (action === 'woodcut') { if (typeof gatherResource === 'function') { gatherResource('Лесоруб', 'forest'); } return; }
+    
     // ПОИСК
     if (action === 'search') {
         var region = g.location.region || 'Королевские земли';
