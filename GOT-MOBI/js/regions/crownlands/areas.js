@@ -66,15 +66,23 @@ const CROWNLANDS_AREAS = {
     'kl_-1_2':{id:'kl_-1_2',name:'Равнина',type:'plain',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:2,x:-1,y:2},
 
     // ==================== СЕВЕРО-ЗАПАД — Королевский лес ====================
-    'kl_-1_-1': { id:'kl_-1_-1', name:'Королевский лес: Лесная тропа', type:'forest', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старый дуб'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:1, x:-1, y:-1 },
-    'kl_-2_-2': { id:'kl_-2_-2', name:'Королевский лес: Поляна', type:'forest', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Деревня','Кострище'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:2, x:-2, y:-2 },
-    'kl_-3_-3': { id:'kl_-3_-3', name:'Королевский лес: Мельничный ручей', type:'forest', level:25, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Заброшенная мельница'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:3, x:-3, y:-3 },
-    'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 },
+    'kl_-1_-1': { id:'kl_-1_-1', name:'Королевский лес: Лесная тропа', type:'forest', level:15, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Лесосека','Старый дуб'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:1, x:-1, y:-1 },
+    'kl_-2_-2': { id:'kl_-2_-2', name:'Королевский лес: Поляна', type:'forest', level:20, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Лесосека','Деревня','Кострище'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:2, x:-2, y:-2 },
+    'kl_-3_-3': { id:'kl_-3_-3', name:'Королевский лес: Мельничный ручей', type:'forest', level:25, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Лесосека','Заброшенная мельница'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:3, x:-3, y:-3 },
+    'kl_-4_-4': { id:'kl_-4_-4', name:'Королевский лес: Развалины крепости', type:'forest', level:30, region:'Королевские земли', area:'Королевская Гавань', owner:'crown', places:['Лесосека','Старые руины'], actions:[], resourceType:'forest', resources:['Дерево','Шкура','Мясо'], zoneNumber:4, x:-4, y:-4 },
+
+    // ==================== Сектор ЗАПАД — СЕВЕРО-ЗАПАД (Опушка леса) ====================
+    'kl_-2_-1':{id:'kl_-2_-1',name:'Опушка леса',type:'forest',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:1,x:-2,y:-1},
+    'kl_-3_-2':{id:'kl_-3_-2',name:'Опушка леса',type:'forest',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:2,x:-3,y:-2},
+    'kl_-4_-3':{id:'kl_-4_-3',name:'Опушка леса',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-4,y:-3},
+    'kl_-3_-1':{id:'kl_-3_-1',name:'Опушка леса',type:'forest',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:2,x:-3,y:-1},
+    'kl_-4_-2':{id:'kl_-4_-2',name:'Опушка леса',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-4,y:-2},
+    'kl_-4_-1':{id:'kl_-4_-1',name:'Опушка леса',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Лесосека'],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-4,y:-1},
 
     // ==================== Сектор СЕВЕР — СЕВЕРО-ВОСТОК (Прибрежные холмы) ====================
     'kl_1_-2':{id:'kl_1_-2',name:'Прибрежные холмы',type:'mountain',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:2,x:1,y:-2},
     'kl_1_-3':{id:'kl_1_-3',name:'Прибрежные холмы',type:'mountain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:3,x:1,y:-3},
-    'kl_2_-3':{id:'kl_2_-3',name:'Шахта',type:'mountain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Шахта'],actions:[],resourceType:'mountain',resources:['Камень','Руда','Уголь'],zoneNumber:3,x:2,y:-3},
+    'kl_2_-3':{id:'kl_2_-3',name:'Шахта',type:'mountain',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:['Шахта'],actions:[],resourceType:'mountain',resources:[{name:'Камень',chance:70},{name:'Уголь',chance:20},{name:'Руда',chance:10}],zoneNumber:3,x:2,y:-3},
     'kl_1_-4':{id:'kl_1_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:1,y:-4},
     'kl_2_-4':{id:'kl_2_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:2,y:-4},
     'kl_3_-4':{id:'kl_3_-4',name:'Прибрежные холмы',type:'mountain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'mountain',resources:['Камень','Руда'],zoneNumber:4,x:3,y:-4},
@@ -102,14 +110,6 @@ const CROWNLANDS_AREAS = {
     'kl_1_4':{id:'kl_1_4',name:'Равнина',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:1,y:4},
     'kl_2_4':{id:'kl_2_4',name:'Равнина',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:2,y:4},
     'kl_3_4':{id:'kl_3_4',name:'Равнина',type:'plain',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:4,x:3,y:4},
-
-    // ==================== Сектор ЗАПАД — СЕВЕРО-ЗАПАД (Опушка леса) ====================
-    'kl_-2_-1':{id:'kl_-2_-1',name:'Опушка леса',type:'forest',level:5,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:1,x:-2,y:-1},
-    'kl_-3_-2':{id:'kl_-3_-2',name:'Опушка леса',type:'forest',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:2,x:-3,y:-2},
-    'kl_-4_-3':{id:'kl_-4_-3',name:'Опушка леса',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-4,y:-3},
-    'kl_-3_-1':{id:'kl_-3_-1',name:'Опушка леса',type:'forest',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:2,x:-3,y:-1},
-    'kl_-4_-2':{id:'kl_-4_-2',name:'Опушка леса',type:'forest',level:15,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:3,x:-4,y:-2},
-    'kl_-4_-1':{id:'kl_-4_-1',name:'Опушка леса',type:'forest',level:20,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'forest',resources:['Дерево','Шкура','Мясо'],zoneNumber:4,x:-4,y:-1},
 
     // ==================== Сектор СЕВЕРО-ЗАПАД — СЕВЕР (Предлесье) ====================
     'kl_-1_-2':{id:'kl_-1_-2',name:'Предлесье',type:'plain',level:10,region:'Королевские земли',area:'Королевская Гавань',owner:'crown',places:[],actions:[],resourceType:'plain',resources:['Пшеница','Овощи'],zoneNumber:2,x:-1,y:-2},
@@ -234,6 +234,16 @@ window.updateActions = function() {
     g.location.locationId = place;
     container.innerHTML = '';
     var actions = (loc.actions || []).slice();
+    
+    // Кнопка добычи для шахты
+    if (loc.places && loc.places.indexOf('Шахта') !== -1 && g.location.place === 'Шахта') {
+        actions.push({ id: 'mine', label: '⛏️ Добывать' });
+    }
+    // Кнопка рубки для лесосеки
+    if (loc.places && loc.places.indexOf('Лесосека') !== -1 && g.location.place === 'Лесосека') {
+        actions.push({ id: 'woodcut', label: '🪓 Рубить лес' });
+    }
+    
     actions.push({ id:'map', label:'🗺️ Карта' },{ id:'compass', label:'🧭 Компас' },{ id:'search', label:'🔍 Поиск' },
                  { id:'inventory', label:'🎒 Инвентарь' },{ id:'character', label:'👤 Персонаж' },{ id:'menu', label:'📋 Меню' });
     actions.forEach(function(a) {
