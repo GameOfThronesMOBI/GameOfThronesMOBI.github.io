@@ -253,6 +253,38 @@ function enterGame(name) {
                 convertCurrency(g);
                 setMessage('🧹 +' + coins + ' МП.');
             }
+            if (g.busyAction === 'Чтение' && g.busyData) {
+                var bookIndex = g.busyData.bookIndex;
+                if (bookIndex !== undefined && bookIndex < g.inventory.length) {
+                    var item = g.inventory[bookIndex];
+                    if (item && item.isBook) {
+                        var weapon = g.equipment.rightHand;
+                        var weaponType = weapon ? weapon.type : null;
+                        if (weaponType) {
+                            var xpMultiplier = 1 + (g.stats.intelligence / 100);
+                            var xpGain = Math.round(item.xp * xpMultiplier);
+                            g.xp += xpGain;
+                            while (g.xp >= g.nextLevelXp) {
+                                g.xp -= g.nextLevelXp;
+                                g.level++;
+                                g.nextLevelXp = 100 + g.level * 10;
+                                if (g.level <= 100) g.attributePoints++;
+                            }
+                            if (g.skills[weaponType]) {
+                                g.skills[weaponType].xp = (g.skills[weaponType].xp || 0) + xpGain;
+                                var needed = g.skills[weaponType].level * 20 + 10;
+                                while (g.skills[weaponType].xp >= needed) {
+                                    g.skills[weaponType].xp -= needed;
+                                    g.skills[weaponType].level = Math.min(999, g.skills[weaponType].level + 1);
+                                }
+                            }
+                            g.inventory.splice(bookIndex, 1);
+                            setMessage('📖 Вы прочитали книгу! +' + xpGain + ' XP');
+                            updateMenu();
+                        }
+                    }
+                }
+            }
             g.busyUntil = null;
             g.busyAction = null;
             g.busyData = null;
@@ -599,11 +631,11 @@ function startBusy(actionName, minutes, callback, busyAction, busyData) {
         clearInterval(busyInterval);
         statusEl.classList.add('hide');
         busyTimer = null;
+        if (callback) callback();
         g.busyUntil = null;
         g.busyAction = null;
         g.busyData = null;
         saveData();
-        if (callback) callback();
         updateActions();
     }, minutes * 60 * 1000);
     
