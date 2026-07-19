@@ -94,7 +94,7 @@ window.updateStory = function() {
     var g = user.game;
     var place = g.location.place;
     
-    if (place === 'Дорога' || (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[place])) {
+    if (place === 'Дорога' || (typeof WORLD_AREAS !== 'undefined' && (WORLD_AREAS[place] || (g.location.parentZone && WORLD_AREAS[g.location.parentZone])))) {
     if (typeof _kingsLandingPrevUpdateStory === 'function') {
         return _kingsLandingPrevUpdateStory();
     }
@@ -151,7 +151,7 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
-    if (place === 'Дорога' || (typeof WORLD_AREAS !== 'undefined' && WORLD_AREAS[place])) {
+    if (place === 'Дорога' || (typeof WORLD_AREAS !== 'undefined' && (WORLD_AREAS[place] || (g.location.parentZone && WORLD_AREAS[g.location.parentZone])))) {
     if (typeof _kingsLandingPrevUpdateActions === 'function') {
         return _kingsLandingPrevUpdateActions();
     }
