@@ -125,6 +125,12 @@ Object.assign(WORLD_AREAS, CROWNLANDS_AREAS);
 window.WORLD_AREAS = WORLD_AREAS;
 
 // ============================================================
+// СОХРАНЯЕМ ПРЕДЫДУЩИЕ ОБРАБОТЧИКИ (ДО ПЕРЕОПРЕДЕЛЕНИЯ)
+// ============================================================
+var _areasPrevUpdateStory = window.updateStory;
+var _areasPrevUpdateActions = window.updateActions;
+
+// ============================================================
 // ГЛОБАЛЬНЫЙ ГЕНЕРАТОР ПЕРЕХОДОВ
 // ============================================================
 
@@ -231,7 +237,6 @@ window.updateActions = function() {
     var g = users[currentUser].game; var place = g.location.place;
     var container = document.getElementById('actions-container'); if (!container) return;
     
-    // Ищем зону: либо сам place, либо parentZone
     var loc = WORLD_AREAS[place];
     if (!loc && g.location.parentZone) {
         loc = WORLD_AREAS[g.location.parentZone];
@@ -243,11 +248,9 @@ window.updateActions = function() {
     container.innerHTML = '';
     var actions = (loc.actions || []).slice();
     
-    // Кнопка добычи для шахты
     if (loc.places && loc.places.indexOf('Шахта') !== -1 && g.location.place === 'Шахта') {
         actions.push({ id: 'mine', label: '⛏️ Добывать' });
     }
-    // Кнопка рубки для лесосеки
     if (loc.places && loc.places.indexOf('Лесосека') !== -1 && g.location.place === 'Лесосека') {
         actions.push({ id: 'woodcut', label: '🪓 Рубить лес' });
     }
@@ -267,8 +270,9 @@ window.updateActions = function() {
     });
 };
 
-var _areasPrevUpdateStory = window.updateStory;
-var _areasPrevUpdateActions = window.updateActions;
+// ============================================================
+// ПЕРЕОПРЕДЕЛЯЕМ
+// ============================================================
 window.updateStory = updateStory;
 window.updateActions = updateActions;
 
