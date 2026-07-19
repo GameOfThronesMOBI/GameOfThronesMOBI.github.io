@@ -1,15 +1,10 @@
 // ============================================================
 // js/regions/crownlands/locations/kings_landing_castle.js
-// КРАСНЫЙ ЗАМОК — 10 ЗДАНИЙ
+// КРАСНЫЙ ЗАМОК — 10 ЗДАНИЙ (НЕЗАВИСИМЫЙ)
 // ============================================================
 
-// Сохраняем предыдущие обработчики
 var _castlePrevUpdateStory = window.updateStory;
 var _castlePrevUpdateActions = window.updateActions;
-
-// ============================================================
-// 1. ЗДАНИЯ КРАСНОГО ЗАМКА
-// ============================================================
 
 const CASTLE_BUILDINGS = [
     { id: 'castle_gate', label: '🚪 Ворота замка' },
@@ -24,13 +19,8 @@ const CASTLE_BUILDINGS = [
     { id: 'castle_stable', label: '🐴 Конюшня' }
 ];
 
-// ============================================================
-// 2. КАРТА ЗАМКА
-// ============================================================
-
 function openCastleMap() {
     var g = users[currentUser].game;
-    
     var modal = document.getElementById('modal-map');
     var content = document.getElementById('modal-map-content');
     
@@ -55,10 +45,6 @@ function openCastleMap() {
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
-
-// ============================================================
-// 3. ПЕРЕМЕЩЕНИЕ ПО ЗАМКУ
-// ============================================================
 
 function goToCastleBuilding(building) {
     var g = users[currentUser].game;
@@ -85,37 +71,27 @@ function goToCastleBuilding(building) {
 }
 
 // ============================================================
-// 4. STORY ДЛЯ ЗАМКА
+// STORY
 // ============================================================
 
 window.updateStory = function() {
     var g = users[currentUser].game;
     var place = g.location.place;
     
-    // Если это не замок — передаём управление дальше
     var isCastle = false;
     for (var i = 0; i < CASTLE_BUILDINGS.length; i++) {
         if (CASTLE_BUILDINGS[i].id === place) { isCastle = true; break; }
     }
     
     if (!isCastle) {
-        if (typeof _castlePrevUpdateStory === 'function') {
-            return _castlePrevUpdateStory();
-        }
+        if (typeof _castlePrevUpdateStory === 'function') return _castlePrevUpdateStory();
         return;
     }
     
     var titleEl = document.getElementById('story-title');
     var textEl = document.getElementById('story-text');
     
-    var buildingNames = {};
-    for (var i = 0; i < CASTLE_BUILDINGS.length; i++) {
-        buildingNames[CASTLE_BUILDINGS[i].id] = CASTLE_BUILDINGS[i].label;
-    }
-    
-    if (titleEl) {
-        titleEl.textContent = '🏰 Красный замок';
-    }
+    if (titleEl) titleEl.textContent = '🏰 Красный замок';
     
     var texts = {
         'castle_gate': '🚪 Ворота Красного замка. Отсюда можно выйти в город.',
@@ -130,17 +106,13 @@ window.updateStory = function() {
         'castle_stable': '🐴 Замковая конюшня.'
     };
     
-    if (textEl) {
-        textEl.textContent = texts[place] || 'Вы в ' + (buildingNames[place] || place);
-    }
+    if (textEl) textEl.textContent = texts[place] || 'Вы в ' + place;
     
-    if (typeof updateActions === 'function') {
-        updateActions();
-    }
+    if (typeof updateActions === 'function') updateActions();
 };
 
 // ============================================================
-// 5. ACTIONS ДЛЯ ЗАМКА
+// ACTIONS
 // ============================================================
 
 window.updateActions = function() {
@@ -149,27 +121,19 @@ window.updateActions = function() {
     var container = document.getElementById('actions-container');
     if (!container) return;
     
+    // Если зона не замковая — выходим, не трогаем цепочку
     var isCastle = false;
     for (var i = 0; i < CASTLE_BUILDINGS.length; i++) {
         if (CASTLE_BUILDINGS[i].id === place) { isCastle = true; break; }
     }
-    
-    if (!isCastle) {
-        if (typeof _castlePrevUpdateActions === 'function') {
-            return _castlePrevUpdateActions();
-        }
-        return;
-    }
+    if (!isCastle) return;
     
     container.innerHTML = '';
     var actions = [];
     
-    // Кнопка выхода из замка
     if (place === 'castle_gate') {
         actions.push({ id: 'leave_castle', label: '🚪 Выйти в город' });
     }
-    
-    // Основные действия
     if (place === 'castle_barracks') {
         actions.push({ id: 'barracks_manage', label: '⚔️ Управление армией' });
     }
@@ -195,7 +159,6 @@ window.updateActions = function() {
         actions.push({ id: 'castle_stable_open', label: '🐴 Конюшня' });
     }
     
-    // Глобальные кнопки
     actions.push({ id: 'castle_map', label: '🗺️ Карта замка' });
     actions.push({ id: 'inventory', label: '🎒 Инвентарь' });
     actions.push({ id: 'character', label: '👤 Персонаж' });
@@ -208,10 +171,7 @@ window.updateActions = function() {
         btn.textContent = a.label;
         btn.onclick = (function(action) {
             return function() {
-                if (action.id === 'castle_map') {
-                    openCastleMap();
-                    return;
-                }
+                if (action.id === 'castle_map') { openCastleMap(); return; }
                 if (action.id === 'leave_castle') {
                     g.location.place = 'Ворота Красного замка';
                     g.location.location = 'Королевская Гавань';
@@ -219,11 +179,8 @@ window.updateActions = function() {
                     updateMenu(); updateStory(); updateActions(); saveData();
                     return;
                 }
-                if (typeof gameAction === 'function') {
-                    gameAction(action.id);
-                } else {
-                    setMessage('❌ Действие временно недоступно.');
-                }
+                if (typeof gameAction === 'function') gameAction(action.id);
+                else setMessage('❌ Действие временно недоступно.');
             };
         })(a);
         container.appendChild(btn);
@@ -231,7 +188,7 @@ window.updateActions = function() {
 };
 
 // ============================================================
-// 6. РЕГИСТРАЦИЯ
+// РЕГИСТРАЦИЯ
 // ============================================================
 
 window.openCastleMap = openCastleMap;
