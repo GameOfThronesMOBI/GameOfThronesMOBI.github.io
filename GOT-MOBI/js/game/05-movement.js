@@ -201,7 +201,7 @@ window.openWorldMap = function() {
     
     var cols = maxX - minX + 1;
     var rows = maxY - minY + 1;
-    var cellSize = Math.max(8, Math.min(20, Math.floor(400 / Math.max(cols, rows))));
+    var cellSize = Math.max(10, Math.min(24, Math.floor(420 / Math.max(cols, rows))));
     
     var modal = document.getElementById('modal-world-map');
     if (!modal) {
@@ -250,7 +250,6 @@ window.openWorldMap = function() {
         if (z.y > areas[z.area].maxY) areas[z.area].maxY = z.y;
     }
     
-    // Функция получения информации о замке из HOUSES
     function getCastleInfo(zone) {
         if (!zone || !zone.owner) return null;
         if (zone.owner === 'crown') return { castle: 'Красный замок', house: 'Баратеоны', sigil: '🦌' };
@@ -263,23 +262,20 @@ window.openWorldMap = function() {
     
     var html = '<div class="modal-section">';
     html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
-    html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">';
-    html += 'Вы: ⭐ | 👑 Корона | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
+    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
+    html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
     html += '</p>';
-    html += '<p style="color:#6a5a48;font-size:10px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
+    html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
     
-    // Кнопка переключения владений
     html += '<div style="text-align:center;margin:6px 0;">';
-    html += '<button class="btn btn-small" onclick="toggleOwnerColors()" id="btn-toggle-owners" style="font-size:10px;">🎨 Показать владения</button>';
+    html += '<button class="btn btn-small" onclick="toggleOwnerColors()" id="btn-toggle-owners" style="font-size:11px;">🎨 Показать владения</button>';
     html += '</div>';
     html += '</div>';
     
-    // Список областей
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
         var aa = areas[a];
-        // Ищем замок в этой области
         var areaCastle = '';
         for (var i = 0; i < allZones.length; i++) {
             if (allZones[i].area === a && (allZones[i].type === 'castle' || allZones[i].type === 'castle_gate')) {
@@ -288,11 +284,10 @@ window.openWorldMap = function() {
                 break;
             }
         }
-        // Для Королевской Гавани
         if (!areaCastle && a === 'Королевская Гавань') {
             areaCastle = ' 🏰 Красный замок 🦌 Баратеоны';
         }
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaCastle + '</span>';
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:11px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaCastle + '</span>';
     }
     html += '</div>';
     
@@ -309,7 +304,6 @@ window.openWorldMap = function() {
             var castleInfo = zone ? getCastleInfo(zone) : null;
             
             if (zone) {
-                // Цвет: берег vs мелководье
                 var colorKey = zone.type;
                 if (zone.type === 'coast' && zone.resourceType === 'shallows') {
                     colorKey = 'shallows';
@@ -355,66 +349,69 @@ window.openWorldMap = function() {
                     emoji = '🏚️';
                 } else if (isAreaCenter && ownerEmoji && !_showOwners) {
                     emoji = ownerEmoji;
-                } else if (_showOwners && ownerEmoji && cellSize >= 14) {
+                } else if (_showOwners && ownerEmoji) {
                     emoji = ownerEmoji;
                 }
                 
                 if (zone.id === currentId) isCurrent = true;
             }
             
-            // Текст под эмодзи для замков/столиц
+            // Текст замка/города
             var subText = '';
+            var subText2 = '';
             if (zone) {
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     subText = zone.area;
                 } else if ((zone.type === 'castle' || zone.type === 'castle_gate') && castleInfo) {
                     subText = castleInfo.castle;
                 }
-            }
-            
-            // Вторая строка — дом-владелец (для замков и столиц)
-            var subText2 = '';
-            if (zone && castleInfo) {
-                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
-                    subText2 = castleInfo.sigil + ' ' + castleInfo.house;
-                } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
+                if (castleInfo && (subText || zone.type === 'crossroads')) {
                     subText2 = castleInfo.sigil + ' ' + castleInfo.house;
                 }
             }
             
-            var cellHeight = cellSize;
-            if (subText) cellHeight = Math.floor(cellSize * 2.2);
+            var fontSize = Math.max(8, Math.floor(cellSize * 0.4));
+            var fontSizeSmall = Math.max(7, Math.floor(cellSize * 0.32));
+            var emojiSize = Math.max(10, Math.floor(cellSize * 0.55));
             
             html += '<div style="';
-            html += 'width:' + cellSize + 'px;height:' + cellHeight + 'px;';
+            html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
             html += 'background:' + bg + ';';
-            html += 'display:flex;flex-direction:column;align-items:center;justify-content:center;';
-            html += 'font-size:' + Math.floor(cellSize*0.5) + 'px;';
+            html += 'position:relative;';
             html += 'border-radius:2px;';
-            html += 'color:#fff;';
-            html += 'line-height:1.1;';
-            html += 'overflow:hidden;';
+            html += 'overflow:visible;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
-            if (isCurrent && cellSize >= 12) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.6) + 'px;">⭐</span>';
-            } else if (emoji && cellSize >= 14) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.6) + 'px;">' + emoji + '</span>';
+            
+            // Эмодзи по центру
+            html += '<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:' + emojiSize + 'px;pointer-events:none;z-index:1;">';
+            if (isCurrent) {
+                html += '⭐';
+            } else if (emoji) {
+                html += emoji;
             }
-            if (subText) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.22) + 'px;color:#000;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText + '</span>';
+            html += '</div>';
+            
+            // Текст замка/города поверх
+            if (subText || subText2) {
+                html += '<div style="position:absolute;bottom:-' + Math.floor(cellSize*0.8) + 'px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;z-index:10;white-space:nowrap;">';
+                if (subText) {
+                    html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.85);padding:2px 4px;border-radius:3px;">' + subText + '</span>';
+                }
+                if (subText2) {
+                    html += '<br><span style="font-size:' + fontSizeSmall + 'px;color:#fff;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;">' + subText2 + '</span>';
+                }
+                html += '</div>';
             }
-            if (subText2 && cellSize >= 14) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.2) + 'px;color:#333;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText2 + '</span>';
-            }
+            
             html += '</div>';
         }
     }
     
     html += '</div></div>';
     
-    html += '<div class="modal-section" style="margin-top:8px;">';
-    html += '<p style="color:#6a5a48;font-size:11px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
+    html += '<div class="modal-section" style="margin-top:12px;">';
+    html += '<p style="color:#6a5a48;font-size:12px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
     html += '</div>';
     
     html += '<button class="btn btn-secondary" onclick="closeWorldMap()" style="margin-top:8px;">Закрыть</button>';
