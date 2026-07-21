@@ -201,7 +201,7 @@ window.openWorldMap = function() {
     
     var cols = maxX - minX + 1;
     var rows = maxY - minY + 1;
-    var cellSize = Math.max(10, Math.min(24, Math.floor(420 / Math.max(cols, rows))));
+    var cellSize = Math.max(12, Math.min(28, Math.floor(450 / Math.max(cols, rows))));
     
     var modal = document.getElementById('modal-world-map');
     if (!modal) {
@@ -370,38 +370,33 @@ window.openWorldMap = function() {
                 }
             }
             
-            var fontSize = Math.max(8, Math.floor(cellSize * 0.4));
-            var fontSizeSmall = Math.max(7, Math.floor(cellSize * 0.32));
-            var emojiSize = Math.max(10, Math.floor(cellSize * 0.55));
+            var fontSize = Math.max(10, Math.floor(cellSize * 0.5));
+            var fontSizeSmall = Math.max(9, Math.floor(cellSize * 0.4));
+            var emojiSize = Math.max(12, Math.floor(cellSize * 0.6));
             
             html += '<div style="';
             html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
             html += 'background:' + bg + ';';
-            html += 'position:relative;';
+            html += 'display:flex;flex-direction:column;align-items:center;justify-content:center;';
             html += 'border-radius:2px;';
             html += 'overflow:visible;';
+            html += 'z-index:1;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            // Эмодзи по центру
-            html += '<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:' + emojiSize + 'px;pointer-events:none;z-index:1;">';
+            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;">';
             if (isCurrent) {
                 html += '⭐';
             } else if (emoji) {
                 html += emoji;
             }
-            html += '</div>';
+            html += '</span>';
             
-            // Текст замка/города поверх
-            if (subText || subText2) {
-                html += '<div style="position:absolute;bottom:-' + Math.floor(cellSize*0.8) + 'px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;z-index:10;white-space:nowrap;">';
-                if (subText) {
-                    html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.85);padding:2px 4px;border-radius:3px;">' + subText + '</span>';
-                }
-                if (subText2) {
-                    html += '<br><span style="font-size:' + fontSizeSmall + 'px;color:#fff;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;">' + subText2 + '</span>';
-                }
-                html += '</div>';
+            if (subText) {
+                html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.85);padding:2px 4px;border-radius:3px;margin-top:-2px;line-height:1.1;white-space:nowrap;z-index:10;">' + subText + '</span>';
+            }
+            if (subText2) {
+                html += '<span style="font-size:' + fontSizeSmall + 'px;color:#fff;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;margin-top:1px;line-height:1.1;white-space:nowrap;z-index:10;">' + subText2 + '</span>';
             }
             
             html += '</div>';
