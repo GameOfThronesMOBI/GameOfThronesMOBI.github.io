@@ -251,11 +251,30 @@ window.openWorldMap = function() {
     }
     
     function getCastleInfo(zone) {
-        if (!zone || !zone.owner) return null;
-        if (zone.owner === 'crown') return { castle: 'Красный замок', house: 'Баратеоны', sigil: '🦌' };
-        if (window.HOUSES && HOUSES[zone.owner]) {
-            var house = HOUSES[zone.owner];
-            return { castle: house.castle, house: house.name, sigil: house.sigil };
+        if (!zone) return null;
+        // Столица (Королевская Гавань) — Железный Трон
+        if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
+            var owner = zone.owner;
+            if (owner === 'crown') {
+                return { castle: 'Красный замок', house: 'Корона', sigil: '👑', throne: 'Железный Трон' };
+            } else if (owner && window.HOUSES && HOUSES[owner]) {
+                var house = HOUSES[owner];
+                return { castle: 'Красный замок', house: house.name, sigil: house.sigil, throne: 'Железный Трон' };
+            } else {
+                return { castle: 'Красный замок', house: 'Null', sigil: '❓', throne: 'Железный Трон' };
+            }
+        }
+        // Замки
+        if (zone.type === 'castle' || zone.type === 'castle_gate') {
+            var owner = zone.owner;
+            if (owner && owner !== 'crown' && window.HOUSES && HOUSES[owner]) {
+                var house = HOUSES[owner];
+                return { castle: house.castle || 'Замок', house: house.name, sigil: house.sigil };
+            } else if (owner === 'crown') {
+                return { castle: 'Королевский замок', house: 'Корона', sigil: '👑' };
+            } else {
+                return { castle: 'Замок', house: 'Null', sigil: '❓' };
+            }
         }
         return null;
     }
@@ -270,25 +289,6 @@ window.openWorldMap = function() {
     html += '<div style="text-align:center;margin:6px 0;">';
     html += '<button class="btn btn-small" onclick="toggleOwnerColors()" id="btn-toggle-owners" style="font-size:11px;">🎨 Показать владения</button>';
     html += '</div>';
-    html += '</div>';
-    
-    html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
-    html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
-    for (var a in areas) {
-        var aa = areas[a];
-        var areaCastle = '';
-        for (var i = 0; i < allZones.length; i++) {
-            if (allZones[i].area === a && (allZones[i].type === 'castle' || allZones[i].type === 'castle_gate')) {
-                var ci = getCastleInfo(allZones[i]);
-                if (ci) areaCastle = ' 🏰 ' + ci.castle + ' ' + ci.sigil + ' ' + ci.house;
-                break;
-            }
-        }
-        if (!areaCastle && a === 'Королевская Гавань') {
-            areaCastle = ' 🏰 Красный замок 🦌 Баратеоны';
-        }
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:11px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaCastle + '</span>';
-    }
     html += '</div>';
     
     // Контейнер карты с абсолютным позиционированием
@@ -369,8 +369,12 @@ window.openWorldMap = function() {
                 } else if ((zone.type === 'castle' || zone.type === 'castle_gate') && castleInfo) {
                     subText = castleInfo.castle;
                 }
-                if (castleInfo && (subText || zone.type === 'crossroads')) {
-                    subText2 = castleInfo.sigil + ' ' + castleInfo.house;
+                if (castleInfo) {
+                    if (castleInfo.throne) {
+                        subText2 = castleInfo.sigil + ' ' + castleInfo.house;
+                    } else if (subText || zone.type === 'crossroads') {
+                        subText2 = castleInfo.sigil + ' ' + castleInfo.house;
+                    }
                 }
             }
             
@@ -407,10 +411,10 @@ window.openWorldMap = function() {
                 var labelTop = top + cellSize + 2;
                 html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
                 if (subText) {
-                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;padding:1px 4px;white-space:nowrap;margin-bottom:1px;opacity:0.7;">' + subText + '</div>';
+                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;padding:1px 4px;white-space:nowrap;margin-bottom:1px;opacity:0.9;">' + subText + '</div>';
                 }
                 if (subText2) {
-                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ccc;padding:1px 3px;white-space:nowrap;opacity:0.7;">' + subText2 + '</div>';
+                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ccc;padding:1px 3px;white-space:nowrap;opacity:0.9;">' + subText2 + '</div>';
                 }
                 html += '</div>';
             }
@@ -419,7 +423,28 @@ window.openWorldMap = function() {
     
     html += '</div></div>';
     
-    html += '<div class="modal-section" style="margin-top:12px;">';
+    // Список областей (под картой)
+    html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;margin-top:8px;">';
+    html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
+    for (var a in areas) {
+        var aa = areas[a];
+        var areaOwner = '';
+        for (var i = 0; i < allZones.length; i++) {
+            if (allZones[i].area === a && allZones[i].owner && allZones[i].owner !== 'crown' && allZones[i].owner !== 'none') {
+                if (window.HOUSES && HOUSES[allZones[i].owner]) {
+                    areaOwner = ' ' + HOUSES[allZones[i].owner].sigil + ' ' + HOUSES[allZones[i].owner].name;
+                }
+                break;
+            }
+        }
+        if (!areaOwner && a === 'Королевская Гавань') {
+            areaOwner = ' 👑 Корона';
+        }
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:11px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaOwner + '</span>';
+    }
+    html += '</div>';
+    
+    html += '<div class="modal-section" style="margin-top:8px;">';
     html += '<p style="color:#6a5a48;font-size:12px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
     html += '</div>';
     
