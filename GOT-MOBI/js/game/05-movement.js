@@ -6,6 +6,15 @@ console.log('🧭 Система перемещений загружается..
 
 var _showOwners = false;
 
+// Информация об областях: замки и дома-владельцы
+var AREA_INFO = {
+    'Королевская Гавань': { castle: 'Красный замок', house: 'Баратеоны' },
+    'Владения Баклеров': { castle: 'Бронзовый Щит', house: 'Баклеры' }
+    // Добавляй новые области сюда:
+    // 'Северные земли': { castle: 'Винтерфелл', house: 'Старки' },
+    // 'Западные земли': { castle: 'Утёс Кастерли', house: 'Ланнистеры' },
+};
+
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
     if (nextId === 'kl_0_0') return '👑';
@@ -263,26 +272,30 @@ window.openWorldMap = function() {
     html += '</div>';
     html += '</div>';
     
+    // Список областей с замками и домами
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
         var aa = areas[a];
-        // Ищем дом-владелец для этой области
-        var areaOwner = '';
-        for (var i = 0; i < allZones.length; i++) {
-            if (allZones[i].area === a && allZones[i].owner && allZones[i].owner !== 'crown' && allZones[i].owner !== 'none') {
-                if (window.HOUSES && HOUSES[allZones[i].owner]) {
-                    areaOwner = ' ' + HOUSES[allZones[i].owner].sigil + ' ' + HOUSES[allZones[i].owner].name;
-                } else if (allZones[i].owner === 'crown') {
-                    areaOwner = ' 👑 Корона';
+        var areaInfo = AREA_INFO[a];
+        var infoStr = '';
+        if (areaInfo) {
+            infoStr = ' 🏰 ' + areaInfo.castle;
+            // Ищем эмодзи дома
+            if (window.HOUSES) {
+                for (var hid in HOUSES) {
+                    if (HOUSES[hid].name === areaInfo.house) {
+                        infoStr += ' ' + HOUSES[hid].sigil + ' ' + areaInfo.house;
+                        break;
+                    }
                 }
-                break;
             }
         }
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaOwner + '</span>';
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + infoStr + '</span>';
     }
     html += '</div>';
     
+    // Сетка мира
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
     html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',' + cellSize + 'px);gap:1px;background:#0a0806;padding:1px;border-radius:8px;width:fit-content;min-width:' + (cols*cellSize+2) + 'px;">';
     
@@ -298,6 +311,9 @@ window.openWorldMap = function() {
                 // Цвет по типу зоны
                 bg = typeColors[zone.type] || '#3d3026';
                 title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
+                
+                // Информация о замке и доме
+                var areaInfo = AREA_INFO[zone.area];
                 
                 // Если включён режим показа владений — красим по дому
                 if (_showOwners && zone.owner) {
@@ -331,8 +347,10 @@ window.openWorldMap = function() {
                 // Эмодзи для особых зон
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
+                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | 🦌 ' + areaInfo.house;
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
                     emoji = '🏰';
+                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | 🦌 ' + areaInfo.house;
                 } else if (zone.type === 'village') {
                     emoji = '🏘️';
                 } else if (zone.places && zone.places.indexOf('Деревня') !== -1) {
@@ -344,10 +362,8 @@ window.openWorldMap = function() {
                 } else if (zone.type === 'ruins') {
                     emoji = '🏚️';
                 } else if (isAreaCenter && ownerEmoji && !_showOwners) {
-                    // В обычном режиме — показываем владельца в центре области
                     emoji = ownerEmoji;
                 } else if (_showOwners && ownerEmoji && cellSize >= 14) {
-                    // В режиме владений — показываем владельца на каждой клетке
                     emoji = ownerEmoji;
                 }
                 
