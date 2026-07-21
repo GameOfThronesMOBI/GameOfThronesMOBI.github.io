@@ -6,15 +6,6 @@ console.log('🧭 Система перемещений загружается..
 
 var _showOwners = false;
 
-// Информация об областях: замки и дома-владельцы
-var AREA_INFO = {
-    'Королевская Гавань': { castle: 'Красный замок', house: 'Баратеоны' },
-    'Владения Баклеров': { castle: 'Бронзовый Щит', house: 'Баклеры' }
-    // Добавляй новые области сюда:
-    // 'Северные земли': { castle: 'Винтерфелл', house: 'Старки' },
-    // 'Западные земли': { castle: 'Утёс Кастерли', house: 'Ланнистеры' },
-};
-
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
     if (nextId === 'kl_0_0') return '👑';
@@ -259,6 +250,17 @@ window.openWorldMap = function() {
         if (z.y > areas[z.area].maxY) areas[z.area].maxY = z.y;
     }
     
+    // Функция получения информации о замке из HOUSES
+    function getCastleInfo(zone) {
+        if (!zone || !zone.owner) return null;
+        if (zone.owner === 'crown') return { castle: 'Красный замок', house: 'Баратеоны', sigil: '🦌' };
+        if (window.HOUSES && HOUSES[zone.owner]) {
+            var house = HOUSES[zone.owner];
+            return { castle: house.castle, house: house.name, sigil: house.sigil };
+        }
+        return null;
+    }
+    
     var html = '<div class="modal-section">';
     html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">';
@@ -272,25 +274,25 @@ window.openWorldMap = function() {
     html += '</div>';
     html += '</div>';
     
-    // Список областей с замками и домами
+    // Список областей
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
         var aa = areas[a];
-        var areaInfo = AREA_INFO[a];
-        var infoStr = '';
-        if (areaInfo) {
-            infoStr = ' 🏰 ' + areaInfo.castle;
-            if (window.HOUSES) {
-                for (var hid in HOUSES) {
-                    if (HOUSES[hid].name === areaInfo.house) {
-                        infoStr += ' ' + HOUSES[hid].sigil + ' ' + areaInfo.house;
-                        break;
-                    }
-                }
+        // Ищем замок в этой области
+        var areaCastle = '';
+        for (var i = 0; i < allZones.length; i++) {
+            if (allZones[i].area === a && (allZones[i].type === 'castle' || allZones[i].type === 'castle_gate')) {
+                var ci = getCastleInfo(allZones[i]);
+                if (ci) areaCastle = ' 🏰 ' + ci.castle + ' ' + ci.sigil + ' ' + ci.house;
+                break;
             }
         }
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + infoStr + '</span>';
+        // Для Королевской Гавани
+        if (!areaCastle && a === 'Королевская Гавань') {
+            areaCastle = ' 🏰 Красный замок 🦌 Баратеоны';
+        }
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaCastle + '</span>';
     }
     html += '</div>';
     
@@ -304,10 +306,15 @@ window.openWorldMap = function() {
             var bg = '#0a0806';
             var emoji = '';
             var isCurrent = false;
-            var areaInfo = zone ? AREA_INFO[zone.area] : null;
+            var castleInfo = zone ? getCastleInfo(zone) : null;
             
             if (zone) {
-                bg = typeColors[zone.type] || '#3d3026';
+                // Цвет: берег vs мелководье
+                var colorKey = zone.type;
+                if (zone.type === 'coast' && zone.resourceType === 'shallows') {
+                    colorKey = 'shallows';
+                }
+                bg = typeColors[colorKey] || '#3d3026';
                 
                 if (_showOwners && zone.owner) {
                     if (zone.owner === 'crown') {
@@ -355,18 +362,28 @@ window.openWorldMap = function() {
                 if (zone.id === currentId) isCurrent = true;
             }
             
-            // Текст под эмодзи для замков/столиц (всегда)
+            // Текст под эмодзи для замков/столиц
             var subText = '';
-            if (zone && areaInfo) {
+            if (zone) {
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     subText = zone.area;
+                } else if ((zone.type === 'castle' || zone.type === 'castle_gate') && castleInfo) {
+                    subText = castleInfo.castle;
+                }
+            }
+            
+            // Вторая строка — дом-владелец (для замков и столиц)
+            var subText2 = '';
+            if (zone && castleInfo) {
+                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
+                    subText2 = castleInfo.sigil + ' ' + castleInfo.house;
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
-                    subText = areaInfo.castle;
+                    subText2 = castleInfo.sigil + ' ' + castleInfo.house;
                 }
             }
             
             var cellHeight = cellSize;
-            if (subText) cellHeight = Math.floor(cellSize * 1.8);
+            if (subText) cellHeight = Math.floor(cellSize * 2.2);
             
             html += '<div style="';
             html += 'width:' + cellSize + 'px;height:' + cellHeight + 'px;';
@@ -380,12 +397,15 @@ window.openWorldMap = function() {
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             if (isCurrent && cellSize >= 12) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.7) + 'px;">⭐</span>';
+                html += '<span style="font-size:' + Math.floor(cellSize*0.6) + 'px;">⭐</span>';
             } else if (emoji && cellSize >= 14) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.7) + 'px;">' + emoji + '</span>';
+                html += '<span style="font-size:' + Math.floor(cellSize*0.6) + 'px;">' + emoji + '</span>';
             }
             if (subText) {
                 html += '<span style="font-size:' + Math.floor(cellSize*0.22) + 'px;color:#000;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText + '</span>';
+            }
+            if (subText2 && cellSize >= 14) {
+                html += '<span style="font-size:' + Math.floor(cellSize*0.2) + 'px;color:#333;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText2 + '</span>';
             }
             html += '</div>';
         }
