@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС (ГЛОБАЛЬНЫЙ, WORLD_*) ФИНАЛ
+// movement.js — КОМПАС (ГЛОБАЛЬНЫЙ, WORLD_*) ФИНАЛ + КАРТА МИРА
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -70,6 +70,11 @@ function openCompass() {
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">📍 ' + (loc ? loc.name : current);
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
+    
+    // Кнопка МИР
+    html += '<div style="text-align:center;margin-bottom:8px;">';
+    html += '<button class="btn btn-game" onclick="openWorldMap(); closeCompass();" style="display:inline-block;width:auto;padding:6px 16px;">🌍 Мир</button>';
+    html += '</div>';
     
     html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:4px;max-width:300px;margin:10px auto;">';
     
@@ -168,8 +173,165 @@ function moveTo(direction) {
     saveData();
 }
 
+// ============================================================
+// ГЛОБАЛЬНАЯ КАРТА МИРА
+// ============================================================
+
+window.openWorldMap = function() {
+    var g = users[currentUser].game;
+    var currentId = g.location.parentZone || g.location.locationId || g.location.place;
+    var currentLoc = WORLD_AREAS[currentId];
+    if (!currentLoc) { setMessage('📍 Вы не на внешней локации.'); return; }
+    
+    var allZones = [];
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    
+    for (var id in WORLD_AREAS) {
+        var z = WORLD_AREAS[id];
+        allZones.push(z);
+        if (z.x < minX) minX = z.x;
+        if (z.x > maxX) maxX = z.x;
+        if (z.y < minY) minY = z.y;
+        if (z.y > maxY) maxY = z.y;
+    }
+    
+    if (allZones.length === 0) { setMessage('❌ Мир пуст.'); return; }
+    
+    var cols = maxX - minX + 1;
+    var rows = maxY - minY + 1;
+    var cellSize = Math.max(8, Math.min(20, Math.floor(400 / Math.max(cols, rows))));
+    
+    var modal = document.getElementById('modal-world-map');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-world-map';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeWorldMap(); };
+        overlay.innerHTML = '<div class="modal-box" style="max-width:100%;width:95vw;"><div class="modal-header"><h3>🌍 МИР</h3><button class="close-btn" onclick="closeWorldMap()">✕</button></div><div id="modal-world-map-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-world-map-content');
+    
+    var typeColors = {
+        'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
+        'river': '#2980b9', 'coast': '#1a6b8a', 'sea': '#0d3b5c', 'shallows': '#1a5276',
+        'crossroads': '#8B7355', 'castle': '#4a3728', 'castle_gate': '#4a3728',
+        'village': '#6b8a3a', 'mine': '#3d3d3d', 'swamp': '#3d5020', 'wall': '#3d3d3d',
+        'training': '#5a4738', 'barracks': '#5a4738', 'forge': '#5a4738', 'armory': '#5a4738',
+        'library': '#5a4738', 'septa': '#5a4738', 'garden': '#3a6b3a', 'kitchen': '#5a4738',
+        'hall': '#5a4738', 'chambers': '#5a4738', 'dungeon': '#1a1a1a', 'crypt': '#1a1a1a',
+        'hideout': '#1a1a1a', 'balcony': '#5a4738', 'cellar': '#3d3d3d', 'stables': '#5a4738',
+        'arena': '#8B7355', 'field': '#7a9a3a', 'camp': '#6b6b3a', 'bandit_camp': '#5a3a2a',
+        'tower': '#6b6b6b', 'lighthouse': '#6b6b6b', 'bridge': '#8B7355', 'docks': '#8B7355',
+        'harbor': '#1a6b8a', 'trading_post': '#8B7355', 'ruins': '#5a5a4a', 'cave': '#3d3d3d',
+        'nest': '#5a3a2a', 'rock': '#6b6b6b', 'reef': '#1a6b8a', 'island': '#3a6b3a',
+        'wreck': '#5a4a3a', 'abyss': '#0a1a2a', 'maelstrom': '#0d3b5c', 'pirate_island': '#3a5a2a',
+        'cape': '#6b6b6b', 'bay': '#1a6b8a', 'hunting': '#4a6b2a', 'logging_camp': '#5a4a2a',
+        'farm': '#8a9a3a', 'border': '#4a3728'
+    };
+    
+    var lookup = {};
+    for (var i = 0; i < allZones.length; i++) {
+        var z = allZones[i];
+        lookup[z.x + ',' + z.y] = z;
+    }
+    
+    var areas = {};
+    for (var i = 0; i < allZones.length; i++) {
+        var z = allZones[i];
+        if (!areas[z.area]) areas[z.area] = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        if (z.x < areas[z.area].minX) areas[z.area].minX = z.x;
+        if (z.x > areas[z.area].maxX) areas[z.area].maxX = z.x;
+        if (z.y < areas[z.area].minY) areas[z.area].minY = z.y;
+        if (z.y > areas[z.area].maxY) areas[z.area].maxY = z.y;
+    }
+    
+    var html = '<div class="modal-section">';
+    html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
+    html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">';
+    html += 'Вы: ⭐ | 👑 Корона | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
+    html += '</p>';
+    html += '<p style="color:#6a5a48;font-size:10px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
+    html += '</div>';
+    
+    html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
+    html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
+    for (var a in areas) {
+        var aa = areas[a];
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')</span>';
+    }
+    html += '</div>';
+    
+    html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
+    html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',' + cellSize + 'px);gap:1px;background:#0a0806;padding:1px;border-radius:8px;width:fit-content;min-width:' + (cols*cellSize+2) + 'px;">';
+    
+    for (var y = minY; y <= maxY; y++) {
+        for (var x = minX; x <= maxX; x++) {
+            var zone = lookup[x + ',' + y];
+            var bg = '#0a0806';
+            var emoji = '';
+            var title = '';
+            var isCurrent = false;
+            
+            if (zone) {
+                bg = typeColors[zone.type] || '#3d3026';
+                title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
+                
+                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
+                    emoji = '👑';
+                } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
+                    emoji = '🏰';
+                } else if (zone.type === 'village') {
+                    emoji = '🏘️';
+                } else if (zone.places && zone.places.indexOf('Шахта') !== -1) {
+                    emoji = '⛏️';
+                } else if (zone.places && zone.places.indexOf('Лесосека') !== -1) {
+                    emoji = '🪓';
+                } else if (zone.type === 'ruins') {
+                    emoji = '🏚️';
+                }
+                
+                if (zone.id === currentId) isCurrent = true;
+            }
+            
+            html += '<div title="' + title + '" style="';
+            html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
+            html += 'background:' + bg + ';';
+            html += 'display:flex;align-items:center;justify-content:center;';
+            html += 'font-size:' + Math.floor(cellSize*0.7) + 'px;';
+            html += 'border-radius:1px;';
+            if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
+            html += '">';
+            if (isCurrent && cellSize >= 12) {
+                html += '⭐';
+            } else if (emoji && cellSize >= 14) {
+                html += emoji;
+            }
+            html += '</div>';
+        }
+    }
+    
+    html += '</div></div>';
+    
+    html += '<div class="modal-section" style="margin-top:8px;">';
+    html += '<p style="color:#6a5a48;font-size:11px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
+    html += '</div>';
+    
+    html += '<button class="btn btn-secondary" onclick="closeWorldMap()" style="margin-top:8px;">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+};
+
+window.closeWorldMap = function() {
+    var modal = document.getElementById('modal-world-map');
+    if (modal) modal.classList.add('hide');
+};
+
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
 window.moveTo = moveTo;
 
-console.log('✅ Система перемещений загружена!');
+console.log('✅ Система перемещений + Карта мира загружены!');
