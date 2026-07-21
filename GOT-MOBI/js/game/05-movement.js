@@ -73,7 +73,6 @@ function openCompass() {
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
     
-    // Кнопка МИР
     html += '<div style="text-align:center;margin-bottom:8px;">';
     html += '<button class="btn btn-game" onclick="openWorldMap(); closeCompass();" style="display:inline-block;width:auto;padding:6px 16px;">🌍 Мир</button>';
     html += '</div>';
@@ -252,7 +251,6 @@ window.openWorldMap = function() {
     
     function getCastleInfo(zone) {
         if (!zone) return null;
-        // Столица (Королевская Гавань) — Железный Трон
         if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
             var owner = zone.owner;
             if (owner === 'crown') {
@@ -264,7 +262,6 @@ window.openWorldMap = function() {
                 return { castle: 'Красный замок', house: 'Null', sigil: '❓', throne: 'Железный Трон' };
             }
         }
-        // Замки
         if (zone.type === 'castle' || zone.type === 'castle_gate') {
             var owner = zone.owner;
             if (owner && owner !== 'crown' && window.HOUSES && HOUSES[owner]) {
@@ -291,13 +288,13 @@ window.openWorldMap = function() {
     html += '</div>';
     html += '</div>';
     
-    // Контейнер карты с абсолютным позиционированием
+    // Контейнер карты
     var mapWidth = cols * cellSize;
     var mapHeight = rows * cellSize;
-    var padding = Math.floor(cellSize * 1.5);
+    var padding = Math.floor(cellSize * 2);
     
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
-    html += '<div style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
+    html += '<div id="world-map-container" style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
     
     for (var y = minY; y <= maxY; y++) {
         for (var x = minX; x <= maxX; x++) {
@@ -360,7 +357,6 @@ window.openWorldMap = function() {
                 if (zone.id === currentId) isCurrent = true;
             }
             
-            // Текст замка/города
             var subText = '';
             var subText2 = '';
             if (zone) {
@@ -378,9 +374,10 @@ window.openWorldMap = function() {
                 }
             }
             
-            var fontSize = Math.max(10, Math.floor(cellSize * 0.45));
-            var fontSizeSmall = Math.max(9, Math.floor(cellSize * 0.35));
-            var emojiSize = Math.max(12, Math.floor(cellSize * 0.55));
+            var fontSize = Math.max(11, Math.floor(cellSize * 0.5));
+            var fontSizeSmall = Math.max(10, Math.floor(cellSize * 0.4));
+            var emojiSize = Math.max(14, Math.floor(cellSize * 0.6));
+            var coordSize = Math.max(8, Math.floor(cellSize * 0.3));
             
             var left = (x - minX) * cellSize + 1;
             var top = (y - minY) * cellSize + padding + 1;
@@ -396,7 +393,8 @@ window.openWorldMap = function() {
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;">';
+            // Эмодзи по центру
+            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
             if (isCurrent) {
                 html += '⭐';
             } else if (emoji) {
@@ -404,9 +402,12 @@ window.openWorldMap = function() {
             }
             html += '</span>';
             
+            // Координаты в левом верхнем углу
+            html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
+            
             html += '</div>';
             
-            // Текст замка/города — абсолютно, поверх клетки
+            // Текст замка/города
             if (subText || subText2) {
                 var labelTop = top + cellSize + 2;
                 html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
@@ -423,7 +424,7 @@ window.openWorldMap = function() {
     
     html += '</div></div>';
     
-    // Список областей (под картой)
+    // Список областей
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;margin-top:8px;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
