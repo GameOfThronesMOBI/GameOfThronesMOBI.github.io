@@ -5,6 +5,8 @@
 console.log('🧭 Система перемещений загружается...');
 
 var _showOwners = false;
+var _showCoords = false;
+var _showLevels = false;
 
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
@@ -73,6 +75,7 @@ function openCompass() {
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
     
+    // Кнопка МИР
     html += '<div style="text-align:center;margin-bottom:8px;">';
     html += '<button class="btn btn-game" onclick="openWorldMap(); closeCompass();" style="display:inline-block;width:auto;padding:6px 16px;">🌍 Мир</button>';
     html += '</div>';
@@ -276,6 +279,47 @@ window.openWorldMap = function() {
         return null;
     }
     
+    // Собираем связные группы по владельцам
+    var ownerGroups = [];
+    if (_showOwners) {
+        var visited = {};
+        for (var i = 0; i < allZones.length; i++) {
+            var z = allZones[i];
+            var key = z.x + ',' + z.y;
+            if (visited[key]) continue;
+            if (!z.owner || z.owner === 'none') continue;
+            
+            var group = { owner: z.owner, zones: [], minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+            var queue = [z];
+            visited[key] = true;
+            
+            while (queue.length > 0) {
+                var cz = queue.shift();
+                group.zones.push(cz);
+                if (cz.x < group.minX) group.minX = cz.x;
+                if (cz.x > group.maxX) group.maxX = cz.x;
+                if (cz.y < group.minY) group.minY = cz.y;
+                if (cz.y > group.maxY) group.maxY = cz.y;
+                
+                // Соседи
+                for (var d in {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}) {
+                    var nx = cz.x + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][0];
+                    var ny = cz.y + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][1];
+                    var nkey = nx + ',' + ny;
+                    var nz = lookup[nkey];
+                    if (nz && !visited[nkey] && nz.owner === group.owner) {
+                        visited[nkey] = true;
+                        queue.push(nz);
+                    }
+                }
+            }
+            
+            if (group.zones.length >= 2) {
+                ownerGroups.push(group);
+            }
+        }
+    }
+    
     var html = '<div class="modal-section">';
     html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
@@ -283,8 +327,11 @@ window.openWorldMap = function() {
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
     
-    html += '<div style="text-align:center;margin:6px 0;">';
-    html += '<button class="btn btn-small" onclick="toggleOwnerColors()" id="btn-toggle-owners" style="font-size:11px;">🎨 Показать владения</button>';
+    // Галочки
+    html += '<div style="text-align:center;margin:6px 0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">';
+    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleCoords()"><input type="checkbox" id="chk-coords" ' + (_showCoords ? 'checked' : '') + '> 📍 Координаты</label>';
+    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleLevels()"><input type="checkbox" id="chk-levels" ' + (_showLevels ? 'checked' : '') + '> 📈 Уровни</label>';
+    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleOwnerColors()"><input type="checkbox" id="chk-owners" ' + (_showOwners ? 'checked' : '') + '> 🎨 Владения</label>';
     html += '</div>';
     html += '</div>';
     
@@ -296,6 +343,36 @@ window.openWorldMap = function() {
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
     html += '<div id="world-map-container" style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
     
+    // Сначала рисуем рамки владений (под клетками)
+    for (var gi = 0; gi < ownerGroups.length; gi++) {
+        var group = ownerGroups[gi];
+        var frameLeft = (group.minX - minX) * cellSize + 1;
+        var frameTop = (group.minY - minY) * cellSize + padding + 1;
+        var frameW = (group.maxX - group.minX + 1) * cellSize - 2;
+        var frameH = (group.maxY - group.minY + 1) * cellSize - 2;
+        
+        var houseColor = '#ffd700';
+        var houseLabel = '';
+        if (group.owner === 'crown') {
+            houseColor = '#ffd700';
+            houseLabel = '👑 Корона';
+        } else if (window.HOUSES && HOUSES[group.owner]) {
+            houseColor = HOUSES[group.owner].color || '#ffd700';
+            houseLabel = HOUSES[group.owner].sigil + ' ' + HOUSES[group.owner].name;
+        }
+        
+        html += '<div style="position:absolute;left:' + frameLeft + 'px;top:' + frameTop + 'px;width:' + frameW + 'px;height:' + frameH + 'px;border:3px solid ' + houseColor + ';border-radius:4px;pointer-events:none;z-index:5;box-shadow:0 0 6px ' + houseColor + ';"></div>';
+        
+        // Название по центру
+        var labelX = frameLeft + frameW/2;
+        var labelY = frameTop + frameH/2;
+        var labelFontSize = Math.max(12, Math.floor(Math.min(frameW, frameH) * 0.15));
+        html += '<div style="position:absolute;left:' + labelX + 'px;top:' + labelY + 'px;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:10;">';
+        html += '<span style="font-size:' + labelFontSize + 'px;font-weight:bold;color:#fff;background:rgba(0,0,0,0.7);padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0.9;text-shadow:0 0 4px #000;">' + houseLabel + '</span>';
+        html += '</div>';
+    }
+    
+    // Клетки
     for (var y = minY; y <= maxY; y++) {
         for (var x = minX; x <= maxX; x++) {
             var zone = lookup[x + ',' + y];
@@ -310,27 +387,6 @@ window.openWorldMap = function() {
                     colorKey = 'shallows';
                 }
                 bg = typeColors[colorKey] || '#3d3026';
-                
-                if (_showOwners && zone.owner) {
-                    if (zone.owner === 'crown') {
-                        bg = '#ffd700';
-                    } else if (window.HOUSES && HOUSES[zone.owner] && HOUSES[zone.owner].color) {
-                        bg = HOUSES[zone.owner].color;
-                    } else if (window.users && users[zone.owner]) {
-                        bg = '#8a7a5a';
-                    }
-                }
-                
-                var ownerEmoji = '';
-                if (zone.owner) {
-                    if (zone.owner === 'crown') {
-                        ownerEmoji = '👑';
-                    } else if (window.HOUSES && HOUSES[zone.owner]) {
-                        ownerEmoji = HOUSES[zone.owner].sigil;
-                    } else if (window.users && users[zone.owner]) {
-                        ownerEmoji = '👤';
-                    }
-                }
                 
                 var isAreaCenter = (zone.zoneNumber === 0 || (zone.places && zone.places.indexOf('Столб с указателями') !== -1));
                 
@@ -348,10 +404,6 @@ window.openWorldMap = function() {
                     emoji = '🪓';
                 } else if (zone.type === 'ruins') {
                     emoji = '🏚️';
-                } else if (isAreaCenter && ownerEmoji && !_showOwners) {
-                    emoji = ownerEmoji;
-                } else if (_showOwners && ownerEmoji) {
-                    emoji = ownerEmoji;
                 }
                 
                 if (zone.id === currentId) isCurrent = true;
@@ -393,7 +445,6 @@ window.openWorldMap = function() {
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            // Эмодзи по центру
             html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
             if (isCurrent) {
                 html += '⭐';
@@ -402,8 +453,14 @@ window.openWorldMap = function() {
             }
             html += '</span>';
             
-            // Координаты в левом верхнем углу
-            html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
+            // Координаты
+            if (_showCoords) {
+                html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
+            }
+            // Уровень
+            if (_showLevels && zone && zone.level) {
+                html += '<span style="position:absolute;bottom:1px;right:2px;font-size:' + coordSize + 'px;color:#ffd700;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">ур.' + zone.level + '</span>';
+            }
             
             html += '</div>';
             
@@ -462,8 +519,19 @@ window.closeWorldMap = function() {
 
 window.toggleOwnerColors = function() {
     _showOwners = !_showOwners;
-    var btn = document.getElementById('btn-toggle-owners');
-    if (btn) btn.textContent = _showOwners ? '🎨 Скрыть владения' : '🎨 Показать владения';
+    document.getElementById('chk-owners').checked = _showOwners;
+    openWorldMap();
+};
+
+window.toggleCoords = function() {
+    _showCoords = !_showCoords;
+    document.getElementById('chk-coords').checked = _showCoords;
+    openWorldMap();
+};
+
+window.toggleLevels = function() {
+    _showLevels = !_showLevels;
+    document.getElementById('chk-levels').checked = _showLevels;
     openWorldMap();
 };
 
