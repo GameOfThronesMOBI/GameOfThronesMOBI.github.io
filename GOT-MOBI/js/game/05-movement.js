@@ -281,7 +281,6 @@ window.openWorldMap = function() {
         var infoStr = '';
         if (areaInfo) {
             infoStr = ' 🏰 ' + areaInfo.castle;
-            // Ищем эмодзи дома
             if (window.HOUSES) {
                 for (var hid in HOUSES) {
                     if (HOUSES[hid].name === areaInfo.house) {
@@ -306,14 +305,12 @@ window.openWorldMap = function() {
             var emoji = '';
             var title = '';
             var isCurrent = false;
+            var areaInfo = zone ? AREA_INFO[zone.area] : null;
             
             if (zone) {
                 // Цвет по типу зоны
                 bg = typeColors[zone.type] || '#3d3026';
                 title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
-                
-                // Информация о замке и доме
-                var areaInfo = AREA_INFO[zone.area];
                 
                 // Если включён режим показа владений — красим по дому
                 if (_showOwners && zone.owner) {
@@ -347,10 +344,11 @@ window.openWorldMap = function() {
                 // Эмодзи для особых зон
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
-                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | 🦌 ' + areaInfo.house;
+                    title += ' | 👑 ' + zone.area;
+                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | ' + areaInfo.house;
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
                     emoji = '🏰';
-                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | 🦌 ' + areaInfo.house;
+                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | ' + areaInfo.house;
                 } else if (zone.type === 'village') {
                     emoji = '🏘️';
                 } else if (zone.places && zone.places.indexOf('Деревня') !== -1) {
