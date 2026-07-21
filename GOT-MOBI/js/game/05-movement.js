@@ -4,6 +4,8 @@
 
 console.log('🧭 Система перемещений загружается...');
 
+var _showOwners = false;
+
 function getLocationEmoji(loc, nextId) {
     if (!loc) return '📍';
     if (nextId === 'kl_0_0') return '👑';
@@ -254,13 +256,30 @@ window.openWorldMap = function() {
     html += 'Вы: ⭐ | 👑 Корона | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:10px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
+    
+    // Кнопка переключения владений
+    html += '<div style="text-align:center;margin:6px 0;">';
+    html += '<button class="btn btn-small" onclick="toggleOwnerColors()" id="btn-toggle-owners" style="font-size:10px;">🎨 Показать владения</button>';
+    html += '</div>';
     html += '</div>';
     
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
         var aa = areas[a];
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')</span>';
+        // Ищем дом-владелец для этой области
+        var areaOwner = '';
+        for (var i = 0; i < allZones.length; i++) {
+            if (allZones[i].area === a && allZones[i].owner && allZones[i].owner !== 'crown' && allZones[i].owner !== 'none') {
+                if (window.HOUSES && HOUSES[allZones[i].owner]) {
+                    areaOwner = ' ' + HOUSES[allZones[i].owner].sigil + ' ' + HOUSES[allZones[i].owner].name;
+                } else if (allZones[i].owner === 'crown') {
+                    areaOwner = ' 👑 Корона';
+                }
+                break;
+            }
+        }
+        html += '<span style="display:inline-block;margin:2px 6px;font-size:10px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaOwner + '</span>';
     }
     html += '</div>';
     
@@ -276,14 +295,47 @@ window.openWorldMap = function() {
             var isCurrent = false;
             
             if (zone) {
+                // Цвет по типу зоны
                 bg = typeColors[zone.type] || '#3d3026';
                 title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
                 
+                // Если включён режим показа владений — красим по дому
+                if (_showOwners && zone.owner) {
+                    if (zone.owner === 'crown') {
+                        bg = '#ffd700';
+                        title += ' | 👑 Корона';
+                    } else if (window.HOUSES && HOUSES[zone.owner] && HOUSES[zone.owner].color) {
+                        bg = HOUSES[zone.owner].color;
+                        title += ' | ' + HOUSES[zone.owner].sigil + ' ' + HOUSES[zone.owner].name;
+                    } else if (window.users && users[zone.owner]) {
+                        bg = '#8a7a5a';
+                        title += ' | 👤 ' + zone.owner;
+                    }
+                }
+                
+                // Владелец для эмодзи
+                var ownerEmoji = '';
+                if (zone.owner) {
+                    if (zone.owner === 'crown') {
+                        ownerEmoji = '👑';
+                    } else if (window.HOUSES && HOUSES[zone.owner]) {
+                        ownerEmoji = HOUSES[zone.owner].sigil;
+                    } else if (window.users && users[zone.owner]) {
+                        ownerEmoji = '👤';
+                    }
+                }
+                
+                // Центр области
+                var isAreaCenter = (zone.zoneNumber === 0 || (zone.places && zone.places.indexOf('Столб с указателями') !== -1));
+                
+                // Эмодзи для особых зон
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
                     emoji = '🏰';
                 } else if (zone.type === 'village') {
+                    emoji = '🏘️';
+                } else if (zone.places && zone.places.indexOf('Деревня') !== -1) {
                     emoji = '🏘️';
                 } else if (zone.places && zone.places.indexOf('Шахта') !== -1) {
                     emoji = '⛏️';
@@ -291,6 +343,12 @@ window.openWorldMap = function() {
                     emoji = '🪓';
                 } else if (zone.type === 'ruins') {
                     emoji = '🏚️';
+                } else if (isAreaCenter && ownerEmoji && !_showOwners) {
+                    // В обычном режиме — показываем владельца в центре области
+                    emoji = ownerEmoji;
+                } else if (_showOwners && ownerEmoji && cellSize >= 14) {
+                    // В режиме владений — показываем владельца на каждой клетке
+                    emoji = ownerEmoji;
                 }
                 
                 if (zone.id === currentId) isCurrent = true;
@@ -328,6 +386,13 @@ window.openWorldMap = function() {
 window.closeWorldMap = function() {
     var modal = document.getElementById('modal-world-map');
     if (modal) modal.classList.add('hide');
+};
+
+window.toggleOwnerColors = function() {
+    _showOwners = !_showOwners;
+    var btn = document.getElementById('btn-toggle-owners');
+    if (btn) btn.textContent = _showOwners ? '🎨 Скрыть владения' : '🎨 Показать владения';
+    openWorldMap();
 };
 
 window.openCompass = openCompass;
