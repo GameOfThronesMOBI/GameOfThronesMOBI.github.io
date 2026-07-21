@@ -308,25 +308,19 @@ window.openWorldMap = function() {
             var areaInfo = zone ? AREA_INFO[zone.area] : null;
             
             if (zone) {
-                // Цвет по типу зоны
                 bg = typeColors[zone.type] || '#3d3026';
                 title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
                 
-                // Если включён режим показа владений — красим по дому
                 if (_showOwners && zone.owner) {
                     if (zone.owner === 'crown') {
                         bg = '#ffd700';
-                        title += ' | 👑 Корона';
                     } else if (window.HOUSES && HOUSES[zone.owner] && HOUSES[zone.owner].color) {
                         bg = HOUSES[zone.owner].color;
-                        title += ' | ' + HOUSES[zone.owner].sigil + ' ' + HOUSES[zone.owner].name;
                     } else if (window.users && users[zone.owner]) {
                         bg = '#8a7a5a';
-                        title += ' | 👤 ' + zone.owner;
                     }
                 }
                 
-                // Владелец для эмодзи
                 var ownerEmoji = '';
                 if (zone.owner) {
                     if (zone.owner === 'crown') {
@@ -338,10 +332,8 @@ window.openWorldMap = function() {
                     }
                 }
                 
-                // Центр области
                 var isAreaCenter = (zone.zoneNumber === 0 || (zone.places && zone.places.indexOf('Столб с указателями') !== -1));
                 
-                // Эмодзи для особых зон
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
                     title += ' | 👑 ' + zone.area;
@@ -368,18 +360,37 @@ window.openWorldMap = function() {
                 if (zone.id === currentId) isCurrent = true;
             }
             
-            html += '<div title="' + title + '" style="';
-            html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
+            // Текст под эмодзи для замков/столиц (всегда)
+            var subText = '';
+            if (zone && areaInfo) {
+                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
+                    subText = zone.area;
+                } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
+                    subText = areaInfo.castle;
+                }
+            }
+            
+            var cellHeight = cellSize;
+            if (subText && cellSize >= 14) cellHeight = Math.floor(cellSize * 1.8);
+            
+            html += '<div style="';
+            html += 'width:' + cellSize + 'px;height:' + cellHeight + 'px;';
             html += 'background:' + bg + ';';
-            html += 'display:flex;align-items:center;justify-content:center;';
-            html += 'font-size:' + Math.floor(cellSize*0.7) + 'px;';
-            html += 'border-radius:1px;';
+            html += 'display:flex;flex-direction:column;align-items:center;justify-content:center;';
+            html += 'font-size:' + Math.floor(cellSize*0.5) + 'px;';
+            html += 'border-radius:2px;';
+            html += 'color:#fff;';
+            html += 'line-height:1.1;';
+            html += 'overflow:hidden;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             if (isCurrent && cellSize >= 12) {
-                html += '⭐';
+                html += '<span style="font-size:' + Math.floor(cellSize*0.7) + 'px;">⭐</span>';
             } else if (emoji && cellSize >= 14) {
-                html += emoji;
+                html += '<span style="font-size:' + Math.floor(cellSize*0.7) + 'px;">' + emoji + '</span>';
+            }
+            if (subText && cellSize >= 14) {
+                html += '<span style="font-size:' + Math.floor(cellSize*0.25) + 'px;color:#000;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText + '</span>';
             }
             html += '</div>';
         }
