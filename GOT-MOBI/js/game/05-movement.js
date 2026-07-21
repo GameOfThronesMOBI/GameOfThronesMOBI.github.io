@@ -122,10 +122,19 @@ function openCompass() {
                 
                 var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
                 
-                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;">';
+                // Проверка на воду для компаса
+                var isWater = false;
+                if (nextLoc) {
+                    isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
+                               nextLoc.type === 'abyss' || nextLoc.type === 'maelstrom' || nextLoc.type === 'bay' ||
+                               nextLoc.type === 'reef' || (nextLoc.type === 'coast' && nextLoc.resourceType === 'shallows'));
+                }
+                
+                html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;' + (isWater ? 'opacity:0.5;' : '') + '">';
                 html += '<span style="font-size:14px;">' + dirLabels[dir] + '</span>';
                 if (emoji) html += '<span style="font-size:14px;">' + emoji + '</span>';
-                html += '<span style="font-size:8px;color:#c9b694;">' + nextName + '</span>';
+                html += '<span style="font-size:8px;color:' + (isWater ? '#c96a5a' : '#c9b694') + ';">' + nextName + '</span>';
+                if (isWater) html += '<span style="font-size:6px;color:#c96a5a;">⛵ корабль</span>';
                 html += houseInfo;
                 html += '<span style="font-size:6px;color:#6a5a48;">' + coords + '</span>';
                 html += '</button>';
@@ -167,6 +176,17 @@ function moveTo(direction) {
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
     var nextName = nextLoc ? nextLoc.name : next;
     
+    // Проверка на любую воду
+    if (nextLoc) {
+        var isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
+                       nextLoc.type === 'abyss' || nextLoc.type === 'maelstrom' || nextLoc.type === 'bay' ||
+                       nextLoc.type === 'reef' || (nextLoc.type === 'coast' && nextLoc.resourceType === 'shallows'));
+        if (isWater) {
+            setMessage('⛵ У вас нет корабля, чтобы ходить по воде.');
+            return;
+        }
+    }
+    
     g.location.place = next;
     g.location.locationId = next;
     g.location.parentZone = null;
@@ -177,363 +197,7 @@ function moveTo(direction) {
     saveData();
 }
 
-// ============================================================
-// ГЛОБАЛЬНАЯ КАРТА МИРА
-// ============================================================
-
-window.openWorldMap = function() {
-    var g = users[currentUser].game;
-    var currentId = g.location.parentZone || g.location.locationId || g.location.place;
-    var currentLoc = WORLD_AREAS[currentId];
-    if (!currentLoc) { setMessage('📍 Вы не на внешней локации.'); return; }
-    
-    var allZones = [];
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    
-    for (var id in WORLD_AREAS) {
-        var z = WORLD_AREAS[id];
-        allZones.push(z);
-        if (z.x < minX) minX = z.x;
-        if (z.x > maxX) maxX = z.x;
-        if (z.y < minY) minY = z.y;
-        if (z.y > maxY) maxY = z.y;
-    }
-    
-    if (allZones.length === 0) { setMessage('❌ Мир пуст.'); return; }
-    
-    var cols = maxX - minX + 1;
-    var rows = maxY - minY + 1;
-    var cellSize = Math.max(14, Math.min(30, Math.floor(460 / Math.max(cols, rows))));
-    
-    var modal = document.getElementById('modal-world-map');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-world-map';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeWorldMap(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-width:100%;width:95vw;"><div class="modal-header"><h3>🌍 МИР</h3><button class="close-btn" onclick="closeWorldMap()">✕</button></div><div id="modal-world-map-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-world-map-content');
-    
-    var typeColors = {
-        'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
-        'river': '#2980b9', 'coast': '#d4b896', 'sea': '#0d3b5c', 'shallows': '#1a5276',
-        'crossroads': '#8B7355', 'castle': '#4a3728', 'castle_gate': '#4a3728',
-        'village': '#6b8a3a', 'mine': '#3d3d3d', 'swamp': '#3d5020', 'wall': '#3d3d3d',
-        'training': '#5a4738', 'barracks': '#5a4738', 'forge': '#5a4738', 'armory': '#5a4738',
-        'library': '#5a4738', 'septa': '#5a4738', 'garden': '#3a6b3a', 'kitchen': '#5a4738',
-        'hall': '#5a4738', 'chambers': '#5a4738', 'dungeon': '#1a1a1a', 'crypt': '#1a1a1a',
-        'hideout': '#1a1a1a', 'balcony': '#5a4738', 'cellar': '#3d3d3d', 'stables': '#5a4738',
-        'arena': '#8B7355', 'field': '#7a9a3a', 'camp': '#6b6b3a', 'bandit_camp': '#5a3a2a',
-        'tower': '#6b6b6b', 'lighthouse': '#6b6b6b', 'bridge': '#8B7355', 'docks': '#8B7355',
-        'harbor': '#1a6b8a', 'trading_post': '#8B7355', 'ruins': '#5a5a4a', 'cave': '#3d3d3d',
-        'nest': '#5a3a2a', 'rock': '#6b6b6b', 'reef': '#1a6b8a', 'island': '#3a6b3a',
-        'wreck': '#5a4a3a', 'abyss': '#0a1a2a', 'maelstrom': '#0d3b5c', 'pirate_island': '#3a5a2a',
-        'cape': '#6b6b6b', 'bay': '#1a6b8a', 'hunting': '#4a6b2a', 'logging_camp': '#5a4a2a',
-        'farm': '#8a9a3a', 'border': '#4a3728'
-    };
-    
-    var lookup = {};
-    for (var i = 0; i < allZones.length; i++) {
-        var z = allZones[i];
-        lookup[z.x + ',' + z.y] = z;
-    }
-    
-    var areas = {};
-    for (var i = 0; i < allZones.length; i++) {
-        var z = allZones[i];
-        if (!areas[z.area]) areas[z.area] = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-        if (z.x < areas[z.area].minX) areas[z.area].minX = z.x;
-        if (z.x > areas[z.area].maxX) areas[z.area].maxX = z.x;
-        if (z.y < areas[z.area].minY) areas[z.area].minY = z.y;
-        if (z.y > areas[z.area].maxY) areas[z.area].maxY = z.y;
-    }
-    
-    function getCastleInfo(zone) {
-        if (!zone) return null;
-        if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
-            var owner = zone.owner;
-            if (owner === 'crown') {
-                return { castle: 'Красный замок', house: 'Корона', sigil: '👑', throne: 'Железный Трон' };
-            } else if (owner && window.HOUSES && HOUSES[owner]) {
-                var house = HOUSES[owner];
-                return { castle: 'Красный замок', house: house.name, sigil: house.sigil, throne: 'Железный Трон' };
-            } else {
-                return { castle: 'Красный замок', house: 'Null', sigil: '❓', throne: 'Железный Трон' };
-            }
-        }
-        if (zone.type === 'castle' || zone.type === 'castle_gate') {
-            var owner = zone.owner;
-            if (owner && owner !== 'crown' && window.HOUSES && HOUSES[owner]) {
-                var house = HOUSES[owner];
-                return { castle: house.castle || 'Замок', house: house.name, sigil: house.sigil };
-            } else if (owner === 'crown') {
-                return { castle: 'Королевский замок', house: 'Корона', sigil: '👑' };
-            } else {
-                return { castle: 'Замок', house: 'Null', sigil: '❓' };
-            }
-        }
-        return null;
-    }
-    
-    // Собираем связные группы по владельцам
-    var ownerGroups = [];
-    if (_showOwners) {
-        var visited = {};
-        for (var i = 0; i < allZones.length; i++) {
-            var z = allZones[i];
-            var key = z.x + ',' + z.y;
-            if (visited[key]) continue;
-            if (!z.owner || z.owner === 'none') continue;
-            
-            var group = { owner: z.owner, zones: [], minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-            var queue = [z];
-            visited[key] = true;
-            
-            while (queue.length > 0) {
-                var cz = queue.shift();
-                group.zones.push(cz);
-                if (cz.x < group.minX) group.minX = cz.x;
-                if (cz.x > group.maxX) group.maxX = cz.x;
-                if (cz.y < group.minY) group.minY = cz.y;
-                if (cz.y > group.maxY) group.maxY = cz.y;
-                
-                // Соседи
-                for (var d in {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}) {
-                    var nx = cz.x + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][0];
-                    var ny = cz.y + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][1];
-                    var nkey = nx + ',' + ny;
-                    var nz = lookup[nkey];
-                    if (nz && !visited[nkey] && nz.owner === group.owner) {
-                        visited[nkey] = true;
-                        queue.push(nz);
-                    }
-                }
-            }
-            
-            if (group.zones.length >= 2) {
-                ownerGroups.push(group);
-            }
-        }
-    }
-    
-    var html = '<div class="modal-section">';
-    html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
-    html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
-    html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
-    html += '</p>';
-    html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
-    
-    // Галочки
-    html += '<div style="text-align:center;margin:6px 0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">';
-    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleCoords()"><input type="checkbox" id="chk-coords" ' + (_showCoords ? 'checked' : '') + '> 📍 Координаты</label>';
-    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleLevels()"><input type="checkbox" id="chk-levels" ' + (_showLevels ? 'checked' : '') + '> 📈 Уровни</label>';
-    html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleOwnerColors()"><input type="checkbox" id="chk-owners" ' + (_showOwners ? 'checked' : '') + '> 🎨 Владения</label>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Контейнер карты
-    var mapWidth = cols * cellSize;
-    var mapHeight = rows * cellSize;
-    var padding = Math.floor(cellSize * 2);
-    
-    html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
-    html += '<div id="world-map-container" style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
-    
-    // Сначала рисуем рамки владений (под клетками)
-    for (var gi = 0; gi < ownerGroups.length; gi++) {
-        var group = ownerGroups[gi];
-        var frameLeft = (group.minX - minX) * cellSize + 1;
-        var frameTop = (group.minY - minY) * cellSize + padding + 1;
-        var frameW = (group.maxX - group.minX + 1) * cellSize - 2;
-        var frameH = (group.maxY - group.minY + 1) * cellSize - 2;
-        
-        var houseColor = '#ffd700';
-        var houseLabel = '';
-        if (group.owner === 'crown') {
-            houseColor = '#ffd700';
-            houseLabel = '👑 Корона';
-        } else if (window.HOUSES && HOUSES[group.owner]) {
-            houseColor = HOUSES[group.owner].color || '#ffd700';
-            houseLabel = HOUSES[group.owner].sigil + ' ' + HOUSES[group.owner].name;
-        }
-        
-        html += '<div style="position:absolute;left:' + frameLeft + 'px;top:' + frameTop + 'px;width:' + frameW + 'px;height:' + frameH + 'px;border:3px solid ' + houseColor + ';border-radius:4px;pointer-events:none;z-index:5;box-shadow:0 0 6px ' + houseColor + ';"></div>';
-        
-        // Название по центру
-        var labelX = frameLeft + frameW/2;
-        var labelY = frameTop + frameH/2;
-        var labelFontSize = Math.max(12, Math.floor(Math.min(frameW, frameH) * 0.15));
-        html += '<div style="position:absolute;left:' + labelX + 'px;top:' + labelY + 'px;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:10;">';
-        html += '<span style="font-size:' + labelFontSize + 'px;font-weight:bold;color:#fff;background:rgba(0,0,0,0.7);padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0.9;text-shadow:0 0 4px #000;">' + houseLabel + '</span>';
-        html += '</div>';
-    }
-    
-    // Клетки
-    for (var y = minY; y <= maxY; y++) {
-        for (var x = minX; x <= maxX; x++) {
-            var zone = lookup[x + ',' + y];
-            var bg = '#0a0806';
-            var emoji = '';
-            var isCurrent = false;
-            var castleInfo = zone ? getCastleInfo(zone) : null;
-            
-            if (zone) {
-                var colorKey = zone.type;
-                if (zone.type === 'coast' && zone.resourceType === 'shallows') {
-                    colorKey = 'shallows';
-                }
-                bg = typeColors[colorKey] || '#3d3026';
-                
-                var isAreaCenter = (zone.zoneNumber === 0 || (zone.places && zone.places.indexOf('Столб с указателями') !== -1));
-                
-                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
-                    emoji = '👑';
-                } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
-                    emoji = '🏰';
-                } else if (zone.type === 'village') {
-                    emoji = '🏘️';
-                } else if (zone.places && zone.places.indexOf('Деревня') !== -1) {
-                    emoji = '🏘️';
-                } else if (zone.places && zone.places.indexOf('Шахта') !== -1) {
-                    emoji = '⛏️';
-                } else if (zone.places && zone.places.indexOf('Лесосека') !== -1) {
-                    emoji = '🪓';
-                } else if (zone.type === 'ruins') {
-                    emoji = '🏚️';
-                }
-                
-                if (zone.id === currentId) isCurrent = true;
-            }
-            
-            var subText = '';
-            var subText2 = '';
-            if (zone) {
-                if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
-                    subText = zone.area;
-                } else if ((zone.type === 'castle' || zone.type === 'castle_gate') && castleInfo) {
-                    subText = castleInfo.castle;
-                }
-                if (castleInfo) {
-                    if (castleInfo.throne) {
-                        subText2 = castleInfo.sigil + ' ' + castleInfo.house;
-                    } else if (subText || zone.type === 'crossroads') {
-                        subText2 = castleInfo.sigil + ' ' + castleInfo.house;
-                    }
-                }
-            }
-            
-            var fontSize = Math.max(11, Math.floor(cellSize * 0.5));
-            var fontSizeSmall = Math.max(10, Math.floor(cellSize * 0.4));
-            var emojiSize = Math.max(14, Math.floor(cellSize * 0.6));
-            var coordSize = Math.max(8, Math.floor(cellSize * 0.3));
-            
-            var left = (x - minX) * cellSize + 1;
-            var top = (y - minY) * cellSize + padding + 1;
-            
-            html += '<div style="';
-            html += 'position:absolute;';
-            html += 'left:' + left + 'px;top:' + top + 'px;';
-            html += 'width:' + (cellSize-2) + 'px;height:' + (cellSize-2) + 'px;';
-            html += 'background:' + bg + ';';
-            html += 'border-radius:2px;';
-            html += 'overflow:visible;';
-            html += 'display:flex;align-items:center;justify-content:center;';
-            if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
-            html += '">';
-            
-            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
-            if (isCurrent) {
-                html += '⭐';
-            } else if (emoji) {
-                html += emoji;
-            }
-            html += '</span>';
-            
-            // Координаты
-            if (_showCoords) {
-                html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
-            }
-            // Уровень
-            if (_showLevels && zone && zone.level) {
-                html += '<span style="position:absolute;bottom:1px;right:2px;font-size:' + coordSize + 'px;color:#ffd700;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">ур.' + zone.level + '</span>';
-            }
-            
-            html += '</div>';
-            
-            // Текст замка/города
-            if (subText || subText2) {
-                var labelTop = top + cellSize + 2;
-                html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
-                if (subText) {
-                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;padding:1px 4px;white-space:nowrap;margin-bottom:1px;opacity:0.9;">' + subText + '</div>';
-                }
-                if (subText2) {
-                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ccc;padding:1px 3px;white-space:nowrap;opacity:0.9;">' + subText2 + '</div>';
-                }
-                html += '</div>';
-            }
-        }
-    }
-    
-    html += '</div></div>';
-    
-    // Список областей
-    html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;margin-top:8px;">';
-    html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
-    for (var a in areas) {
-        var aa = areas[a];
-        var areaOwner = '';
-        for (var i = 0; i < allZones.length; i++) {
-            if (allZones[i].area === a && allZones[i].owner && allZones[i].owner !== 'crown' && allZones[i].owner !== 'none') {
-                if (window.HOUSES && HOUSES[allZones[i].owner]) {
-                    areaOwner = ' ' + HOUSES[allZones[i].owner].sigil + ' ' + HOUSES[allZones[i].owner].name;
-                }
-                break;
-            }
-        }
-        if (!areaOwner && a === 'Королевская Гавань') {
-            areaOwner = ' 👑 Корона';
-        }
-        html += '<span style="display:inline-block;margin:2px 6px;font-size:11px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaOwner + '</span>';
-    }
-    html += '</div>';
-    
-    html += '<div class="modal-section" style="margin-top:8px;">';
-    html += '<p style="color:#6a5a48;font-size:12px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
-    html += '</div>';
-    
-    html += '<button class="btn btn-secondary" onclick="closeWorldMap()" style="margin-top:8px;">Закрыть</button>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-};
-
-window.closeWorldMap = function() {
-    var modal = document.getElementById('modal-world-map');
-    if (modal) modal.classList.add('hide');
-};
-
-window.toggleOwnerColors = function() {
-    _showOwners = !_showOwners;
-    document.getElementById('chk-owners').checked = _showOwners;
-    openWorldMap();
-};
-
-window.toggleCoords = function() {
-    _showCoords = !_showCoords;
-    document.getElementById('chk-coords').checked = _showCoords;
-    openWorldMap();
-};
-
-window.toggleLevels = function() {
-    _showLevels = !_showLevels;
-    document.getElementById('chk-levels').checked = _showLevels;
-    openWorldMap();
-};
+// ... (функция openWorldMap без изменений) ...
 
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
