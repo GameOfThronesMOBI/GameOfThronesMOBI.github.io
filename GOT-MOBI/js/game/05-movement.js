@@ -370,33 +370,40 @@ window.openWorldMap = function() {
                 }
             }
             
-            var fontSize = Math.max(11, Math.floor(cellSize * 0.5));
-            var fontSizeSmall = Math.max(10, Math.floor(cellSize * 0.4));
-            var emojiSize = Math.max(14, Math.floor(cellSize * 0.6));
+            var fontSize = Math.max(10, Math.floor(cellSize * 0.45));
+            var fontSizeSmall = Math.max(9, Math.floor(cellSize * 0.35));
+            var emojiSize = Math.max(12, Math.floor(cellSize * 0.55));
             
+            // Основной контейнер клетки
             html += '<div style="';
             html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
             html += 'background:' + bg + ';';
-            html += 'display:flex;flex-direction:column;align-items:center;justify-content:center;';
-            html += 'border-radius:2px;';
             html += 'position:relative;';
+            html += 'border-radius:2px;';
             html += 'overflow:visible;';
+            html += 'z-index:' + (subText ? 10 : 1) + ';';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:1;">';
+            // Эмодзи по центру
+            html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:' + emojiSize + 'px;line-height:1;z-index:2;">';
             if (isCurrent) {
                 html += '⭐';
             } else if (emoji) {
                 html += emoji;
             }
-            html += '</span>';
+            html += '</div>';
             
-            if (subText) {
-                html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.9);padding:2px 6px;border-radius:3px;line-height:1.2;white-space:nowrap;position:relative;z-index:20;margin-top:1px;">' + subText + '</span>';
-            }
-            if (subText2) {
-                html += '<span style="font-size:' + fontSizeSmall + 'px;color:#ddd;background:rgba(0,0,0,0.85);padding:1px 4px;border-radius:3px;line-height:1.2;white-space:nowrap;position:relative;z-index:20;margin-top:1px;">' + subText2 + '</span>';
+            // Текст замка/города — абсолютно, поверх всего
+            if (subText || subText2) {
+                html += '<div style="position:absolute;bottom:-' + Math.floor(cellSize*0.7) + 'px;left:50%;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
+                if (subText) {
+                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.9);padding:2px 6px;border-radius:3px;white-space:nowrap;margin-bottom:2px;">' + subText + '</div>';
+                }
+                if (subText2) {
+                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ddd;background:rgba(0,0,0,0.85);padding:1px 5px;border-radius:3px;white-space:nowrap;">' + subText2 + '</div>';
+                }
+                html += '</div>';
             }
             
             html += '</div>';
