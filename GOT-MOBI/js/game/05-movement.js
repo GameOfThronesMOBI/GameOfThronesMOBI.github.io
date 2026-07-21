@@ -201,7 +201,7 @@ window.openWorldMap = function() {
     
     var cols = maxX - minX + 1;
     var rows = maxY - minY + 1;
-    var cellSize = Math.max(12, Math.min(28, Math.floor(450 / Math.max(cols, rows))));
+    var cellSize = Math.max(14, Math.min(30, Math.floor(460 / Math.max(cols, rows))));
     
     var modal = document.getElementById('modal-world-map');
     if (!modal) {
@@ -370,21 +370,21 @@ window.openWorldMap = function() {
                 }
             }
             
-            var fontSize = Math.max(10, Math.floor(cellSize * 0.5));
-            var fontSizeSmall = Math.max(9, Math.floor(cellSize * 0.4));
-            var emojiSize = Math.max(12, Math.floor(cellSize * 0.6));
+            var fontSize = Math.max(11, Math.floor(cellSize * 0.5));
+            var fontSizeSmall = Math.max(10, Math.floor(cellSize * 0.4));
+            var emojiSize = Math.max(14, Math.floor(cellSize * 0.6));
             
             html += '<div style="';
             html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
             html += 'background:' + bg + ';';
             html += 'display:flex;flex-direction:column;align-items:center;justify-content:center;';
             html += 'border-radius:2px;';
+            html += 'position:relative;';
             html += 'overflow:visible;';
-            html += 'z-index:1;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;">';
+            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:1;">';
             if (isCurrent) {
                 html += '⭐';
             } else if (emoji) {
@@ -393,10 +393,10 @@ window.openWorldMap = function() {
             html += '</span>';
             
             if (subText) {
-                html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.85);padding:2px 4px;border-radius:3px;margin-top:-2px;line-height:1.1;white-space:nowrap;z-index:10;">' + subText + '</span>';
+                html += '<span style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.9);padding:2px 6px;border-radius:3px;line-height:1.2;white-space:nowrap;position:relative;z-index:20;margin-top:1px;">' + subText + '</span>';
             }
             if (subText2) {
-                html += '<span style="font-size:' + fontSizeSmall + 'px;color:#fff;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;margin-top:1px;line-height:1.1;white-space:nowrap;z-index:10;">' + subText2 + '</span>';
+                html += '<span style="font-size:' + fontSizeSmall + 'px;color:#ddd;background:rgba(0,0,0,0.85);padding:1px 4px;border-radius:3px;line-height:1.2;white-space:nowrap;position:relative;z-index:20;margin-top:1px;">' + subText2 + '</span>';
             }
             
             html += '</div>';
