@@ -291,9 +291,13 @@ window.openWorldMap = function() {
     }
     html += '</div>';
     
-    // Сетка мира
+    // Контейнер карты с абсолютным позиционированием
+    var mapWidth = cols * cellSize;
+    var mapHeight = rows * cellSize;
+    var padding = Math.floor(cellSize * 1.5);
+    
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
-    html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',' + cellSize + 'px);gap:1px;background:#0a0806;padding:1px;border-radius:8px;width:fit-content;min-width:' + (cols*cellSize+2) + 'px;">';
+    html += '<div style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
     
     for (var y = minY; y <= maxY; y++) {
         for (var x = minX; x <= maxX; x++) {
@@ -374,29 +378,34 @@ window.openWorldMap = function() {
             var fontSizeSmall = Math.max(9, Math.floor(cellSize * 0.35));
             var emojiSize = Math.max(12, Math.floor(cellSize * 0.55));
             
-            // Основной контейнер клетки
+            var left = (x - minX) * cellSize + 1;
+            var top = (y - minY) * cellSize + padding + 1;
+            
             html += '<div style="';
-            html += 'width:' + cellSize + 'px;height:' + cellSize + 'px;';
+            html += 'position:absolute;';
+            html += 'left:' + left + 'px;top:' + top + 'px;';
+            html += 'width:' + (cellSize-2) + 'px;height:' + (cellSize-2) + 'px;';
             html += 'background:' + bg + ';';
-            html += 'position:relative;';
             html += 'border-radius:2px;';
             html += 'overflow:visible;';
-            html += 'z-index:' + (subText ? 10 : 1) + ';';
+            html += 'display:flex;align-items:center;justify-content:center;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            // Эмодзи по центру
-            html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:' + emojiSize + 'px;line-height:1;z-index:2;">';
+            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;">';
             if (isCurrent) {
                 html += '⭐';
             } else if (emoji) {
                 html += emoji;
             }
+            html += '</span>';
+            
             html += '</div>';
             
-            // Текст замка/города — абсолютно, поверх всего
+            // Текст замка/города — абсолютно, поверх клетки
             if (subText || subText2) {
-                html += '<div style="position:absolute;bottom:-' + Math.floor(cellSize*0.7) + 'px;left:50%;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
+                var labelTop = top + cellSize + 2;
+                html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
                 if (subText) {
                     html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;background:rgba(0,0,0,0.9);padding:2px 6px;border-radius:3px;white-space:nowrap;margin-bottom:2px;">' + subText + '</div>';
                 }
@@ -405,8 +414,6 @@ window.openWorldMap = function() {
                 }
                 html += '</div>';
             }
-            
-            html += '</div>';
         }
     }
     
