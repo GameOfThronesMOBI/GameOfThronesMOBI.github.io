@@ -407,10 +407,10 @@ window.openWorldMap = function() {
                 var labelTop = top + cellSize + 2;
                 html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
                 if (subText) {
-                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;text-shadow:0 0 4px rgba(0,0,0,0.8);padding:2px 6px;white-space:nowrap;margin-bottom:2px;opacity:0.9;">' + subText + '</div>';
+                    html += '<div style="font-size:' + fontSize + 'px;font-weight:bold;color:#ffd700;padding:1px 4px;white-space:nowrap;margin-bottom:1px;opacity:0.7;">' + subText + '</div>';
                 }
                 if (subText2) {
-                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ddd;text-shadow:0 0 3px rgba(0,0,0,0.7);padding:1px 5px;white-space:nowrap;opacity:0.85;">' + subText2 + '</div>';
+                    html += '<div style="font-size:' + fontSizeSmall + 'px;color:#ccc;padding:1px 3px;white-space:nowrap;opacity:0.7;">' + subText2 + '</div>';
                 }
                 html += '</div>';
             }
