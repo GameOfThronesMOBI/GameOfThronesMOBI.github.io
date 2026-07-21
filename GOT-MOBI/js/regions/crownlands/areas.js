@@ -300,13 +300,14 @@ window.updateActions = function() {
         actions.push({ id: 'woodcut', label: '🪓 Рубить лес' });
     }
     
-    actions.push({ id:'map', label:'🗺️ Карта' },{ id:'compass', label:'🧭 Компас' },{ id:'search', label:'🔍 Поиск' },
-                 { id:'inventory', label:'🎒 Инвентарь' },{ id:'character', label:'👤 Персонаж' },{ id:'menu', label:'📋 Меню' });
+    actions.push({ id:'map', label:'🗺️ Карта' },{ id:'world', label:'🌍 Мир' },{ id:'compass', label:'🧭 Компас' },{ id:'search', label:'🔍 Поиск' },
+             { id:'inventory', label:'🎒 Инвентарь' },{ id:'character', label:'👤 Персонаж' },{ id:'menu', label:'📋 Меню' });
     actions.forEach(function(a) {
         var btn = document.createElement('button'); btn.className='btn-game'; btn.textContent=a.label;
         btn.onclick = (function(id){ return function(){
             if (id==='enter_city') { g.location.place='Ворота'; g.location.location='Королевская Гавань'; g.outside=false; setMessage('🚪 Вы вошли в Королевскую Гавань.'); updateMenu(); updateStory(); updateActions(); saveData(); return; }
             if (id==='map') { if (typeof openPlaces==='function') openPlaces(); else setMessage('❌ Карта не загружена.'); return; }
+            if (id==='world') { if (typeof openWorldMap==='function') openWorldMap(); else setMessage('❌ Карта мира не загружена.'); return; }
             if (id==='compass') { if (typeof openCompass==='function') openCompass(); else setMessage('❌ Компас не загружен.'); return; }
             if (id==='search') { if (typeof window.doSearch==='function') window.doSearch(); else setMessage('❌ Поиск не загружен.'); return; }
             if (typeof gameAction==='function') gameAction(id); else setMessage('❌ Действие недоступно.');
