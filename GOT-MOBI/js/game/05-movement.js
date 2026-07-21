@@ -227,7 +227,7 @@ window.openWorldMap = function() {
     
     var typeColors = {
         'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
-        'river': '#2980b9', 'coast': '#1a6b8a', 'sea': '#0d3b5c', 'shallows': '#1a5276',
+        'river': '#2980b9', 'coast': '#d4b896', 'sea': '#0d3b5c', 'shallows': '#1a5276',
         'crossroads': '#8B7355', 'castle': '#4a3728', 'castle_gate': '#4a3728',
         'village': '#6b8a3a', 'mine': '#3d3d3d', 'swamp': '#3d5020', 'wall': '#3d3d3d',
         'training': '#5a4738', 'barracks': '#5a4738', 'forge': '#5a4738', 'armory': '#5a4738',
@@ -303,13 +303,11 @@ window.openWorldMap = function() {
             var zone = lookup[x + ',' + y];
             var bg = '#0a0806';
             var emoji = '';
-            var title = '';
             var isCurrent = false;
             var areaInfo = zone ? AREA_INFO[zone.area] : null;
             
             if (zone) {
                 bg = typeColors[zone.type] || '#3d3026';
-                title = zone.name + ' [' + zone.x + ',' + zone.y + '] | ' + zone.area;
                 
                 if (_showOwners && zone.owner) {
                     if (zone.owner === 'crown') {
@@ -336,11 +334,8 @@ window.openWorldMap = function() {
                 
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
-                    title += ' | 👑 ' + zone.area;
-                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | ' + areaInfo.house;
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
                     emoji = '🏰';
-                    if (areaInfo) title += ' | 🏰 ' + areaInfo.castle + ' | ' + areaInfo.house;
                 } else if (zone.type === 'village') {
                     emoji = '🏘️';
                 } else if (zone.places && zone.places.indexOf('Деревня') !== -1) {
@@ -371,7 +366,7 @@ window.openWorldMap = function() {
             }
             
             var cellHeight = cellSize;
-            if (subText && cellSize >= 14) cellHeight = Math.floor(cellSize * 1.8);
+            if (subText) cellHeight = Math.floor(cellSize * 1.8);
             
             html += '<div style="';
             html += 'width:' + cellSize + 'px;height:' + cellHeight + 'px;';
@@ -389,8 +384,8 @@ window.openWorldMap = function() {
             } else if (emoji && cellSize >= 14) {
                 html += '<span style="font-size:' + Math.floor(cellSize*0.7) + 'px;">' + emoji + '</span>';
             }
-            if (subText && cellSize >= 14) {
-                html += '<span style="font-size:' + Math.floor(cellSize*0.25) + 'px;color:#000;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText + '</span>';
+            if (subText) {
+                html += '<span style="font-size:' + Math.floor(cellSize*0.22) + 'px;color:#000;text-align:center;max-width:' + (cellSize-2) + 'px;overflow:hidden;white-space:nowrap;">' + subText + '</span>';
             }
             html += '</div>';
         }
