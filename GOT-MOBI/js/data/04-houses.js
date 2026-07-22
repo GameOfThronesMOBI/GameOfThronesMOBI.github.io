@@ -426,7 +426,7 @@ var HOUSES = {
     },
     buckler: {
         id: 'buckler', name: 'Баклеры', sigil: '🛡️', region: 'stormlands', type: 'independent',
-        castle: 'Баклер', castleId: 'buckler', liege: null,
+        castle: 'Бронзовый Щит', castleId: 'buckler', liege: null,
         army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 80, reputation: 65,
         motto: 'Щит и честь', color: '#2c3e50'
     },
