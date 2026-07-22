@@ -1,6 +1,173 @@
 // ============================================================
-// js/game/03-inventory.js — ИНВЕНТАРЬ И ЭКИПИРОВКА
+// js/game/03-inventory.js — ИНВЕНТАРЬ И ЭКИПИРОВКА + СТЕКИ
 // ============================================================
+
+var MAX_STACK = 50;
+
+function addToInventory(g, item) {
+    if (!g || !g.inventory) return false;
+    
+    if (!isStackable(item)) {
+        g.inventory.push(item);
+        return true;
+    }
+    
+    var key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+    var addCount = item.count || 1;
+    
+    for (var i = 0; i < g.inventory.length; i++) {
+        var existing = g.inventory[i];
+        if (!isStackable(existing)) continue;
+        var existingKey = existing.name + '|' + (existing.quality || 'Обычное') + '|' + (existing.resourceType || '');
+        if (existingKey === key && (existing.count || 1) < MAX_STACK) {
+            var space = MAX_STACK - (existing.count || 1);
+            var toAdd = Math.min(addCount, space);
+            existing.count = (existing.count || 1) + toAdd;
+            addCount -= toAdd;
+            if (addCount <= 0) return true;
+        }
+    }
+    
+    while (addCount > 0) {
+        var newStack = Math.min(addCount, MAX_STACK);
+        var newItem = JSON.parse(JSON.stringify(item));
+        newItem.count = newStack;
+        g.inventory.push(newItem);
+        addCount -= newStack;
+    }
+    
+    return true;
+}
+
+function normalizeInventory(g) {
+    if (!g || !g.inventory) return;
+    var items = {};
+    for (var i = 0; i < g.inventory.length; i++) {
+        var item = g.inventory[i];
+        if (!isStackable(item)) continue;
+        var key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+        if (!items[key]) items[key] = { item: item, indices: [] };
+        items[key].indices.push(i);
+    }
+    for (var key in items) {
+        var data = items[key];
+        if (data.indices.length <= 1) continue;
+        var totalCount = 0;
+        data.indices.forEach(function(idx) { totalCount += g.inventory[idx].count || 1; });
+        data.indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
+        
+        var remaining = totalCount;
+        while (remaining > 0) {
+            var stack = Math.min(remaining, MAX_STACK);
+            var newItem = JSON.parse(JSON.stringify(data.item));
+            newItem.count = stack;
+            g.inventory.push(newItem);
+            remaining -= stack;
+        }
+    }
+}
+
+function splitStack(index) {
+    var user = users[currentUser]; if (!user) return;
+    var g = user.game;
+    if (index >= g.inventory.length) return;
+    var item = g.inventory[index];
+    if (!isStackable(item) || !item.count || item.count <= 1) { setMessage('❌ Нельзя разделить.'); return; }
+    var count = prompt('Сколько отделить? (до ' + (item.count - 1) + ')');
+    var num = parseInt(count);
+    if (isNaN(num) || num < 1 || num >= item.count) { setMessage('❌ Отменено.'); return; }
+    var newItem = JSON.parse(JSON.stringify(item));
+    newItem.count = num;
+    item.count -= num;
+    g.inventory.push(newItem);
+    setMessage('✅ Разделено: ' + num + ' шт.');
+    updateMenu(); saveData(); openInventory();
+}
+
+function mergeStacks() {
+    var user = users[currentUser]; if (!user) return;
+    var g = user.game;
+    var items = {};
+    for (var i = 0; i < g.inventory.length; i++) {
+        var item = g.inventory[i];
+        if (!isStackable(item)) continue;
+        var key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+        if (!items[key]) items[key] = { item: item, indices: [] };
+        items[key].indices.push(i);
+    }
+    var merged = false;
+    for (var key in items) {
+        var data = items[key];
+        if (data.indices.length <= 1) continue;
+        var totalCount = 0;
+        data.indices.forEach(function(idx) { totalCount += g.inventory[idx].count || 1; });
+        data.indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
+        
+        var remaining = totalCount;
+        while (remaining > 0) {
+            var stack = Math.min(remaining, MAX_STACK);
+            var newItem = JSON.parse(JSON.stringify(data.item));
+            newItem.count = stack;
+            g.inventory.push(newItem);
+            remaining -= stack;
+        }
+        merged = true;
+    }
+    setMessage(merged ? '✅ Стеки объединены.' : 'ℹ️ Нет стеков.');
+    updateMenu(); saveData(); openInventory();
+}
+
+function mergeSpecificStack(index) {
+    var user = users[currentUser]; if (!user) return;
+    var g = user.game;
+    if (index >= g.inventory.length) return;
+    var item = g.inventory[index];
+    if (!isStackable(item)) { setMessage('❌ Нельзя стакать.'); return; }
+    var key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
+    var totalCount = item.count || 1;
+    var indices = [index];
+    for (var i = 0; i < g.inventory.length; i++) {
+        if (i === index) continue;
+        var other = g.inventory[i];
+        if (!isStackable(other)) continue;
+        if (other.name + '|' + (other.quality || 'Обычное') + '|' + (other.resourceType || '') === key) {
+            totalCount += other.count || 1; indices.push(i);
+        }
+    }
+    if (indices.length <= 1) { setMessage('ℹ️ Нет других стеков.'); return; }
+    indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
+    
+    var remaining = totalCount;
+    while (remaining > 0) {
+        var stack = Math.min(remaining, MAX_STACK);
+        var newItem = JSON.parse(JSON.stringify(item));
+        newItem.count = stack;
+        g.inventory.push(newItem);
+        remaining -= stack;
+    }
+    setMessage('✅ Объединено: ' + totalCount + ' шт.');
+    updateMenu(); saveData(); openInventory();
+}
+
+function useOneFromStack(index) {
+    var user = users[currentUser]; if (!user) return;
+    var g = user.game;
+    if (index >= g.inventory.length) return;
+    var item = g.inventory[index];
+    if (!isConsumable(item)) { setMessage('❌ Нельзя использовать.'); return; }
+    if (isStackable(item) && item.count && item.count > 1) {
+        if (item.effect) {
+            if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
+            if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
+            if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
+        }
+        item.count--;
+        setMessage('✅ Использовано: ' + item.name);
+        updateMenu(); saveData(); openInventory();
+    } else {
+        useItem(index);
+    }
+}
 
 function openInventory() {
     var user = users[currentUser];
@@ -293,5 +460,11 @@ window.closeInventory = closeInventory;
 window.equipItem = equipItem;
 window.unequipItem = unequipItem;
 window.useItem = useItem;
+window.addToInventory = addToInventory;
+window.normalizeInventory = normalizeInventory;
+window.splitStack = splitStack;
+window.mergeStacks = mergeStacks;
+window.mergeSpecificStack = mergeSpecificStack;
+window.useOneFromStack = useOneFromStack;
 
 console.log('🎒 Инвентарь загружен!');
