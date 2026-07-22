@@ -1,5 +1,5 @@
 // ============================================================
-// ВСЕ ПРЕДМЕТЫ (ОРУЖИЕ, БРОНЯ, РЕСУРСЫ)
+// js/data/01-items.js — ВСЕ ПРЕДМЕТЫ (ОРУЖИЕ, БРОНЯ, РЕСУРСЫ)
 // ============================================================
 
 const ALL_ITEMS = {
@@ -116,8 +116,7 @@ const ALL_ITEMS = {
             { name:'Лук судьбы', level:80, baseDamage:52 },
             { name:'Лук бессмертного', level:85, baseDamage:56 },
             { name:'Лук бога', level:90, baseDamage:60 },
-            { name:'Лук властелина', level:95, baseDamage:65 },
-            { name:'Валирийский лук', level:100, baseDamage:75 }
+            { name:'Лук властелина', level:95, baseDamage:65 }
         ],
         crossbow: [
             { name:'Лёгкий арбалет', level:5, baseDamage:5 },
@@ -138,8 +137,7 @@ const ALL_ITEMS = {
             { name:'Арбалет судьбы', level:80, baseDamage:56 },
             { name:'Арбалет бессмертного', level:85, baseDamage:60 },
             { name:'Арбалет бога', level:90, baseDamage:65 },
-            { name:'Арбалет властелина', level:95, baseDamage:70 },
-            { name:'Валирийский арбалет', level:100, baseDamage:80 }
+            { name:'Арбалет властелина', level:95, baseDamage:70 }
         ],
         dagger: [
             { name:'Ржавый кинжал', level:1, baseDamage:2 },
@@ -190,188 +188,158 @@ const ALL_ITEMS = {
     },
     leather: {
         helmet: [
-            { name:'Рваный кожаный шлем', level:1, baseDefense:1 },
-            { name:'Плохой кожаный шлем', level:5, baseDefense:2 },
-            { name:'Кожаный шлем', level:10, baseDefense:3 },
-            { name:'Кожаный шлем разбойника', level:15, baseDefense:5 },
-            { name:'Кожаный шлем наёмника', level:20, baseDefense:7 },
-            { name:'Кожаный шлем стражи', level:25, baseDefense:9 },
-            { name:'Кожаный шлем рыцаря', level:30, baseDefense:11 },
-            { name:'Кожаный шлем лорда', level:35, baseDefense:13 },
-            { name:'Кожаный шлем героя', level:40, baseDefense:15 },
-            { name:'Кожаный шлем чемпиона', level:45, baseDefense:17 },
-            { name:'Кожаный шлем командующего', level:50, baseDefense:19 },
-            { name:'Королевский кожаный шлем', level:55, baseDefense:21 },
-            { name:'Великий кожаный шлем', level:60, baseDefense:23 },
-            { name:'Кожаный шлем завоевателя', level:65, baseDefense:25 },
-            { name:'Легендарный кожаный шлем', level:70, baseDefense:27 },
-            { name:'Кожаный шлем судьбы', level:75, baseDefense:29 },
-            { name:'Кожаный шлем бессмертного', level:80, baseDefense:31 },
-            { name:'Кожаный шлем бога', level:85, baseDefense:33 },
-            { name:'Кожаный шлем властелина', level:90, baseDefense:35 },
-            { name:'Кожаный шлем драконоборца', level:95, baseDefense:37 },
-            { name:'Валирийский кожаный шлем', level:100, baseDefense:50 }
+            { name:'Рваный кожаный шлем', level:1, baseDefense:1, agilityBonus:1 },
+            { name:'Плохой кожаный шлем', level:5, baseDefense:2, agilityBonus:2 },
+            { name:'Кожаный шлем', level:10, baseDefense:3, agilityBonus:3 },
+            { name:'Кожаный шлем разбойника', level:15, baseDefense:5, agilityBonus:5 },
+            { name:'Кожаный шлем наёмника', level:20, baseDefense:7, agilityBonus:7 },
+            { name:'Кожаный шлем стражи', level:25, baseDefense:9, agilityBonus:9 },
+            { name:'Кожаный шлем рыцаря', level:30, baseDefense:11, agilityBonus:11 },
+            { name:'Кожаный шлем лорда', level:35, baseDefense:13, agilityBonus:13 },
+            { name:'Кожаный шлем героя', level:40, baseDefense:15, agilityBonus:15 },
+            { name:'Кожаный шлем чемпиона', level:45, baseDefense:17, agilityBonus:17 },
+            { name:'Кожаный шлем командующего', level:50, baseDefense:19, agilityBonus:19 },
+            { name:'Королевский кожаный шлем', level:55, baseDefense:21, agilityBonus:21 },
+            { name:'Великий кожаный шлем', level:60, baseDefense:23, agilityBonus:23 },
+            { name:'Кожаный шлем завоевателя', level:65, baseDefense:25, agilityBonus:25 },
+            { name:'Легендарный кожаный шлем', level:70, baseDefense:27, agilityBonus:27 },
+            { name:'Кожаный шлем судьбы', level:75, baseDefense:29, agilityBonus:29 },
+            { name:'Кожаный шлем бессмертного', level:80, baseDefense:31, agilityBonus:31 },
+            { name:'Кожаный шлем бога', level:85, baseDefense:33, agilityBonus:33 },
+            { name:'Кожаный шлем властелина', level:90, baseDefense:35, agilityBonus:35 },
+            { name:'Кожаный шлем драконоборца', level:95, baseDefense:37, agilityBonus:37 }
         ],
         chestplate: [
-            { name:'Рваный кожаный нагрудник', level:1, baseDefense:1 },
-            { name:'Плохой кожаный нагрудник', level:5, baseDefense:3 },
-            { name:'Кожаный нагрудник', level:10, baseDefense:5 },
-            { name:'Кожаный нагрудник разбойника', level:15, baseDefense:8 },
-            { name:'Кожаный нагрудник наёмника', level:20, baseDefense:11 },
-            { name:'Кожаный нагрудник стражи', level:25, baseDefense:14 },
-            { name:'Кожаный нагрудник рыцаря', level:30, baseDefense:17 },
-            { name:'Кожаный нагрудник лорда', level:35, baseDefense:20 },
-            { name:'Кожаный нагрудник героя', level:40, baseDefense:23 },
-            { name:'Кожаный нагрудник чемпиона', level:45, baseDefense:26 },
-            { name:'Кожаный нагрудник командующего', level:50, baseDefense:29 },
-            { name:'Королевский кожаный нагрудник', level:55, baseDefense:32 },
-            { name:'Великий кожаный нагрудник', level:60, baseDefense:35 },
-            { name:'Кожаный нагрудник завоевателя', level:65, baseDefense:38 },
-            { name:'Легендарный кожаный нагрудник', level:70, baseDefense:41 },
-            { name:'Кожаный нагрудник судьбы', level:75, baseDefense:44 },
-            { name:'Кожаный нагрудник бессмертного', level:80, baseDefense:47 },
-            { name:'Кожаный нагрудник бога', level:85, baseDefense:50 },
-            { name:'Кожаный нагрудник властелина', level:90, baseDefense:53 },
-            { name:'Кожаный нагрудник драконоборца', level:95, baseDefense:56 },
-            { name:'Валирийский кожаный нагрудник', level:100, baseDefense:70 }
+            { name:'Рваный кожаный нагрудник', level:1, baseDefense:1, agilityBonus:1 },
+            { name:'Плохой кожаный нагрудник', level:5, baseDefense:3, agilityBonus:3 },
+            { name:'Кожаный нагрудник', level:10, baseDefense:5, agilityBonus:5 },
+            { name:'Кожаный нагрудник разбойника', level:15, baseDefense:8, agilityBonus:8 },
+            { name:'Кожаный нагрудник наёмника', level:20, baseDefense:11, agilityBonus:11 },
+            { name:'Кожаный нагрудник стражи', level:25, baseDefense:14, agilityBonus:14 },
+            { name:'Кожаный нагрудник рыцаря', level:30, baseDefense:17, agilityBonus:17 },
+            { name:'Кожаный нагрудник лорда', level:35, baseDefense:20, agilityBonus:20 },
+            { name:'Кожаный нагрудник героя', level:40, baseDefense:23, agilityBonus:23 },
+            { name:'Кожаный нагрудник чемпиона', level:45, baseDefense:26, agilityBonus:26 },
+            { name:'Кожаный нагрудник командующего', level:50, baseDefense:29, agilityBonus:29 },
+            { name:'Королевский кожаный нагрудник', level:55, baseDefense:32, agilityBonus:32 },
+            { name:'Великий кожаный нагрудник', level:60, baseDefense:35, agilityBonus:35 },
+            { name:'Кожаный нагрудник завоевателя', level:65, baseDefense:38, agilityBonus:38 },
+            { name:'Легендарный кожаный нагрудник', level:70, baseDefense:41, agilityBonus:41 },
+            { name:'Кожаный нагрудник судьбы', level:75, baseDefense:44, agilityBonus:44 },
+            { name:'Кожаный нагрудник бессмертного', level:80, baseDefense:47, agilityBonus:47 },
+            { name:'Кожаный нагрудник бога', level:85, baseDefense:50, agilityBonus:50 },
+            { name:'Кожаный нагрудник властелина', level:90, baseDefense:53, agilityBonus:53 },
+            { name:'Кожаный нагрудник драконоборца', level:95, baseDefense:56, agilityBonus:56 }
         ],
         boots: [
-            { name:'Рваные кожаные сапоги', level:1, baseDefense:0, speedPercent: 1 },
-            { name:'Плохие кожаные сапоги', level:5, baseDefense:1, speedPercent: 2 },
-            { name:'Кожаные сапоги', level:10, baseDefense:2, speedPercent: 3 },
-            { name:'Сапоги разбойника', level:15, baseDefense:3, speedPercent: 5 },
-            { name:'Сапоги наёмника', level:20, baseDefense:4, speedPercent: 7 },
-            { name:'Сапоги стражи', level:25, baseDefense:5, speedPercent: 9 },
-            { name:'Сапоги рыцаря', level:30, baseDefense:6, speedPercent: 11 },
-            { name:'Сапоги лорда', level:35, baseDefense:7, speedPercent: 13 },
-            { name:'Сапоги героя', level:40, baseDefense:8, speedPercent: 15 },
-            { name:'Сапоги чемпиона', level:45, baseDefense:9, speedPercent: 17 },
-            { name:'Сапоги командующего', level:50, baseDefense:10, speedPercent: 19 },
-            { name:'Королевские сапоги', level:55, baseDefense:11, speedPercent: 21 },
-            { name:'Великие сапоги', level:60, baseDefense:12, speedPercent: 23 },
-            { name:'Сапоги завоевателя', level:65, baseDefense:13, speedPercent: 25 },
-            { name:'Легендарные сапоги', level:70, baseDefense:14, speedPercent: 27 },
-            { name:'Сапоги судьбы', level:75, baseDefense:15, speedPercent: 29 },
-            { name:'Сапоги бессмертного', level:80, baseDefense:16, speedPercent: 30 },
-            { name:'Сапоги бога', level:85, baseDefense:17, speedPercent: 30 },
-            { name:'Сапоги властелина', level:90, baseDefense:18, speedPercent: 30 },
-            { name:'Сапоги драконоборца', level:95, baseDefense:19, speedPercent: 30 },
-            { name:'Валирийские сапоги', level:100, baseDefense:30, speedPercent: 30 }
+            { name:'Рваные кожаные сапоги', level:1, baseDefense:0, speedPercent:1 },
+            { name:'Плохие кожаные сапоги', level:5, baseDefense:1, speedPercent:2 },
+            { name:'Кожаные сапоги', level:10, baseDefense:2, speedPercent:3 },
+            { name:'Сапоги разбойника', level:15, baseDefense:3, speedPercent:5 },
+            { name:'Сапоги наёмника', level:20, baseDefense:4, speedPercent:7 },
+            { name:'Сапоги стражи', level:25, baseDefense:5, speedPercent:9 },
+            { name:'Сапоги рыцаря', level:30, baseDefense:6, speedPercent:11 },
+            { name:'Сапоги лорда', level:35, baseDefense:7, speedPercent:13 },
+            { name:'Сапоги героя', level:40, baseDefense:8, speedPercent:15 },
+            { name:'Сапоги чемпиона', level:45, baseDefense:9, speedPercent:17 },
+            { name:'Сапоги командующего', level:50, baseDefense:10, speedPercent:19 },
+            { name:'Королевские сапоги', level:55, baseDefense:11, speedPercent:21 },
+            { name:'Великие сапоги', level:60, baseDefense:12, speedPercent:23 },
+            { name:'Сапоги завоевателя', level:65, baseDefense:13, speedPercent:25 },
+            { name:'Легендарные сапоги', level:70, baseDefense:14, speedPercent:27 },
+            { name:'Сапоги судьбы', level:75, baseDefense:15, speedPercent:29 },
+            { name:'Сапоги бессмертного', level:80, baseDefense:16, speedPercent:30 },
+            { name:'Сапоги бога', level:85, baseDefense:17, speedPercent:30 },
+            { name:'Сапоги властелина', level:90, baseDefense:18, speedPercent:30 },
+            { name:'Сапоги драконоборца', level:95, baseDefense:19, speedPercent:30 }
         ],
         shoulders: [
-            { name:'Рваные кожаные наплечники', level:1, baseDefense:0 },
-            { name:'Плохие кожаные наплечники', level:5, baseDefense:1 },
-            { name:'Кожаные наплечники', level:10, baseDefense:2 },
-            { name:'Наплечники разбойника', level:15, baseDefense:3 },
-            { name:'Наплечники наёмника', level:20, baseDefense:4 },
-            { name:'Наплечники стражи', level:25, baseDefense:5 },
-            { name:'Наплечники рыцаря', level:30, baseDefense:6 },
-            { name:'Наплечники лорда', level:35, baseDefense:7 },
-            { name:'Наплечники героя', level:40, baseDefense:8 },
-            { name:'Наплечники чемпиона', level:45, baseDefense:9 },
-            { name:'Наплечники командующего', level:50, baseDefense:10 },
-            { name:'Королевские наплечники', level:55, baseDefense:11 },
-            { name:'Великие наплечники', level:60, baseDefense:12 },
-            { name:'Наплечники завоевателя', level:65, baseDefense:13 },
-            { name:'Легендарные наплечники', level:70, baseDefense:14 },
-            { name:'Наплечники судьбы', level:75, baseDefense:15 },
-            { name:'Наплечники бессмертного', level:80, baseDefense:16 },
-            { name:'Наплечники бога', level:85, baseDefense:17 },
-            { name:'Наплечники властелина', level:90, baseDefense:18 },
-            { name:'Наплечники драконоборца', level:95, baseDefense:19 },
-            { name:'Валирийские наплечники', level:100, baseDefense:30 }
+            { name:'Рваные кожаные наплечники', level:1, baseDefense:0, agilityBonus:1 },
+            { name:'Плохие кожаные наплечники', level:5, baseDefense:1, agilityBonus:2 },
+            { name:'Кожаные наплечники', level:10, baseDefense:2, agilityBonus:3 },
+            { name:'Наплечники разбойника', level:15, baseDefense:3, agilityBonus:4 },
+            { name:'Наплечники наёмника', level:20, baseDefense:4, agilityBonus:5 },
+            { name:'Наплечники стражи', level:25, baseDefense:5, agilityBonus:6 },
+            { name:'Наплечники рыцаря', level:30, baseDefense:6, agilityBonus:7 },
+            { name:'Наплечники лорда', level:35, baseDefense:7, agilityBonus:8 },
+            { name:'Наплечники героя', level:40, baseDefense:8, agilityBonus:9 },
+            { name:'Наплечники чемпиона', level:45, baseDefense:9, agilityBonus:10 },
+            { name:'Наплечники командующего', level:50, baseDefense:10, agilityBonus:11 },
+            { name:'Королевские наплечники', level:55, baseDefense:11, agilityBonus:12 },
+            { name:'Великие наплечники', level:60, baseDefense:12, agilityBonus:13 },
+            { name:'Наплечники завоевателя', level:65, baseDefense:13, agilityBonus:14 },
+            { name:'Легендарные наплечники', level:70, baseDefense:14, agilityBonus:15 },
+            { name:'Наплечники судьбы', level:75, baseDefense:15, agilityBonus:16 },
+            { name:'Наплечники бессмертного', level:80, baseDefense:16, agilityBonus:17 },
+            { name:'Наплечники бога', level:85, baseDefense:17, agilityBonus:18 },
+            { name:'Наплечники властелина', level:90, baseDefense:18, agilityBonus:19 },
+            { name:'Наплечники драконоборца', level:95, baseDefense:19, agilityBonus:20 }
         ],
         leggings: [
-            { name:'Рваные кожаные поножи', level:1, baseDefense:0 },
-            { name:'Плохие кожаные поножи', level:5, baseDefense:1 },
-            { name:'Кожаные поножи', level:10, baseDefense:2 },
-            { name:'Поножи разбойника', level:15, baseDefense:3 },
-            { name:'Поножи наёмника', level:20, baseDefense:4 },
-            { name:'Поножи стражи', level:25, baseDefense:5 },
-            { name:'Поножи рыцаря', level:30, baseDefense:6 },
-            { name:'Поножи лорда', level:35, baseDefense:7 },
-            { name:'Поножи героя', level:40, baseDefense:8 },
-            { name:'Поножи чемпиона', level:45, baseDefense:9 },
-            { name:'Поножи командующего', level:50, baseDefense:10 },
-            { name:'Королевские поножи', level:55, baseDefense:11 },
-            { name:'Великие поножи', level:60, baseDefense:12 },
-            { name:'Поножи завоевателя', level:65, baseDefense:13 },
-            { name:'Легендарные поножи', level:70, baseDefense:14 },
-            { name:'Поножи судьбы', level:75, baseDefense:15 },
-            { name:'Поножи бессмертного', level:80, baseDefense:16 },
-            { name:'Поножи бога', level:85, baseDefense:17 },
-            { name:'Поножи властелина', level:90, baseDefense:18 },
-            { name:'Поножи драконоборца', level:95, baseDefense:19 },
-            { name:'Валирийские поножи', level:100, baseDefense:30 }
+            { name:'Рваные кожаные поножи', level:1, baseDefense:0, agilityBonus:1 },
+            { name:'Плохие кожаные поножи', level:5, baseDefense:1, agilityBonus:2 },
+            { name:'Кожаные поножи', level:10, baseDefense:2, agilityBonus:3 },
+            { name:'Поножи разбойника', level:15, baseDefense:3, agilityBonus:4 },
+            { name:'Поножи наёмника', level:20, baseDefense:4, agilityBonus:5 },
+            { name:'Поножи стражи', level:25, baseDefense:5, agilityBonus:6 },
+            { name:'Поножи рыцаря', level:30, baseDefense:6, agilityBonus:7 },
+            { name:'Поножи лорда', level:35, baseDefense:7, agilityBonus:8 },
+            { name:'Поножи героя', level:40, baseDefense:8, agilityBonus:9 },
+            { name:'Поножи чемпиона', level:45, baseDefense:9, agilityBonus:10 },
+            { name:'Поножи командующего', level:50, baseDefense:10, agilityBonus:11 },
+            { name:'Королевские поножи', level:55, baseDefense:11, agilityBonus:12 },
+            { name:'Великие поножи', level:60, baseDefense:12, agilityBonus:13 },
+            { name:'Поножи завоевателя', level:65, baseDefense:13, agilityBonus:14 },
+            { name:'Легендарные поножи', level:70, baseDefense:14, agilityBonus:15 },
+            { name:'Поножи судьбы', level:75, baseDefense:15, agilityBonus:16 },
+            { name:'Поножи бессмертного', level:80, baseDefense:16, agilityBonus:17 },
+            { name:'Поножи бога', level:85, baseDefense:17, agilityBonus:18 },
+            { name:'Поножи властелина', level:90, baseDefense:18, agilityBonus:19 },
+            { name:'Поножи драконоборца', level:95, baseDefense:19, agilityBonus:20 }
         ],
         gloves: [
-            { name:'Рваные кожаные перчатки', level:1, baseDefense:0 },
-            { name:'Плохие кожаные перчатки', level:5, baseDefense:1 },
-            { name:'Кожаные перчатки', level:10, baseDefense:2 },
-            { name:'Перчатки разбойника', level:15, baseDefense:3 },
-            { name:'Перчатки наёмника', level:20, baseDefense:4 },
-            { name:'Перчатки стражи', level:25, baseDefense:5 },
-            { name:'Перчатки рыцаря', level:30, baseDefense:6 },
-            { name:'Перчатки лорда', level:35, baseDefense:7 },
-            { name:'Перчатки героя', level:40, baseDefense:8 },
-            { name:'Перчатки чемпиона', level:45, baseDefense:9 },
-            { name:'Перчатки командующего', level:50, baseDefense:10 },
-            { name:'Королевские перчатки', level:55, baseDefense:11 },
-            { name:'Великие перчатки', level:60, baseDefense:12 },
-            { name:'Перчатки завоевателя', level:65, baseDefense:13 },
-            { name:'Легендарные перчатки', level:70, baseDefense:14 },
-            { name:'Перчатки судьбы', level:75, baseDefense:15 },
-            { name:'Перчатки бессмертного', level:80, baseDefense:16 },
-            { name:'Перчатки бога', level:85, baseDefense:17 },
-            { name:'Перчатки властелина', level:90, baseDefense:18 },
-            { name:'Перчатки драконоборца', level:95, baseDefense:19 },
-            { name:'Валирийские перчатки', level:100, baseDefense:30 }
+            { name:'Рваные кожаные перчатки', level:1, baseDefense:0, agilityBonus:1 },
+            { name:'Плохие кожаные перчатки', level:5, baseDefense:1, agilityBonus:2 },
+            { name:'Кожаные перчатки', level:10, baseDefense:2, agilityBonus:3 },
+            { name:'Перчатки разбойника', level:15, baseDefense:3, agilityBonus:4 },
+            { name:'Перчатки наёмника', level:20, baseDefense:4, agilityBonus:5 },
+            { name:'Перчатки стражи', level:25, baseDefense:5, agilityBonus:6 },
+            { name:'Перчатки рыцаря', level:30, baseDefense:6, agilityBonus:7 },
+            { name:'Перчатки лорда', level:35, baseDefense:7, agilityBonus:8 },
+            { name:'Перчатки героя', level:40, baseDefense:8, agilityBonus:9 },
+            { name:'Перчатки чемпиона', level:45, baseDefense:9, agilityBonus:10 },
+            { name:'Перчатки командующего', level:50, baseDefense:10, agilityBonus:11 },
+            { name:'Королевские перчатки', level:55, baseDefense:11, agilityBonus:12 },
+            { name:'Великие перчатки', level:60, baseDefense:12, agilityBonus:13 },
+            { name:'Перчатки завоевателя', level:65, baseDefense:13, agilityBonus:14 },
+            { name:'Легендарные перчатки', level:70, baseDefense:14, agilityBonus:15 },
+            { name:'Перчатки судьбы', level:75, baseDefense:15, agilityBonus:16 },
+            { name:'Перчатки бессмертного', level:80, baseDefense:16, agilityBonus:17 },
+            { name:'Перчатки бога', level:85, baseDefense:17, agilityBonus:18 },
+            { name:'Перчатки властелина', level:90, baseDefense:18, agilityBonus:19 },
+            { name:'Перчатки драконоборца', level:95, baseDefense:19, agilityBonus:20 }
         ],
         belt: [
-            { name:'Рваный кожаный пояс', level:1, baseDefense:0 },
-            { name:'Плохой кожаный пояс', level:5, baseDefense:1 },
-            { name:'Кожаный пояс', level:10, baseDefense:2 },
-            { name:'Пояс разбойника', level:15, baseDefense:3 },
-            { name:'Пояс наёмника', level:20, baseDefense:4 },
-            { name:'Пояс стражи', level:25, baseDefense:5 },
-            { name:'Пояс рыцаря', level:30, baseDefense:6 },
-            { name:'Пояс лорда', level:35, baseDefense:7 },
-            { name:'Пояс героя', level:40, baseDefense:8 },
-            { name:'Пояс чемпиона', level:45, baseDefense:9 },
-            { name:'Пояс командующего', level:50, baseDefense:10 },
-            { name:'Королевский пояс', level:55, baseDefense:11 },
-            { name:'Великий пояс', level:60, baseDefense:12 },
-            { name:'Пояс завоевателя', level:65, baseDefense:13 },
-            { name:'Легендарный пояс', level:70, baseDefense:14 },
-            { name:'Пояс судьбы', level:75, baseDefense:15 },
-            { name:'Пояс бессмертного', level:80, baseDefense:16 },
-            { name:'Пояс бога', level:85, baseDefense:17 },
-            { name:'Пояс властелина', level:90, baseDefense:18 },
-            { name:'Пояс драконоборца', level:95, baseDefense:19 },
-            { name:'Валирийский пояс', level:100, baseDefense:30 }
-        ],
-        cloak: [
-            { name:'Рваный кожаный плащ', level:1, baseDefense:0 },
-            { name:'Плохой кожаный плащ', level:5, baseDefense:1 },
-            { name:'Кожаный плащ', level:10, baseDefense:2 },
-            { name:'Плащ разбойника', level:15, baseDefense:3 },
-            { name:'Плащ наёмника', level:20, baseDefense:4 },
-            { name:'Плащ стражи', level:25, baseDefense:5 },
-            { name:'Плащ рыцаря', level:30, baseDefense:6 },
-            { name:'Плащ лорда', level:35, baseDefense:7 },
-            { name:'Плащ героя', level:40, baseDefense:8 },
-            { name:'Плащ чемпиона', level:45, baseDefense:9 },
-            { name:'Плащ командующего', level:50, baseDefense:10 },
-            { name:'Королевский плащ', level:55, baseDefense:11 },
-            { name:'Великий плащ', level:60, baseDefense:12 },
-            { name:'Плащ завоевателя', level:65, baseDefense:13 },
-            { name:'Легендарный плащ', level:70, baseDefense:14 },
-            { name:'Плащ судьбы', level:75, baseDefense:15 },
-            { name:'Плащ бессмертного', level:80, baseDefense:16 },
-            { name:'Плащ бога', level:85, baseDefense:17 },
-            { name:'Плащ властелина', level:90, baseDefense:18 },
-            { name:'Плащ драконоборца', level:95, baseDefense:19 },
-            { name:'Валирийский плащ', level:100, baseDefense:30 }
+            { name:'Рваный кожаный пояс', level:1, baseDefense:0, agilityBonus:1 },
+            { name:'Плохой кожаный пояс', level:5, baseDefense:1, agilityBonus:2 },
+            { name:'Кожаный пояс', level:10, baseDefense:2, agilityBonus:3 },
+            { name:'Пояс разбойника', level:15, baseDefense:3, agilityBonus:4 },
+            { name:'Пояс наёмника', level:20, baseDefense:4, agilityBonus:5 },
+            { name:'Пояс стражи', level:25, baseDefense:5, agilityBonus:6 },
+            { name:'Пояс рыцаря', level:30, baseDefense:6, agilityBonus:7 },
+            { name:'Пояс лорда', level:35, baseDefense:7, agilityBonus:8 },
+            { name:'Пояс героя', level:40, baseDefense:8, agilityBonus:9 },
+            { name:'Пояс чемпиона', level:45, baseDefense:9, agilityBonus:10 },
+            { name:'Пояс командующего', level:50, baseDefense:10, agilityBonus:11 },
+            { name:'Королевский пояс', level:55, baseDefense:11, agilityBonus:12 },
+            { name:'Великий пояс', level:60, baseDefense:12, agilityBonus:13 },
+            { name:'Пояс завоевателя', level:65, baseDefense:13, agilityBonus:14 },
+            { name:'Легендарный пояс', level:70, baseDefense:14, agilityBonus:15 },
+            { name:'Пояс судьбы', level:75, baseDefense:15, agilityBonus:16 },
+            { name:'Пояс бессмертного', level:80, baseDefense:16, agilityBonus:17 },
+            { name:'Пояс бога', level:85, baseDefense:17, agilityBonus:18 },
+            { name:'Пояс властелина', level:90, baseDefense:18, agilityBonus:19 },
+            { name:'Пояс драконоборца', level:95, baseDefense:19, agilityBonus:20 }
         ]
     },
     plate: {
@@ -420,26 +388,26 @@ const ALL_ITEMS = {
             { name:'Валирийский латный нагрудник', level:100, baseDefense:90 }
         ],
         boots: [
-            { name:'Ржавые латные сапоги', level:5, baseDefense:2, speedPercent: 1 },
-            { name:'Латные сапоги', level:10, baseDefense:4, speedPercent: 2 },
-            { name:'Латные сапоги разбойника', level:15, baseDefense:6, speedPercent: 3 },
-            { name:'Латные сапоги наёмника', level:20, baseDefense:8, speedPercent: 4 },
-            { name:'Латные сапоги стражи', level:25, baseDefense:10, speedPercent: 5 },
-            { name:'Латные сапоги рыцаря', level:30, baseDefense:12, speedPercent: 6 },
-            { name:'Латные сапоги лорда', level:35, baseDefense:14, speedPercent: 7 },
-            { name:'Латные сапоги героя', level:40, baseDefense:16, speedPercent: 8 },
-            { name:'Латные сапоги чемпиона', level:45, baseDefense:18, speedPercent: 9 },
-            { name:'Латные сапоги командующего', level:50, baseDefense:20, speedPercent: 10 },
-            { name:'Королевские латные сапоги', level:55, baseDefense:22, speedPercent: 11 },
-            { name:'Великие латные сапоги', level:60, baseDefense:24, speedPercent: 12 },
-            { name:'Латные сапоги завоевателя', level:65, baseDefense:26, speedPercent: 13 },
-            { name:'Легендарные латные сапоги', level:70, baseDefense:28, speedPercent: 14 },
-            { name:'Латные сапоги судьбы', level:75, baseDefense:30, speedPercent: 15 },
-            { name:'Латные сапоги бессмертного', level:80, baseDefense:32, speedPercent: 15 },
-            { name:'Латные сапоги бога', level:85, baseDefense:34, speedPercent: 15 },
-            { name:'Латные сапоги властелина', level:90, baseDefense:36, speedPercent: 15 },
-            { name:'Латные сапоги легенды', level:95, baseDefense:38, speedPercent: 15 },
-            { name:'Валирийские латные сапоги', level:100, baseDefense:45, speedPercent: 15 }
+            { name:'Ржавые латные сапоги', level:5, baseDefense:2, speedPercent:1 },
+            { name:'Латные сапоги', level:10, baseDefense:4, speedPercent:2 },
+            { name:'Латные сапоги разбойника', level:15, baseDefense:6, speedPercent:3 },
+            { name:'Латные сапоги наёмника', level:20, baseDefense:8, speedPercent:4 },
+            { name:'Латные сапоги стражи', level:25, baseDefense:10, speedPercent:5 },
+            { name:'Латные сапоги рыцаря', level:30, baseDefense:12, speedPercent:6 },
+            { name:'Латные сапоги лорда', level:35, baseDefense:14, speedPercent:7 },
+            { name:'Латные сапоги героя', level:40, baseDefense:16, speedPercent:8 },
+            { name:'Латные сапоги чемпиона', level:45, baseDefense:18, speedPercent:9 },
+            { name:'Латные сапоги командующего', level:50, baseDefense:20, speedPercent:10 },
+            { name:'Королевские латные сапоги', level:55, baseDefense:22, speedPercent:11 },
+            { name:'Великие латные сапоги', level:60, baseDefense:24, speedPercent:12 },
+            { name:'Латные сапоги завоевателя', level:65, baseDefense:26, speedPercent:13 },
+            { name:'Легендарные латные сапоги', level:70, baseDefense:28, speedPercent:14 },
+            { name:'Латные сапоги судьбы', level:75, baseDefense:30, speedPercent:15 },
+            { name:'Латные сапоги бессмертного', level:80, baseDefense:32, speedPercent:15 },
+            { name:'Латные сапоги бога', level:85, baseDefense:34, speedPercent:15 },
+            { name:'Латные сапоги властелина', level:90, baseDefense:36, speedPercent:15 },
+            { name:'Латные сапоги легенды', level:95, baseDefense:38, speedPercent:15 },
+            { name:'Валирийские латные сапоги', level:100, baseDefense:45, speedPercent:15 }
         ],
         shoulders: [
             { name:'Ржавые латные наплечники', level:5, baseDefense:2 },
@@ -528,33 +496,44 @@ const ALL_ITEMS = {
             { name:'Латный пояс властелина', level:90, baseDefense:36 },
             { name:'Латный пояс легенды', level:95, baseDefense:38 },
             { name:'Валирийский латный пояс', level:100, baseDefense:50 }
-        ],
-        cloak: [
-            { name:'Ржавый латный плащ', level:5, baseDefense:2 },
-            { name:'Латный плащ', level:10, baseDefense:4 },
-            { name:'Латный плащ разбойника', level:15, baseDefense:6 },
-            { name:'Латный плащ наёмника', level:20, baseDefense:8 },
-            { name:'Латный плащ стражи', level:25, baseDefense:10 },
-            { name:'Латный плащ рыцаря', level:30, baseDefense:12 },
-            { name:'Латный плащ лорда', level:35, baseDefense:14 },
-            { name:'Латный плащ героя', level:40, baseDefense:16 },
-            { name:'Латный плащ чемпиона', level:45, baseDefense:18 },
-            { name:'Латный плащ командующего', level:50, baseDefense:20 },
-            { name:'Королевский латный плащ', level:55, baseDefense:22 },
-            { name:'Великий латный плащ', level:60, baseDefense:24 },
-            { name:'Латный плащ завоевателя', level:65, baseDefense:26 },
-            { name:'Легендарный латный плащ', level:70, baseDefense:28 },
-            { name:'Латный плащ судьбы', level:75, baseDefense:30 },
-            { name:'Латный плащ бессмертного', level:80, baseDefense:32 },
-            { name:'Латный плащ бога', level:85, baseDefense:34 },
-            { name:'Латный плащ властелина', level:90, baseDefense:36 },
-            { name:'Латный плащ легенды', level:95, baseDefense:38 },
-            { name:'Валирийский латный плащ', level:100, baseDefense:50 }
         ]
     }
 };
+
 // ============================================================
-// РАСХОДНИКИ, КНИГИ, ЕДА, ЗЕЛЬЯ (ОБНОВЛЁННЫЙ РАЗДЕЛ)
+// СОЛДАТСКОЕ СНАРЯЖЕНИЕ (только для ботов, создаётся в замковой кузнице)
+// ============================================================
+
+const SOLDIER_ITEMS = {
+    weapons: {
+        sword: [
+            { name: 'Меч солдата', baseDamage: 3 }
+        ],
+        spear: [
+            { name: 'Копьё солдата', baseDamage: 3 }
+        ],
+        bow: [
+            { name: 'Лук солдатский', baseDamage: 2 }
+        ],
+        crossbow: [
+            { name: 'Самострел солдата', baseDamage: 3 }
+        ],
+        shield: [
+            { name: 'Щит солдата', defense: 2 }
+        ]
+    },
+    armor: {
+        leather: [
+            { name: 'Комплект кожаной брони солдата', baseDefense: 3 }
+        ],
+        plate: [
+            { name: 'Комплект латной брони солдата', baseDefense: 8 }
+        ]
+    }
+};
+
+// ============================================================
+// РАСХОДНИКИ, КНИГИ, ЕДА, ЗЕЛЬЯ
 // ============================================================
 
 const CONSUMABLES = {
@@ -587,24 +566,49 @@ const CONSUMABLES = {
         { level: 25, xp: 400, price: 1000, name: '📖 Искусство войны (ур.25)' }
     ],
     resources: [
-        { name: 'Дерево', price: 3, resourceType: 'wood' },
-        { name: 'Руда железная', price: 5, resourceType: 'iron' },
-        { name: 'Кожа', price: 4, resourceType: 'leather' },
-        { name: 'Уголь', price: 2, resourceType: 'coal' },
-        { name: 'Сталь', price: 20, resourceType: 'steel' },
-        { name: 'Шкура', price: 6, resourceType: 'leather' },
-        // НОВЫЕ РЕСУРСЫ:
-        { name: '💎 Руда 14 огней', price: 50000, resourceType: 'valyrian_ore' },
-        { name: '🌟 Валирийская сталь', price: 100000, resourceType: 'valyrian_steel' }
-    ],
-    materials: [
         { name: '🪵 Древесина', price: 3, resourceType: 'wood' },
         { name: '⛏️ Руда', price: 5, resourceType: 'iron' },
         { name: '🧵 Кожа', price: 4, resourceType: 'leather' },
         { name: '🔥 Уголь', price: 2, resourceType: 'coal' },
         { name: '⚒️ Сталь', price: 20, resourceType: 'steel' },
-        // НОВЫЕ РЕСУРСЫ:
+        { name: '🪨 Камень', price: 2, resourceType: 'stone' },
+        { name: '🌾 Пшеница', price: 2, resourceType: 'wheat' },
+        { name: '🥕 Овощи', price: 2, resourceType: 'vegetables' },
+        { name: '🧵 Шкура', price: 6, resourceType: 'leather' },
+        { name: '🐟 Рыба', price: 5, resourceType: 'fish' },
+        { name: '🧂 Соль', price: 3, resourceType: 'salt' },
+        { name: '💧 Вода', price: 1, resourceType: 'water' },
         { name: '💎 Руда 14 огней', price: 50000, resourceType: 'valyrian_ore' },
         { name: '🌟 Валирийская сталь', price: 100000, resourceType: 'valyrian_steel' }
     ]
+// ============================================================
+// СОЛДАТСКОЕ СНАРЯЖЕНИЕ (только для ботов, создаётся в замковой кузнице)
+// ============================================================
+
+const SOLDIER_ITEMS = {
+    weapons: {
+        sword: [
+            { name: 'Меч солдата', baseDamage: 3 }
+        ],
+        spear: [
+            { name: 'Копьё солдата', baseDamage: 3 }
+        ],
+        bow: [
+            { name: 'Лук солдатский', baseDamage: 2 }
+        ],
+        crossbow: [
+            { name: 'Самострел солдата', baseDamage: 3 }
+        ],
+        shield: [
+            { name: 'Щит солдата', defense: 2 }
+        ]
+    },
+    armor: {
+        leather: [
+            { name: 'Комплект кожаной брони солдата', baseDefense: 3 }
+        ],
+        plate: [
+            { name: 'Комплект латной брони солдата', baseDefense: 8 }
+        ]
+    }
 };
