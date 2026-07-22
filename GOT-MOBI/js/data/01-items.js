@@ -612,4 +612,3 @@ const SOLDIER_ITEMS = {
         ]
     }
 };
-};
