@@ -110,8 +110,8 @@ function openCastleTavern() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-tavern'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeTavern(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🍺 ТАВЕРНА ЗАМКА</h3><button class="close-btn" onclick="closeTavern()">✕</button></div><div id="modal-tavern-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleTavern(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🍺 ТАВЕРНА ЗАМКА</h3><button class="close-btn" onclick="closeCastleTavern()">✕</button></div><div id="modal-tavern-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -134,7 +134,7 @@ function openCastleTavern() {
     html += '<div class="modal-section"><h4>🛏️ ОТДЫХ</h4>';
     html += '<div class="row"><span class="label">Отдохнуть (10 МП)</span><span class="value"><button class="btn btn-small" onclick="restInTavern()">🛏️ Отдых</button></span></div></div>';
     
-    html += '<button class="btn btn-secondary" onclick="closeTavern()" style="margin-top:10px;">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleTavern()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
@@ -158,7 +158,7 @@ function restInTavern() {
     saveData(); setMessage('🛏️ Вы отдохнули.'); updateMenu(); openCastleTavern();
 }
 
-function closeTavern() { var m = document.getElementById('modal-tavern'); if (m) m.classList.add('hide'); }
+function closeCastleTavern() { var m = document.getElementById('modal-tavern'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // КОНЮШНЯ
@@ -174,8 +174,8 @@ function openCastleStable() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-stable'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStable(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🐴 ЗАМКОВАЯ КОНЮШНЯ</h3><button class="close-btn" onclick="closeStable()">✕</button></div><div id="modal-stable-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleStable(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🐴 ЗАМКОВАЯ КОНЮШНЯ</h3><button class="close-btn" onclick="closeCastleStable()">✕</button></div><div id="modal-stable-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -189,7 +189,7 @@ function openCastleStable() {
             html += '<div style="color:#c9b694;font-size:16px;">🐴 ВАША ЛОШАДЬ</div>';
             html += '<div style="color:#b8a890;">' + horse.emoji + ' ' + horse.name + '</div>';
             html += '<div style="color:#6a5a48;font-size:12px;">❤️ HP: ' + g.equipment.horse.hp + '/' + g.equipment.horse.maxHp + '</div>';
-            html += '<button class="btn btn-danger" onclick="sellCastleHorse(); closeStable();" style="margin-top:8px;">💰 Продать лошадь</button>';
+            html += '<button class="btn btn-danger" onclick="sellCastleHorse(); closeCastleStable();" style="margin-top:8px;">💰 Продать лошадь</button>';
             html += '</div>';
         }
     } else {
@@ -218,7 +218,7 @@ function openCastleStable() {
         if (isOwned) html += ' <span style="color:#7ac98a;">✅ Ваша</span>';
         html += '</div><div style="text-align:right;">';
         if (isOwned) html += '<span style="color:#7ac98a;">Уже куплена</span>';
-        else if (canBuy && available > 0) html += formatCurrency(h.price * 210 * 56) + ' <button class="btn btn-small" onclick="buyCastleHorse(\'' + h.type + '\',' + h.price + '); closeStable();">✅</button>';
+        else if (canBuy && available > 0) html += formatCurrency(h.price * 210 * 56) + ' <button class="btn btn-small" onclick="buyCastleHorse(\'' + h.type + '\',' + h.price + '); closeCastleStable();">✅</button>';
         else if (available <= 0) html += '<span style="color:#c96a5a;">Распродано</span>';
         else html += '<span style="color:#c96a5a;">Продайте текущую</span>';
         html += '</div></div>';
@@ -260,7 +260,7 @@ function sellCastleHorse() {
     saveData(); setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56)); updateMenu();
 }
 
-function closeStable() { var m = document.getElementById('modal-stable'); if (m) m.classList.add('hide'); }
+function closeCastleStable() { var m = document.getElementById('modal-stable'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // МАСТЕРСКАЯ
@@ -276,8 +276,8 @@ function openCastleWorkshop() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-workshop'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeWorkshop(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛠️ МАСТЕРСКАЯ</h3><button class="close-btn" onclick="closeWorkshop()">✕</button></div><div id="modal-workshop-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleWorkshop(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛠️ МАСТЕРСКАЯ</h3><button class="close-btn" onclick="closeCastleWorkshop()">✕</button></div><div id="modal-workshop-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -317,7 +317,7 @@ function openCastleWorkshop() {
     html += '</div>';
     
     html += '<p style="color:#c96a5a;font-size:11px;">❌ Кожевня и Плотник отсутствуют.</p>';
-    html += '<button class="btn btn-secondary" onclick="closeWorkshop()" style="margin-top:10px;">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleWorkshop()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
@@ -342,7 +342,6 @@ function queueWorkshopItem(itemId) {
         setMessage('❌ Недостаточно ресурсов на складе.'); return;
     }
     
-    // Списываем обычное качество
     if (needsIron > 0 && storage.iron['Обычное']) { var t = Math.min(storage.iron['Обычное'], needsIron); storage.iron['Обычное'] -= t; if (storage.iron['Обычное'] <= 0) delete storage.iron['Обычное']; needsIron -= t; }
     if (needsSteel > 0 && storage.steel['Обычное']) { var t = Math.min(storage.steel['Обычное'], needsSteel); storage.steel['Обычное'] -= t; if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное']; needsSteel -= t; }
     if (needsPlanks > 0 && storage.planks['Обычное']) { var t = Math.min(storage.planks['Обычное'], needsPlanks); storage.planks['Обычное'] -= t; if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное']; needsPlanks -= t; }
@@ -350,7 +349,7 @@ function queueWorkshopItem(itemId) {
     
     queue.push({ id: itemId, name: name, timeLeft: 60 });
     setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
-    processWorkshopQueue(); closeWorkshop(); openCastleWorkshop();
+    processWorkshopQueue(); closeCastleWorkshop(); openCastleWorkshop();
 }
 
 function cancelQueueItem(index) {
@@ -367,7 +366,7 @@ function cancelQueueItem(index) {
     
     saveData();
     setMessage('❌ ' + item.name + ' удалён из очереди. Ресурсы возвращены.');
-    closeWorkshop(); openCastleWorkshop();
+    closeCastleWorkshop(); openCastleWorkshop();
 }
 
 function processWorkshopQueue() {
@@ -395,10 +394,10 @@ function processWorkshopQueue() {
     }, 60000);
 }
 
-function closeWorkshop() { var m = document.getElementById('modal-workshop'); if (m) m.classList.add('hide'); }
+function closeCastleWorkshop() { var m = document.getElementById('modal-workshop'); if (m) m.classList.add('hide'); }
 
 // ============================================================
-// СКЛАД (с модальным окном качеств)
+// СКЛАД
 // ============================================================
 
 function openCastleStorage() {
@@ -412,8 +411,8 @@ function openCastleStorage() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-storage'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStorage(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД ЗАМКА</h3><button class="close-btn" onclick="closeStorage()">✕</button></div><div id="modal-storage-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleStorage(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД ЗАМКА</h3><button class="close-btn" onclick="closeCastleStorage()">✕</button></div><div id="modal-storage-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -447,7 +446,7 @@ function openCastleStorage() {
         }
     });
     html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeStorage()">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleStorage()">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
@@ -459,8 +458,8 @@ function showStorageQualityModal(key, name) {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-storage-quality'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStorageQuality(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ' + name + '</h3><button class="close-btn" onclick="closeStorageQuality()">✕</button></div><div id="modal-storage-quality-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleStorageQuality(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ' + name + '</h3><button class="close-btn" onclick="closeCastleStorageQuality()">✕</button></div><div id="modal-storage-quality-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -480,7 +479,7 @@ function showStorageQualityModal(key, name) {
     
     if (!hasAny) html += '<p style="color:#6a5a48;">Пусто.</p>';
     html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeStorageQuality()">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleStorageQuality()">Закрыть</button>';
     
     content.innerHTML = html; modal.classList.remove('hide');
 }
@@ -501,7 +500,7 @@ function takeQualityFromStorage(key, quality, available, name) {
     }
     
     saveData(); setMessage('✅ Забрано: ' + amount + ' ' + quality); updateMenu();
-    closeStorageQuality(); openCastleStorage();
+    closeCastleStorageQuality(); openCastleStorage();
 }
 
 function takeSimpleFromStorage(key, available) {
@@ -544,8 +543,8 @@ function donateToStorage(index) {
     saveData(); setMessage('✅ ' + item.name + ' ×' + count + ' на складе.'); updateMenu(); openCastleStorage();
 }
 
-function closeStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
-function closeStorageQuality() { var m = document.getElementById('modal-storage-quality'); if (m) m.classList.add('hide'); }
+function closeCastleStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
+function closeCastleStorageQuality() { var m = document.getElementById('modal-storage-quality'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // АМБАР
@@ -562,8 +561,8 @@ function openCastleGranary() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-granary'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeGranary(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🌾 АМБАР</h3><button class="close-btn" onclick="closeGranary()">✕</button></div><div id="modal-granary-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleGranary(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🌾 АМБАР</h3><button class="close-btn" onclick="closeCastleGranary()">✕</button></div><div id="modal-granary-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -587,7 +586,7 @@ function openCastleGranary() {
         }
     });
     html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeGranary()">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleGranary()">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
@@ -628,7 +627,7 @@ function takeFromGranary(key, available) {
     saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleGranary();
 }
 
-function closeGranary() { var m = document.getElementById('modal-granary'); if (m) m.classList.add('hide'); }
+function closeCastleGranary() { var m = document.getElementById('modal-granary'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // ОРУЖЕЙНАЯ
@@ -642,8 +641,8 @@ function openCastleArmory() {
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-armory'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeArmory(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ОРУЖЕЙНАЯ</h3><button class="close-btn" onclick="closeArmory()">✕</button></div><div id="modal-armory-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) closeCastleArmory(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ОРУЖЕЙНАЯ</h3><button class="close-btn" onclick="closeCastleArmory()">✕</button></div><div id="modal-armory-content"></div></div>';
         document.body.appendChild(overlay); modal = overlay;
     }
     
@@ -656,7 +655,7 @@ function openCastleArmory() {
     html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierArmor\')">🛡️ Солд. броня ('+armory.soldierArmor.length+')</button>';
     html += '<button class="tab-btn" onclick="showArmoryTab(\'donate\')">📥 Положить</button>';
     html += '</div><div id="armory-tab-content"></div>';
-    html += '<button class="btn btn-secondary" onclick="closeArmory()" style="margin-top:10px;">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="closeCastleArmory()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
     showArmoryTab('weapons');
 }
@@ -712,7 +711,7 @@ function donateToArmory(index) {
     saveData(); setMessage('✅ ' + item.name + ' перемещён в оружейную.'); updateMenu(); showArmoryTab('donate');
 }
 
-function closeArmory() { var m = document.getElementById('modal-armory'); if (m) m.classList.add('hide'); }
+function closeCastleArmory() { var m = document.getElementById('modal-armory'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // ОСТАЛЬНЫЕ ЗДАНИЯ
@@ -738,7 +737,7 @@ function openCastleMap() {
         html += '<div class="row"><span class="label">'+b.label+(isCurrent?' ⭐':'')+'</span>';
         html += '<span class="value">'+(isCurrent?'<span style="color:#6a5a48;">Вы здесь</span>':'<button class="btn btn-small" onclick="goToCastleBuilding(\''+b.id+'\')">🚶 Идти</button>')+'</span></div>';
     });
-    html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
+    html += '</div><button class="btn" onclick="document.getElementById(\'modal-map\').classList.add(\'hide\')">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
@@ -748,7 +747,8 @@ function goToCastleBuilding(building) {
     if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
     if (!CASTLE_BUILDINGS.some(function(b){return b.id===building})) { setMessage('❌ Здание не найдено.'); return; }
     g.location.place = building; g.location.location = 'Бронзовый Щит';
-    closeMap(); updateMenu(); updateStory(); updateActions(); saveData();
+    document.getElementById('modal-map').classList.add('hide');
+    updateMenu(); updateStory(); updateActions(); saveData();
 }
 
 // ============================================================
@@ -821,11 +821,6 @@ window.enterBucklerCastle = function() {
     setMessage('🏰 Вы вошли в замок Бронзовый Щит.');
     updateMenu(); updateStory(); updateActions(); saveData();
 };
-
-window.openCastleMap = openCastleMap;
-window.goToCastleBuilding = goToCastleBuilding;
-window.updateStory = window.updateStory;
-window.updateActions = window.updateActions;
 
 processWorkshopQueue();
 console.log('🏰 Замок Бронзовый Щит загружен!');
