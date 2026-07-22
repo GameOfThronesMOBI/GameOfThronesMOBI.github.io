@@ -182,10 +182,9 @@ function openCastleWorkshop() {
     
     var html = '<div class="modal-section"><h4>🛠️ МАСТЕРСКАЯ ЗАМКА</h4>';
     html += '<p style="color:#6a5a48;font-size:11px;">⚒️ Кузница: ✅ | 🪡 Кожевня: ❌ | 🪵 Плотник: ❌</p>';
-    html += '<p style="color:#6a5a48;font-size:11px;">📦 Склад: Руда: ' + storage.iron + ' | Уголь: ' + storage.coal + ' | Сталь: ' + storage.steel + '</p>';
+    html += '<p style="color:#6a5a48;font-size:11px;">📦 Склад: Руда: ' + storage.iron + ' | Уголь: ' + storage.coal + ' | Сталь: ' + storage.steel + ' | Доски: ' + storage.planks + ' | Кожа: ' + storage.leather + '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;">🗡️ Оружейная: ' + armory.length + ' предметов</p>';
     
-    // Очередь
     if (queue.length > 0) {
         html += '<p style="color:#ffd700;font-size:11px;">⏳ Очередь: ' + queue.length + '/10</p>';
         queue.forEach(function(q, i) {
@@ -199,27 +198,32 @@ function openCastleWorkshop() {
     html += '<div class="row"><span class="label">Сталь (2 руды + 1 уголь)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'steel\')">🔨 1 час</button></span></div>';
     html += '</div>';
     
-    // Снаряжение
-    html += '<div class="modal-section"><h4>🗡️ ОРУЖИЕ</h4>';
+    // Оружие (кузница)
+    html += '<div class="modal-section"><h4>🗡️ ОРУЖИЕ (Кузница)</h4>';
     var weapons = [
-        { id: 'sword', name: 'Меч солдата', steel: 3 },
-        { id: 'spear', name: 'Копьё солдата', steel: 3 },
-        { id: 'shield', name: 'Щит солдата', steel: 6 }
+        { id: 'sword', name: 'Меч солдата', steel: 3, planks: 0 },
+        { id: 'spear', name: 'Копьё солдата', steel: 1, planks: 2 },
+        { id: 'shield', name: 'Щит солдата', steel: 6, planks: 0 }
     ];
     weapons.forEach(function(w) {
-        html += '<div class="row"><span class="label">' + w.name + ' (' + w.steel + ' стали)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'' + w.id + '\')">🔨 1 час</button></span></div>';
+        var costs = w.steel + ' стали';
+        if (w.planks > 0) costs += ' + ' + w.planks + ' досок';
+        html += '<div class="row"><span class="label">' + w.name + ' (' + costs + ')</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'' + w.id + '\')">🔨 1 час</button></span></div>';
     });
     html += '</div>';
     
+    // Броня латная
     html += '<div class="modal-section"><h4>🛡️ ЛАТНАЯ БРОНЯ</h4>';
     html += '<div class="row"><span class="label">Комплект латной брони (12 стали)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'plate_armor\')">🔨 1 час</button></span></div>';
     html += '</div>';
     
+    // Броня кожаная
     html += '<div class="modal-section"><h4>🧵 КОЖАНАЯ БРОНЯ</h4>';
     html += '<p style="color:#c96a5a;font-size:11px;">❌ Нет кожевни.</p>';
     html += '</div>';
     
-    html += '<div class="modal-section"><h4>🏹 ЛУКИ И АРБАЛЕТЫ</h4>';
+    // Луки
+    html += '<div class="modal-section"><h4>🏹 ЛУКИ И АРБАЛЕТЫ (Плотник)</h4>';
     html += '<p style="color:#c96a5a;font-size:11px;">❌ Нет плотника.</p>';
     html += '</div>';
     
@@ -236,16 +240,16 @@ function queueWorkshopItem(itemId) {
     if (queue.length >= 10) { setMessage('❌ Очередь заполнена (макс. 10).'); return; }
     
     var name = '';
-    var needsSteel = 0, needsIron = 0, needsCoal = 0;
+    var needsSteel = 0, needsIron = 0, needsCoal = 0, needsPlanks = 0;
     
     if (itemId === 'steel') { name = 'Сталь'; needsIron = 2; needsCoal = 1; }
     else if (itemId === 'sword') { name = 'Меч солдата'; needsSteel = 3; }
-    else if (itemId === 'spear') { name = 'Копьё солдата'; needsSteel = 3; }
+    else if (itemId === 'spear') { name = 'Копьё солдата'; needsSteel = 1; needsPlanks = 2; }
     else if (itemId === 'shield') { name = 'Щит солдата'; needsSteel = 6; }
     else if (itemId === 'plate_armor') { name = 'Комплект латной брони'; needsSteel = 12; }
     else { setMessage('❌ Неизвестный предмет.'); return; }
     
-    if (storage.iron < needsIron || storage.coal < needsCoal || storage.steel < needsSteel) {
+    if (storage.iron < needsIron || storage.coal < needsCoal || storage.steel < needsSteel || storage.planks < needsPlanks) {
         setMessage('❌ Недостаточно ресурсов на складе.');
         return;
     }
@@ -253,6 +257,7 @@ function queueWorkshopItem(itemId) {
     storage.iron -= needsIron;
     storage.coal -= needsCoal;
     storage.steel -= needsSteel;
+    storage.planks -= needsPlanks;
     
     queue.push({ id: itemId, name: name, timeLeft: 60, needsSteel: needsSteel });
     setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
@@ -292,7 +297,7 @@ function processWorkshopQueue() {
             saveData();
         }
         if (queue.length === 0) { clearInterval(window._workshopTimer); window._workshopTimer = null; }
-    }, 60000); // 1 минута = 60000 мс (для теста можно 1000)
+    }, 60000);
 }
 
 function closeWorkshop() {
@@ -327,6 +332,7 @@ function openCastleStorage() {
     html += '<p style="color:#b8a890;">⛏️ Руда: ' + storage.iron + '</p>';
     html += '<p style="color:#b8a890;">🔥 Уголь: ' + storage.coal + '</p>';
     html += '<p style="color:#b8a890;">⚒️ Сталь: ' + storage.steel + '</p>';
+    html += '<p style="color:#b8a890;">🪵 Доски: ' + storage.planks + '</p>';
     html += '<p style="color:#b8a890;">🧵 Кожа: ' + storage.leather + '</p>';
     html += '<p style="color:#b8a890;">🪵 Древесина: ' + storage.wood + '</p>';
     html += '</div>';
@@ -336,7 +342,8 @@ function openCastleStorage() {
         { id: 'iron', name: 'Руда', type: 'iron' },
         { id: 'coal', name: 'Уголь', type: 'coal' },
         { id: 'leather', name: 'Кожа', type: 'leather' },
-        { id: 'wood', name: 'Древесина', type: 'wood' }
+        { id: 'wood', name: 'Древесина', type: 'wood' },
+        { id: 'planks', name: 'Доски', type: 'wood' }
     ];
     
     resources.forEach(function(r) {
