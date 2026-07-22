@@ -15,7 +15,7 @@ if (!window._castleHorseLimits) window._castleHorseLimits = {};
 
 function getCastleStorage(castleId) {
     if (!window._castleStorages[castleId]) {
-        window._castleStorages[castleId] = { iron: 0, coal: 0, steel: 0, planks: 0, leather: 0, hardenedLeather: 0, stone: 0, wood: 0, salt: 0, valyrian_ore: 0, valyrian_steel: 0 };
+        window._castleStorages[castleId] = { iron: {}, coal: 0, steel: {}, planks: {}, leather: {}, hardenedLeather: {}, stone: 0, wood: {}, salt: 0, valyrian_ore: 0, valyrian_steel: 0 };
     }
     return window._castleStorages[castleId];
 }
@@ -51,6 +51,32 @@ function getCastleHorseLimits(castleId) {
     if (now > limits.war.resetTime) { limits.war.sold = 0; limits.war.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
     if (now > limits.heavy.resetTime) { limits.heavy.sold = 0; limits.heavy.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
     return limits;
+}
+
+// Функции для работы с качественными ресурсами
+function addQualityResource(storageObj, key, quality, count) {
+    if (!storageObj[key]) storageObj[key] = {};
+    if (!storageObj[key][quality]) storageObj[key][quality] = 0;
+    storageObj[key][quality] += count;
+}
+
+function removeQualityResource(storageObj, key, quality, count) {
+    if (!storageObj[key] || !storageObj[key][quality] || storageObj[key][quality] < count) return false;
+    storageObj[key][quality] -= count;
+    if (storageObj[key][quality] <= 0) delete storageObj[key][quality];
+    return true;
+}
+
+function getQualityResourceCount(storageObj, key, quality) {
+    if (!storageObj[key] || !storageObj[key][quality]) return 0;
+    return storageObj[key][quality];
+}
+
+function getTotalQualityResource(storageObj, key) {
+    if (!storageObj[key]) return 0;
+    var total = 0;
+    for (var q in storageObj[key]) total += storageObj[key][q];
+    return total;
 }
 
 function isBucklerMember() {
@@ -104,33 +130,28 @@ function openCastleTavern() {
     
     var content = document.getElementById('modal-tavern-content');
     var html = '<div class="modal-section"><h4>🍺 ТАВЕРНА БРОНЗОВОГО ЩИТА</h4>';
-    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
-    html += '</div>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p></div>';
     
-    // Еда
     html += '<div class="modal-section"><h4>🍞 ЕДА</h4>';
-    [{name:'🍞 Хлеб',price:5,effect:{food:20}},{name:'🥩 Мясо',price:10,effect:{food:30}},{name:'🐟 Рыба',price:8,effect:{food:25}},{name:'🧀 Сыр',price:7,effect:{food:22}},{name:'🍎 Яблоко',price:3,effect:{food:15}}].forEach(function(item){
-        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+',\'food\','+item.effect.food+',0)">Купить</button></span></div>';
+    [{name:'🍞 Хлеб',price:5,food:20},{name:'🥩 Мясо',price:10,food:30},{name:'🐟 Рыба',price:8,food:25},{name:'🧀 Сыр',price:7,food:22},{name:'🍎 Яблоко',price:3,food:15}].forEach(function(item){
+        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+','+item.food+',0)">Купить</button></span></div>';
     });
     html += '</div>';
     
-    // Напитки
     html += '<div class="modal-section"><h4>🍺 НАПИТКИ</h4>';
-    [{name:'💧 Вода',price:2,effect:{thirst:15}},{name:'🍺 Эль',price:5,effect:{hp:5,thirst:10}},{name:'🍷 Вино',price:8,effect:{hp:8,thirst:15}},{name:'🥛 Молоко',price:4,effect:{food:10,thirst:10}}].forEach(function(item){
-        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+',\'drink\','+(item.effect.food||0)+','+(item.effect.thirst||0)+')">Купить</button></span></div>';
+    [{name:'💧 Вода',price:2,food:0,thirst:15},{name:'🍺 Эль',price:5,food:0,thirst:10},{name:'🍷 Вино',price:8,food:0,thirst:15},{name:'🥛 Молоко',price:4,food:10,thirst:10}].forEach(function(item){
+        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+','+item.food+','+item.thirst+')">Купить</button></span></div>';
     });
     html += '</div>';
     
-    // Отдых
     html += '<div class="modal-section"><h4>🛏️ ОТДЫХ</h4>';
-    html += '<div class="row"><span class="label">Отдохнуть (10 МП)</span><span class="value"><button class="btn btn-small" onclick="restInTavern()">🛏️ Отдых</button></span></div>';
-    html += '</div>';
+    html += '<div class="row"><span class="label">Отдохнуть (10 МП)</span><span class="value"><button class="btn btn-small" onclick="restInTavern()">🛏️ Отдых</button></span></div></div>';
     
     html += '<button class="btn btn-secondary" onclick="closeTavern()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
-function buyTavernItem(name, price, category, food, thirst) {
+function buyTavernItem(name, price, food, thirst) {
     var user = users[currentUser];
     if (!user) return;
     var g = user.game;
@@ -147,7 +168,7 @@ function restInTavern() {
     if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег!'); return; }
     g.fatigue = Math.min(100, g.fatigue + 30);
     g.hp = Math.min(g.maxHp, g.hp + 15);
-    saveData(); setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.'); updateMenu(); openCastleTavern();
+    saveData(); setMessage('🛏️ Вы отдохнули.'); updateMenu(); openCastleTavern();
 }
 
 function closeTavern() { var m = document.getElementById('modal-tavern'); if (m) m.classList.add('hide'); }
@@ -275,14 +296,21 @@ function openCastleWorkshop() {
     
     var content = document.getElementById('modal-workshop-content');
     var totalArmory = armory.weapons.length + armory.armor.length + armory.soldierWeapons.length + armory.soldierArmor.length;
+    var totalIron = getTotalQualityResource(storage, 'iron');
+    var totalSteel = getTotalQualityResource(storage, 'steel');
+    var totalPlanks = getTotalQualityResource(storage, 'planks');
     
     var html = '<div class="modal-section"><h4>🛠️ МАСТЕРСКАЯ ЗАМКА</h4>';
     html += '<p style="color:#6a5a48;font-size:11px;">⚒️ Кузница: ✅ | 🪡 Кожевня: ❌ | 🪵 Плотник: ❌</p>';
-    html += '<p style="color:#6a5a48;font-size:11px;">📦 Руда:' + storage.iron + ' Уголь:' + storage.coal + ' Сталь:' + storage.steel + ' Доски:' + storage.planks + ' Кожа:' + storage.leather + '</p>';
+    html += '<p style="color:#6a5a48;font-size:11px;">📦 Руда:' + totalIron + ' Уголь:' + storage.coal + ' Сталь:' + totalSteel + ' Доски:' + totalPlanks + '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;">🗡️ Оружейная: ' + totalArmory + ' предм.</p>';
+    
     if (queue.length > 0) {
         html += '<p style="color:#ffd700;font-size:11px;">⏳ Очередь: ' + queue.length + '/10</p>';
-        queue.forEach(function(q, i) { html += '<div style="font-size:10px;color:#b8a890;">' + (i+1) + '. ' + q.name + ' — ' + q.timeLeft + ' мин</div>'; });
+        queue.forEach(function(q, i) {
+            html += '<div style="font-size:10px;color:#b8a890;">' + (i+1) + '. ' + q.name + ' — ' + q.timeLeft + ' мин ';
+            html += '<button class="btn btn-small" style="background:#3d2a1a;font-size:9px;" onclick="cancelQueueItem(' + i + ')">❌</button></div>';
+        });
     }
     html += '</div>';
     
@@ -310,6 +338,7 @@ function queueWorkshopItem(itemId) {
     var queue = getCastleQueue(CASTLE_ID);
     var storage = getCastleStorage(CASTLE_ID);
     if (queue.length >= 10) { setMessage('❌ Очередь заполнена.'); return; }
+    
     var name = '', needsSteel = 0, needsIron = 0, needsCoal = 0, needsPlanks = 0;
     if (itemId === 'steel') { name = 'Сталь'; needsIron = 2; needsCoal = 1; }
     else if (itemId === 'sword') { name = 'Меч солдата'; needsSteel = 3; }
@@ -317,13 +346,69 @@ function queueWorkshopItem(itemId) {
     else if (itemId === 'shield') { name = 'Щит солдата'; needsSteel = 6; }
     else if (itemId === 'plate_armor') { name = 'Комплект латной брони'; needsSteel = 12; }
     else { setMessage('❌ Неизвестный предмет.'); return; }
-    if (storage.iron < needsIron || storage.coal < needsCoal || storage.steel < needsSteel || storage.planks < needsPlanks) {
+    
+    // Проверка ресурсов (используем обычное качество для крафта)
+    var totalIron = getTotalQualityResource(storage, 'iron');
+    var totalSteel = getTotalQualityResource(storage, 'steel');
+    var totalPlanks = getTotalQualityResource(storage, 'planks');
+    
+    if (totalIron < needsIron || storage.coal < needsCoal || totalSteel < needsSteel || totalPlanks < needsPlanks) {
         setMessage('❌ Недостаточно ресурсов на складе.'); return;
     }
-    storage.iron -= needsIron; storage.coal -= needsCoal; storage.steel -= needsSteel; storage.planks -= needsPlanks;
-    queue.push({ id: itemId, name: name, timeLeft: 60 });
+    
+    // Списываем ресурсы (обычное качество в первую очередь)
+    if (needsIron > 0) {
+        var remaining = needsIron;
+        if (storage.iron['Обычное'] && storage.iron['Обычное'] > 0) {
+            var take = Math.min(storage.iron['Обычное'], remaining);
+            storage.iron['Обычное'] -= take;
+            if (storage.iron['Обычное'] <= 0) delete storage.iron['Обычное'];
+            remaining -= take;
+        }
+        needsIron = remaining;
+    }
+    if (needsSteel > 0) {
+        var remaining = needsSteel;
+        if (storage.steel['Обычное'] && storage.steel['Обычное'] > 0) {
+            var take = Math.min(storage.steel['Обычное'], remaining);
+            storage.steel['Обычное'] -= take;
+            if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное'];
+            remaining -= take;
+        }
+        needsSteel = remaining;
+    }
+    if (needsPlanks > 0) {
+        var remaining = needsPlanks;
+        if (storage.planks['Обычное'] && storage.planks['Обычное'] > 0) {
+            var take = Math.min(storage.planks['Обычное'], remaining);
+            storage.planks['Обычное'] -= take;
+            if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное'];
+            remaining -= take;
+        }
+        needsPlanks = remaining;
+    }
+    storage.coal -= needsCoal;
+    
+    queue.push({ id: itemId, name: name, timeLeft: 60, needsSteel: 0, needsIron: 0, needsCoal: 0, needsPlanks: 0 });
     setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
     processWorkshopQueue(); closeWorkshop(); openCastleWorkshop();
+}
+
+function cancelQueueItem(index) {
+    var queue = getCastleQueue(CASTLE_ID);
+    var storage = getCastleStorage(CASTLE_ID);
+    if (index >= queue.length) { setMessage('❌ Предмет не найден.'); return; }
+    var item = queue.splice(index, 1)[0];
+    
+    if (item.id === 'steel') { addQualityResource(storage, 'iron', 'Обычное', 2); storage.coal += 1; }
+    else if (item.id === 'sword') { addQualityResource(storage, 'steel', 'Обычное', 3); }
+    else if (item.id === 'spear') { addQualityResource(storage, 'steel', 'Обычное', 1); addQualityResource(storage, 'planks', 'Обычное', 2); }
+    else if (item.id === 'shield') { addQualityResource(storage, 'steel', 'Обычное', 6); }
+    else if (item.id === 'plate_armor') { addQualityResource(storage, 'steel', 'Обычное', 12); }
+    
+    saveData();
+    setMessage('❌ ' + item.name + ' удалён из очереди. Ресурсы возвращены.');
+    closeWorkshop(); openCastleWorkshop();
 }
 
 function processWorkshopQueue() {
@@ -336,7 +421,7 @@ function processWorkshopQueue() {
             var done = queue.shift();
             var storage = getCastleStorage(CASTLE_ID);
             var armory = getCastleArmory(CASTLE_ID);
-            if (done.id === 'steel') { storage.steel++; setMessage('✅ Сталь готова!'); }
+            if (done.id === 'steel') { addQualityResource(storage, 'steel', 'Обычное', 1); setMessage('✅ Сталь готова!'); }
             else {
                 var item = null, cat = '';
                 if (done.id === 'sword') { item = SOLDIER_ITEMS.weapons.sword[0]; cat = 'soldierWeapons'; }
@@ -375,26 +460,88 @@ function openCastleStorage() {
     
     var content = document.getElementById('modal-storage-content');
     var html = '<div class="modal-section"><h4>📦 СКЛАД ЗАМКА</h4>';
-    var res = [
-        {key:'iron',name:'⛏️ Руда'},{key:'coal',name:'🔥 Уголь'},{key:'steel',name:'⚒️ Сталь'},
-        {key:'planks',name:'🪵 Доски'},{key:'leather',name:'🧵 Кожа'},{key:'hardenedLeather',name:'🟤 Дублёная кожа'},
-        {key:'stone',name:'🪨 Камень'},{key:'wood',name:'🪵 Древесина'},{key:'salt',name:'🧂 Соль'},
+    
+    // Ресурсы с качеством
+    var qualityResources = [
+        {key:'iron',name:'⛏️ Руда'},{key:'steel',name:'⚒️ Сталь'},{key:'planks',name:'🪵 Доски'},
+        {key:'leather',name:'🧵 Кожа'},{key:'hardenedLeather',name:'🟫 Дублёная кожа'},{key:'wood',name:'🪵 Древесина'}
+    ];
+    
+    qualityResources.forEach(function(r) {
+        var total = getTotalQualityResource(storage, r.key);
+        html += '<div class="row"><span class="label">'+r.name+': '+total+'</span><span class="value"><button class="btn btn-small" onclick="showStorageQuality(\''+r.key+'\',\''+r.name+'\')">📋</button></span></div>';
+    });
+    
+    // Ресурсы без качества
+    var simpleResources = [
+        {key:'coal',name:'🔥 Уголь'},{key:'salt',name:'🧂 Соль'},{key:'stone',name:'🪨 Камень'},
         {key:'valyrian_ore',name:'💎 Руда 14 огней'},{key:'valyrian_steel',name:'🌟 Валирийская сталь'}
     ];
-    res.forEach(function(r) {
-        html += '<div class="row"><span class="label">'+r.name+': '+storage[r.key]+'</span><span class="value"><button class="btn btn-small" onclick="takeFromStorage(\''+r.key+'\')">📤</button></span></div>';
+    
+    simpleResources.forEach(function(r) {
+        html += '<div class="row"><span class="label">'+r.name+': '+(storage[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeSimpleFromStorage(\''+r.key+'\','+(storage[r.key]||0)+')">📤</button></span></div>';
     });
     html += '</div>';
     
     html += '<div class="modal-section"><h4>📥 ПОЛОЖИТЬ РЕСУРСЫ</h4>';
     g.inventory.forEach(function(item, i) {
         if (item.resourceType) {
-            html += '<div class="row"><span class="label">'+item.name+' ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToStorage('+i+')">📥</button></span></div>';
+            html += '<div class="row"><span class="label">'+item.name+' ('+(item.quality||'Обычное')+') ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToStorage('+i+')">📥</button></span></div>';
         }
     });
     html += '</div>';
     html += '<button class="btn btn-secondary" onclick="closeStorage()">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
+}
+
+function showStorageQuality(key, name) {
+    var storage = getCastleStorage(CASTLE_ID);
+    var qualities = storage[key] || {};
+    var msg = name + ' на складе:\n';
+    var hasAny = false;
+    for (var q in qualities) {
+        if (qualities[q] > 0) { msg += '• ' + q + ': ' + qualities[q] + ' шт.\n'; hasAny = true; }
+    }
+    if (!hasAny) msg += 'Пусто.\n';
+    msg += '\nВведите качество и количество:\n(например: Обычное 5)';
+    var input = prompt(msg);
+    if (!input) return;
+    var parts = input.split(' ');
+    var quality = parts[0];
+    var amount = parseInt(parts[1]);
+    if (!quality || isNaN(amount) || amount <= 0 || !qualities[quality] || qualities[quality] < amount) {
+        setMessage('❌ Неверный ввод.'); return;
+    }
+    
+    qualities[quality] -= amount;
+    if (qualities[quality] <= 0) delete qualities[quality];
+    
+    var remaining = amount;
+    while (remaining > 0) {
+        var stack = Math.min(remaining, 50);
+        addToInventory(users[currentUser].game, { name: name, type: 'resource', resourceType: key, count: stack, quality: quality });
+        remaining -= stack;
+    }
+    
+    saveData(); setMessage('✅ Забрано: ' + amount + ' ' + quality); updateMenu(); openCastleStorage();
+}
+
+function takeSimpleFromStorage(key, available) {
+    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
+    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
+    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
+    
+    var storage = getCastleStorage(CASTLE_ID);
+    storage[key] -= amount;
+    
+    var remaining = amount;
+    while (remaining > 0) {
+        var stack = Math.min(remaining, 50);
+        addToInventory(users[currentUser].game, { name: key, type: 'resource', resourceType: key, count: stack, quality: 'Обычное' });
+        remaining -= stack;
+    }
+    
+    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleStorage();
 }
 
 function donateToStorage(index) {
@@ -406,23 +553,18 @@ function donateToStorage(index) {
     var item = g.inventory[index];
     if (!item.resourceType) { setMessage('❌ Это не ресурс.'); return; }
     var count = item.count || 1;
-    storage[item.resourceType] = (storage[item.resourceType] || 0) + count;
+    var quality = item.quality || 'Обычное';
+    
+    // Проверяем, ресурс с качеством или без
+    var qualityKeys = ['iron','steel','planks','leather','hardenedLeather','wood'];
+    if (qualityKeys.indexOf(item.resourceType) !== -1) {
+        addQualityResource(storage, item.resourceType, quality, count);
+    } else {
+        storage[item.resourceType] = (storage[item.resourceType] || 0) + count;
+    }
+    
     g.inventory.splice(index, 1);
     saveData(); setMessage('✅ ' + item.name + ' ×' + count + ' на складе.'); updateMenu(); openCastleStorage();
-}
-
-function takeFromStorage(key) {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var storage = getCastleStorage(CASTLE_ID);
-    var available = storage[key] || 0;
-    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
-    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
-    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
-    storage[key] -= amount;
-    addToInventory(g, { name: key, type: 'resource', resourceType: key, count: amount, quality: 'Обычное' });
-    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleStorage();
 }
 
 function closeStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
@@ -456,7 +598,7 @@ function openCastleGranary() {
         {key:'ale',name:'🍺 Эль'},{key:'wine',name:'🍷 Вино'}
     ];
     res.forEach(function(r) {
-        html += '<div class="row"><span class="label">'+r.name+': '+(granary[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeFromGranary(\''+r.key+'\')">📤</button></span></div>';
+        html += '<div class="row"><span class="label">'+r.name+': '+(granary[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeFromGranary(\''+r.key+'\','+(granary[r.key]||0)+')">📤</button></span></div>';
     });
     html += '</div>';
     
@@ -487,18 +629,24 @@ function donateToGranary(index) {
     saveData(); setMessage('✅ Положено в амбар.'); updateMenu(); openCastleGranary();
 }
 
-function takeFromGranary(key) {
+function takeFromGranary(key, available) {
+    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
     var user = users[currentUser];
     if (!user) return;
     var g = user.game;
     var granary = getCastleGranary(CASTLE_ID);
-    var available = granary[key] || 0;
-    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
     var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
     if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
     granary[key] -= amount;
+    
     var names = {wheat:'🌾 Пшеница',vegetables:'🥕 Овощи',fish:'🐟 Рыба',water:'💧 Вода',bread:'🍞 Хлеб',meat:'🥩 Мясо',cheese:'🧀 Сыр',apple:'🍎 Яблоко',milk:'🥛 Молоко',ale:'🍺 Эль',wine:'🍷 Вино'};
-    addToInventory(g, { name: names[key] || key, type: 'food', count: amount, quality: 'Обычное' });
+    var remaining = amount;
+    while (remaining > 0) {
+        var stack = Math.min(remaining, 50);
+        addToInventory(g, { name: names[key] || key, type: 'food', count: stack, quality: 'Обычное' });
+        remaining -= stack;
+    }
+    
     saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleGranary();
 }
 
@@ -564,9 +712,9 @@ function showArmoryTab(tab) {
         if (items.length === 0) html += '<p style="color:#6a5a48;">Пусто.</p>';
         else {
             var grouped = {};
-            items.forEach(function(item) { var k = item.name; if (!grouped[k]) grouped[k] = 0; grouped[k]++; });
-            for (var name in grouped) {
-                html += '<div class="row"><span class="label">'+name+'</span><span class="value">×'+grouped[name]+'</span></div>';
+            items.forEach(function(item) { var k = item.name + '|' + (item.quality||'Обычное'); if (!grouped[k]) grouped[k] = {item:item,count:0}; grouped[k].count++; });
+            for (var k in grouped) {
+                html += '<div class="row"><span class="label">'+grouped[k].item.name+' ('+(grouped[k].item.quality||'Обычное')+')</span><span class="value">×'+grouped[k].count+'</span></div>';
             }
         }
     }
