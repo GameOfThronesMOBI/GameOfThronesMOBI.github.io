@@ -53,23 +53,10 @@ function getCastleHorseLimits(castleId) {
     return limits;
 }
 
-// Функции для работы с качественными ресурсами
 function addQualityResource(storageObj, key, quality, count) {
     if (!storageObj[key]) storageObj[key] = {};
     if (!storageObj[key][quality]) storageObj[key][quality] = 0;
     storageObj[key][quality] += count;
-}
-
-function removeQualityResource(storageObj, key, quality, count) {
-    if (!storageObj[key] || !storageObj[key][quality] || storageObj[key][quality] < count) return false;
-    storageObj[key][quality] -= count;
-    if (storageObj[key][quality] <= 0) delete storageObj[key][quality];
-    return true;
-}
-
-function getQualityResourceCount(storageObj, key, quality) {
-    if (!storageObj[key] || !storageObj[key][quality]) return 0;
-    return storageObj[key][quality];
 }
 
 function getTotalQualityResource(storageObj, key) {
@@ -347,7 +334,6 @@ function queueWorkshopItem(itemId) {
     else if (itemId === 'plate_armor') { name = 'Комплект латной брони'; needsSteel = 12; }
     else { setMessage('❌ Неизвестный предмет.'); return; }
     
-    // Проверка ресурсов (используем обычное качество для крафта)
     var totalIron = getTotalQualityResource(storage, 'iron');
     var totalSteel = getTotalQualityResource(storage, 'steel');
     var totalPlanks = getTotalQualityResource(storage, 'planks');
@@ -356,40 +342,13 @@ function queueWorkshopItem(itemId) {
         setMessage('❌ Недостаточно ресурсов на складе.'); return;
     }
     
-    // Списываем ресурсы (обычное качество в первую очередь)
-    if (needsIron > 0) {
-        var remaining = needsIron;
-        if (storage.iron['Обычное'] && storage.iron['Обычное'] > 0) {
-            var take = Math.min(storage.iron['Обычное'], remaining);
-            storage.iron['Обычное'] -= take;
-            if (storage.iron['Обычное'] <= 0) delete storage.iron['Обычное'];
-            remaining -= take;
-        }
-        needsIron = remaining;
-    }
-    if (needsSteel > 0) {
-        var remaining = needsSteel;
-        if (storage.steel['Обычное'] && storage.steel['Обычное'] > 0) {
-            var take = Math.min(storage.steel['Обычное'], remaining);
-            storage.steel['Обычное'] -= take;
-            if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное'];
-            remaining -= take;
-        }
-        needsSteel = remaining;
-    }
-    if (needsPlanks > 0) {
-        var remaining = needsPlanks;
-        if (storage.planks['Обычное'] && storage.planks['Обычное'] > 0) {
-            var take = Math.min(storage.planks['Обычное'], remaining);
-            storage.planks['Обычное'] -= take;
-            if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное'];
-            remaining -= take;
-        }
-        needsPlanks = remaining;
-    }
+    // Списываем обычное качество
+    if (needsIron > 0 && storage.iron['Обычное']) { var t = Math.min(storage.iron['Обычное'], needsIron); storage.iron['Обычное'] -= t; if (storage.iron['Обычное'] <= 0) delete storage.iron['Обычное']; needsIron -= t; }
+    if (needsSteel > 0 && storage.steel['Обычное']) { var t = Math.min(storage.steel['Обычное'], needsSteel); storage.steel['Обычное'] -= t; if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное']; needsSteel -= t; }
+    if (needsPlanks > 0 && storage.planks['Обычное']) { var t = Math.min(storage.planks['Обычное'], needsPlanks); storage.planks['Обычное'] -= t; if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное']; needsPlanks -= t; }
     storage.coal -= needsCoal;
     
-    queue.push({ id: itemId, name: name, timeLeft: 60, needsSteel: 0, needsIron: 0, needsCoal: 0, needsPlanks: 0 });
+    queue.push({ id: itemId, name: name, timeLeft: 60 });
     setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
     processWorkshopQueue(); closeWorkshop(); openCastleWorkshop();
 }
@@ -439,7 +398,7 @@ function processWorkshopQueue() {
 function closeWorkshop() { var m = document.getElementById('modal-workshop'); if (m) m.classList.add('hide'); }
 
 // ============================================================
-// СКЛАД
+// СКЛАД (с модальным окном качеств)
 // ============================================================
 
 function openCastleStorage() {
@@ -461,7 +420,6 @@ function openCastleStorage() {
     var content = document.getElementById('modal-storage-content');
     var html = '<div class="modal-section"><h4>📦 СКЛАД ЗАМКА</h4>';
     
-    // Ресурсы с качеством
     var qualityResources = [
         {key:'iron',name:'⛏️ Руда'},{key:'steel',name:'⚒️ Сталь'},{key:'planks',name:'🪵 Доски'},
         {key:'leather',name:'🧵 Кожа'},{key:'hardenedLeather',name:'🟫 Дублёная кожа'},{key:'wood',name:'🪵 Древесина'}
@@ -469,10 +427,9 @@ function openCastleStorage() {
     
     qualityResources.forEach(function(r) {
         var total = getTotalQualityResource(storage, r.key);
-        html += '<div class="row"><span class="label">'+r.name+': '+total+'</span><span class="value"><button class="btn btn-small" onclick="showStorageQuality(\''+r.key+'\',\''+r.name+'\')">📋</button></span></div>';
+        html += '<div class="row"><span class="label">'+r.name+': '+total+'</span><span class="value"><button class="btn btn-small" onclick="showStorageQualityModal(\''+r.key+'\',\''+r.name+'\')">📋</button></span></div>';
     });
     
-    // Ресурсы без качества
     var simpleResources = [
         {key:'coal',name:'🔥 Уголь'},{key:'salt',name:'🧂 Соль'},{key:'stone',name:'🪨 Камень'},
         {key:'valyrian_ore',name:'💎 Руда 14 огней'},{key:'valyrian_steel',name:'🌟 Валирийская сталь'}
@@ -494,27 +451,47 @@ function openCastleStorage() {
     content.innerHTML = html; modal.classList.remove('hide');
 }
 
-function showStorageQuality(key, name) {
+function showStorageQualityModal(key, name) {
     var storage = getCastleStorage(CASTLE_ID);
     var qualities = storage[key] || {};
-    var msg = name + ' на складе:\n';
-    var hasAny = false;
-    for (var q in qualities) {
-        if (qualities[q] > 0) { msg += '• ' + q + ': ' + qualities[q] + ' шт.\n'; hasAny = true; }
-    }
-    if (!hasAny) msg += 'Пусто.\n';
-    msg += '\nВведите качество и количество:\n(например: Обычное 5)';
-    var input = prompt(msg);
-    if (!input) return;
-    var parts = input.split(' ');
-    var quality = parts[0];
-    var amount = parseInt(parts[1]);
-    if (!quality || isNaN(amount) || amount <= 0 || !qualities[quality] || qualities[quality] < amount) {
-        setMessage('❌ Неверный ввод.'); return;
+    
+    var modal = document.getElementById('modal-storage-quality');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-storage-quality'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeStorageQuality(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ' + name + '</h3><button class="close-btn" onclick="closeStorageQuality()">✕</button></div><div id="modal-storage-quality-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
     }
     
-    qualities[quality] -= amount;
-    if (qualities[quality] <= 0) delete qualities[quality];
+    var content = document.getElementById('modal-storage-quality-content');
+    var html = '<div class="modal-section"><h4>' + name + ' на складе</h4>';
+    
+    var qualityOrder = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
+    var hasAny = false;
+    
+    qualityOrder.forEach(function(q) {
+        if (qualities[q] && qualities[q] > 0) {
+            hasAny = true;
+            var qData = QUALITIES[q] || {};
+            html += '<div class="row"><span class="label" style="color:'+(qData.color||'#fff')+';">'+(qData.emoji||'')+' '+q+': '+qualities[q]+' шт.</span><span class="value"><button class="btn btn-small" onclick="takeQualityFromStorage(\''+key+'\',\''+q+'\','+qualities[q]+',\''+name+'\')">📤 Забрать</button></span></div>';
+        }
+    });
+    
+    if (!hasAny) html += '<p style="color:#6a5a48;">Пусто.</p>';
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeStorageQuality()">Закрыть</button>';
+    
+    content.innerHTML = html; modal.classList.remove('hide');
+}
+
+function takeQualityFromStorage(key, quality, available, name) {
+    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
+    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
+    
+    var storage = getCastleStorage(CASTLE_ID);
+    storage[key][quality] -= amount;
+    if (storage[key][quality] <= 0) delete storage[key][quality];
     
     var remaining = amount;
     while (remaining > 0) {
@@ -523,7 +500,8 @@ function showStorageQuality(key, name) {
         remaining -= stack;
     }
     
-    saveData(); setMessage('✅ Забрано: ' + amount + ' ' + quality); updateMenu(); openCastleStorage();
+    saveData(); setMessage('✅ Забрано: ' + amount + ' ' + quality); updateMenu();
+    closeStorageQuality(); openCastleStorage();
 }
 
 function takeSimpleFromStorage(key, available) {
@@ -555,7 +533,6 @@ function donateToStorage(index) {
     var count = item.count || 1;
     var quality = item.quality || 'Обычное';
     
-    // Проверяем, ресурс с качеством или без
     var qualityKeys = ['iron','steel','planks','leather','hardenedLeather','wood'];
     if (qualityKeys.indexOf(item.resourceType) !== -1) {
         addQualityResource(storage, item.resourceType, quality, count);
@@ -568,6 +545,7 @@ function donateToStorage(index) {
 }
 
 function closeStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
+function closeStorageQuality() { var m = document.getElementById('modal-storage-quality'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // АМБАР
@@ -658,9 +636,6 @@ function closeGranary() { var m = document.getElementById('modal-granary'); if (
 
 function openCastleArmory() {
     if (!checkBucklerAccess()) return;
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
     var armory = getCastleArmory(CASTLE_ID);
     
     var modal = document.getElementById('modal-armory');
