@@ -49,7 +49,6 @@ function openShop(shopType) {
 }
 
 function getShopCategories(shopType) {
-    // Кожевник и его подтипы
     if (shopType === 'КожевникРесурсы') {
         return [{ id: 'leather', label: '🧵 Кожа' }];
     }
@@ -77,7 +76,6 @@ function getShopCategories(shopType) {
         ];
     }
     
-    // Плотник и его подтипы
     if (shopType === 'ПлотникРесурсы') {
         return [{ id: 'wood', label: '🪵 Дерево' }];
     }
@@ -95,7 +93,6 @@ function getShopCategories(shopType) {
         ];
     }
     
-    // Кузница
     if (shopType === 'Кузница') {
         return [
             { id: 'iron', label: '⛏️ Руда' },
@@ -106,7 +103,6 @@ function getShopCategories(shopType) {
         ];
     }
     
-    // Торговля (общая)
     if (shopType === 'Торговля') {
         return [
             { id: 'sword', label: '🗡️ Мечи' },
@@ -197,12 +193,11 @@ function openCategory(shopType, categoryId) {
 function getCategoryItems(shopType, categoryId) {
     var items = [];
     
-    // Определяем базовый магазин для стока
     var stockShop = shopType;
     if (shopType === 'КожевникРесурсы' || shopType === 'ТорговляКожа') stockShop = 'Кожевник';
     if (shopType === 'ПлотникРесурсы' || shopType === 'ТорговляДерево') stockShop = 'Плотник';
+    if (shopType === 'Торговля') stockShop = 'Кузница';
     
-    // Кожевник и подтипы
     if (stockShop === 'Кожевник') {
         if (categoryId === 'leather') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(quality) {
@@ -242,7 +237,6 @@ function getCategoryItems(shopType, categoryId) {
         }
     }
     
-    // Плотник и подтипы
     if (stockShop === 'Плотник') {
         if (categoryId === 'wood') {
             ['Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное'].forEach(function(quality) {
@@ -281,10 +275,9 @@ function getCategoryItems(shopType, categoryId) {
         }
     }
     
-    // Кузница
     if (shopType === 'Кузница') {
         var resourceNames = {
-            'iron': { name: '⛏️ Руда железная', basePrice: 8 },
+            'iron': { name: '⛏️ Руда', basePrice: 8 },
             'coal': { name: '🔥 Уголь', basePrice: 4 },
             'steel': { name: '⚒️ Сталь', basePrice: 20 },
             'valyrian_ore': { name: '💎 Руда 14 огней', basePrice: 50000 },
@@ -309,9 +302,7 @@ function getCategoryItems(shopType, categoryId) {
         }
     }
     
-    // Торговля (общая)
     if (shopType === 'Торговля') {
-        // Оружие ближнего боя
         if (['sword','spear','axe','mace','dagger','shield'].indexOf(categoryId) !== -1) {
             if (ALL_ITEMS && ALL_ITEMS.weapons && ALL_ITEMS.weapons[categoryId]) {
                 ALL_ITEMS.weapons[categoryId].forEach(function(w) {
@@ -339,7 +330,6 @@ function getCategoryItems(shopType, categoryId) {
                 });
             }
         }
-        // Латная броня
         if (['helmet','chestplate','shoulders','leggings','boots','gloves','belt'].indexOf(categoryId) !== -1) {
             if (ALL_ITEMS && ALL_ITEMS.plate && ALL_ITEMS.plate[categoryId]) {
                 ALL_ITEMS.plate[categoryId].forEach(function(w) {
@@ -474,10 +464,10 @@ function buyFromShop(shopType, itemKey, price) {
         return;
     }
     
-    // Маппинг стока для подтипов магазинов
     var stockShop = shopType;
     if (shopType === 'КожевникРесурсы' || shopType === 'ТорговляКожа') stockShop = 'Кожевник';
     if (shopType === 'ПлотникРесурсы' || shopType === 'ТорговляДерево') stockShop = 'Плотник';
+    if (shopType === 'Торговля') stockShop = 'Кузница';
     
     removeTraderStock(stockShop, itemKey, 1);
     
@@ -547,14 +537,15 @@ function buyFromShop(shopType, itemKey, price) {
     
     if (!found) {
         item.type = 'resource';
-        if (name === 'Руда железная') item.resourceType = 'iron';
-        else if (name === 'Уголь') item.resourceType = 'coal';
-        else if (name === 'Сталь') item.resourceType = 'steel';
-        else if (name === 'Кожа') item.resourceType = 'leather';
-        else if (name === 'Дерево') item.resourceType = 'wood';
-        else if (name === 'Руда 14 огней') item.resourceType = 'valyrian_ore';
-        else if (name === 'Валирийская сталь') item.resourceType = 'valyrian_steel';
-        else if (name === 'Шкура') item.resourceType = 'leather';
+        var cleanName = name.replace(/[⛏️🔥⚒️🧵🪵💎🌟]/g, '').trim();
+        if (cleanName.indexOf('Руда') !== -1 && cleanName.indexOf('14') === -1) item.resourceType = 'iron';
+        else if (cleanName.indexOf('Уголь') !== -1) item.resourceType = 'coal';
+        else if (cleanName.indexOf('Сталь') !== -1 && cleanName.indexOf('Валирийская') === -1) item.resourceType = 'steel';
+        else if (cleanName.indexOf('Кожа') !== -1) item.resourceType = 'leather';
+        else if (cleanName.indexOf('Дерево') !== -1 || cleanName.indexOf('Доски') !== -1) item.resourceType = 'wood';
+        else if (cleanName.indexOf('Шкура') !== -1) item.resourceType = 'leather';
+        else if (cleanName.indexOf('Руда 14 огней') !== -1 || name.indexOf('14 огней') !== -1) item.resourceType = 'valyrian_ore';
+        else if (cleanName.indexOf('Валирийская сталь') !== -1 || name.indexOf('Валирийская') !== -1) item.resourceType = 'valyrian_steel';
     }
     
     addToInventory(g, item);
@@ -649,10 +640,10 @@ function sellToShop(shopType, index) {
     convertCurrency(g);
     g.inventory.splice(index, 1);
     
-    // Маппинг стока для подтипов магазинов
     var stockShop = shopType;
     if (shopType === 'КожевникРесурсы' || shopType === 'ТорговляКожа') stockShop = 'Кожевник';
     if (shopType === 'ПлотникРесурсы' || shopType === 'ТорговляДерево') stockShop = 'Плотник';
+    if (shopType === 'Торговля') stockShop = 'Кузница';
     
     var quality = item.quality || 'Обычное';
     var key = item.name + '|' + quality;
