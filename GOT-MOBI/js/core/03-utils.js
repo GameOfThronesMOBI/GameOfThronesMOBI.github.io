@@ -1,5 +1,5 @@
 // ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ОБНОВЛЁННАЯ)
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (БЕЗ ИНВЕНТАРЯ)
 // ============================================================
 
 function hash(str) {
@@ -126,131 +126,6 @@ function isConsumable(item) {
     return false;
 }
 
-function addToInventory(g, item) {
-    if (!g || !g.inventory) return false;
-    if (!isStackable(item)) { g.inventory.push(item); return true; }
-    const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-    for (let i = 0; i < g.inventory.length; i++) {
-        const existing = g.inventory[i];
-        if (!isStackable(existing)) continue;
-        const existingKey = existing.name + '|' + (existing.quality || 'Обычное') + '|' + (existing.resourceType || '');
-        if (existingKey === key) { existing.count = (existing.count || 1) + (item.count || 1); return true; }
-    }
-    if (!item.count) item.count = 1;
-    g.inventory.push(item);
-    return true;
-}
-
-function normalizeInventory(g) {
-    if (!g || !g.inventory) return;
-    const items = {};
-    for (let i = 0; i < g.inventory.length; i++) {
-        const item = g.inventory[i];
-        if (!isStackable(item)) continue;
-        const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-        if (!items[key]) items[key] = { item: item, indices: [] };
-        items[key].indices.push(i);
-    }
-    for (const key in items) {
-        const data = items[key];
-        if (data.indices.length <= 1) continue;
-        let totalCount = 0;
-        data.indices.forEach(function(idx) { totalCount += g.inventory[idx].count || 1; });
-        data.indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
-        data.item.count = totalCount;
-        g.inventory.push(data.item);
-    }
-}
-
-function splitStack(index) {
-    const user = users[currentUser]; if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) return;
-    const item = g.inventory[index];
-    if (!isStackable(item) || !item.count || item.count <= 1) { setMessage('❌ Нельзя разделить.'); return; }
-    const count = prompt('Сколько отделить? (до ' + (item.count - 1) + ')');
-    const num = parseInt(count);
-    if (isNaN(num) || num < 1 || num >= item.count) { setMessage('❌ Отменено.'); return; }
-    const newItem = JSON.parse(JSON.stringify(item));
-    newItem.count = num;
-    item.count -= num;
-    g.inventory.push(newItem);
-    setMessage('✅ Разделено: ' + num + ' шт.');
-    updateMenu(); saveData(); openInventory();
-}
-
-function mergeStacks() {
-    const user = users[currentUser]; if (!user) return;
-    const g = user.game;
-    const items = {};
-    for (let i = 0; i < g.inventory.length; i++) {
-        const item = g.inventory[i];
-        if (!isStackable(item)) continue;
-        const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-        if (!items[key]) items[key] = { item: item, indices: [] };
-        items[key].indices.push(i);
-    }
-    let merged = false;
-    for (const key in items) {
-        const data = items[key];
-        if (data.indices.length <= 1) continue;
-        let totalCount = 0;
-        data.indices.forEach(function(idx) { totalCount += g.inventory[idx].count || 1; });
-        data.indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
-        data.item.count = totalCount;
-        g.inventory.push(data.item);
-        merged = true;
-    }
-    setMessage(merged ? '✅ Стеки объединены.' : 'ℹ️ Нет стеков.');
-    updateMenu(); saveData(); openInventory();
-}
-
-function mergeSpecificStack(index) {
-    const user = users[currentUser]; if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) return;
-    const item = g.inventory[index];
-    if (!isStackable(item)) { setMessage('❌ Нельзя стакать.'); return; }
-    const key = item.name + '|' + (item.quality || 'Обычное') + '|' + (item.resourceType || '');
-    let totalCount = item.count || 1;
-    const indices = [index];
-    for (let i = 0; i < g.inventory.length; i++) {
-        if (i === index) continue;
-        const other = g.inventory[i];
-        if (!isStackable(other)) continue;
-        if (other.name + '|' + (other.quality || 'Обычное') + '|' + (other.resourceType || '') === key) {
-            totalCount += other.count || 1; indices.push(i);
-        }
-    }
-    if (indices.length <= 1) { setMessage('ℹ️ Нет других стеков.'); return; }
-    indices.sort(function(a, b) { return b - a; }).forEach(function(idx) { g.inventory.splice(idx, 1); });
-    const newItem = JSON.parse(JSON.stringify(item));
-    newItem.count = totalCount;
-    g.inventory.push(newItem);
-    setMessage('✅ Объединено: ' + totalCount + ' шт.');
-    updateMenu(); saveData(); openInventory();
-}
-
-function useOneFromStack(index) {
-    const user = users[currentUser]; if (!user) return;
-    const g = user.game;
-    if (index >= g.inventory.length) return;
-    const item = g.inventory[index];
-    if (!isConsumable(item)) { setMessage('❌ Нельзя использовать.'); return; }
-    if (isStackable(item) && item.count && item.count > 1) {
-        if (item.effect) {
-            if (item.effect.food) g.food = Math.min(100, g.food + item.effect.food);
-            if (item.effect.thirst) g.thirst = Math.min(100, g.thirst + item.effect.thirst);
-            if (item.effect.hp) g.hp = Math.min(g.maxHp, g.hp + item.effect.hp);
-        }
-        item.count--;
-        setMessage('✅ Использовано: ' + item.name);
-        updateMenu(); saveData(); openInventory();
-    } else {
-        useItem(index);
-    }
-}
-
 function addTraderStock(place, itemKey, amount) {
     if (!traderInventory) traderInventory = {};
     if (!traderInventory[place]) traderInventory[place] = {};
@@ -332,4 +207,4 @@ function initTraderStock() {
         }
     });
     saveData();
-}
+                          }
