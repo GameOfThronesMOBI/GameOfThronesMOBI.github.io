@@ -581,34 +581,4 @@ const CONSUMABLES = {
         { name: '💎 Руда 14 огней', price: 50000, resourceType: 'valyrian_ore' },
         { name: '🌟 Валирийская сталь', price: 100000, resourceType: 'valyrian_steel' }
     ]
-// ============================================================
-// СОЛДАТСКОЕ СНАРЯЖЕНИЕ (только для ботов, создаётся в замковой кузнице)
-// ============================================================
-
-const SOLDIER_ITEMS = {
-    weapons: {
-        sword: [
-            { name: 'Меч солдата', baseDamage: 3 }
-        ],
-        spear: [
-            { name: 'Копьё солдата', baseDamage: 3 }
-        ],
-        bow: [
-            { name: 'Лук солдатский', baseDamage: 2 }
-        ],
-        crossbow: [
-            { name: 'Самострел солдата', baseDamage: 3 }
-        ],
-        shield: [
-            { name: 'Щит солдата', defense: 2 }
-        ]
-    },
-    armor: {
-        leather: [
-            { name: 'Комплект кожаной брони солдата', baseDefense: 3 }
-        ],
-        plate: [
-            { name: 'Комплект латной брони солдата', baseDefense: 8 }
-        ]
-    }
 };
