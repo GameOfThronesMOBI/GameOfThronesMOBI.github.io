@@ -164,7 +164,7 @@ function openCategory(shopType, categoryId) {
                 quality: item.quality,
                 price: item.price,
                 key: item.key,
-                stock: item.stock || 99
+                stock: item.stock
             });
         });
         
@@ -359,6 +359,7 @@ function getCategoryItems(shopType, categoryId) {
 }
 
 function getQualitiesForLevel(level) {
+    if (level >= 100) return ['Мифическое'];
     var qualities = ['Плохое','Обычное','Хорошее','Качественное'];
     if (level >= 40) qualities.push('Мастерское');
     if (level >= 60) qualities.push('Легендарное');
@@ -399,7 +400,7 @@ function openQualityModal(shopType, itemName, level, stats) {
                 quality: item.quality,
                 price: item.price,
                 key: item.key,
-                stock: item.stock || 99,
+                stock: item.stock,
                 stats: item.stats
             });
         }
