@@ -1,831 +1,646 @@
 // ============================================================
-// js/regions/stormlands/castles/buckler_castle.js
-// ЗАМОК БРОНЗОВЫЙ ЩИТ — ПОЛНАЯ ЛОГИКА
+// ВСЕ ДОМА ВЕСТЕРОСА (houses.js) — ФИНАЛЬНАЯ ВЕРСИЯ
+// Все 100 домов. Все независимы на старте.
 // ============================================================
 
-var _castlePrevUpdateStory = window.updateStory;
-var _castlePrevUpdateActions = window.updateActions;
+var HOUSES = {
+    // ============================================================
+    // 1. СЕВЕР (The North) — 13 домов
+    // Столица: Белая Гавань (нейтральная)
+    // ============================================================
+    stark: {
+        id: 'stark', name: 'Старки', sigil: '🐺', region: 'north', type: 'independent',
+        castle: 'Винтерфелл', castleId: 'winterfell', liege: null,
+        army: { infantry: 1200, cavalry: 500, ships: 0 }, treasury: 3000, loyalty: 85, reputation: 90,
+        motto: 'Зима близко.', color: '#8cb3d9'
+    },
+    bolton: {
+        id: 'bolton', name: 'Болтоны', sigil: '🩸', region: 'north', type: 'independent',
+        castle: 'Дредфорт', castleId: 'dreadfort', liege: null,
+        army: { infantry: 300, cavalry: 100, ships: 0 }, treasury: 1000, loyalty: 70, reputation: 40,
+        motto: 'Наша сталь остра.', color: '#c0392b'
+    },
+    karstark: {
+        id: 'karstark', name: 'Карстарки', sigil: '⭐', region: 'north', type: 'independent',
+        castle: 'Кархолд', castleId: 'karhold', liege: null,
+        army: { infantry: 200, cavalry: 80, ships: 0 }, treasury: 800, loyalty: 85, reputation: 70,
+        motto: 'Зимнее солнце', color: '#d4af37'
+    },
+    mormont: {
+        id: 'mormont', name: 'Мормонты', sigil: '🐻', region: 'north', type: 'independent',
+        castle: 'Медвежий остров', castleId: 'bear_island', liege: null,
+        army: { infantry: 150, cavalry: 50, ships: 20 }, treasury: 500, loyalty: 95, reputation: 85,
+        motto: 'Здесь мы стоим.', color: '#8e44ad'
+    },
+    umber: {
+        id: 'umber', name: 'Амберы', sigil: '🪓', region: 'north', type: 'independent',
+        castle: 'Последний Очаг', castleId: 'last_hearth', liege: null,
+        army: { infantry: 250, cavalry: 60, ships: 0 }, treasury: 600, loyalty: 90, reputation: 75,
+        motto: 'Мы выстоим', color: '#e74c3c'
+    },
+    glover: {
+        id: 'glover', name: 'Гловеры', sigil: '🧤', region: 'north', type: 'independent',
+        castle: 'Темнолесье', castleId: 'deepwood_motte', liege: null,
+        army: { infantry: 180, cavalry: 40, ships: 10 }, treasury: 400, loyalty: 80, reputation: 70,
+        motto: 'Честь и долг', color: '#2c3e50'
+    },
+    reed: {
+        id: 'reed', name: 'Риды', sigil: '🌿', region: 'north', type: 'independent',
+        castle: 'Серая Стража', castleId: 'greywater_watch', liege: null,
+        army: { infantry: 100, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 95, reputation: 80,
+        motto: 'Болото помнит', color: '#27ae60'
+    },
+    manderly: {
+        id: 'manderly', name: 'Мандерли', sigil: '🐟', region: 'north', type: 'independent',
+        castle: 'Белая Гавань', castleId: 'white_harbor', liege: null,
+        army: { infantry: 200, cavalry: 50, ships: 30 }, treasury: 1200, loyalty: 85, reputation: 80,
+        motto: 'Верность и сила', color: '#2980b9'
+    },
+    hornwood: {
+        id: 'hornwood', name: 'Хорнвуды', sigil: '🌲', region: 'north', type: 'independent',
+        castle: 'Хорнвуд', castleId: 'hornwood', liege: null,
+        army: { infantry: 150, cavalry: 40, ships: 0 }, treasury: 350, loyalty: 80, reputation: 65,
+        motto: 'Лес помнит', color: '#2d5016'
+    },
+    tallhart: {
+        id: 'tallhart', name: 'Толхарты', sigil: '🌾', region: 'north', type: 'independent',
+        castle: 'Толхарт', castleId: 'tallhart', liege: null,
+        army: { infantry: 120, cavalry: 30, ships: 0 }, treasury: 280, loyalty: 75, reputation: 60,
+        motto: 'Зерно и сталь', color: '#c0392b'
+    },
+    slate: {
+        id: 'slate', name: 'Слейты', sigil: '⛰️', region: 'north', type: 'independent',
+        castle: 'Чёрная Крепость', castleId: 'black_keep', liege: null,
+        army: { infantry: 100, cavalry: 20, ships: 0 }, treasury: 200, loyalty: 70, reputation: 55,
+        motto: 'Крепче камня', color: '#7f8c8d'
+    },
+    flint: {
+        id: 'flint', name: 'Флинты', sigil: '🔥', region: 'north', type: 'independent',
+        castle: 'Флинт', castleId: 'flint', liege: null,
+        army: { infantry: 90, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 75, reputation: 60,
+        motto: 'Огонь в крови', color: '#e67e22'
+    },
+    norrey: {
+        id: 'norrey', name: 'Норри', sigil: '🌿', region: 'north', type: 'independent',
+        castle: 'Норри', castleId: 'norrey', liege: null,
+        army: { infantry: 80, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 80, reputation: 65,
+        motto: 'Хранители гор', color: '#27ae60'
+    },
 
-// Глобальные хранилища
-if (!window._castleStorages) window._castleStorages = {};
-if (!window._castleGranaries) window._castleGranaries = {};
-if (!window._castleArmories) window._castleArmories = {};
-if (!window._castleQueues) window._castleQueues = {};
-if (!window._castleHorseLimits) window._castleHorseLimits = {};
+    // ============================================================
+    // 2. ЗАПАДНЫЕ ЗЕМЛИ (The Westerlands) — 17 домов
+    // Столица: Ланниспорт (нейтральный)
+    // ============================================================
+    lannister: {
+        id: 'lannister', name: 'Ланнистеры', sigil: '🦁', region: 'westlands', type: 'independent',
+        castle: 'Утёс Кастерли', castleId: 'casterly_rock', liege: null,
+        army: { infantry: 1500, cavalry: 800, ships: 50 }, treasury: 10000, loyalty: 30, reputation: 70,
+        motto: 'Слышишь мой рёв?', color: '#d4af37'
+    },
+    reyne: {
+        id: 'reyne', name: 'Рейны', sigil: '🦀', region: 'westlands', type: 'independent',
+        castle: 'Кастамере', castleId: 'castamere', liege: null,
+        army: { infantry: 200, cavalry: 60, ships: 0 }, treasury: 600, loyalty: 75, reputation: 50,
+        motto: 'Мы не забываем.', color: '#c0392b'
+    },
+    marbrand: {
+        id: 'marbrand', name: 'Марбранды', sigil: '🔥', region: 'westlands', type: 'independent',
+        castle: 'Эшмарк', castleId: 'ashemark', liege: null,
+        army: { infantry: 180, cavalry: 50, ships: 0 }, treasury: 500, loyalty: 80, reputation: 70,
+        motto: 'Огонь и сталь', color: '#e67e22'
+    },
+    crakehall: {
+        id: 'crakehall', name: 'Крейкхоллы', sigil: '🐗', region: 'westlands', type: 'independent',
+        castle: 'Крейкхолл', castleId: 'crakehall', liege: null,
+        army: { infantry: 220, cavalry: 70, ships: 0 }, treasury: 550, loyalty: 75, reputation: 65,
+        motto: 'Сила и честь', color: '#2c3e50'
+    },
+    brax: {
+        id: 'brax', name: 'Браксы', sigil: '🐴', region: 'westlands', type: 'independent',
+        castle: 'Хорнвейл', castleId: 'hornvale', liege: null,
+        army: { infantry: 160, cavalry: 80, ships: 0 }, treasury: 450, loyalty: 70, reputation: 60,
+        motto: 'Быстрее ветра', color: '#8e44ad'
+    },
+    farman: {
+        id: 'farman', name: 'Фарманы', sigil: '⚓', region: 'westlands', type: 'independent',
+        castle: 'Прекрасный остров', castleId: 'fair_isle', liege: null,
+        army: { infantry: 120, cavalry: 30, ships: 40 }, treasury: 400, loyalty: 80, reputation: 65,
+        motto: 'Море наш дом', color: '#3498db'
+    },
+    westerling: {
+        id: 'westerling', name: 'Вестерлинги', sigil: '⛰️', region: 'westlands', type: 'independent',
+        castle: 'Утёс', castleId: 'the_crag', liege: null,
+        army: { infantry: 130, cavalry: 40, ships: 0 }, treasury: 350, loyalty: 65, reputation: 55,
+        motto: 'Скала не сдаётся', color: '#95a5a6'
+    },
+    plumm: {
+        id: 'plumm', name: 'Пламмы', sigil: '💎', region: 'westlands', type: 'independent',
+        castle: 'Пламм', castleId: 'plumm', liege: null,
+        army: { infantry: 110, cavalry: 35, ships: 0 }, treasury: 300, loyalty: 70, reputation: 60,
+        motto: 'Богатство и честь', color: '#9b59b6'
+    },
+    serrett: {
+        id: 'serrett', name: 'Серретты', sigil: '🪙', region: 'westlands', type: 'independent',
+        castle: 'Серретт', castleId: 'serrett', liege: null,
+        army: { infantry: 100, cavalry: 25, ships: 0 }, treasury: 400, loyalty: 75, reputation: 60,
+        motto: 'Серебро и сталь', color: '#bdc3c7'
+    },
+    clegane: {
+        id: 'clegane', name: 'Клиганы', sigil: '🐕', region: 'westlands', type: 'independent',
+        castle: 'Крепость Клиганов', castleId: 'clegane_keep', liege: null,
+        army: { infantry: 80, cavalry: 20, ships: 0 }, treasury: 200, loyalty: 95, reputation: 20,
+        motto: 'Псы всегда верны', color: '#2c3e50'
+    },
+    lefford: {
+        id: 'lefford', name: 'Леффорды', sigil: '🏔️', region: 'westlands', type: 'independent',
+        castle: 'Золотой Зуб', castleId: 'golden_tooth', liege: null,
+        army: { infantry: 140, cavalry: 45, ships: 0 }, treasury: 600, loyalty: 80, reputation: 70,
+        motto: 'Золото — наша сила', color: '#f1c40f'
+    },
+    betley: {
+        id: 'betley', name: 'Бетли', sigil: '🏹', region: 'westlands', type: 'independent',
+        castle: 'Бетли', castleId: 'betley', liege: null,
+        army: { infantry: 90, cavalry: 20, ships: 0 }, treasury: 220, loyalty: 70, reputation: 55,
+        motto: 'Меткий выстрел', color: '#27ae60'
+    },
+    erene: {
+        id: 'erene', name: 'Эрены', sigil: '🌿', region: 'westlands', type: 'independent',
+        castle: 'Эрен', castleId: 'erene', liege: null,
+        army: { infantry: 85, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 65, reputation: 50,
+        motto: 'Зелень и покой', color: '#2ecc71'
+    },
+    estwick: {
+        id: 'estwick', name: 'Эствики', sigil: '🪨', region: 'westlands', type: 'independent',
+        castle: 'Эствик', castleId: 'estwick', liege: null,
+        army: { infantry: 75, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 60, reputation: 45,
+        motto: 'Крепче камня', color: '#7f8c8d'
+    },
+    green: {
+        id: 'green', name: 'Грины', sigil: '🌾', region: 'westlands', type: 'independent',
+        castle: 'Грин', castleId: 'green', liege: null,
+        army: { infantry: 70, cavalry: 10, ships: 0 }, treasury: 140, loyalty: 70, reputation: 50,
+        motto: 'Зелёные поля', color: '#27ae60'
+    },
+    yaz: {
+        id: 'yaz', name: 'Язы', sigil: '⚔️', region: 'westlands', type: 'independent',
+        castle: 'Яз', castleId: 'yaz', liege: null,
+        army: { infantry: 60, cavalry: 15, ships: 0 }, treasury: 120, loyalty: 75, reputation: 55,
+        motto: 'Честь и сталь', color: '#2c3e50'
+    },
+    payne: {
+        id: 'payne', name: 'Пейны', sigil: '🪦', region: 'westlands', type: 'independent',
+        castle: 'Пейн', castleId: 'payne', liege: null,
+        army: { infantry: 50, cavalry: 10, ships: 0 }, treasury: 100, loyalty: 90, reputation: 30,
+        motto: 'Смерть не ждёт', color: '#2c3e50'
+    },
 
-function getCastleStorage(castleId) {
-    if (!window._castleStorages[castleId]) {
-        window._castleStorages[castleId] = { iron: {}, coal: 0, steel: {}, planks: {}, leather: {}, hardenedLeather: {}, stone: 0, wood: {}, salt: 0, valyrian_ore: 0, valyrian_steel: 0 };
+    // ============================================================
+    // 3. ПРОСТОР (The Reach) — 14 домов
+    // Столица: Старомест (нейтральный)
+    // ============================================================
+    tyrell: {
+        id: 'tyrell', name: 'Тиреллы', sigil: '🌹', region: 'reach', type: 'independent',
+        castle: 'Хайгарден', castleId: 'highgarden', liege: null,
+        army: { infantry: 1000, cavalry: 600, ships: 100 }, treasury: 4000, loyalty: 85, reputation: 80,
+        motto: 'Вырастая, мы становимся сильнее.', color: '#27ae60'
+    },
+    hightower: {
+        id: 'hightower', name: 'Хайтауэры', sigil: '🏛️', region: 'reach', type: 'independent',
+        castle: 'Хайтауэр', castleId: 'hightower', liege: null,
+        army: { infantry: 250, cavalry: 100, ships: 40 }, treasury: 1200, loyalty: 80, reputation: 75,
+        motto: 'Свет знаний', color: '#8e44ad'
+    },
+    tarly: {
+        id: 'tarly', name: 'Тарли', sigil: '🏹', region: 'reach', type: 'independent',
+        castle: 'Хорнхилл', castleId: 'horn_hill', liege: null,
+        army: { infantry: 200, cavalry: 70, ships: 0 }, treasury: 800, loyalty: 90, reputation: 85,
+        motto: 'Первый в бою', color: '#2c3e50'
+    },
+    redwyne: {
+        id: 'redwyne', name: 'Редвины', sigil: '🍷', region: 'reach', type: 'independent',
+        castle: 'Арбор', castleId: 'arbor', liege: null,
+        army: { infantry: 150, cavalry: 50, ships: 80 }, treasury: 900, loyalty: 85, reputation: 75,
+        motto: 'Вино и сила', color: '#e74c3c'
+    },
+    rowan: {
+        id: 'rowan', name: 'Рованы', sigil: '🌲', region: 'reach', type: 'independent',
+        castle: 'Золотая Роща', castleId: 'golden_grove', liege: null,
+        army: { infantry: 180, cavalry: 60, ships: 0 }, treasury: 650, loyalty: 75, reputation: 65,
+        motto: 'Золотой лес', color: '#f1c40f'
+    },
+    oakheart: {
+        id: 'oakheart', name: 'Окхарты', sigil: '🌳', region: 'reach', type: 'independent',
+        castle: 'Старый Дуб', castleId: 'old_oak', liege: null,
+        army: { infantry: 160, cavalry: 50, ships: 0 }, treasury: 550, loyalty: 80, reputation: 70,
+        motto: 'Древняя сила', color: '#2d5016'
+    },
+    fossoway: {
+        id: 'fossoway', name: 'Фоссовеи', sigil: '🍎', region: 'reach', type: 'independent',
+        castle: 'Фоссовей', castleId: 'fossoway', liege: null,
+        army: { infantry: 130, cavalry: 40, ships: 0 }, treasury: 400, loyalty: 80, reputation: 65,
+        motto: 'Красное яблоко', color: '#e74c3c'
+    },
+    ashford: {
+        id: 'ashford', name: 'Эшфорды', sigil: '🌸', region: 'reach', type: 'independent',
+        castle: 'Эшфорд', castleId: 'ashford', liege: null,
+        army: { infantry: 120, cavalry: 35, ships: 0 }, treasury: 350, loyalty: 75, reputation: 60,
+        motto: 'Цветы и сталь', color: '#e91e63'
+    },
+    merryweather: {
+        id: 'merryweather', name: 'Мерривезеры', sigil: '🎭', region: 'reach', type: 'independent',
+        castle: 'Мерривезер', castleId: 'merryweather', liege: null,
+        army: { infantry: 100, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 70, reputation: 55,
+        motto: 'Игра и честь', color: '#9b59b6'
+    },
+    florent: {
+        id: 'florent', name: 'Флоренты', sigil: '🌿', region: 'reach', type: 'independent',
+        castle: 'Брайтуотер', castleId: 'brightwater_keep', liege: null,
+        army: { infantry: 140, cavalry: 45, ships: 0 }, treasury: 450, loyalty: 60, reputation: 50,
+        motto: 'Свет и вода', color: '#2ecc71'
+    },
+    crane: {
+        id: 'crane', name: 'Крейны', sigil: '🦢', region: 'reach', type: 'independent',
+        castle: 'Красное Озеро', castleId: 'red_lake', liege: null,
+        army: { infantry: 90, cavalry: 25, ships: 0 }, treasury: 250, loyalty: 80, reputation: 65,
+        motto: 'Красное озеро', color: '#e74c3c'
+    },
+    webber: {
+        id: 'webber', name: 'Вебберы', sigil: '🕷️', region: 'reach', type: 'independent',
+        castle: 'Веббер', castleId: 'webber', liege: null,
+        army: { infantry: 80, cavalry: 20, ships: 0 }, treasury: 200, loyalty: 70, reputation: 50,
+        motto: 'Тишина и паутина', color: '#34495e'
+    },
+    went: {
+        id: 'went', name: 'Уэнты', sigil: '🏰', region: 'reach', type: 'independent',
+        castle: 'Уэнт', castleId: 'went', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 75, reputation: 55,
+        motto: 'Верность стенам', color: '#7f8c8d'
+    },
+    caswell: {
+        id: 'caswell', name: 'Касвеллы', sigil: '🛡️', region: 'reach', type: 'independent',
+        castle: 'Касвелл', castleId: 'caswell', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 80, reputation: 60,
+        motto: 'Щит и меч', color: '#2c3e50'
+    },
+
+    // ============================================================
+    // 4. РЕЧНЫЕ ЗЕМЛИ (The Riverlands) — 12 домов
+    // Столица: Девичье озеро (нейтральное)
+    // ============================================================
+    tully: {
+        id: 'tully', name: 'Талли', sigil: '🐟', region: 'riverlands', type: 'independent',
+        castle: 'Риверран', castleId: 'riverrun', liege: null,
+        army: { infantry: 800, cavalry: 400, ships: 0 }, treasury: 2500, loyalty: 75, reputation: 80,
+        motto: 'Семья, долг, честь.', color: '#2980b9'
+    },
+    frey: {
+        id: 'frey', name: 'Фреи', sigil: '🌉', region: 'riverlands', type: 'independent',
+        castle: 'Близнецы', castleId: 'twins', liege: null,
+        army: { infantry: 180, cavalry: 50, ships: 0 }, treasury: 600, loyalty: 60, reputation: 30,
+        motto: 'Мы не забываем долги', color: '#bdc3c7'
+    },
+    mallister: {
+        id: 'mallister', name: 'Маллистеры', sigil: '🦅', region: 'riverlands', type: 'independent',
+        castle: 'Сигард', castleId: 'seagard', liege: null,
+        army: { infantry: 150, cavalry: 40, ships: 10 }, treasury: 400, loyalty: 90, reputation: 80,
+        motto: 'Честь превыше всего', color: '#8e44ad'
+    },
+    blackwood: {
+        id: 'blackwood', name: 'Блэквуды', sigil: '🌳', region: 'riverlands', type: 'independent',
+        castle: 'Блэквуд', castleId: 'blackwood', liege: null,
+        army: { infantry: 160, cavalry: 45, ships: 0 }, treasury: 450, loyalty: 85, reputation: 75,
+        motto: 'Древняя кровь', color: '#2c3e50'
+    },
+    bracken: {
+        id: 'bracken', name: 'Бракены', sigil: '🌿', region: 'riverlands', type: 'independent',
+        castle: 'Бракен', castleId: 'bracken', liege: null,
+        army: { infantry: 140, cavalry: 40, ships: 0 }, treasury: 400, loyalty: 65, reputation: 55,
+        motto: 'Зелёная земля', color: '#27ae60'
+    },
+    darry: {
+        id: 'darry', name: 'Дарри', sigil: '🦁', region: 'riverlands', type: 'independent',
+        castle: 'Дарри', castleId: 'darry', liege: null,
+        army: { infantry: 120, cavalry: 35, ships: 0 }, treasury: 350, loyalty: 70, reputation: 60,
+        motto: 'Верность льву', color: '#f1c40f'
+    },
+    vance: {
+        id: 'vance', name: 'Вэнсы', sigil: '🗡️', region: 'riverlands', type: 'independent',
+        castle: 'Вэнс', castleId: 'vance', liege: null,
+        army: { infantry: 110, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 75, reputation: 60,
+        motto: 'Острый клинок', color: '#bdc3c7'
+    },
+    piper: {
+        id: 'piper', name: 'Пайперы', sigil: '🎵', region: 'riverlands', type: 'independent',
+        castle: 'Пайпер', castleId: 'piper', liege: null,
+        army: { infantry: 100, cavalry: 25, ships: 0 }, treasury: 250, loyalty: 80, reputation: 65,
+        motto: 'Мелодия и сталь', color: '#e67e22'
+    },
+    root: {
+        id: 'root', name: 'Руты', sigil: '🌱', region: 'riverlands', type: 'independent',
+        castle: 'Рут', castleId: 'root', liege: null,
+        army: { infantry: 80, cavalry: 15, ships: 0 }, treasury: 200, loyalty: 70, reputation: 55,
+        motto: 'Корни сильны', color: '#27ae60'
+    },
+    shawney: {
+        id: 'shawney', name: 'Шоуни', sigil: '⚔️', region: 'riverlands', type: 'independent',
+        castle: 'Шоуни', castleId: 'shawney', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 65, reputation: 50,
+        motto: 'Меч и щит', color: '#7f8c8d'
+    },
+    lychester: {
+        id: 'lychester', name: 'Линчестеры', sigil: '🏹', region: 'riverlands', type: 'independent',
+        castle: 'Линчестер', castleId: 'lychester', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 75, reputation: 60,
+        motto: 'Меткий выстрел', color: '#2c3e50'
+    },
+    terrick: {
+        id: 'terrick', name: 'Террики', sigil: '🌾', region: 'riverlands', type: 'independent',
+        castle: 'Террик', castleId: 'terrick', liege: null,
+        army: { infantry: 50, cavalry: 10, ships: 0 }, treasury: 120, loyalty: 70, reputation: 50,
+        motto: 'Зерно и честь', color: '#f1c40f'
+    },
+
+    // ============================================================
+    // 5. ШТОРМОВЫЕ ЗЕМЛИ (The Stormlands) — 11 домов
+    // Столица: Скорбящий Городок (нейтральный)
+    // ============================================================
+    baratheon: {
+        id: 'baratheon', name: 'Баратеоны', sigil: '🦌', region: 'stormlands', type: 'independent',
+        castle: 'Штормовой Предел', castleId: 'storms_end', liege: null,
+        army: { infantry: 900, cavalry: 500, ships: 30 }, treasury: 3000, loyalty: 80, reputation: 75,
+        motto: 'Ярость и буря.', color: '#2c3e50'
+    },
+    connington: {
+        id: 'connington', name: 'Коннингтоны', sigil: '🦅', region: 'stormlands', type: 'independent',
+        castle: 'Гнездо Грифона', castleId: 'griffins_roost', liege: null,
+        army: { infantry: 160, cavalry: 45, ships: 0 }, treasury: 500, loyalty: 85, reputation: 75,
+        motto: 'Грифон не сдаётся', color: '#2c3e50'
+    },
+    swann: {
+        id: 'swann', name: 'Сванны', sigil: '🦢', region: 'stormlands', type: 'independent',
+        castle: 'Каменный Шлем', castleId: 'stone_helm', liege: null,
+        army: { infantry: 140, cavalry: 35, ships: 0 }, treasury: 400, loyalty: 80, reputation: 70,
+        motto: 'Честь и верность', color: '#ecf0f1'
+    },
+    dondarrion: {
+        id: 'dondarrion', name: 'Дондаррионы', sigil: '⚡', region: 'stormlands', type: 'independent',
+        castle: 'Чёрная Крепость', castleId: 'black_keep', liege: null,
+        army: { infantry: 130, cavalry: 40, ships: 0 }, treasury: 380, loyalty: 85, reputation: 70,
+        motto: 'Молния и гром', color: '#f1c40f'
+    },
+    grandison: {
+    id: 'grandison', name: 'Грандисоны', sigil: '🦁', region: 'stormlands', type: 'independent',
+    castle: 'Грандвью', castleId: 'grandview', liege: null,
+    army: { infantry: 100, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 80, reputation: 65,
+    motto: 'Бодрствуй и охраняй', color: '#f1c40f'
+},
+    caron: {
+        id: 'caron', name: 'Карроны', sigil: '🎵', region: 'stormlands', type: 'independent',
+        castle: 'Каррон', castleId: 'caron', liege: null,
+        army: { infantry: 110, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 70, reputation: 55,
+        motto: 'Песня и сталь', color: '#e67e22'
+    },
+    selmy: {
+        id: 'selmy', name: 'Селми', sigil: '🛡️', region: 'stormlands', type: 'independent',
+        castle: 'Селми', castleId: 'selmy', liege: null,
+        army: { infantry: 100, cavalry: 25, ships: 0 }, treasury: 280, loyalty: 85, reputation: 75,
+        motto: 'Честь и долг', color: '#2c3e50'
+    },
+    trant: {
+        id: 'trant', name: 'Транты', sigil: '⚔️', region: 'stormlands', type: 'independent',
+        castle: 'Трант', castleId: 'trant', liege: null,
+        army: { infantry: 90, cavalry: 20, ships: 0 }, treasury: 250, loyalty: 70, reputation: 45,
+        motto: 'Меч и щит', color: '#7f8c8d'
+    },
+    morrigan: {
+        id: 'morrigan', name: 'Морригены', sigil: '🐦‍⬛', region: 'stormlands', type: 'independent',
+        castle: 'Морриген', castleId: 'morrigan', liege: null,
+        army: { infantry: 80, cavalry: 15, ships: 0 }, treasury: 200, loyalty: 75, reputation: 60,
+        motto: 'Тень и клюв', color: '#2c3e50'
+    },
+    staunton: {
+        id: 'staunton', name: 'Стаунтоны', sigil: '🪨', region: 'stormlands', type: 'independent',
+        castle: 'Стаунтон', castleId: 'staunton', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 70, reputation: 55,
+        motto: 'Крепче скалы', color: '#95a5a6'
+    },
+    buckler: {
+        id: 'buckler', name: 'Баклеры', sigil: '🛡️', region: 'stormlands', type: 'independent',
+        castle: 'Бронзовый Щит', castleId: 'buckler', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 80, reputation: 65,
+        motto: 'Щит и честь', color: '#2c3e50'
+    },
+    errol: {
+        id: 'errol', name: 'Эрролы', sigil: '🦅', region: 'stormlands', type: 'independent',
+        castle: 'Эррол', castleId: 'errol', liege: null,
+        army: { infantry: 50, cavalry: 10, ships: 0 }, treasury: 120, loyalty: 75, reputation: 60,
+        motto: 'Орёл и гром', color: '#2c3e50'
+    },
+
+    // ============================================================
+    // 6. ДОРН (Dorne) — 11 домов
+    // Столица: Песчаный Берег (нейтральный)
+    // ============================================================
+    martell: {
+        id: 'martell', name: 'Мартеллы', sigil: '☀️', region: 'dorne', type: 'independent',
+        castle: 'Солнечное Копьё', castleId: 'sunspear', liege: null,
+        army: { infantry: 800, cavalry: 400, ships: 30 }, treasury: 3500, loyalty: 85, reputation: 75,
+        motto: 'Непокорённые.', color: '#e67e22'
+    },
+    dayne: {
+        id: 'dayne', name: 'Дейны', sigil: '⭐', region: 'dorne', type: 'independent',
+        castle: 'Звездопад', castleId: 'starfall', liege: null,
+        army: { infantry: 150, cavalry: 40, ships: 0 }, treasury: 500, loyalty: 90, reputation: 85,
+        motto: 'Свет звезды', color: '#f1c40f'
+    },
+    yronwood: {
+        id: 'yronwood', name: 'Йронвуды', sigil: '🦂', region: 'dorne', type: 'independent',
+        castle: 'Йронвуд', castleId: 'yronwood', liege: null,
+        army: { infantry: 160, cavalry: 45, ships: 0 }, treasury: 450, loyalty: 75, reputation: 65,
+        motto: 'Скорпион и песок', color: '#e67e22'
+    },
+    manwoody: {
+        id: 'manwoody', name: 'Мэнвуды', sigil: '🏔️', region: 'dorne', type: 'independent',
+        castle: 'Мэнвуди', castleId: 'manwoody', liege: null,
+        army: { infantry: 120, cavalry: 35, ships: 0 }, treasury: 350, loyalty: 80, reputation: 65,
+        motto: 'Гора и честь', color: '#7f8c8d'
+    },
+    santagar: {
+        id: 'santagar', name: 'Сантагары', sigil: '🌵', region: 'dorne', type: 'independent',
+        castle: 'Сантагар', castleId: 'santagar', liege: null,
+        army: { infantry: 100, cavalry: 30, ships: 0 }, treasury: 300, loyalty: 75, reputation: 60,
+        motto: 'Пустыня и сталь', color: '#27ae60'
+    },
+    gargalen: {
+        id: 'gargalen', name: 'Гаргалены', sigil: '🐍', region: 'dorne', type: 'independent',
+        castle: 'Гаргален', castleId: 'gargalen', liege: null,
+        army: { infantry: 90, cavalry: 25, ships: 0 }, treasury: 280, loyalty: 70, reputation: 55,
+        motto: 'Змея и яд', color: '#27ae60'
+    },
+    uller: {
+        id: 'uller', name: 'Уллеры', sigil: '🌵', region: 'dorne', type: 'independent',
+        castle: 'Уллер', castleId: 'uller', liege: null,
+        army: { infantry: 80, cavalry: 20, ships: 0 }, treasury: 220, loyalty: 70, reputation: 55,
+        motto: 'Колючка и песок', color: '#2ecc71'
+    },
+    fowler: {
+        id: 'fowler', name: 'Фаулеры', sigil: '🦅', region: 'dorne', type: 'independent',
+        castle: 'Фаулер', castleId: 'fowler', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 80, reputation: 65,
+        motto: 'Орёл и солнце', color: '#f1c40f'
+    },
+    blackmont: {
+        id: 'blackmont', name: 'Блэкмонты', sigil: '🏔️', region: 'dorne', type: 'independent',
+        castle: 'Блэкмонт', castleId: 'blackmont', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 75, reputation: 60,
+        motto: 'Чёрная гора', color: '#2c3e50'
+    },
+    dalt: {
+        id: 'dalt', name: 'Далты', sigil: '🌊', region: 'dorne', type: 'independent',
+        castle: 'Далт', castleId: 'dalt', liege: null,
+        army: { infantry: 50, cavalry: 10, ships: 5 }, treasury: 120, loyalty: 70, reputation: 50,
+        motto: 'Море и песок', color: '#3498db'
+    },
+    jordayne: {
+        id: 'jordayne', name: 'Джордайны', sigil: '🌊', region: 'dorne', type: 'independent',
+        castle: 'Джордайн', castleId: 'jordayne', liege: null,
+        army: { infantry: 40, cavalry: 10, ships: 0 }, treasury: 100, loyalty: 75, reputation: 55,
+        motto: 'Волна и честь', color: '#2980b9'
+    },
+
+    // ============================================================
+    // 7. ДОЛИНА (The Vale) — 10 домов
+    // Столица: Чаячий город (нейтральный)
+    // ============================================================
+    arryn: {
+        id: 'arryn', name: 'Аррены', sigil: '🦅', region: 'vale', type: 'independent',
+        castle: 'Орлиное Гнездо', castleId: 'eyrie', liege: null,
+        army: { infantry: 700, cavalry: 350, ships: 0 }, treasury: 2500, loyalty: 85, reputation: 80,
+        motto: 'Высоко как честь.', color: '#95a5a6'
+    },
+    royce: {
+        id: 'royce', name: 'Ройсы', sigil: '🪨', region: 'vale', type: 'independent',
+        castle: 'Рунный Камень', castleId: 'runestone', liege: null,
+        army: { infantry: 180, cavalry: 50, ships: 0 }, treasury: 600, loyalty: 85, reputation: 75,
+        motto: 'Древняя память', color: '#7f8c8d'
+    },
+    hunter: {
+        id: 'hunter', name: 'Хантеры', sigil: '🏹', region: 'vale', type: 'independent',
+        castle: 'Хантер', castleId: 'hunter', liege: null,
+        army: { infantry: 140, cavalry: 40, ships: 0 }, treasury: 450, loyalty: 80, reputation: 65,
+        motto: 'Меткий выстрел', color: '#27ae60'
+    },
+    redfort: {
+        id: 'redfort', name: 'Редфорты', sigil: '🔴', region: 'vale', type: 'independent',
+        castle: 'Редфорт', castleId: 'redfort', liege: null,
+        army: { infantry: 130, cavalry: 35, ships: 0 }, treasury: 400, loyalty: 80, reputation: 65,
+        motto: 'Красная крепость', color: '#e74c3c'
+    },
+    waynwood: {
+        id: 'waynwood', name: 'Вейнвуды', sigil: '🌿', region: 'vale', type: 'independent',
+        castle: 'Вейнвуд', castleId: 'waynwood', liege: null,
+        army: { infantry: 120, cavalry: 30, ships: 0 }, treasury: 350, loyalty: 80, reputation: 65,
+        motto: 'Зелёная долина', color: '#2ecc71'
+    },
+    corbray: {
+        id: 'corbray', name: 'Корбрэи', sigil: '🗡️', region: 'vale', type: 'independent',
+        castle: 'Корбрэй', castleId: 'corbray', liege: null,
+        army: { infantry: 110, cavalry: 35, ships: 0 }, treasury: 320, loyalty: 75, reputation: 60,
+        motto: 'Острый клинок', color: '#bdc3c7'
+    },
+    belmore: {
+        id: 'belmore', name: 'Белморы', sigil: '🛡️', region: 'vale', type: 'independent',
+        castle: 'Белмор', castleId: 'belmore', liege: null,
+        army: { infantry: 90, cavalry: 25, ships: 0 }, treasury: 280, loyalty: 75, reputation: 60,
+        motto: 'Щит и честь', color: '#2c3e50'
+    },
+    eyon: {
+        id: 'eyon', name: 'Эйоны', sigil: '🦅', region: 'vale', type: 'independent',
+        castle: 'Эйон', castleId: 'eyon', liege: null,
+        army: { infantry: 80, cavalry: 20, ships: 0 }, treasury: 220, loyalty: 80, reputation: 65,
+        motto: 'Орёл и скала', color: '#7f8c8d'
+    },
+    hardy: {
+        id: 'hardy', name: 'Харди', sigil: '⛰️', region: 'vale', type: 'independent',
+        castle: 'Харди', castleId: 'hardy', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 0 }, treasury: 180, loyalty: 70, reputation: 55,
+        motto: 'Твёрдый как камень', color: '#95a5a6'
+    },
+    melcolm: {
+        id: 'melcolm', name: 'Мелкомбы', sigil: '🏔️', region: 'vale', type: 'independent',
+        castle: 'Мелкомб', castleId: 'melcolm', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 0 }, treasury: 150, loyalty: 75, reputation: 60,
+        motto: 'Гора и честь', color: '#7f8c8d'
+    },
+
+    // ============================================================
+    // 8. ЖЕЛЕЗНЫЕ ОСТРОВА (The Iron Islands) — 11 домов
+    // Столица: Лордпорт (нейтральный)
+    // ============================================================
+    greyjoy: {
+        id: 'greyjoy', name: 'Грейджои', sigil: '🐙', region: 'iron_islands', type: 'independent',
+        castle: 'Пайк', castleId: 'pyke', liege: null,
+        army: { infantry: 700, cavalry: 300, ships: 200 }, treasury: 2000, loyalty: 70, reputation: 40,
+        motto: 'Мы не сеем.', color: '#34495e'
+    },
+    harlaw: {
+        id: 'harlaw', name: 'Харлоу', sigil: '📖', region: 'iron_islands', type: 'independent',
+        castle: 'Харлоу', castleId: 'harlaw_rock', liege: null,
+        army: { infantry: 120, cavalry: 30, ships: 30 }, treasury: 300, loyalty: 85, reputation: 70,
+        motto: 'Мудрость сильнее стали', color: '#8e44ad'
+    },
+    blacktyde: {
+        id: 'blacktyde', name: 'Блэктайды', sigil: '🌑', region: 'iron_islands', type: 'independent',
+        castle: 'Блэктайд', castleId: 'blacktyde', liege: null,
+        army: { infantry: 100, cavalry: 25, ships: 20 }, treasury: 250, loyalty: 70, reputation: 50,
+        motto: 'Тёмная волна', color: '#2c3e50'
+    },
+    goodbrother: {
+        id: 'goodbrother', name: 'Гудбразеры', sigil: '🐗', region: 'iron_islands', type: 'independent',
+        castle: 'Гудбразер', castleId: 'goodbrother', liege: null,
+        army: { infantry: 110, cavalry: 25, ships: 15 }, treasury: 280, loyalty: 75, reputation: 55,
+        motto: 'Сила и кабан', color: '#2c3e50'
+    },
+    botley: {
+        id: 'botley', name: 'Ботли', sigil: '⚓', region: 'iron_islands', type: 'independent',
+        castle: 'Ботли', castleId: 'botley', liege: null,
+        army: { infantry: 90, cavalry: 20, ships: 25 }, treasury: 220, loyalty: 80, reputation: 60,
+        motto: 'Море и якорь', color: '#3498db'
+    },
+    saltcliffe: {
+        id: 'saltcliffe', name: 'Солтклиффы', sigil: '🧂', region: 'iron_islands', type: 'independent',
+        castle: 'Солтклифф', castleId: 'saltcliffe', liege: null,
+        army: { infantry: 80, cavalry: 15, ships: 15 }, treasury: 200, loyalty: 70, reputation: 50,
+        motto: 'Соль и сталь', color: '#ecf0f1'
+    },
+    drumm: {
+        id: 'drumm', name: 'Драммы', sigil: '🥁', region: 'iron_islands', type: 'independent',
+        castle: 'Драмм', castleId: 'drumm', liege: null,
+        army: { infantry: 70, cavalry: 15, ships: 10 }, treasury: 180, loyalty: 75, reputation: 55,
+        motto: 'Барабан и волна', color: '#2c3e50'
+    },
+    merryn: {
+        id: 'merryn', name: 'Меррины', sigil: '🌊', region: 'iron_islands', type: 'independent',
+        castle: 'Меррин', castleId: 'merryn', liege: null,
+        army: { infantry: 60, cavalry: 10, ships: 10 }, treasury: 150, loyalty: 70, reputation: 50,
+        motto: 'Морская пена', color: '#3498db'
+    },
+    kenning: {
+        id: 'kenning', name: 'Кеннинги', sigil: '⚔️', region: 'iron_islands', type: 'independent',
+        castle: 'Кеннинг', castleId: 'kenning', liege: null,
+        army: { infantry: 50, cavalry: 10, ships: 5 }, treasury: 120, loyalty: 75, reputation: 55,
+        motto: 'Меч и море', color: '#2c3e50'
+    },
+    stonehouse: {
+        id: 'stonehouse', name: 'Стоунхаусы', sigil: '🪨', region: 'iron_islands', type: 'independent',
+        castle: 'Стоунхаус', castleId: 'stonehouse', liege: null,
+        army: { infantry: 40, cavalry: 5, ships: 5 }, treasury: 100, loyalty: 70, reputation: 45,
+        motto: 'Камень и море', color: '#95a5a6'
+    },
+    orkwood: {
+        id: 'orkwood', name: 'Орквуды', sigil: '🌳', region: 'iron_islands', type: 'independent',
+        castle: 'Орквуд', castleId: 'orkwood', liege: null,
+        army: { infantry: 30, cavalry: 5, ships: 5 }, treasury: 80, loyalty: 75, reputation: 50,
+        motto: 'Дерево и волна', color: '#27ae60'
     }
-    return window._castleStorages[castleId];
-}
-
-function getCastleGranary(castleId) {
-    if (!window._castleGranaries[castleId]) {
-        window._castleGranaries[castleId] = { wheat: 0, vegetables: 0, fish: 0, water: 0, bread: 0, meat: 0, cheese: 0, apple: 0, milk: 0, ale: 0, wine: 0 };
-    }
-    return window._castleGranaries[castleId];
-}
-
-function getCastleArmory(castleId) {
-    if (!window._castleArmories[castleId]) {
-        window._castleArmories[castleId] = { weapons: [], armor: [], soldierWeapons: [], soldierArmor: [] };
-    }
-    return window._castleArmories[castleId];
-}
-
-function getCastleQueue(castleId) {
-    if (!window._castleQueues[castleId]) window._castleQueues[castleId] = [];
-    return window._castleQueues[castleId];
-}
-
-function getCastleHorseLimits(castleId) {
-    if (!window._castleHorseLimits[castleId]) {
-        window._castleHorseLimits[castleId] = {
-            war: { total: 50, sold: 0, resetTime: Date.now() + 7 * 24 * 60 * 60 * 1000 },
-            heavy: { total: 30, sold: 0, resetTime: Date.now() + 7 * 24 * 60 * 60 * 1000 }
-        };
-    }
-    var limits = window._castleHorseLimits[castleId];
-    var now = Date.now();
-    if (now > limits.war.resetTime) { limits.war.sold = 0; limits.war.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
-    if (now > limits.heavy.resetTime) { limits.heavy.sold = 0; limits.heavy.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
-    return limits;
-}
-
-function addQualityResource(storageObj, key, quality, count) {
-    if (!storageObj[key]) storageObj[key] = {};
-    if (!storageObj[key][quality]) storageObj[key][quality] = 0;
-    storageObj[key][quality] += count;
-}
-
-function getTotalQualityResource(storageObj, key) {
-    if (!storageObj[key]) return 0;
-    var total = 0;
-    for (var q in storageObj[key]) total += storageObj[key][q];
-    return total;
-}
-
-function isBucklerMember() {
-    var user = users[currentUser];
-    return user && user.game && user.game.house === 'buckler';
-}
-
-function checkBucklerAccess() {
-    if (!isBucklerMember()) {
-        setMessage('❌ Только для членов дома Баклеров.');
-        return false;
-    }
-    return true;
-}
-
-const CASTLE_BUILDINGS = [
-    { id: 'castle_gate', label: '🚪 Ворота замка' },
-    { id: 'castle_donjon', label: '🏰 Донжон' },
-    { id: 'castle_barracks', label: '⚔️ Казармы' },
-    { id: 'castle_training', label: '🎯 Тренировочная площадка' },
-    { id: 'castle_workshop', label: '🛠️ Мастерская' },
-    { id: 'castle_forge', label: '⚒️ Кузница' },
-    { id: 'castle_granary', label: '🌾 Амбар' },
-    { id: 'castle_storage', label: '📦 Склад' },
-    { id: 'castle_armory', label: '🗡️ Оружейная' },
-    { id: 'castle_stable', label: '🐴 Конюшня' },
-    { id: 'castle_market', label: '🏪 Рынок' },
-    { id: 'castle_tavern', label: '🍺 Таверна' },
-    { id: 'castle_dungeon', label: '⛓️ Темница' }
-];
-
-var CASTLE_ID = 'buckler';
-
-// ============================================================
-// ТАВЕРНА
-// ============================================================
-
-function openCastleTavern() {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    
-    var modal = document.getElementById('modal-tavern');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-tavern'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeTavern(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🍺 ТАВЕРНА ЗАМКА</h3><button class="close-btn" onclick="closeTavern()">✕</button></div><div id="modal-tavern-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-tavern-content');
-    var html = '<div class="modal-section"><h4>🍺 ТАВЕРНА БРОНЗОВОГО ЩИТА</h4>';
-    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p></div>';
-    
-    html += '<div class="modal-section"><h4>🍞 ЕДА</h4>';
-    [{name:'🍞 Хлеб',price:5,food:20},{name:'🥩 Мясо',price:10,food:30},{name:'🐟 Рыба',price:8,food:25},{name:'🧀 Сыр',price:7,food:22},{name:'🍎 Яблоко',price:3,food:15}].forEach(function(item){
-        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+','+item.food+',0)">Купить</button></span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>🍺 НАПИТКИ</h4>';
-    [{name:'💧 Вода',price:2,food:0,thirst:15},{name:'🍺 Эль',price:5,food:0,thirst:10},{name:'🍷 Вино',price:8,food:0,thirst:15},{name:'🥛 Молоко',price:4,food:10,thirst:10}].forEach(function(item){
-        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+','+item.food+','+item.thirst+')">Купить</button></span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>🛏️ ОТДЫХ</h4>';
-    html += '<div class="row"><span class="label">Отдохнуть (10 МП)</span><span class="value"><button class="btn btn-small" onclick="restInTavern()">🛏️ Отдых</button></span></div></div>';
-    
-    html += '<button class="btn btn-secondary" onclick="closeTavern()" style="margin-top:10px;">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function buyTavernItem(name, price, food, thirst) {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег!'); return; }
-    if (food > 0) g.food = Math.min(100, g.food + food);
-    if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
-    saveData(); setMessage('✅ Куплено: ' + name); updateMenu(); openCastleTavern();
-}
-
-function restInTavern() {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег!'); return; }
-    g.fatigue = Math.min(100, g.fatigue + 30);
-    g.hp = Math.min(g.maxHp, g.hp + 15);
-    saveData(); setMessage('🛏️ Вы отдохнули.'); updateMenu(); openCastleTavern();
-}
-
-function closeTavern() { var m = document.getElementById('modal-tavern'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// КОНЮШНЯ
-// ============================================================
-
-function openCastleStable() {
-    if (!checkBucklerAccess()) return;
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    
-    var modal = document.getElementById('modal-stable');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-stable'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStable(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🐴 ЗАМКОВАЯ КОНЮШНЯ</h3><button class="close-btn" onclick="closeStable()">✕</button></div><div id="modal-stable-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-stable-content');
-    var html = '';
-    
-    if (g.equipment && g.equipment.horse) {
-        var horse = HORSE_TYPES[g.equipment.horse.horseType];
-        if (horse) {
-            html += '<div style="background:#120e0b;border:1px solid #3d3026;border-radius:12px;padding:14px;margin-bottom:16px;">';
-            html += '<div style="color:#c9b694;font-size:16px;">🐴 ВАША ЛОШАДЬ</div>';
-            html += '<div style="color:#b8a890;">' + horse.emoji + ' ' + horse.name + '</div>';
-            html += '<div style="color:#6a5a48;font-size:12px;">❤️ HP: ' + g.equipment.horse.hp + '/' + g.equipment.horse.maxHp + '</div>';
-            html += '<button class="btn btn-danger" onclick="sellCastleHorse(); closeStable();" style="margin-top:8px;">💰 Продать лошадь</button>';
-            html += '</div>';
-        }
-    } else {
-        html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🐴 У вас нет лошади.</p>';
-    }
-    
-    html += '<h4 style="color:#c9b694;margin-top:16px;">📦 БОЕВЫЕ ЛОШАДИ (-50% цены, для Баклеров)</h4>';
-    
-    var limits = getCastleHorseLimits(CASTLE_ID);
-    var now = Date.now();
-    
-    var castleHorses = [
-        { type: 'war', name: HORSE_TYPES['war'].name, emoji: '⚔️', price: Math.floor(HORSE_TYPES['war'].price * 0.5), limit: limits.war },
-        { type: 'heavy', name: HORSE_TYPES['heavy'].name, emoji: '🛡️', price: Math.floor(HORSE_TYPES['heavy'].price * 0.5), limit: limits.heavy }
-    ];
-    
-    castleHorses.forEach(function(h) {
-        var available = h.limit.total - h.limit.sold;
-        var isOwned = g.equipment && g.equipment.horse && g.equipment.horse.horseType === h.type;
-        var canBuy = !g.equipment || !g.equipment.horse;
-        var timeLeft = Math.ceil((h.limit.resetTime - now) / (24 * 60 * 60 * 1000));
-        
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1410;">';
-        html += '<div>' + h.emoji + ' <strong>' + h.name + '</strong>';
-        html += '<br><span style="font-size:11px;color:#6a5a48;">Доступно: ' + available + '/' + h.limit.total + ' | Сброс: ' + timeLeft + ' дн.</span>';
-        if (isOwned) html += ' <span style="color:#7ac98a;">✅ Ваша</span>';
-        html += '</div><div style="text-align:right;">';
-        if (isOwned) html += '<span style="color:#7ac98a;">Уже куплена</span>';
-        else if (canBuy && available > 0) html += formatCurrency(h.price * 210 * 56) + ' <button class="btn btn-small" onclick="buyCastleHorse(\'' + h.type + '\',' + h.price + '); closeStable();">✅</button>';
-        else if (available <= 0) html += '<span style="color:#c96a5a;">Распродано</span>';
-        else html += '<span style="color:#c96a5a;">Продайте текущую</span>';
-        html += '</div></div>';
-    });
-    
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function buyCastleHorse(type, price) {
-    if (!checkBucklerAccess()) return;
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var horse = HORSE_TYPES[type];
-    if (!horse) { setMessage('❌ Такой лошади нет.'); return; }
-    if (g.equipment && g.equipment.horse) { setMessage('❌ У вас уже есть лошадь!'); return; }
-    
-    var limits = getCastleHorseLimits(CASTLE_ID);
-    if (type === 'war' && limits.war.sold >= limits.war.total) { setMessage('❌ Все боевые кони распроданы.'); return; }
-    if (type === 'heavy' && limits.heavy.sold >= limits.heavy.total) { setMessage('❌ Все тяжёлые кони распроданы.'); return; }
-    
-    if (!spendMoney(g, price * 210 * 56)) { setMessage('❌ Недостаточно денег!'); return; }
-    
-    g.equipment.horse = { type: 'horse', horseType: type, name: horse.name, hp: horse.hp, maxHp: horse.hp, speedBonus: horse.speedBonus, defensePercent: horse.defensePercent, inventorySlots: horse.inventorySlots };
-    if (type === 'war') limits.war.sold++;
-    else if (type === 'heavy') limits.heavy.sold++;
-    saveData(); setMessage('✅ Вы купили ' + horse.name); updateMenu();
-}
-
-function sellCastleHorse() {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    if (!g.equipment || !g.equipment.horse) { setMessage('❌ У вас нет лошади.'); return; }
-    var horseType = HORSE_TYPES[g.equipment.horse.horseType];
-    if (!horseType) { setMessage('❌ Лошадь не найдена.'); return; }
-    var refund = Math.floor(horseType.price * 0.3);
-    g.copper += refund * 210 * 56; convertCurrency(g); g.equipment.horse = null;
-    saveData(); setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56)); updateMenu();
-}
-
-function closeStable() { var m = document.getElementById('modal-stable'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// МАСТЕРСКАЯ
-// ============================================================
-
-function openCastleWorkshop() {
-    if (!checkBucklerAccess()) return;
-    var storage = getCastleStorage(CASTLE_ID);
-    var queue = getCastleQueue(CASTLE_ID);
-    var armory = getCastleArmory(CASTLE_ID);
-    
-    var modal = document.getElementById('modal-workshop');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-workshop'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeWorkshop(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛠️ МАСТЕРСКАЯ</h3><button class="close-btn" onclick="closeWorkshop()">✕</button></div><div id="modal-workshop-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-workshop-content');
-    var totalArmory = armory.weapons.length + armory.armor.length + armory.soldierWeapons.length + armory.soldierArmor.length;
-    var totalIron = getTotalQualityResource(storage, 'iron');
-    var totalSteel = getTotalQualityResource(storage, 'steel');
-    var totalPlanks = getTotalQualityResource(storage, 'planks');
-    
-    var html = '<div class="modal-section"><h4>🛠️ МАСТЕРСКАЯ ЗАМКА</h4>';
-    html += '<p style="color:#6a5a48;font-size:11px;">⚒️ Кузница: ✅ | 🪡 Кожевня: ❌ | 🪵 Плотник: ❌</p>';
-    html += '<p style="color:#6a5a48;font-size:11px;">📦 Руда:' + totalIron + ' Уголь:' + storage.coal + ' Сталь:' + totalSteel + ' Доски:' + totalPlanks + '</p>';
-    html += '<p style="color:#6a5a48;font-size:11px;">🗡️ Оружейная: ' + totalArmory + ' предм.</p>';
-    
-    if (queue.length > 0) {
-        html += '<p style="color:#ffd700;font-size:11px;">⏳ Очередь: ' + queue.length + '/10</p>';
-        queue.forEach(function(q, i) {
-            html += '<div style="font-size:10px;color:#b8a890;">' + (i+1) + '. ' + q.name + ' — ' + q.timeLeft + ' мин ';
-            html += '<button class="btn btn-small" style="background:#3d2a1a;font-size:9px;" onclick="cancelQueueItem(' + i + ')">❌</button></div>';
-        });
-    }
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>⚒️ РЕСУРСЫ</h4>';
-    html += '<div class="row"><span class="label">Сталь (2 руды + 1 уголь)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'steel\')">🔨 1ч</button></span></div>';
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>🗡️ ОРУЖИЕ (Кузница)</h4>';
-    [{id:'sword',name:'Меч солдата',steel:3,planks:0},{id:'spear',name:'Копьё солдата',steel:1,planks:2},{id:'shield',name:'Щит солдата',steel:6,planks:0}].forEach(function(w){
-        var c = w.steel+' стали' + (w.planks>0?' + '+w.planks+' досок':'');
-        html += '<div class="row"><span class="label">'+w.name+' ('+c+')</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\''+w.id+'\')">🔨 1ч</button></span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>🛡️ ЛАТНАЯ БРОНЯ</h4>';
-    html += '<div class="row"><span class="label">Комплект латной брони (12 стали)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'plate_armor\')">🔨 1ч</button></span></div>';
-    html += '</div>';
-    
-    html += '<p style="color:#c96a5a;font-size:11px;">❌ Кожевня и Плотник отсутствуют.</p>';
-    html += '<button class="btn btn-secondary" onclick="closeWorkshop()" style="margin-top:10px;">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function queueWorkshopItem(itemId) {
-    var queue = getCastleQueue(CASTLE_ID);
-    var storage = getCastleStorage(CASTLE_ID);
-    if (queue.length >= 10) { setMessage('❌ Очередь заполнена.'); return; }
-    
-    var name = '', needsSteel = 0, needsIron = 0, needsCoal = 0, needsPlanks = 0;
-    if (itemId === 'steel') { name = 'Сталь'; needsIron = 2; needsCoal = 1; }
-    else if (itemId === 'sword') { name = 'Меч солдата'; needsSteel = 3; }
-    else if (itemId === 'spear') { name = 'Копьё солдата'; needsSteel = 1; needsPlanks = 2; }
-    else if (itemId === 'shield') { name = 'Щит солдата'; needsSteel = 6; }
-    else if (itemId === 'plate_armor') { name = 'Комплект латной брони'; needsSteel = 12; }
-    else { setMessage('❌ Неизвестный предмет.'); return; }
-    
-    var totalIron = getTotalQualityResource(storage, 'iron');
-    var totalSteel = getTotalQualityResource(storage, 'steel');
-    var totalPlanks = getTotalQualityResource(storage, 'planks');
-    
-    if (totalIron < needsIron || storage.coal < needsCoal || totalSteel < needsSteel || totalPlanks < needsPlanks) {
-        setMessage('❌ Недостаточно ресурсов на складе.'); return;
-    }
-    
-    // Списываем обычное качество
-    if (needsIron > 0 && storage.iron['Обычное']) { var t = Math.min(storage.iron['Обычное'], needsIron); storage.iron['Обычное'] -= t; if (storage.iron['Обычное'] <= 0) delete storage.iron['Обычное']; needsIron -= t; }
-    if (needsSteel > 0 && storage.steel['Обычное']) { var t = Math.min(storage.steel['Обычное'], needsSteel); storage.steel['Обычное'] -= t; if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное']; needsSteel -= t; }
-    if (needsPlanks > 0 && storage.planks['Обычное']) { var t = Math.min(storage.planks['Обычное'], needsPlanks); storage.planks['Обычное'] -= t; if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное']; needsPlanks -= t; }
-    storage.coal -= needsCoal;
-    
-    queue.push({ id: itemId, name: name, timeLeft: 60 });
-    setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
-    processWorkshopQueue(); closeWorkshop(); openCastleWorkshop();
-}
-
-function cancelQueueItem(index) {
-    var queue = getCastleQueue(CASTLE_ID);
-    var storage = getCastleStorage(CASTLE_ID);
-    if (index >= queue.length) { setMessage('❌ Предмет не найден.'); return; }
-    var item = queue.splice(index, 1)[0];
-    
-    if (item.id === 'steel') { addQualityResource(storage, 'iron', 'Обычное', 2); storage.coal += 1; }
-    else if (item.id === 'sword') { addQualityResource(storage, 'steel', 'Обычное', 3); }
-    else if (item.id === 'spear') { addQualityResource(storage, 'steel', 'Обычное', 1); addQualityResource(storage, 'planks', 'Обычное', 2); }
-    else if (item.id === 'shield') { addQualityResource(storage, 'steel', 'Обычное', 6); }
-    else if (item.id === 'plate_armor') { addQualityResource(storage, 'steel', 'Обычное', 12); }
-    
-    saveData();
-    setMessage('❌ ' + item.name + ' удалён из очереди. Ресурсы возвращены.');
-    closeWorkshop(); openCastleWorkshop();
-}
-
-function processWorkshopQueue() {
-    var queue = getCastleQueue(CASTLE_ID);
-    if (queue.length === 0 || window._workshopTimer) return;
-    window._workshopTimer = setInterval(function() {
-        if (queue.length === 0) { clearInterval(window._workshopTimer); window._workshopTimer = null; return; }
-        queue[0].timeLeft--;
-        if (queue[0].timeLeft <= 0) {
-            var done = queue.shift();
-            var storage = getCastleStorage(CASTLE_ID);
-            var armory = getCastleArmory(CASTLE_ID);
-            if (done.id === 'steel') { addQualityResource(storage, 'steel', 'Обычное', 1); setMessage('✅ Сталь готова!'); }
-            else {
-                var item = null, cat = '';
-                if (done.id === 'sword') { item = SOLDIER_ITEMS.weapons.sword[0]; cat = 'soldierWeapons'; }
-                else if (done.id === 'spear') { item = SOLDIER_ITEMS.weapons.spear[0]; cat = 'soldierWeapons'; }
-                else if (done.id === 'shield') { item = SOLDIER_ITEMS.weapons.shield[0]; cat = 'soldierWeapons'; }
-                else if (done.id === 'plate_armor') { item = SOLDIER_ITEMS.armor.plate[0]; cat = 'soldierArmor'; }
-                if (item) { armory[cat].push(item); setMessage('✅ ' + item.name + ' готов!'); }
-            }
-            saveData();
-        }
-        if (queue.length === 0) { clearInterval(window._workshopTimer); window._workshopTimer = null; }
-    }, 60000);
-}
-
-function closeWorkshop() { var m = document.getElementById('modal-workshop'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// СКЛАД (с модальным окном качеств)
-// ============================================================
-
-function openCastleStorage() {
-    if (!checkBucklerAccess()) return;
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var storage = getCastleStorage(CASTLE_ID);
-    
-    var modal = document.getElementById('modal-storage');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-storage'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStorage(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СКЛАД ЗАМКА</h3><button class="close-btn" onclick="closeStorage()">✕</button></div><div id="modal-storage-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-storage-content');
-    var html = '<div class="modal-section"><h4>📦 СКЛАД ЗАМКА</h4>';
-    
-    var qualityResources = [
-        {key:'iron',name:'⛏️ Руда'},{key:'steel',name:'⚒️ Сталь'},{key:'planks',name:'🪵 Доски'},
-        {key:'leather',name:'🧵 Кожа'},{key:'hardenedLeather',name:'🟫 Дублёная кожа'},{key:'wood',name:'🪵 Древесина'}
-    ];
-    
-    qualityResources.forEach(function(r) {
-        var total = getTotalQualityResource(storage, r.key);
-        html += '<div class="row"><span class="label">'+r.name+': '+total+'</span><span class="value"><button class="btn btn-small" onclick="showStorageQualityModal(\''+r.key+'\',\''+r.name+'\')">📋</button></span></div>';
-    });
-    
-    var simpleResources = [
-        {key:'coal',name:'🔥 Уголь'},{key:'salt',name:'🧂 Соль'},{key:'stone',name:'🪨 Камень'},
-        {key:'valyrian_ore',name:'💎 Руда 14 огней'},{key:'valyrian_steel',name:'🌟 Валирийская сталь'}
-    ];
-    
-    simpleResources.forEach(function(r) {
-        html += '<div class="row"><span class="label">'+r.name+': '+(storage[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeSimpleFromStorage(\''+r.key+'\','+(storage[r.key]||0)+')">📤</button></span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>📥 ПОЛОЖИТЬ РЕСУРСЫ</h4>';
-    g.inventory.forEach(function(item, i) {
-        if (item.resourceType) {
-            html += '<div class="row"><span class="label">'+item.name+' ('+(item.quality||'Обычное')+') ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToStorage('+i+')">📥</button></span></div>';
-        }
-    });
-    html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeStorage()">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function showStorageQualityModal(key, name) {
-    var storage = getCastleStorage(CASTLE_ID);
-    var qualities = storage[key] || {};
-    
-    var modal = document.getElementById('modal-storage-quality');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-storage-quality'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeStorageQuality(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ' + name + '</h3><button class="close-btn" onclick="closeStorageQuality()">✕</button></div><div id="modal-storage-quality-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-storage-quality-content');
-    var html = '<div class="modal-section"><h4>' + name + ' на складе</h4>';
-    
-    var qualityOrder = ['Рваное','Плохое','Обычное','Хорошее','Качественное','Мастерское','Легендарное','Мифическое'];
-    var hasAny = false;
-    
-    qualityOrder.forEach(function(q) {
-        if (qualities[q] && qualities[q] > 0) {
-            hasAny = true;
-            var qData = QUALITIES[q] || {};
-            html += '<div class="row"><span class="label" style="color:'+(qData.color||'#fff')+';">'+(qData.emoji||'')+' '+q+': '+qualities[q]+' шт.</span><span class="value"><button class="btn btn-small" onclick="takeQualityFromStorage(\''+key+'\',\''+q+'\','+qualities[q]+',\''+name+'\')">📤 Забрать</button></span></div>';
-        }
-    });
-    
-    if (!hasAny) html += '<p style="color:#6a5a48;">Пусто.</p>';
-    html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeStorageQuality()">Закрыть</button>';
-    
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function takeQualityFromStorage(key, quality, available, name) {
-    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
-    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
-    
-    var storage = getCastleStorage(CASTLE_ID);
-    storage[key][quality] -= amount;
-    if (storage[key][quality] <= 0) delete storage[key][quality];
-    
-    var remaining = amount;
-    while (remaining > 0) {
-        var stack = Math.min(remaining, 50);
-        addToInventory(users[currentUser].game, { name: name, type: 'resource', resourceType: key, count: stack, quality: quality });
-        remaining -= stack;
-    }
-    
-    saveData(); setMessage('✅ Забрано: ' + amount + ' ' + quality); updateMenu();
-    closeStorageQuality(); openCastleStorage();
-}
-
-function takeSimpleFromStorage(key, available) {
-    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
-    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
-    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
-    
-    var storage = getCastleStorage(CASTLE_ID);
-    storage[key] -= amount;
-    
-    var remaining = amount;
-    while (remaining > 0) {
-        var stack = Math.min(remaining, 50);
-        addToInventory(users[currentUser].game, { name: key, type: 'resource', resourceType: key, count: stack, quality: 'Обычное' });
-        remaining -= stack;
-    }
-    
-    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleStorage();
-}
-
-function donateToStorage(index) {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var storage = getCastleStorage(CASTLE_ID);
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    var item = g.inventory[index];
-    if (!item.resourceType) { setMessage('❌ Это не ресурс.'); return; }
-    var count = item.count || 1;
-    var quality = item.quality || 'Обычное';
-    
-    var qualityKeys = ['iron','steel','planks','leather','hardenedLeather','wood'];
-    if (qualityKeys.indexOf(item.resourceType) !== -1) {
-        addQualityResource(storage, item.resourceType, quality, count);
-    } else {
-        storage[item.resourceType] = (storage[item.resourceType] || 0) + count;
-    }
-    
-    g.inventory.splice(index, 1);
-    saveData(); setMessage('✅ ' + item.name + ' ×' + count + ' на складе.'); updateMenu(); openCastleStorage();
-}
-
-function closeStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
-function closeStorageQuality() { var m = document.getElementById('modal-storage-quality'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// АМБАР
-// ============================================================
-
-function openCastleGranary() {
-    if (!checkBucklerAccess()) return;
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var granary = getCastleGranary(CASTLE_ID);
-    
-    var modal = document.getElementById('modal-granary');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-granary'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeGranary(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🌾 АМБАР</h3><button class="close-btn" onclick="closeGranary()">✕</button></div><div id="modal-granary-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-granary-content');
-    var html = '<div class="modal-section"><h4>🌾 АМБАР ЗАМКА</h4>';
-    var res = [
-        {key:'wheat',name:'🌾 Пшеница'},{key:'vegetables',name:'🥕 Овощи'},{key:'fish',name:'🐟 Рыба'},
-        {key:'water',name:'💧 Вода'},{key:'bread',name:'🍞 Хлеб'},{key:'meat',name:'🥩 Мясо'},
-        {key:'cheese',name:'🧀 Сыр'},{key:'apple',name:'🍎 Яблоко'},{key:'milk',name:'🥛 Молоко'},
-        {key:'ale',name:'🍺 Эль'},{key:'wine',name:'🍷 Вино'}
-    ];
-    res.forEach(function(r) {
-        html += '<div class="row"><span class="label">'+r.name+': '+(granary[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeFromGranary(\''+r.key+'\','+(granary[r.key]||0)+')">📤</button></span></div>';
-    });
-    html += '</div>';
-    
-    html += '<div class="modal-section"><h4>📥 ПОЛОЖИТЬ ЕДУ</h4>';
-    g.inventory.forEach(function(item, i) {
-        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst))) {
-            html += '<div class="row"><span class="label">'+item.name+' ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToGranary('+i+')">📥</button></span></div>';
-        }
-    });
-    html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeGranary()">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function donateToGranary(index) {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var granary = getCastleGranary(CASTLE_ID);
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    var item = g.inventory[index];
-    var key = item.name.replace(/[🍞🥩🐟🧀🍎💧🍺🍷🥛]/g,'').trim().toLowerCase();
-    var map = {'хлеб':'bread','мясо':'meat','рыба':'fish','сыр':'cheese','яблоко':'apple','вода':'water','эль':'ale','вино':'wine','молоко':'milk'};
-    key = map[key] || key;
-    var count = item.count || 1;
-    granary[key] = (granary[key] || 0) + count;
-    g.inventory.splice(index, 1);
-    saveData(); setMessage('✅ Положено в амбар.'); updateMenu(); openCastleGranary();
-}
-
-function takeFromGranary(key, available) {
-    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var granary = getCastleGranary(CASTLE_ID);
-    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
-    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
-    granary[key] -= amount;
-    
-    var names = {wheat:'🌾 Пшеница',vegetables:'🥕 Овощи',fish:'🐟 Рыба',water:'💧 Вода',bread:'🍞 Хлеб',meat:'🥩 Мясо',cheese:'🧀 Сыр',apple:'🍎 Яблоко',milk:'🥛 Молоко',ale:'🍺 Эль',wine:'🍷 Вино'};
-    var remaining = amount;
-    while (remaining > 0) {
-        var stack = Math.min(remaining, 50);
-        addToInventory(g, { name: names[key] || key, type: 'food', count: stack, quality: 'Обычное' });
-        remaining -= stack;
-    }
-    
-    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleGranary();
-}
-
-function closeGranary() { var m = document.getElementById('modal-granary'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// ОРУЖЕЙНАЯ
-// ============================================================
-
-function openCastleArmory() {
-    if (!checkBucklerAccess()) return;
-    var armory = getCastleArmory(CASTLE_ID);
-    
-    var modal = document.getElementById('modal-armory');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-armory'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeArmory(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ ОРУЖЕЙНАЯ</h3><button class="close-btn" onclick="closeArmory()">✕</button></div><div id="modal-armory-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-armory-content');
-    var html = '<div class="modal-section"><h4>🗡️ ОРУЖЕЙНАЯ ЗАМКА</h4>';
-    html += '<div class="tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
-    html += '<button class="tab-btn active" onclick="showArmoryTab(\'weapons\')">🗡️ Оружие ('+armory.weapons.length+')</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'armor\')">🛡️ Броня ('+armory.armor.length+')</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierWeapons\')">⚔️ Солд. оружие ('+armory.soldierWeapons.length+')</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierArmor\')">🛡️ Солд. броня ('+armory.soldierArmor.length+')</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'donate\')">📥 Положить</button>';
-    html += '</div><div id="armory-tab-content"></div>';
-    html += '<button class="btn btn-secondary" onclick="closeArmory()" style="margin-top:10px;">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-    showArmoryTab('weapons');
-}
-
-function showArmoryTab(tab) {
-    var container = document.getElementById('armory-tab-content');
-    if (!container) return;
-    var armory = getCastleArmory(CASTLE_ID);
-    var html = '';
-    var titles = { weapons:'🗡️ Оружие', armor:'🛡️ Броня', soldierWeapons:'⚔️ Солдатское оружие', soldierArmor:'🛡️ Солдатская броня' };
-    
-    if (tab === 'donate') {
-        var user = users[currentUser];
-        if (!user) return;
-        var g = user.game;
-        html += '<h4>📥 ПОЛОЖИТЬ В ОРУЖЕЙНУЮ</h4>';
-        var hasItems = false;
-        g.inventory.forEach(function(item, i) {
-            if (isEquippable(item)) {
-                hasItems = true;
-                html += '<div class="row"><span class="label">'+item.name+' ('+(item.quality||'Обычное')+')</span><span class="value"><button class="btn btn-small" onclick="donateToArmory('+i+')">📥</button></span></div>';
-            }
-        });
-        if (!hasItems) html += '<p style="color:#6a5a48;">Нет предметов для передачи.</p>';
-    } else {
-        var items = armory[tab] || [];
-        html += '<h4>'+titles[tab]+' ('+items.length+' шт.)</h4>';
-        if (items.length === 0) html += '<p style="color:#6a5a48;">Пусто.</p>';
-        else {
-            var grouped = {};
-            items.forEach(function(item) { var k = item.name + '|' + (item.quality||'Обычное'); if (!grouped[k]) grouped[k] = {item:item,count:0}; grouped[k].count++; });
-            for (var k in grouped) {
-                html += '<div class="row"><span class="label">'+grouped[k].item.name+' ('+(grouped[k].item.quality||'Обычное')+')</span><span class="value">×'+grouped[k].count+'</span></div>';
-            }
-        }
-    }
-    container.innerHTML = html;
-}
-
-function donateToArmory(index) {
-    var user = users[currentUser];
-    if (!user) return;
-    var g = user.game;
-    var armory = getCastleArmory(CASTLE_ID);
-    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
-    var item = g.inventory.splice(index, 1)[0];
-    var cat = 'weapons';
-    if (item.armorClass === 'leather' || item.armorClass === 'plate') cat = 'armor';
-    if (item.isSoldierGear) {
-        cat = (item.type === 'armor') ? 'soldierArmor' : 'soldierWeapons';
-    }
-    armory[cat].push(item);
-    saveData(); setMessage('✅ ' + item.name + ' перемещён в оружейную.'); updateMenu(); showArmoryTab('donate');
-}
-
-function closeArmory() { var m = document.getElementById('modal-armory'); if (m) m.classList.add('hide'); }
-
-// ============================================================
-// ОСТАЛЬНЫЕ ЗДАНИЯ
-// ============================================================
-
-function openCastleDonjon() { if (!checkBucklerAccess()) return; setMessage('🗼 Вы в донжоне. Лорд Баклеров приветствует вас.'); }
-function openCastleBarracks() { if (!checkBucklerAccess()) return; setMessage('⚔️ Казармы гарнизона.'); }
-function openCastleTraining() { if (!checkBucklerAccess()) return; setMessage('🎯 Тренировочная площадка. Пока недоступна.'); }
-function openCastleMarket() { setMessage('🏪 Замковый рынок. Пока недоступен.'); }
-function openCastleDungeon() { if (!checkBucklerAccess()) return; setMessage('⛓️ Темница замка. Пока недоступна.'); }
-
-// ============================================================
-// КАРТА ЗАМКА
-// ============================================================
-
-function openCastleMap() {
-    var g = users[currentUser].game;
-    var modal = document.getElementById('modal-map');
-    var content = document.getElementById('modal-map-content');
-    var html = '<div class="modal-section"><h4>🏰 Бронзовый Щит</h4></div><div class="modal-section">';
-    CASTLE_BUILDINGS.forEach(function(b) {
-        var isCurrent = b.id === g.location.place;
-        html += '<div class="row"><span class="label">'+b.label+(isCurrent?' ⭐':'')+'</span>';
-        html += '<span class="value">'+(isCurrent?'<span style="color:#6a5a48;">Вы здесь</span>':'<button class="btn btn-small" onclick="goToCastleBuilding(\''+b.id+'\')">🚶 Идти</button>')+'</span></div>';
-    });
-    html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
-}
-
-function goToCastleBuilding(building) {
-    var g = users[currentUser].game;
-    if (isBusy) { setMessage('⏳ Вы заняты.'); return; }
-    if (building === g.location.place) { setMessage('📍 Вы уже здесь.'); return; }
-    if (!CASTLE_BUILDINGS.some(function(b){return b.id===building})) { setMessage('❌ Здание не найдено.'); return; }
-    g.location.place = building; g.location.location = 'Бронзовый Щит';
-    closeMap(); updateMenu(); updateStory(); updateActions(); saveData();
-}
-
-// ============================================================
-// STORY / ACTIONS
-// ============================================================
-
-window.updateStory = function() {
-    var g = users[currentUser].game;
-    var place = g.location.place;
-    if (!CASTLE_BUILDINGS.some(function(b){return b.id===place})) { if (typeof _castlePrevUpdateStory==='function') return _castlePrevUpdateStory(); return; }
-    document.getElementById('story-title').textContent = '🏰 Бронзовый Щит';
-    var texts = { castle_gate:'🚪 Ворота замка.', castle_donjon:'🗼 Донжон.', castle_barracks:'⚔️ Казармы.', castle_training:'🎯 Тренировочная площадка.', castle_workshop:'🛠️ Мастерская.', castle_forge:'⚒️ Кузница.', castle_granary:'🌾 Амбар.', castle_storage:'📦 Склад.', castle_armory:'🗡️ Оружейная.', castle_stable:'🐴 Конюшня.', castle_market:'🏪 Рынок.', castle_tavern:'🍺 Таверна.', castle_dungeon:'⛓️ Темница.' };
-    document.getElementById('story-text').textContent = texts[place] || '';
-    if (typeof updateActions==='function') updateActions();
 };
-
-window.updateActions = function() {
-    var g = users[currentUser].game;
-    var place = g.location.place;
-    var container = document.getElementById('actions-container');
-    if (!container) return;
-    if (!CASTLE_BUILDINGS.some(function(b){return b.id===place})) { if (typeof _castlePrevUpdateActions==='function') return _castlePrevUpdateActions(); return; }
-    
-    container.innerHTML = '';
-    var actions = [];
-    if (place==='castle_gate') actions.push({id:'leave_buckler_castle',label:'🚪 Выйти из замка'});
-    if (place==='castle_donjon') actions.push({id:'donjon_open',label:'🗼 Донжон'});
-    if (place==='castle_barracks') actions.push({id:'barracks_open',label:'⚔️ Казармы'});
-    if (place==='castle_training') actions.push({id:'training_open',label:'🎯 Тренировка'});
-    if (place==='castle_workshop') actions.push({id:'workshop_open',label:'🛠️ Производство'});
-    if (place==='castle_forge') actions.push({id:'castle_forge_craft',label:'⚒️ Ковка'});
-    if (place==='castle_granary') actions.push({id:'granary_open',label:'🌾 Амбар'});
-    if (place==='castle_storage') actions.push({id:'storage_open',label:'📦 Склад'});
-    if (place==='castle_armory') actions.push({id:'armory_open',label:'🗡️ Оружейная'});
-    if (place==='castle_stable') actions.push({id:'stable_open',label:'🐴 Конюшня'});
-    if (place==='castle_market') actions.push({id:'market_open',label:'🏪 Рынок'});
-    if (place==='castle_tavern') actions.push({id:'tavern_open',label:'🍺 Таверна'});
-    if (place==='castle_dungeon') actions.push({id:'dungeon_open',label:'⛓️ Темница'});
-    actions.push({id:'castle_map',label:'🗺️ Карта замка'});
-    actions.push({id:'inventory',label:'🎒 Инвентарь'});
-    actions.push({id:'character',label:'👤 Персонаж'});
-    actions.push({id:'menu',label:'📋 Меню'});
-    
-    actions.forEach(function(a) {
-        var btn = document.createElement('button'); btn.className='btn-game'; btn.textContent=a.label;
-        btn.onclick = function() {
-            if (a.id==='castle_map') openCastleMap();
-            else if (a.id==='leave_buckler_castle') { g.location.place='bl_-1_0'; g.location.location='Владения Баклеров'; g.location.locationId='bl_-1_0'; g.location.parentZone=null; setMessage('🚪 Вы вышли из замка.'); updateMenu(); updateStory(); updateActions(); saveData(); }
-            else if (a.id==='castle_forge_craft') { if (!checkBucklerAccess()) return; if (typeof openCraftMenu==='function') openCraftMenu(); }
-            else if (a.id==='stable_open') openCastleStable();
-            else if (a.id==='workshop_open') openCastleWorkshop();
-            else if (a.id==='storage_open') openCastleStorage();
-            else if (a.id==='granary_open') openCastleGranary();
-            else if (a.id==='armory_open') openCastleArmory();
-            else if (a.id==='tavern_open') openCastleTavern();
-            else if (a.id==='donjon_open') openCastleDonjon();
-            else if (a.id==='barracks_open') openCastleBarracks();
-            else if (a.id==='training_open') openCastleTraining();
-            else if (a.id==='market_open') openCastleMarket();
-            else if (a.id==='dungeon_open') openCastleDungeon();
-            else if (typeof gameAction==='function') gameAction(a.id);
-        };
-        container.appendChild(btn);
-    });
-};
-
-window.enterBucklerCastle = function() {
-    var g = users[currentUser].game;
-    g.location.place = 'castle_gate'; g.location.location = 'Бронзовый Щит'; g.location.parentZone = null;
-    setMessage('🏰 Вы вошли в замок Бронзовый Щит.');
-    updateMenu(); updateStory(); updateActions(); saveData();
-};
-
-window.openCastleMap = openCastleMap;
-window.goToCastleBuilding = goToCastleBuilding;
-window.updateStory = window.updateStory;
-window.updateActions = window.updateActions;
-
-processWorkshopQueue();
-console.log('🏰 Замок Бронзовый Щит загружен!');
