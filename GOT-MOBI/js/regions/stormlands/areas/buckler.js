@@ -177,7 +177,7 @@ window.updateStory = function() {
     var loc = WORLD_AREAS[place];
     
     if (!loc || loc.region !== 'Штормовые земли') {
-        if (typeof _bucklerPrevUpdateStory === 'function') return _bucklerPrevUpdateStory();
+        if (typeof _bucklerPrevUpdateStory === 'function') _bucklerPrevUpdateStory();
         return;
     }
     
@@ -201,22 +201,14 @@ window.updateActions = function() {
     if (!container) return;
     
     var loc = WORLD_AREAS[place];
-    if (!loc || (loc.region !== 'Штормовые земли' && loc.region !== 'Королевские земли')) {
-        // Пропускаем только если это не Штормовые земли и не КЛ
-        if (loc && loc.region !== 'Королевские земли') {
-            if (typeof _bucklerPrevUpdateActions === 'function') return _bucklerPrevUpdateActions();
-        }
+    
+    if (!loc || loc.region !== 'Штормовые земли') {
+        if (typeof _bucklerPrevUpdateActions === 'function') _bucklerPrevUpdateActions();
+        return;
     }
     
-    if (!loc) {
-        if (g.location.parentZone) {
-            loc = WORLD_AREAS[g.location.parentZone];
-        }
-    }
+    if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
     
-    if (!loc) return;
-    
-    g.location.locationId = g.location.parentZone || place;
     container.innerHTML = '';
     var actions = (loc.actions || []).slice();
     
