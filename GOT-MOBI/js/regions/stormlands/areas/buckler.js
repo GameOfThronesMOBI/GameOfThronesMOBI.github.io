@@ -85,7 +85,7 @@ const BUCKLER_AREAS = {
     'bl_-4_0': { id:'bl_-4_0', name:'Равнина', x:-4, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:['Пшеница','Овощи'] },
     'bl_-3_0': { id:'bl_-3_0', name:'Равнина', x:-3, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', places:['Деревня'], resources:['Пшеница','Овощи'] },
     'bl_-2_0': { id:'bl_-2_0', name:'Равнина', x:-2, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:['Пшеница','Овощи'] },
-    'bl_-1_0': { id:'bl_-1_0', name:'Бронзовый Щит', x:-1, y:11, type:'castle', level:11, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:[] },
+    'bl_-1_0': { id:'bl_-1_0', name:'Бронзовый Щит', x:-1, y:11, type:'castle', level:11, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:[], actions:[{id:'enter_buckler_castle',label:'🏰 Войти в замок'}] },
     'bl_0_0':  { id:'bl_0_0', name:'Равнина', x:0, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:['Пшеница','Овощи'] },
     'bl_1_0':  { id:'bl_1_0', name:'Равнина', x:1, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:['Пшеница','Овощи'] },
     'bl_2_0':  { id:'bl_2_0', name:'Равнина', x:2, y:11, type:'plain', level:5, owner:'buckler', region:'Штормовые земли', area:'Владения Баклеров', resources:['Пшеница','Овощи'] },
@@ -162,5 +162,99 @@ const BUCKLER_AREAS = {
 // Добавляем в глобальный мир
 Object.assign(WORLD_AREAS, BUCKLER_AREAS);
 buildWorldTransitions();
+
+// Сохраняем предыдущие обработчики
+var _bucklerPrevUpdateStory = window.updateStory;
+var _bucklerPrevUpdateActions = window.updateActions;
+
+// ============================================================
+// STORY
+// ============================================================
+
+window.updateStory = function() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var loc = WORLD_AREAS[place];
+    
+    if (!loc || loc.region !== 'Штормовые земли') {
+        if (typeof _bucklerPrevUpdateStory === 'function') return _bucklerPrevUpdateStory();
+        return;
+    }
+    
+    if (!g.location.locationId || !WORLD_AREAS[g.location.locationId]) g.location.locationId = place;
+    
+    document.getElementById('story-title').textContent = '📍 ' + loc.name + ' (ур.' + loc.level + ')';
+    var desc = { road:'🛤️ Дорога', forest:'🌲 Лес', coast:'🏖️ Берег', castle:'🏰 Замок', river:'🏞️ Вода', mountain:'⛰️ Горы', plain:'🌾 Равнина' };
+    document.getElementById('story-text').textContent = desc[loc.type] || '📍 ' + loc.name;
+    
+    if (typeof updateActions === 'function') updateActions();
+};
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+window.updateActions = function() {
+    var g = users[currentUser].game;
+    var place = g.location.place;
+    var container = document.getElementById('actions-container');
+    if (!container) return;
+    
+    var loc = WORLD_AREAS[place];
+    if (!loc || (loc.region !== 'Штормовые земли' && loc.region !== 'Королевские земли')) {
+        // Пропускаем только если это не Штормовые земли и не КЛ
+        if (loc && loc.region !== 'Королевские земли') {
+            if (typeof _bucklerPrevUpdateActions === 'function') return _bucklerPrevUpdateActions();
+        }
+    }
+    
+    if (!loc) {
+        if (g.location.parentZone) {
+            loc = WORLD_AREAS[g.location.parentZone];
+        }
+    }
+    
+    if (!loc) return;
+    
+    g.location.locationId = g.location.parentZone || place;
+    container.innerHTML = '';
+    var actions = (loc.actions || []).slice();
+    
+    if (loc.places && loc.places.indexOf('Шахта') !== -1 && g.location.place === 'Шахта') {
+        actions.push({ id: 'mine', label: '⛏️ Добывать' });
+    }
+    if (loc.places && loc.places.indexOf('Лесосека') !== -1 && g.location.place === 'Лесосека') {
+        actions.push({ id: 'woodcut', label: '🪓 Рубить лес' });
+    }
+    
+    actions.push({ id:'map', label:'🗺️ Карта' },{ id:'world', label:'🌍 Мир' },{ id:'compass', label:'🧭 Компас' },{ id:'search', label:'🔍 Поиск' },
+                 { id:'inventory', label:'🎒 Инвентарь' },{ id:'character', label:'👤 Персонаж' },{ id:'menu', label:'📋 Меню' });
+    
+    for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var btn = document.createElement('button');
+        btn.className = 'btn-game';
+        btn.textContent = a.label;
+        btn.onclick = (function(id) {
+            return function() {
+                if (id === 'enter_buckler_castle') {
+                    if (typeof enterBucklerCastle === 'function') enterBucklerCastle();
+                    else setMessage('❌ Замок не загружен.');
+                    return;
+                }
+                if (id === 'map') { if (typeof openPlaces === 'function') openPlaces(); else setMessage('❌ Карта не загружена.'); return; }
+                if (id === 'world') { if (typeof openWorldMap === 'function') openWorldMap(); else setMessage('❌ Карта мира не загружена.'); return; }
+                if (id === 'compass') { if (typeof openCompass === 'function') openCompass(); else setMessage('❌ Компас не загружен.'); return; }
+                if (id === 'search') { if (typeof window.doSearch === 'function') window.doSearch(); else setMessage('❌ Поиск не загружен.'); return; }
+                if (typeof gameAction === 'function') gameAction(id);
+                else setMessage('❌ Действие временно недоступно.');
+            };
+        })(a.id);
+        container.appendChild(btn);
+    }
+};
+
+window.updateStory = updateStory;
+window.updateActions = updateActions;
 
 console.log('✅ Владения Баклеров загружены (121 зона, 11×11)');
