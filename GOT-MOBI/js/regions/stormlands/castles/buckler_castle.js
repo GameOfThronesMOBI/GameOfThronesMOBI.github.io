@@ -6,17 +6,25 @@
 var _castlePrevUpdateStory = window.updateStory;
 var _castlePrevUpdateActions = window.updateActions;
 
+// Глобальные хранилища
 if (!window._castleStorages) window._castleStorages = {};
+if (!window._castleGranaries) window._castleGranaries = {};
 if (!window._castleArmories) window._castleArmories = {};
+if (!window._castleQueues) window._castleQueues = {};
+if (!window._castleHorseLimits) window._castleHorseLimits = {};
 
 function getCastleStorage(castleId) {
     if (!window._castleStorages[castleId]) {
-        window._castleStorages[castleId] = { 
-            iron: 0, coal: 0, steel: 0, leather: 0, salt: 0, wood: 0, planks: 0, hardenedLeather: 0,
-            stone: 0, wheat: 0, vegetables: 0, fish: 0, water: 0, valyrian_ore: 0, valyrian_steel: 0
-        };
+        window._castleStorages[castleId] = { iron: 0, coal: 0, steel: 0, planks: 0, leather: 0, hardenedLeather: 0, stone: 0, wood: 0, salt: 0, valyrian_ore: 0, valyrian_steel: 0 };
     }
     return window._castleStorages[castleId];
+}
+
+function getCastleGranary(castleId) {
+    if (!window._castleGranaries[castleId]) {
+        window._castleGranaries[castleId] = { wheat: 0, vegetables: 0, fish: 0, water: 0, bread: 0, meat: 0, cheese: 0, apple: 0, milk: 0, ale: 0, wine: 0 };
+    }
+    return window._castleGranaries[castleId];
 }
 
 function getCastleArmory(castleId) {
@@ -26,12 +34,36 @@ function getCastleArmory(castleId) {
     return window._castleArmories[castleId];
 }
 
-if (!window._castleQueues) window._castleQueues = {};
 function getCastleQueue(castleId) {
-    if (!window._castleQueues[castleId]) {
-        window._castleQueues[castleId] = [];
-    }
+    if (!window._castleQueues[castleId]) window._castleQueues[castleId] = [];
     return window._castleQueues[castleId];
+}
+
+function getCastleHorseLimits(castleId) {
+    if (!window._castleHorseLimits[castleId]) {
+        window._castleHorseLimits[castleId] = {
+            war: { total: 50, sold: 0, resetTime: Date.now() + 7 * 24 * 60 * 60 * 1000 },
+            heavy: { total: 30, sold: 0, resetTime: Date.now() + 7 * 24 * 60 * 60 * 1000 }
+        };
+    }
+    var limits = window._castleHorseLimits[castleId];
+    var now = Date.now();
+    if (now > limits.war.resetTime) { limits.war.sold = 0; limits.war.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
+    if (now > limits.heavy.resetTime) { limits.heavy.sold = 0; limits.heavy.resetTime = now + 7 * 24 * 60 * 60 * 1000; }
+    return limits;
+}
+
+function isBucklerMember() {
+    var user = users[currentUser];
+    return user && user.game && user.game.house === 'buckler';
+}
+
+function checkBucklerAccess() {
+    if (!isBucklerMember()) {
+        setMessage('❌ Только для членов дома Баклеров.');
+        return false;
+    }
+    return true;
 }
 
 const CASTLE_BUILDINGS = [
@@ -46,34 +78,97 @@ const CASTLE_BUILDINGS = [
     { id: 'castle_armory', label: '🗡️ Оружейная' },
     { id: 'castle_stable', label: '🐴 Конюшня' },
     { id: 'castle_market', label: '🏪 Рынок' },
+    { id: 'castle_tavern', label: '🍺 Таверна' },
     { id: 'castle_dungeon', label: '⛓️ Темница' }
 ];
 
 var CASTLE_ID = 'buckler';
 
 // ============================================================
+// ТАВЕРНА
+// ============================================================
+
+function openCastleTavern() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    
+    var modal = document.getElementById('modal-tavern');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-tavern'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeTavern(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🍺 ТАВЕРНА ЗАМКА</h3><button class="close-btn" onclick="closeTavern()">✕</button></div><div id="modal-tavern-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-tavern-content');
+    var html = '<div class="modal-section"><h4>🍺 ТАВЕРНА БРОНЗОВОГО ЩИТА</h4>';
+    html += '<p style="color:#6a5a48;">💰 ' + formatCurrency(g.gold * 210 * 56 + g.silver * 56 + g.copper) + '</p>';
+    html += '</div>';
+    
+    // Еда
+    html += '<div class="modal-section"><h4>🍞 ЕДА</h4>';
+    [{name:'🍞 Хлеб',price:5,effect:{food:20}},{name:'🥩 Мясо',price:10,effect:{food:30}},{name:'🐟 Рыба',price:8,effect:{food:25}},{name:'🧀 Сыр',price:7,effect:{food:22}},{name:'🍎 Яблоко',price:3,effect:{food:15}}].forEach(function(item){
+        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+',\'food\','+item.effect.food+',0)">Купить</button></span></div>';
+    });
+    html += '</div>';
+    
+    // Напитки
+    html += '<div class="modal-section"><h4>🍺 НАПИТКИ</h4>';
+    [{name:'💧 Вода',price:2,effect:{thirst:15}},{name:'🍺 Эль',price:5,effect:{hp:5,thirst:10}},{name:'🍷 Вино',price:8,effect:{hp:8,thirst:15}},{name:'🥛 Молоко',price:4,effect:{food:10,thirst:10}}].forEach(function(item){
+        html += '<div class="row"><span class="label">'+item.name+'</span><span class="value">'+formatCurrency(item.price)+' <button class="btn btn-small" onclick="buyTavernItem(\''+item.name+'\','+item.price+',\'drink\','+(item.effect.food||0)+','+(item.effect.thirst||0)+')">Купить</button></span></div>';
+    });
+    html += '</div>';
+    
+    // Отдых
+    html += '<div class="modal-section"><h4>🛏️ ОТДЫХ</h4>';
+    html += '<div class="row"><span class="label">Отдохнуть (10 МП)</span><span class="value"><button class="btn btn-small" onclick="restInTavern()">🛏️ Отдых</button></span></div>';
+    html += '</div>';
+    
+    html += '<button class="btn btn-secondary" onclick="closeTavern()" style="margin-top:10px;">Закрыть</button>';
+    content.innerHTML = html; modal.classList.remove('hide');
+}
+
+function buyTavernItem(name, price, category, food, thirst) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    if (!spendMoney(g, price)) { setMessage('❌ Недостаточно денег!'); return; }
+    if (food > 0) g.food = Math.min(100, g.food + food);
+    if (thirst > 0) g.thirst = Math.min(100, g.thirst + thirst);
+    saveData(); setMessage('✅ Куплено: ' + name); updateMenu(); openCastleTavern();
+}
+
+function restInTavern() {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    if (!spendMoney(g, 10)) { setMessage('❌ Недостаточно денег!'); return; }
+    g.fatigue = Math.min(100, g.fatigue + 30);
+    g.hp = Math.min(g.maxHp, g.hp + 15);
+    saveData(); setMessage('🛏️ Вы отдохнули. Усталость +30, HP +15.'); updateMenu(); openCastleTavern();
+}
+
+function closeTavern() { var m = document.getElementById('modal-tavern'); if (m) m.classList.add('hide'); }
+
+// ============================================================
 // КОНЮШНЯ
 // ============================================================
 
 function openCastleStable() {
+    if (!checkBucklerAccess()) return;
     var user = users[currentUser];
-    if (!user) { setMessage('❌ Игрок не найден.'); return; }
+    if (!user) return;
     var g = user.game;
-    
-    if (g.house !== 'buckler') {
-        setMessage('❌ Только члены дома Баклеров могут покупать лошадей в замке.');
-        return;
-    }
     
     var modal = document.getElementById('modal-stable');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-stable';
-        overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-stable'; overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeStable(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🐴 ЗАМКОВАЯ КОНЮШНЯ</h3><button class="close-btn" onclick="closeStable()">✕</button></div><div id="modal-stable-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
+        document.body.appendChild(overlay); modal = overlay;
     }
     
     var content = document.getElementById('modal-stable-content');
@@ -93,40 +188,55 @@ function openCastleStable() {
         html += '<p style="color:#6a5a48;text-align:center;padding:10px 0;">🐴 У вас нет лошади.</p>';
     }
     
-    html += '<h4 style="color:#c9b694;margin-top:16px;">📦 БОЕВЫЕ ЛОШАДИ (-50% цены)</h4>';
+    html += '<h4 style="color:#c9b694;margin-top:16px;">📦 БОЕВЫЕ ЛОШАДИ (-50% цены, для Баклеров)</h4>';
+    
+    var limits = getCastleHorseLimits(CASTLE_ID);
+    var now = Date.now();
     
     var castleHorses = [
-        { type: 'war', name: 'Боевой конь', emoji: '⚔️', price: Math.floor(HORSE_TYPES['war'].price * 0.5) },
-        { type: 'heavy', name: 'Тяжёлый боевой конь', emoji: '🛡️', price: Math.floor(HORSE_TYPES['heavy'].price * 0.5) }
+        { type: 'war', name: HORSE_TYPES['war'].name, emoji: '⚔️', price: Math.floor(HORSE_TYPES['war'].price * 0.5), limit: limits.war },
+        { type: 'heavy', name: HORSE_TYPES['heavy'].name, emoji: '🛡️', price: Math.floor(HORSE_TYPES['heavy'].price * 0.5), limit: limits.heavy }
     ];
     
     castleHorses.forEach(function(h) {
+        var available = h.limit.total - h.limit.sold;
         var isOwned = g.equipment && g.equipment.horse && g.equipment.horse.horseType === h.type;
         var canBuy = !g.equipment || !g.equipment.horse;
+        var timeLeft = Math.ceil((h.limit.resetTime - now) / (24 * 60 * 60 * 1000));
         
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1410;">';
-        html += '<div>' + h.emoji + ' <strong>' + h.name + '</strong>' + (isOwned ? ' ✅' : '') + '</div>';
-        html += '<div style="text-align:right;">';
+        html += '<div>' + h.emoji + ' <strong>' + h.name + '</strong>';
+        html += '<br><span style="font-size:11px;color:#6a5a48;">Доступно: ' + available + '/' + h.limit.total + ' | Сброс: ' + timeLeft + ' дн.</span>';
+        if (isOwned) html += ' <span style="color:#7ac98a;">✅ Ваша</span>';
+        html += '</div><div style="text-align:right;">';
         if (isOwned) html += '<span style="color:#7ac98a;">Уже куплена</span>';
-        else if (canBuy) html += '<span style="color:#c9b694;">' + formatCurrency(h.price * 210 * 56) + '</span> <button class="btn btn-small" onclick="buyCastleHorse(\'' + h.type + '\',' + h.price + '); closeStable();">✅</button>';
+        else if (canBuy && available > 0) html += formatCurrency(h.price * 210 * 56) + ' <button class="btn btn-small" onclick="buyCastleHorse(\'' + h.type + '\',' + h.price + '); closeStable();">✅</button>';
+        else if (available <= 0) html += '<span style="color:#c96a5a;">Распродано</span>';
         else html += '<span style="color:#c96a5a;">Продайте текущую</span>';
         html += '</div></div>';
     });
     
-    content.innerHTML = html;
-    modal.classList.remove('hide');
+    content.innerHTML = html; modal.classList.remove('hide');
 }
 
 function buyCastleHorse(type, price) {
+    if (!checkBucklerAccess()) return;
     var user = users[currentUser];
     if (!user) return;
     var g = user.game;
-    if (g.house !== 'buckler') { setMessage('❌ Только члены дома Баклеров.'); return; }
     var horse = HORSE_TYPES[type];
     if (!horse) { setMessage('❌ Такой лошади нет.'); return; }
     if (g.equipment && g.equipment.horse) { setMessage('❌ У вас уже есть лошадь!'); return; }
+    
+    var limits = getCastleHorseLimits(CASTLE_ID);
+    if (type === 'war' && limits.war.sold >= limits.war.total) { setMessage('❌ Все боевые кони распроданы.'); return; }
+    if (type === 'heavy' && limits.heavy.sold >= limits.heavy.total) { setMessage('❌ Все тяжёлые кони распроданы.'); return; }
+    
     if (!spendMoney(g, price * 210 * 56)) { setMessage('❌ Недостаточно денег!'); return; }
+    
     g.equipment.horse = { type: 'horse', horseType: type, name: horse.name, hp: horse.hp, maxHp: horse.hp, speedBonus: horse.speedBonus, defensePercent: horse.defensePercent, inventorySlots: horse.inventorySlots };
+    if (type === 'war') limits.war.sold++;
+    else if (type === 'heavy') limits.heavy.sold++;
     saveData(); setMessage('✅ Вы купили ' + horse.name); updateMenu();
 }
 
@@ -142,11 +252,14 @@ function sellCastleHorse() {
     saveData(); setMessage('💰 Вы продали лошадь за ' + formatCurrency(refund * 210 * 56)); updateMenu();
 }
 
+function closeStable() { var m = document.getElementById('modal-stable'); if (m) m.classList.add('hide'); }
+
 // ============================================================
 // МАСТЕРСКАЯ
 // ============================================================
 
 function openCastleWorkshop() {
+    if (!checkBucklerAccess()) return;
     var storage = getCastleStorage(CASTLE_ID);
     var queue = getCastleQueue(CASTLE_ID);
     var armory = getCastleArmory(CASTLE_ID);
@@ -154,12 +267,10 @@ function openCastleWorkshop() {
     var modal = document.getElementById('modal-workshop');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-workshop';
-        overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-workshop'; overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeWorkshop(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛠️ МАСТЕРСКАЯ</h3><button class="close-btn" onclick="closeWorkshop()">✕</button></div><div id="modal-workshop-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
+        document.body.appendChild(overlay); modal = overlay;
     }
     
     var content = document.getElementById('modal-workshop-content');
@@ -169,12 +280,9 @@ function openCastleWorkshop() {
     html += '<p style="color:#6a5a48;font-size:11px;">⚒️ Кузница: ✅ | 🪡 Кожевня: ❌ | 🪵 Плотник: ❌</p>';
     html += '<p style="color:#6a5a48;font-size:11px;">📦 Руда:' + storage.iron + ' Уголь:' + storage.coal + ' Сталь:' + storage.steel + ' Доски:' + storage.planks + ' Кожа:' + storage.leather + '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;">🗡️ Оружейная: ' + totalArmory + ' предм.</p>';
-    
     if (queue.length > 0) {
         html += '<p style="color:#ffd700;font-size:11px;">⏳ Очередь: ' + queue.length + '/10</p>';
-        queue.forEach(function(q, i) {
-            html += '<div style="font-size:10px;color:#b8a890;">' + (i+1) + '. ' + q.name + ' — ' + q.timeLeft + ' мин</div>';
-        });
+        queue.forEach(function(q, i) { html += '<div style="font-size:10px;color:#b8a890;">' + (i+1) + '. ' + q.name + ' — ' + q.timeLeft + ' мин</div>'; });
     }
     html += '</div>';
     
@@ -195,16 +303,13 @@ function openCastleWorkshop() {
     
     html += '<p style="color:#c96a5a;font-size:11px;">❌ Кожевня и Плотник отсутствуют.</p>';
     html += '<button class="btn btn-secondary" onclick="closeWorkshop()" style="margin-top:10px;">Закрыть</button>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
+    content.innerHTML = html; modal.classList.remove('hide');
 }
 
 function queueWorkshopItem(itemId) {
     var queue = getCastleQueue(CASTLE_ID);
     var storage = getCastleStorage(CASTLE_ID);
     if (queue.length >= 10) { setMessage('❌ Очередь заполнена.'); return; }
-    
     var name = '', needsSteel = 0, needsIron = 0, needsCoal = 0, needsPlanks = 0;
     if (itemId === 'steel') { name = 'Сталь'; needsIron = 2; needsCoal = 1; }
     else if (itemId === 'sword') { name = 'Меч солдата'; needsSteel = 3; }
@@ -212,15 +317,13 @@ function queueWorkshopItem(itemId) {
     else if (itemId === 'shield') { name = 'Щит солдата'; needsSteel = 6; }
     else if (itemId === 'plate_armor') { name = 'Комплект латной брони'; needsSteel = 12; }
     else { setMessage('❌ Неизвестный предмет.'); return; }
-    
     if (storage.iron < needsIron || storage.coal < needsCoal || storage.steel < needsSteel || storage.planks < needsPlanks) {
         setMessage('❌ Недостаточно ресурсов на складе.'); return;
     }
     storage.iron -= needsIron; storage.coal -= needsCoal; storage.steel -= needsSteel; storage.planks -= needsPlanks;
     queue.push({ id: itemId, name: name, timeLeft: 60 });
     setMessage('✅ Добавлено в очередь: ' + name + ' (1 час)');
-    processWorkshopQueue();
-    closeWorkshop(); openCastleWorkshop();
+    processWorkshopQueue(); closeWorkshop(); openCastleWorkshop();
 }
 
 function processWorkshopQueue() {
@@ -255,8 +358,10 @@ function closeWorkshop() { var m = document.getElementById('modal-workshop'); if
 // ============================================================
 
 function openCastleStorage() {
+    if (!checkBucklerAccess()) return;
     var user = users[currentUser];
     if (!user) return;
+    var g = user.game;
     var storage = getCastleStorage(CASTLE_ID);
     
     var modal = document.getElementById('modal-storage');
@@ -273,21 +378,19 @@ function openCastleStorage() {
     var res = [
         {key:'iron',name:'⛏️ Руда'},{key:'coal',name:'🔥 Уголь'},{key:'steel',name:'⚒️ Сталь'},
         {key:'planks',name:'🪵 Доски'},{key:'leather',name:'🧵 Кожа'},{key:'hardenedLeather',name:'🟤 Дублёная кожа'},
-        {key:'stone',name:'🪨 Камень'},{key:'wheat',name:'🌾 Пшеница'},{key:'vegetables',name:'🥕 Овощи'},
-        {key:'wood',name:'🪵 Древесина'},{key:'fish',name:'🐟 Рыба'},{key:'water',name:'💧 Вода'},
-        {key:'salt',name:'🧂 Соль'},{key:'valyrian_ore',name:'💎 Руда 14 огней'},{key:'valyrian_steel',name:'🌟 Валирийская сталь'}
+        {key:'stone',name:'🪨 Камень'},{key:'wood',name:'🪵 Древесина'},{key:'salt',name:'🧂 Соль'},
+        {key:'valyrian_ore',name:'💎 Руда 14 огней'},{key:'valyrian_steel',name:'🌟 Валирийская сталь'}
     ];
-    res.forEach(function(r) { html += '<p style="color:#b8a890;">'+r.name+': '+storage[r.key]+'</p>'; });
+    res.forEach(function(r) {
+        html += '<div class="row"><span class="label">'+r.name+': '+storage[r.key]+'</span><span class="value"><button class="btn btn-small" onclick="takeFromStorage(\''+r.key+'\')">📤</button></span></div>';
+    });
     html += '</div>';
     
     html += '<div class="modal-section"><h4>📥 ПОЛОЖИТЬ РЕСУРСЫ</h4>';
-    var userRes = [];
-    g.inventory.forEach(function(item) {
-        if (item.resourceType && item.count) userRes.push(item);
-    });
-    if (userRes.length === 0) html += '<p style="color:#6a5a48;">У вас нет ресурсов.</p>';
-    else userRes.forEach(function(item, i) {
-        html += '<div class="row"><span class="label">'+item.name+' ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToStorage('+i+')">📥</button></span></div>';
+    g.inventory.forEach(function(item, i) {
+        if (item.resourceType) {
+            html += '<div class="row"><span class="label">'+item.name+' ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToStorage('+i+')">📥</button></span></div>';
+        }
     });
     html += '</div>';
     html += '<button class="btn btn-secondary" onclick="closeStorage()">Закрыть</button>';
@@ -308,13 +411,105 @@ function donateToStorage(index) {
     saveData(); setMessage('✅ ' + item.name + ' ×' + count + ' на складе.'); updateMenu(); openCastleStorage();
 }
 
+function takeFromStorage(key) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var storage = getCastleStorage(CASTLE_ID);
+    var available = storage[key] || 0;
+    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
+    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
+    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
+    storage[key] -= amount;
+    addToInventory(g, { name: key, type: 'resource', resourceType: key, count: amount, quality: 'Обычное' });
+    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleStorage();
+}
+
 function closeStorage() { var m = document.getElementById('modal-storage'); if (m) m.classList.add('hide'); }
+
+// ============================================================
+// АМБАР
+// ============================================================
+
+function openCastleGranary() {
+    if (!checkBucklerAccess()) return;
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var granary = getCastleGranary(CASTLE_ID);
+    
+    var modal = document.getElementById('modal-granary');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-granary'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeGranary(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🌾 АМБАР</h3><button class="close-btn" onclick="closeGranary()">✕</button></div><div id="modal-granary-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-granary-content');
+    var html = '<div class="modal-section"><h4>🌾 АМБАР ЗАМКА</h4>';
+    var res = [
+        {key:'wheat',name:'🌾 Пшеница'},{key:'vegetables',name:'🥕 Овощи'},{key:'fish',name:'🐟 Рыба'},
+        {key:'water',name:'💧 Вода'},{key:'bread',name:'🍞 Хлеб'},{key:'meat',name:'🥩 Мясо'},
+        {key:'cheese',name:'🧀 Сыр'},{key:'apple',name:'🍎 Яблоко'},{key:'milk',name:'🥛 Молоко'},
+        {key:'ale',name:'🍺 Эль'},{key:'wine',name:'🍷 Вино'}
+    ];
+    res.forEach(function(r) {
+        html += '<div class="row"><span class="label">'+r.name+': '+(granary[r.key]||0)+'</span><span class="value"><button class="btn btn-small" onclick="takeFromGranary(\''+r.key+'\')">📤</button></span></div>';
+    });
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>📥 ПОЛОЖИТЬ ЕДУ</h4>';
+    g.inventory.forEach(function(item, i) {
+        if (item.type === 'food' || (item.effect && (item.effect.food || item.effect.thirst))) {
+            html += '<div class="row"><span class="label">'+item.name+' ×'+(item.count||1)+'</span><span class="value"><button class="btn btn-small" onclick="donateToGranary('+i+')">📥</button></span></div>';
+        }
+    });
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeGranary()">Закрыть</button>';
+    content.innerHTML = html; modal.classList.remove('hide');
+}
+
+function donateToGranary(index) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var granary = getCastleGranary(CASTLE_ID);
+    if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
+    var item = g.inventory[index];
+    var key = item.name.replace(/[🍞🥩🐟🧀🍎💧🍺🍷🥛]/g,'').trim().toLowerCase();
+    var map = {'хлеб':'bread','мясо':'meat','рыба':'fish','сыр':'cheese','яблоко':'apple','вода':'water','эль':'ale','вино':'wine','молоко':'milk'};
+    key = map[key] || key;
+    var count = item.count || 1;
+    granary[key] = (granary[key] || 0) + count;
+    g.inventory.splice(index, 1);
+    saveData(); setMessage('✅ Положено в амбар.'); updateMenu(); openCastleGranary();
+}
+
+function takeFromGranary(key) {
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    var granary = getCastleGranary(CASTLE_ID);
+    var available = granary[key] || 0;
+    if (available <= 0) { setMessage('❌ Нет в наличии.'); return; }
+    var amount = parseInt(prompt('Сколько забрать? (доступно: ' + available + ')'));
+    if (isNaN(amount) || amount <= 0 || amount > available) { setMessage('❌ Отменено.'); return; }
+    granary[key] -= amount;
+    var names = {wheat:'🌾 Пшеница',vegetables:'🥕 Овощи',fish:'🐟 Рыба',water:'💧 Вода',bread:'🍞 Хлеб',meat:'🥩 Мясо',cheese:'🧀 Сыр',apple:'🍎 Яблоко',milk:'🥛 Молоко',ale:'🍺 Эль',wine:'🍷 Вино'};
+    addToInventory(g, { name: names[key] || key, type: 'food', count: amount, quality: 'Обычное' });
+    saveData(); setMessage('✅ Забрано: ' + amount); updateMenu(); openCastleGranary();
+}
+
+function closeGranary() { var m = document.getElementById('modal-granary'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // ОРУЖЕЙНАЯ
 // ============================================================
 
 function openCastleArmory() {
+    if (!checkBucklerAccess()) return;
     var user = users[currentUser];
     if (!user) return;
     var g = user.game;
@@ -332,13 +527,12 @@ function openCastleArmory() {
     var content = document.getElementById('modal-armory-content');
     var html = '<div class="modal-section"><h4>🗡️ ОРУЖЕЙНАЯ ЗАМКА</h4>';
     html += '<div class="tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
-    html += '<button class="tab-btn active" onclick="showArmoryTab(\'weapons\')">🗡️ Оружие</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'armor\')">🛡️ Броня</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierWeapons\')">⚔️ Солд. оружие</button>';
-    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierArmor\')">🛡️ Солд. броня</button>';
+    html += '<button class="tab-btn active" onclick="showArmoryTab(\'weapons\')">🗡️ Оружие ('+armory.weapons.length+')</button>';
+    html += '<button class="tab-btn" onclick="showArmoryTab(\'armor\')">🛡️ Броня ('+armory.armor.length+')</button>';
+    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierWeapons\')">⚔️ Солд. оружие ('+armory.soldierWeapons.length+')</button>';
+    html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierArmor\')">🛡️ Солд. броня ('+armory.soldierArmor.length+')</button>';
     html += '<button class="tab-btn" onclick="showArmoryTab(\'donate\')">📥 Положить</button>';
-    html += '</div>';
-    html += '<div id="armory-tab-content"></div>';
+    html += '</div><div id="armory-tab-content"></div>';
     html += '<button class="btn btn-secondary" onclick="closeArmory()" style="margin-top:10px;">Закрыть</button>';
     content.innerHTML = html; modal.classList.remove('hide');
     showArmoryTab('weapons');
@@ -349,20 +543,7 @@ function showArmoryTab(tab) {
     if (!container) return;
     var armory = getCastleArmory(CASTLE_ID);
     var html = '';
-    
-    if (tab === 'weapons' || tab === 'armor' || tab === 'soldierWeapons' || tab === 'soldierArmor') {
-        var items = armory[tab] || [];
-        var titles = { weapons:'🗡️ Оружие', armor:'🛡️ Броня', soldierWeapons:'⚔️ Солдатское оружие', soldierArmor:'🛡️ Солдатская броня' };
-        html += '<h4>'+titles[tab]+' ('+items.length+' шт.)</h4>';
-        if (items.length === 0) html += '<p style="color:#6a5a48;">Пусто.</p>';
-        else {
-            var grouped = {};
-            items.forEach(function(item) { var k = item.name; if (!grouped[k]) grouped[k] = 0; grouped[k]++; });
-            for (var name in grouped) {
-                html += '<div class="row"><span class="label">'+name+'</span><span class="value">×'+grouped[name]+'</span></div>';
-            }
-        }
-    }
+    var titles = { weapons:'🗡️ Оружие', armor:'🛡️ Броня', soldierWeapons:'⚔️ Солдатское оружие', soldierArmor:'🛡️ Солдатская броня' };
     
     if (tab === 'donate') {
         var user = users[currentUser];
@@ -377,8 +558,18 @@ function showArmoryTab(tab) {
             }
         });
         if (!hasItems) html += '<p style="color:#6a5a48;">Нет предметов для передачи.</p>';
+    } else {
+        var items = armory[tab] || [];
+        html += '<h4>'+titles[tab]+' ('+items.length+' шт.)</h4>';
+        if (items.length === 0) html += '<p style="color:#6a5a48;">Пусто.</p>';
+        else {
+            var grouped = {};
+            items.forEach(function(item) { var k = item.name; if (!grouped[k]) grouped[k] = 0; grouped[k]++; });
+            for (var name in grouped) {
+                html += '<div class="row"><span class="label">'+name+'</span><span class="value">×'+grouped[name]+'</span></div>';
+            }
+        }
     }
-    
     container.innerHTML = html;
 }
 
@@ -392,10 +583,8 @@ function donateToArmory(index) {
     var cat = 'weapons';
     if (item.armorClass === 'leather' || item.armorClass === 'plate') cat = 'armor';
     if (item.isSoldierGear) {
-        if (item.type === 'sword' || item.type === 'spear' || item.type === 'shield' || item.type === 'bow' || item.type === 'crossbow') cat = 'soldierWeapons';
-        else cat = 'soldierArmor';
+        cat = (item.type === 'armor') ? 'soldierArmor' : 'soldierWeapons';
     }
-    if (!armory[cat]) armory[cat] = [];
     armory[cat].push(item);
     saveData(); setMessage('✅ ' + item.name + ' перемещён в оружейную.'); updateMenu(); showArmoryTab('donate');
 }
@@ -406,16 +595,11 @@ function closeArmory() { var m = document.getElementById('modal-armory'); if (m)
 // ОСТАЛЬНЫЕ ЗДАНИЯ
 // ============================================================
 
-function openCastleDonjon() {
-    var g = users[currentUser].game;
-    if (g.house !== 'buckler') { setMessage('🗼 Донжон закрыт для чужаков.'); return; }
-    setMessage('🗼 Вы в донжоне. Лорд Баклеров приветствует вас.');
-}
-function openCastleBarracks() { setMessage('⚔️ Казармы гарнизона.'); }
-function openCastleTraining() { setMessage('🎯 Тренировочная площадка. Пока недоступна.'); }
-function openCastleGranary() { setMessage('🌾 Амбар. Пока недоступен.'); }
+function openCastleDonjon() { if (!checkBucklerAccess()) return; setMessage('🗼 Вы в донжоне. Лорд Баклеров приветствует вас.'); }
+function openCastleBarracks() { if (!checkBucklerAccess()) return; setMessage('⚔️ Казармы гарнизона.'); }
+function openCastleTraining() { if (!checkBucklerAccess()) return; setMessage('🎯 Тренировочная площадка. Пока недоступна.'); }
 function openCastleMarket() { setMessage('🏪 Замковый рынок. Пока недоступен.'); }
-function openCastleDungeon() { setMessage('⛓️ Темница замка. Пока недоступна.'); }
+function openCastleDungeon() { if (!checkBucklerAccess()) return; setMessage('⛓️ Темница замка. Пока недоступна.'); }
 
 // ============================================================
 // КАРТА ЗАМКА
@@ -428,8 +612,7 @@ function openCastleMap() {
     var html = '<div class="modal-section"><h4>🏰 Бронзовый Щит</h4></div><div class="modal-section">';
     CASTLE_BUILDINGS.forEach(function(b) {
         var isCurrent = b.id === g.location.place;
-        html += '<div class="row" style="padding:6px 0; border-bottom:1px solid #1a1410;">';
-        html += '<span class="label">'+b.label+(isCurrent?' ⭐':'')+'</span>';
+        html += '<div class="row"><span class="label">'+b.label+(isCurrent?' ⭐':'')+'</span>';
         html += '<span class="value">'+(isCurrent?'<span style="color:#6a5a48;">Вы здесь</span>':'<button class="btn btn-small" onclick="goToCastleBuilding(\''+b.id+'\')">🚶 Идти</button>')+'</span></div>';
     });
     html += '</div><button class="btn" onclick="closeMap()">Закрыть</button>';
@@ -454,7 +637,7 @@ window.updateStory = function() {
     var place = g.location.place;
     if (!CASTLE_BUILDINGS.some(function(b){return b.id===place})) { if (typeof _castlePrevUpdateStory==='function') return _castlePrevUpdateStory(); return; }
     document.getElementById('story-title').textContent = '🏰 Бронзовый Щит';
-    var texts = { castle_gate:'🚪 Ворота замка.', castle_donjon:'🗼 Донжон.', castle_barracks:'⚔️ Казармы.', castle_training:'🎯 Тренировочная площадка.', castle_workshop:'🛠️ Мастерская.', castle_forge:'⚒️ Кузница.', castle_granary:'🌾 Амбар.', castle_storage:'📦 Склад.', castle_armory:'🗡️ Оружейная.', castle_stable:'🐴 Конюшня.', castle_market:'🏪 Рынок.', castle_dungeon:'⛓️ Темница.' };
+    var texts = { castle_gate:'🚪 Ворота замка.', castle_donjon:'🗼 Донжон.', castle_barracks:'⚔️ Казармы.', castle_training:'🎯 Тренировочная площадка.', castle_workshop:'🛠️ Мастерская.', castle_forge:'⚒️ Кузница.', castle_granary:'🌾 Амбар.', castle_storage:'📦 Склад.', castle_armory:'🗡️ Оружейная.', castle_stable:'🐴 Конюшня.', castle_market:'🏪 Рынок.', castle_tavern:'🍺 Таверна.', castle_dungeon:'⛓️ Темница.' };
     document.getElementById('story-text').textContent = texts[place] || '';
     if (typeof updateActions==='function') updateActions();
 };
@@ -474,11 +657,12 @@ window.updateActions = function() {
     if (place==='castle_training') actions.push({id:'training_open',label:'🎯 Тренировка'});
     if (place==='castle_workshop') actions.push({id:'workshop_open',label:'🛠️ Производство'});
     if (place==='castle_forge') actions.push({id:'castle_forge_craft',label:'⚒️ Ковка'});
-    if (place==='castle_granary') actions.push({id:'granary_open',label:'🌾 Запасы'});
+    if (place==='castle_granary') actions.push({id:'granary_open',label:'🌾 Амбар'});
     if (place==='castle_storage') actions.push({id:'storage_open',label:'📦 Склад'});
     if (place==='castle_armory') actions.push({id:'armory_open',label:'🗡️ Оружейная'});
     if (place==='castle_stable') actions.push({id:'stable_open',label:'🐴 Конюшня'});
     if (place==='castle_market') actions.push({id:'market_open',label:'🏪 Рынок'});
+    if (place==='castle_tavern') actions.push({id:'tavern_open',label:'🍺 Таверна'});
     if (place==='castle_dungeon') actions.push({id:'dungeon_open',label:'⛓️ Темница'});
     actions.push({id:'castle_map',label:'🗺️ Карта замка'});
     actions.push({id:'inventory',label:'🎒 Инвентарь'});
@@ -490,15 +674,16 @@ window.updateActions = function() {
         btn.onclick = function() {
             if (a.id==='castle_map') openCastleMap();
             else if (a.id==='leave_buckler_castle') { g.location.place='bl_-1_0'; g.location.location='Владения Баклеров'; g.location.locationId='bl_-1_0'; g.location.parentZone=null; setMessage('🚪 Вы вышли из замка.'); updateMenu(); updateStory(); updateActions(); saveData(); }
-            else if (a.id==='castle_forge_craft') { if (typeof openCraftMenu==='function') openCraftMenu(); else setMessage('❌ Недоступно.'); }
+            else if (a.id==='castle_forge_craft') { if (!checkBucklerAccess()) return; if (typeof openCraftMenu==='function') openCraftMenu(); }
             else if (a.id==='stable_open') openCastleStable();
             else if (a.id==='workshop_open') openCastleWorkshop();
             else if (a.id==='storage_open') openCastleStorage();
+            else if (a.id==='granary_open') openCastleGranary();
             else if (a.id==='armory_open') openCastleArmory();
+            else if (a.id==='tavern_open') openCastleTavern();
             else if (a.id==='donjon_open') openCastleDonjon();
             else if (a.id==='barracks_open') openCastleBarracks();
             else if (a.id==='training_open') openCastleTraining();
-            else if (a.id==='granary_open') openCastleGranary();
             else if (a.id==='market_open') openCastleMarket();
             else if (a.id==='dungeon_open') openCastleDungeon();
             else if (typeof gameAction==='function') gameAction(a.id);
