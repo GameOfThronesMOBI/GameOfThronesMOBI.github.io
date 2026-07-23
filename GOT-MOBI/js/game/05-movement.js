@@ -296,7 +296,7 @@ window.openWorldMap = function() {
         return null;
     }
     
-    // Войска для членов домов
+    // Войска
     var houseId = g.house;
     var troopsByZone = {};
     if (houseId && window._castleGarrisons) {
@@ -522,13 +522,11 @@ window.openWorldMap = function() {
             var left = (x - minX) * cellSize + 1;
             var top = (y - minY) * cellSize + padding + 1;
             
-            // Онклик для членов домов
-            var clickAttr = '';
+            html += '<div';
             if (houseId && zone && !isWater) {
-                clickAttr = ' onclick="handleZoneClick(\'' + zone.id + '\')" style="cursor:pointer;';
+                html += ' onclick="handleZoneClick(\'' + zone.id + '\')"';
             }
-            
-            html += '<div' + clickAttr + ' style="';
+            html += ' style="';
             html += 'position:absolute;';
             html += 'left:' + left + 'px;top:' + top + 'px;';
             html += 'width:' + (cellSize-2) + 'px;height:' + (cellSize-2) + 'px;';
@@ -536,21 +534,20 @@ window.openWorldMap = function() {
             html += 'border-radius:2px;';
             html += 'overflow:visible;';
             html += 'display:flex;align-items:center;justify-content:center;';
+            if (houseId && zone && !isWater) html += 'cursor:pointer;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
             if (emoji) {
                 html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
-                if (isCurrent) html += '⭐';
-                else html += emoji;
+                if (isCurrent) html += '⭐'; else html += emoji;
                 html += '</span>';
                 if (troopEmoji) {
                     html += '<span style="position:absolute;top:1px;right:1px;font-size:' + Math.max(10, cellSize*0.35) + 'px;z-index:4;line-height:1;">' + troopEmoji + '</span>';
                 }
             } else if (troopEmoji) {
                 html += '<span style="font-size:' + (emojiSize + 4) + 'px;line-height:1;position:relative;z-index:2;">';
-                if (isCurrent) html += '⭐';
-                else html += troopEmoji;
+                if (isCurrent) html += '⭐'; else html += troopEmoji;
                 html += '</span>';
             } else if (isCurrent) {
                 html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">⭐</span>';
