@@ -1,6 +1,6 @@
 // ============================================================
-// js/game/08-command.js — КОМАНДОВАНИЕ ВОЙСКАМИ + PvP + РАЗВЕДКА + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ — ВСЕ ФУНКЦИИ СОХРАНЕНЫ
+// js/game/08-command.js — КОМАНДОВАНИЕ + PvP + РАЗВЕДКА + АНИМАЦИЯ
+// ПОЛНАЯ ВЕРСИЯ — ВСЕ ФУНКЦИИ
 // ============================================================
 
 window.closeZoneInfo = function() {
@@ -10,10 +10,9 @@ window.closeZoneInfo = function() {
 
 window._awaitingTarget = false;
 window._targetData = null;
-window._marchingMarkers = {};
 
 // ============================================================
-// ПОИСК ПУТИ (BFS)
+// ПОИСК ПУТИ (BFS) — 8 НАПРАВЛЕНИЙ
 // ============================================================
 
 function findPath(fromZoneId, toZoneId) {
@@ -49,7 +48,7 @@ function findPath(fromZoneId, toZoneId) {
 
 function getNeighborZones(zone) {
     var neighbors = [];
-    var dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+    var dirs = [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]];
     for (var i = 0; i < dirs.length; i++) {
         var nx = zone.x + dirs[i][0];
         var ny = zone.y + dirs[i][1];
@@ -102,10 +101,8 @@ window.handleZoneClick = function(zoneId) {
         
         var isOwnZone = zone && zone.owner === houseId;
         
-        // Скорость по умолчанию (пехота)
         var speed = 2;
         if (window._targetData.isScout) speed = 2;
-        else if (window._targetData.commander) speed = 2;
         var timeMinutes = dist * speed;
         
         var actions = [];
@@ -677,7 +674,7 @@ window.detachScout = function(zoneId) {
 };
 
 // ============================================================
-// 5. ВЫБОР ДЛЯ ОТПРАВКИ (БЕЗ МИНИКАРТ — НА ОСНОВНОЙ КАРТЕ)
+// 5. ВЫБОР ДЛЯ ОТПРАВКИ
 // ============================================================
 
 window.selectCommanderForMove = function(zoneId, rank, name) {
@@ -715,14 +712,12 @@ window.confirmTarget = function(targetZoneId, action, timeMinutes) {
         return;
     }
     
+    var isScout = data.isScout;
+    
     window._awaitingTarget = false;
     window._targetData = null;
     
-    if (data.isScout) {
-        window.moveScout(targetZoneId, action, timeMinutes);
-    } else {
-        window.confirmMovement(data.fromZone, targetZoneId, action, timeMinutes);
-    }
+    window.confirmMovement(data.fromZone, targetZoneId, action, timeMinutes, isScout);
     
     window.closeConfirmMove();
 };
@@ -733,165 +728,10 @@ window.closeConfirmMove = function() {
 };
 
 // ============================================================
-// 7. ДВИЖЕНИЕ РАЗВЕДЧИКА
+// 7. ОТПРАВКА ВОЙСК С АНИМАЦИЕЙ
 // ============================================================
 
-window.moveScout = function(targetZoneId, action, timeMinutes) {
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    var commander = window.currentMovingCommander;
-    var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [], marching: [] };
-    
-    var scout = null;
-    var scoutCat = '';
-    
-    ['infantry','cavalry','siege'].forEach(function(cat) {
-        if (!scout && garrison[cat]) {
-            var cnt = 0;
-            for (var i = garrison[cat].length - 1; i >= 0; i--) {
-                if (garrison[cat][i].location === commander.zoneId && garrison[cat][i].isScout) {
-                    if (cnt === commander.scoutIndex) {
-                        scout = garrison[cat].splice(i, 1)[0];
-                        scoutCat = cat;
-                        break;
-                    }
-                    cnt++;
-                }
-            }
-        }
-    });
-    
-    if (!scout) {
-        setMessage('❌ Разведчик не найден.');
-        return;
-    }
-    
-    if (action === 'scout') {
-        // Разведка: 50% успех
-        if (Math.random() < 0.5) {
-            var enemies = findEnemiesInZone(targetZoneId, houseId);
-            var enemyInfo = '🔍 РАЗВЕДКА УСПЕШНА!\n\nВраги в зоне:\n';
-            if (enemies.length === 0) {
-                enemyInfo += 'Нет вражеских войск.';
-            } else {
-                var enemyCount = {};
-                enemies.forEach(function(e) {
-                    var hh = HOUSES[e.house];
-                    var name = hh ? hh.sigil + ' ' + hh.name : e.house;
-                    if (!enemyCount[name]) enemyCount[name] = 0;
-                    enemyCount[name]++;
-                });
-                for (var n in enemyCount) {
-                    enemyInfo += n + ': ~' + enemyCount[n] + ' юнитов\n';
-                }
-            }
-            
-            // Возвращаем разведчика на домашнюю зону
-            scout.location = scout.scoutHome || commander.zoneId;
-            if (scoutCat === 'infantry') garrison.infantry.push(scout);
-            else if (scoutCat === 'cavalry') garrison.cavalry.push(scout);
-            else if (scoutCat === 'siege') garrison.siege.push(scout);
-            
-            saveData();
-            alert(enemyInfo);
-            setMessage('👁️ Разведка успешна! Разведчик вернулся.');
-            addHouseLog(houseId, '👁️ Успешная разведка в ' + getZoneName(targetZoneId));
-        } else {
-            saveData();
-            setMessage('💀 Разведчик погиб при выполнении задания.');
-            addHouseLog(houseId, '💀 Разведчик погиб в ' + getZoneName(targetZoneId));
-        }
-    } else {
-        // Просто движение
-        var arrivesAt = Date.now() + timeMinutes * 60 * 1000;
-        var marchingEntry = {
-            units: [scout],
-            fromZone: commander.zoneId,
-            targetZone: targetZoneId,
-            action: 'move',
-            arrivesAt: arrivesAt,
-            departedAt: Date.now(),
-            commander: currentUser,
-            isScout: true
-        };
-        
-        if (!garrison.marching) garrison.marching = [];
-        garrison.marching.push(marchingEntry);
-        
-        saveData();
-        setMessage('👁️ Разведчик выдвинулся. Прибудет через ' + timeMinutes + ' мин.');
-        
-        setTimeout(function() {
-            processScoutArrival(marchingEntry, houseId, scoutCat);
-        }, timeMinutes * 60 * 1000);
-    }
-};
-
-function processScoutArrival(marchingEntry, houseId, cat) {
-    var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : null;
-    if (!garrison || !garrison.marching) return;
-    
-    var idx = garrison.marching.indexOf(marchingEntry);
-    if (idx === -1) return;
-    garrison.marching.splice(idx, 1);
-    
-    var unit = marchingEntry.units[0];
-    if (!unit) return;
-    
-    // Проверяем вражеских разведчиков в зоне
-    var enemyScouts = findEnemyScoutsInZone(marchingEntry.targetZone, houseId);
-    if (enemyScouts.length > 0) {
-        // Бой разведчиков: 50/50
-        if (Math.random() < 0.5) {
-            var enemyHouse = enemyScouts[0].house;
-            var enemyGarrison = window._castleGarrisons[enemyHouse];
-            if (enemyGarrison) {
-                ['infantry','cavalry','siege'].forEach(function(c) {
-                    if (enemyGarrison[c]) {
-                        for (var i = enemyGarrison[c].length - 1; i >= 0; i--) {
-                            if (enemyGarrison[c][i] === enemyScouts[0].unit) {
-                                enemyGarrison[c].splice(i, 1);
-                                break;
-                            }
-                        }
-                    }
-                });
-            }
-            unit.location = marchingEntry.targetZone;
-            unit.isScout = true;
-            if (!unit.scoutHome) unit.scoutHome = marchingEntry.fromZone;
-            if (cat === 'infantry') garrison.infantry.push(unit);
-            else if (cat === 'cavalry') garrison.cavalry.push(unit);
-            else if (cat === 'siege') garrison.siege.push(unit);
-            
-            saveData();
-            setMessage('⚔️ Разведчик уничтожил вражеского разведчика в ' + getZoneName(marchingEntry.targetZone));
-            addHouseLog(houseId, '⚔️ Разведчик убил вражеского разведчика в ' + getZoneName(marchingEntry.targetZone));
-        } else {
-            saveData();
-            setMessage('💀 Разведчик убит вражеским разведчиком в ' + getZoneName(marchingEntry.targetZone));
-            addHouseLog(houseId, '💀 Разведчик убит вражеским разведчиком в ' + getZoneName(marchingEntry.targetZone));
-        }
-    } else {
-        unit.location = marchingEntry.targetZone;
-        unit.isScout = true;
-        if (!unit.scoutHome) unit.scoutHome = marchingEntry.fromZone;
-        if (cat === 'infantry') garrison.infantry.push(unit);
-        else if (cat === 'cavalry') garrison.cavalry.push(unit);
-        else if (cat === 'siege') garrison.siege.push(unit);
-        
-        saveData();
-        setMessage('👁️ Разведчик прибыл в ' + getZoneName(marchingEntry.targetZone));
-    }
-    
-    updateMenu();
-}
-
-// ============================================================
-// 8. ОТПРАВКА ВОЙСК С АНИМАЦИЕЙ
-// ============================================================
-
-window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes) {
+window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes, isScout) {
     var user = users[currentUser];
     var houseId = user.game.house;
     var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [], marching: [] };
@@ -899,7 +739,9 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
     var takenUnits = [];
     var commander = window.currentMovingCommander;
     
-    // Собираем юнитов командира
+    if (!isScout) isScout = false;
+    
+    // Собираем юнитов
     if (commander.type === 'commander') {
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (garrison[cat]) {
@@ -912,7 +754,6 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
             }
         });
         
-        // Если командор или капитан — забираем и подчинённых
         if (commander.rank === 'knight_commander' || commander.rank === 'captain_officer') {
             ['infantry','cavalry','siege'].forEach(function(cat) {
                 if (garrison[cat]) {
@@ -926,7 +767,6 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
             });
         }
     } else if (commander.type === 'unattached') {
-        // Собираем выбранных непривязанных юнитов
         var inputs = document.querySelectorAll('.unattached-count');
         inputs.forEach(function(inp) {
             var type = inp.getAttribute('data-type');
@@ -944,6 +784,21 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
                 }
             });
         });
+    } else if (commander.type === 'scout') {
+        ['infantry','cavalry','siege'].forEach(function(cat) {
+            if (!takenUnits.length && garrison[cat]) {
+                var cnt = 0;
+                for (var i = garrison[cat].length - 1; i >= 0; i--) {
+                    if (garrison[cat][i].location === commander.zoneId && garrison[cat][i].isScout) {
+                        if (cnt === commander.scoutIndex) {
+                            takenUnits.push(garrison[cat].splice(i, 1)[0]);
+                            break;
+                        }
+                        cnt++;
+                    }
+                }
+            }
+        });
     }
     
     if (takenUnits.length === 0) {
@@ -952,16 +807,17 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
     }
     
     // Определяем скорость по типу войск
-    var hasCavalry = false, hasSiege = false, hasInfantry = false;
-    takenUnits.forEach(function(u) {
-        if (u.siege) hasSiege = true;
-        else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') hasCavalry = true;
-        else hasInfantry = true;
-    });
-    
-    var speedPerZone = 2; // Пехота по умолчанию
-    if (hasSiege) speedPerZone = 5;      // Осадные — самые медленные
-    else if (hasCavalry && !hasInfantry) speedPerZone = 1; // Чистая конница — быстрая
+    var speedPerZone = 2;
+    if (!isScout && takenUnits.length > 0) {
+        var hasCavalry = false, hasSiege = false, hasInfantry = false;
+        takenUnits.forEach(function(u) {
+            if (u.siege) hasSiege = true;
+            else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') hasCavalry = true;
+            else hasInfantry = true;
+        });
+        if (hasSiege) speedPerZone = 5;
+        else if (hasCavalry && !hasInfantry) speedPerZone = 1;
+    }
     
     // Строим путь
     var path = findPath(fromZoneId, targetZoneId);
@@ -976,7 +832,8 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
         action: action,
         houseId: houseId,
         speedPerZone: speedPerZone,
-        nextMoveTime: Date.now() + speedPerZone * 60 * 1000
+        nextMoveTime: Date.now() + speedPerZone * 60 * 1000,
+        isScout: isScout
     };
     
     if (!garrison.marching) garrison.marching = [];
@@ -992,14 +849,13 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
 };
 
 // ============================================================
-// 9. ПОШАГОВОЕ ДВИЖЕНИЕ
+// 8. ПОШАГОВОЕ ДВИЖЕНИЕ
 // ============================================================
 
 function processMarchStep(marchId) {
     var marchData = null;
     var garrison = null;
     
-    // Ищем запись марша
     for (var hid in window._castleGarrisons) {
         var g = window._castleGarrisons[hid];
         if (g.marching) {
@@ -1018,17 +874,13 @@ function processMarchStep(marchId) {
     
     var now = Date.now();
     if (now < marchData.nextMoveTime) {
-        // Ещё не время — ждём
         setTimeout(function() { processMarchStep(marchId); }, marchData.nextMoveTime - now);
         return;
     }
     
-    // Делаем шаг
     marchData.currentStep++;
     
-    // Проверяем — не прибыли ли?
     if (marchData.currentStep >= marchData.path.length - 1) {
-        // Прибытие
         var idx = garrison.marching.indexOf(marchData);
         if (idx !== -1) garrison.marching.splice(idx, 1);
         
@@ -1036,52 +888,86 @@ function processMarchStep(marchId) {
         var action = marchData.action;
         var units = marchData.units;
         
-        var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
-        
-        if (enemies.length > 0) {
-            // Бой
-            resolveBattle(units, enemies, targetZone.id, marchData.houseId, action);
-        } else {
-            // Захват / защита
-            if (action === 'attack' && targetZone) {
-                targetZone.owner = marchData.houseId;
+        if (marchData.isScout && action === 'scout') {
+            // Разведка
+            if (Math.random() < 0.5) {
+                var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
+                var enemyInfo = '🔍 РАЗВЕДКА УСПЕШНА!\n\nВраги в зоне:\n';
+                if (enemies.length === 0) {
+                    enemyInfo += 'Нет вражеских войск.';
+                } else {
+                    var enemyCount = {};
+                    enemies.forEach(function(e) {
+                        var hh = HOUSES[e.house];
+                        var name = hh ? hh.sigil + ' ' + hh.name : e.house;
+                        if (!enemyCount[name]) enemyCount[name] = 0;
+                        enemyCount[name]++;
+                    });
+                    for (var n in enemyCount) {
+                        enemyInfo += n + ': ~' + enemyCount[n] + ' юнитов\n';
+                    }
+                }
+                
+                var homeZone = units[0].scoutHome || marchData.path[0];
+                units.forEach(function(u) {
+                    u.location = homeZone;
+                    u.isScout = true;
+                    returnUnit(u, window._castleGarrisons[marchData.houseId]);
+                });
+                saveData();
+                alert(enemyInfo);
+                setMessage('👁️ Разведка успешна! Разведчик вернулся.');
+                addHouseLog(marchData.houseId, '👁️ Успешная разведка в ' + getZoneName(targetZone.id));
+            } else {
+                saveData();
+                setMessage('💀 Разведчик погиб при выполнении задания.');
+                addHouseLog(marchData.houseId, '💀 Разведчик погиб в ' + getZoneName(targetZone.id));
             }
-            var isCastleZone = targetZone && (targetZone.type === 'castle' || targetZone.type === 'castle_gate');
-            units.forEach(function(u) {
-                u.location = isCastleZone ? 'castle' : targetZone.id;
-                u.stance = action === 'defend' ? 'defending' : 'moving';
-                returnUnit(u, window._castleGarrisons[marchData.houseId]);
-            });
-            saveData();
-            setMessage('✅ Отряд прибыл в ' + getZoneName(targetZone.id));
-            addHouseLog(marchData.houseId, '🚶 Отряд прибыл в ' + getZoneName(targetZone.id));
+        } else {
+            // Обычный отряд или разведчик в режиме движения
+            var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
+            if (enemies.length > 0) {
+                resolveBattle(units, enemies, targetZone.id, marchData.houseId, action);
+            } else {
+                if (action === 'attack' && targetZone) {
+                    targetZone.owner = marchData.houseId;
+                }
+                var isCastleZone = targetZone && (targetZone.type === 'castle' || targetZone.type === 'castle_gate');
+                units.forEach(function(u) {
+                    u.location = isCastleZone ? 'castle' : targetZone.id;
+                    u.stance = action === 'defend' ? 'defending' : 'moving';
+                    if (marchData.isScout) { u.isScout = true; u.scoutHome = u.scoutHome || marchData.path[0]; }
+                    returnUnit(u, window._castleGarrisons[marchData.houseId]);
+                });
+                saveData();
+                setMessage('✅ Отряд прибыл в ' + getZoneName(targetZone.id));
+                addHouseLog(marchData.houseId, '🚶 Отряд прибыл в ' + getZoneName(targetZone.id));
+            }
         }
         
         updateMenu();
         return;
     }
     
-    // Следующий шаг: движение + 10 секунд ожидания
+    // Следующий шаг
     marchData.nextMoveTime = Date.now() + marchData.speedPerZone * 60 * 1000 + 10000;
-    
     saveData();
     updateMenu();
     
-    // Планируем следующий шаг
     setTimeout(function() {
         processMarchStep(marchId);
     }, marchData.speedPerZone * 60 * 1000 + 10000);
 }
-
-// ============================================================
-// 10. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================================
 
 function returnUnit(u, garrison) {
     if (u.siege) garrison.siege.push(u);
     else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') garrison.cavalry.push(u);
     else garrison.infantry.push(u);
 }
+
+// ============================================================
+// 9. БОЙ
+// ============================================================
 
 function findEnemiesInZone(zoneId, myHouseId) {
     var enemies = [];
@@ -1107,16 +993,13 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
     var defPower = defenders.length;
     
     var attRoll = attPower * (0.8 + Math.random() * 0.4);
-    var defRoll = defPower * (0.8 + Math.random() * 0.4) * 1.2; // Защитники имеют бонус 20%
+    var defRoll = defPower * (0.8 + Math.random() * 0.4) * 1.2;
     
     var attackerGarrison = window._castleGarrisons[attackerHouseId];
     
     if (attRoll > defRoll) {
-        // Атакующие победили
         var attLosses = Math.max(1, Math.floor(attackers.length * 0.3));
-        var defLosses = defenders.length;
         
-        // Удаляем всех защитников
         for (var hid in window._castleGarrisons) {
             var g = window._castleGarrisons[hid];
             ['infantry','cavalry','siege'].forEach(function(cat) {
@@ -1130,7 +1013,6 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
             });
         }
         
-        // Потери атакующих
         var lost = 0;
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (attackerGarrison[cat]) {
@@ -1143,12 +1025,10 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
             }
         });
         
-        // Захват зоны
         if (action === 'attack' && WORLD_AREAS[zoneId]) {
             WORLD_AREAS[zoneId].owner = attackerHouseId;
         }
         
-        // Оставшиеся атакующие занимают зону
         var targetZone = WORLD_AREAS[zoneId];
         var isCastleZone = targetZone && (targetZone.type === 'castle' || targetZone.type === 'castle_gate');
         attackers.forEach(function(u) {
@@ -1160,14 +1040,11 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
         });
         
         saveData();
-        setMessage('⚔️ ПОБЕДА! Потери: ' + attLosses + ' vs ' + defLosses);
+        setMessage('⚔️ ПОБЕДА! Потери: ' + attLosses + ' vs ' + defenders.length);
         addHouseLog(attackerHouseId, '⚔️ Победа в ' + getZoneName(zoneId) + ' (-' + attLosses + ' юнитов)');
     } else {
-        // Защитники победили
         var defLosses = Math.max(1, Math.floor(defenders.length * 0.2));
-        var attLosses = attackers.length;
         
-        // Удаляем всех атакующих
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (attackerGarrison[cat]) {
                 for (var i = attackerGarrison[cat].length - 1; i >= 0; i--) {
@@ -1178,7 +1055,6 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
             }
         });
         
-        // Потери защитников
         var lost = 0;
         for (var hid in window._castleGarrisons) {
             var g = window._castleGarrisons[hid];
@@ -1196,11 +1072,15 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
         
         saveData();
         setMessage('🛡️ ПОРАЖЕНИЕ! Защитники удержали зону.');
-        addHouseLog(attackerHouseId, '🛡️ Поражение в ' + getZoneName(zoneId) + ' (-' + attLosses + ' юнитов)');
+        addHouseLog(attackerHouseId, '🛡️ Поражение в ' + getZoneName(zoneId) + ' (-' + attackers.length + ' юнитов)');
     }
     
     updateMenu();
 }
+
+// ============================================================
+// 10. ВСПОМОГАТЕЛЬНЫЕ
+// ============================================================
 
 function getZoneName(zoneId) {
     var z = WORLD_AREAS[zoneId];
@@ -1217,20 +1097,7 @@ window.restoreMarchingTimers = function() {
         if (g.marching && g.marching.length > 0) {
             g.marching.forEach(function(m) {
                 if (m.path) {
-                    // Новый формат — пошаговое движение
                     processMarchStep(m.id);
-                } else if (m.isScout) {
-                    // Старый формат для разведчиков
-                    var timeLeft = m.arrivesAt - Date.now();
-                    if (timeLeft <= 0) {
-                        var cat = m.units[0] && m.units[0].siege ? 'siege' : (m.units[0] && (m.units[0].horse || m.units[0].type === 'rider' || m.units[0].type === 'heavy_rider' || m.units[0].type === 'knight') ? 'cavalry' : 'infantry');
-                        processScoutArrival(m, hid, cat);
-                    } else {
-                        setTimeout(function() {
-                            var cat = m.units[0] && m.units[0].siege ? 'siege' : (m.units[0] && (m.units[0].horse || m.units[0].type === 'rider' || m.units[0].type === 'heavy_rider' || m.units[0].type === 'knight') ? 'cavalry' : 'infantry');
-                            processScoutArrival(m, hid, cat);
-                        }, timeLeft);
-                    }
                 }
             });
         }
@@ -1249,7 +1116,6 @@ window.detachScout = detachScout;
 window.selectCommanderForMove = selectCommanderForMove;
 window.selectScoutForMove = selectScoutForMove;
 window.selectUnattachedForMove = selectUnattachedForMove;
-window.moveScout = moveScout;
 window.confirmMovement = confirmMovement;
 window.confirmTarget = confirmTarget;
 window.closeConfirmMove = closeConfirmMove;
@@ -1258,7 +1124,6 @@ window.processMarchStep = processMarchStep;
 window.resolveBattle = resolveBattle;
 window.restoreMarchingTimers = restoreMarchingTimers;
 
-// Запускаем восстановление таймеров при загрузке
 setTimeout(function() {
     if (typeof window._castleGarrisons !== 'undefined') {
         restoreMarchingTimers();
