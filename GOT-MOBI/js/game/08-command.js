@@ -3,6 +3,12 @@
 // ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
+// Раннее определение closeZoneInfo
+window.closeZoneInfo = function() {
+    var m = document.getElementById('modal-zone-info');
+    if (m) m.classList.add('hide');
+};
+
 // ============================================================
 // 1. КЛИК ПО ЗОНЕ НА КАРТЕ МИРА (ДЛЯ ВСЕХ)
 // ============================================================
@@ -60,8 +66,8 @@ function showZoneInfoPublic(zoneId, zoneName) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-zone-info';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeZoneInfo(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📍 ЗОНА</h3><button class="close-btn" onclick="closeZoneInfo()">✕</button></div><div id="modal-zone-info-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeZoneInfo(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📍 ЗОНА</h3><button class="close-btn" onclick="window.closeZoneInfo()">✕</button></div><div id="modal-zone-info-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -98,7 +104,7 @@ function showZoneInfoPublic(zoneId, zoneName) {
     }
     
     h += '</div>';
-    h += '<button class="btn btn-secondary" onclick="closeZoneInfo()">Закрыть</button>';
+    h += '<button class="btn btn-secondary" onclick="window.closeZoneInfo()">Закрыть</button>';
     
     content.innerHTML = h;
     modal.classList.remove('hide');
@@ -114,8 +120,8 @@ function showEnemyInfo(zoneId, zoneName, enemies) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-zone-info';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeZoneInfo(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📍 ЗОНА</h3><button class="close-btn" onclick="closeZoneInfo()">✕</button></div><div id="modal-zone-info-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeZoneInfo(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📍 ЗОНА</h3><button class="close-btn" onclick="window.closeZoneInfo()">✕</button></div><div id="modal-zone-info-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -137,15 +143,10 @@ function showEnemyInfo(zoneId, zoneName, enemies) {
     }
     
     h += '</div>';
-    h += '<button class="btn btn-secondary" onclick="closeZoneInfo()">Закрыть</button>';
+    h += '<button class="btn btn-secondary" onclick="window.closeZoneInfo()">Закрыть</button>';
     
     content.innerHTML = h;
     modal.classList.remove('hide');
-};
-
-window.closeZoneInfo = function() {
-    var m = document.getElementById('modal-zone-info');
-    if (m) m.classList.add('hide');
 };
 
 // ============================================================
@@ -250,14 +251,19 @@ function findEnemyScoutsInZone(zoneId, myHouseId) {
 
 window.currentMovingCommander = null;
 
+window.closeOwnUnitsModal = function() {
+    var m = document.getElementById('modal-own-units');
+    if (m) m.classList.add('hide');
+};
+
 function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
     var modal = document.getElementById('modal-own-units');
     if (!modal) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-own-units';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeOwnUnitsModal(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>⚔️ ВОЙСКА В ЗОНЕ</h3><button class="close-btn" onclick="closeOwnUnitsModal()">✕</button></div><div id="modal-own-units-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeOwnUnitsModal(); };
+        overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>⚔️ ВОЙСКА В ЗОНЕ</h3><button class="close-btn" onclick="window.closeOwnUnitsModal()">✕</button></div><div id="modal-own-units-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -273,7 +279,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             var houseName = hh ? hh.sigil + ' ' + hh.name : es.house;
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">👁️ Разведчик ' + houseName + '</span>';
-            html += '<span class="value"><button class="btn btn-small" style="background:#5a2020;" onclick="attackEnemyScout(\'' + zoneId + '\',' + i + ')">⚔️ Атаковать (50%)</button></span>';
+            html += '<span class="value"><button class="btn btn-small" style="background:#5a2020;" onclick="window.attackEnemyScout(\'' + zoneId + '\',' + i + ')">⚔️ Атаковать (50%)</button></span>';
             html += '</div>';
         });
         html += '</div>';
@@ -287,9 +293,9 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">👁️ Разведчик (' + (ut ? ut.emoji + ' ' + ut.name : u.type) + ')</span>';
             html += '<span class="value">';
-            html += '<button class="btn btn-small" onclick="selectScoutForMove(\'' + zoneId + '\',' + i + ')">🚶 Двигать</button> ';
+            html += '<button class="btn btn-small" onclick="window.selectScoutForMove(\'' + zoneId + '\',' + i + ')">🚶 Двигать</button> ';
             if (ownUnits.unattached.length > 0 || ownUnits.sergeants.length > 0 || ownUnits.captains.length > 0 || ownUnits.commanders.length > 0) {
-                html += '<button class="btn btn-small" onclick="mergeScout(' + i + ',\'' + zoneId + '\')">🔗 В отряд</button>';
+                html += '<button class="btn btn-small" onclick="window.mergeScout(' + i + ',\'' + zoneId + '\')">🔗 В отряд</button>';
             }
             html += '</span>';
             html += '</div>';
@@ -303,7 +309,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             var totalUnits = cmd.units.length;
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">⭐ ' + cmd.name + '<br><span style="font-size:10px;color:#6a5a48;">Командор — ' + totalUnits + ' юнитов</span></span>';
-            html += '<span class="value"><button class="btn btn-small" onclick="selectCommanderForMove(\'' + zoneId + '\',\'knight_commander\',\'' + cmd.name + '\')">🚶 Отправить</button></span>';
+            html += '<span class="value"><button class="btn btn-small" onclick="window.selectCommanderForMove(\'' + zoneId + '\',\'knight_commander\',\'' + cmd.name + '\')">🚶 Отправить</button></span>';
             html += '</div>';
         });
         html += '</div>';
@@ -315,7 +321,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             var totalUnits = cap.units.length;
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">🗡️ ' + cap.name + '<br><span style="font-size:10px;color:#6a5a48;">Капитан — ' + totalUnits + ' юнитов</span></span>';
-            html += '<span class="value"><button class="btn btn-small" onclick="selectCommanderForMove(\'' + zoneId + '\',\'captain_officer\',\'' + cap.name + '\')">🚶 Отправить</button></span>';
+            html += '<span class="value"><button class="btn btn-small" onclick="window.selectCommanderForMove(\'' + zoneId + '\',\'captain_officer\',\'' + cap.name + '\')">🚶 Отправить</button></span>';
             html += '</div>';
         });
         html += '</div>';
@@ -338,7 +344,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             }
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">🛡️ ' + sgt.name + '<br><span style="font-size:10px;color:#6a5a48;">' + unitStr + '</span></span>';
-            html += '<span class="value"><button class="btn btn-small" onclick="selectCommanderForMove(\'' + zoneId + '\',\'sergeant\',\'' + sgt.name + '\')">🚶 Отправить</button></span>';
+            html += '<span class="value"><button class="btn btn-small" onclick="window.selectCommanderForMove(\'' + zoneId + '\',\'sergeant\',\'' + sgt.name + '\')">🚶 Отправить</button></span>';
             html += '</div>';
         });
         html += '</div>';
@@ -359,21 +365,16 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             html += '<span class="value">×' + unitTypes[t] + ' <input type="number" class="unattached-count" data-type="' + t + '" value="' + unitTypes[t] + '" min="1" max="' + unitTypes[t] + '" style="width:50px;padding:2px;"></span>';
             html += '</div>';
         }
-        html += '<button class="btn btn-small" onclick="selectUnattachedForMove(\'' + zoneId + '\')">🚶 Отправить выбранных</button>';
-        html += '<button class="btn btn-small" onclick="detachScout(\'' + zoneId + '\')" style="margin-left:4px;">👁️ Отделить разведчика</button>';
+        html += '<button class="btn btn-small" onclick="window.selectUnattachedForMove(\'' + zoneId + '\')">🚶 Отправить выбранных</button>';
+        html += '<button class="btn btn-small" onclick="window.detachScout(\'' + zoneId + '\')" style="margin-left:4px;">👁️ Отделить разведчика</button>';
         html += '</div>';
     }
     
     html += '</div>';
-    html += '<button class="btn btn-secondary" onclick="closeOwnUnitsModal()" style="margin-top:10px;">Закрыть</button>';
+    html += '<button class="btn btn-secondary" onclick="window.closeOwnUnitsModal()" style="margin-top:10px;">Закрыть</button>';
     
     content.innerHTML = html;
     modal.classList.remove('hide');
-};
-
-window.closeOwnUnitsModal = function() {
-    var m = document.getElementById('modal-own-units');
-    if (m) m.classList.add('hide');
 };
 
 // ============================================================
@@ -429,7 +430,7 @@ window.attackEnemyScout = function(zoneId, enemyIndex) {
         addHouseLog(houseId, '💀 Разведчик убит вражеским разведчиком в ' + getZoneName(zoneId));
     }
     
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     updateMenu();
 };
 
@@ -466,7 +467,7 @@ window.mergeScout = function(scoutIndex, zoneId) {
     scout.isScout = false;
     scout.scoutHome = null;
     saveData();
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     setMessage('✅ Разведчик возвращён в отряд.');
     addHouseLog(houseId, '👁️➡️⚔️ Разведчик возвращён в отряд в ' + getZoneName(zoneId));
 };
@@ -505,7 +506,7 @@ window.detachScout = function(zoneId) {
     else garrison.infantry.push(scout);
     
     saveData();
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     setMessage('👁️ Разведчик отделён от отряда.');
     addHouseLog(houseId, '👁️ Разведчик отделён в ' + getZoneName(zoneId));
 };
@@ -516,19 +517,19 @@ window.detachScout = function(zoneId) {
 
 window.selectCommanderForMove = function(zoneId, rank, name) {
     window.currentMovingCommander = { zoneId: zoneId, rank: rank, name: name, type: 'commander' };
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     openMovementTargetMap(zoneId);
 };
 
 window.selectScoutForMove = function(zoneId, scoutIndex) {
     window.currentMovingCommander = { zoneId: zoneId, type: 'scout', scoutIndex: scoutIndex };
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     openScoutTargetMap(zoneId);
 };
 
 window.selectUnattachedForMove = function(zoneId) {
     window.currentMovingCommander = { zoneId: zoneId, type: 'unattached' };
-    closeOwnUnitsModal();
+    window.closeOwnUnitsModal();
     openMovementTargetMap(zoneId);
 };
 
@@ -542,8 +543,8 @@ function openScoutTargetMap(fromZoneId) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-scout-target';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeScoutTargetMap(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК — ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="closeScoutTargetMap()">✕</button></div><div id="modal-scout-target-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeScoutTargetMap(); };
+        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК — ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="window.closeScoutTargetMap()">✕</button></div><div id="modal-scout-target-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -647,7 +648,7 @@ function buildScoutTargetMap(fromZoneId) {
             var dist = Math.abs(x - fromX) + Math.abs(y - fromY);
             var timeEst = isWater ? '—' : (dist * 2 + 'м');
             
-            html += '<div onclick="selectScoutTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ',' + hasEnemy + ')" style="';
+            html += '<div onclick="window.selectScoutTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ',' + hasEnemy + ')" style="';
             html += 'position:absolute;left:' + left + 'px;top:' + top + 'px;width:' + size + 'px;height:' + size + 'px;';
             html += 'background:' + bg + ';border:1px solid #2a201a;border-radius:2px;cursor:pointer;';
             html += 'display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:' + Math.max(7, cellSize*0.3) + 'px;';
@@ -680,8 +681,8 @@ window.selectScoutTarget = function(targetZoneId, distance, isWater, hasEnemy) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-scout-action';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeScoutAction(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК</h3><button class="close-btn" onclick="closeScoutAction()">✕</button></div><div id="modal-scout-action-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeScoutAction(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК</h3><button class="close-btn" onclick="window.closeScoutAction()">✕</button></div><div id="modal-scout-action-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -695,14 +696,14 @@ window.selectScoutTarget = function(targetZoneId, distance, isWater, hasEnemy) {
     h += '</div>';
     
     h += '<div class="modal-section"><h4>⚡ ДЕЙСТВИЕ</h4>';
-    h += '<button class="btn btn-game" onclick="moveScout(\'' + targetZoneId + '\',\'move\',' + timeMinutes + ')" style="margin:4px 0;">🚶 Идти</button><br>';
+    h += '<button class="btn btn-game" onclick="window.moveScout(\'' + targetZoneId + '\',\'move\',' + timeMinutes + ')" style="margin:4px 0;">🚶 Идти</button><br>';
     
     if (hasEnemy) {
-        h += '<button class="btn btn-game" onclick="moveScout(\'' + targetZoneId + '\',\'scout\',' + timeMinutes + ')" style="margin:4px 0;background:#5a3a1a;">🔍 Разведка (50% риск)</button><br>';
+        h += '<button class="btn btn-game" onclick="window.moveScout(\'' + targetZoneId + '\',\'scout\',' + timeMinutes + ')" style="margin:4px 0;background:#5a3a1a;">🔍 Разведка (50% риск)</button><br>';
         h += '<span style="font-size:10px;color:#c96a5a;">Разведчик может погибнуть, но узнает состав врага</span><br>';
     }
     
-    h += '</div><button class="btn btn-secondary" onclick="closeScoutAction()">Отмена</button>';
+    h += '</div><button class="btn btn-secondary" onclick="window.closeScoutAction()">Отмена</button>';
     
     content.innerHTML = h;
     modal.classList.remove('hide');
@@ -809,8 +810,8 @@ window.moveScout = function(targetZoneId, action, timeMinutes) {
         }, timeMinutes * 60 * 1000);
     }
     
-    closeScoutAction();
-    closeScoutTargetMap();
+    window.closeScoutAction();
+    window.closeScoutTargetMap();
 };
 
 function processScoutArrival(marchingEntry, houseId, cat) {
@@ -881,8 +882,8 @@ function openMovementTargetMap(fromZoneId) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-move-target';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeMovementTargetMap(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>🗺️ ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="closeMovementTargetMap()">✕</button></div><div id="modal-move-target-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeMovementTargetMap(); };
+        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>🗺️ ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="window.closeMovementTargetMap()">✕</button></div><div id="modal-move-target-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -968,7 +969,7 @@ function buildMoveTargetMap(fromZoneId) {
             var dist = Math.abs(x - fromX) + Math.abs(y - fromY);
             var timeEst = isWater ? '—' : (dist * 5 + 'м');
             
-            html += '<div onclick="selectMoveTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ')" style="';
+            html += '<div onclick="window.selectMoveTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ')" style="';
             html += 'position:absolute;left:' + left + 'px;top:' + top + 'px;width:' + size + 'px;height:' + size + 'px;';
             html += 'background:' + bg + ';border:1px solid #2a201a;border-radius:2px;cursor:pointer;';
             html += 'display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:' + Math.max(7, cellSize*0.3) + 'px;';
@@ -1011,8 +1012,8 @@ window.selectMoveTarget = function(targetZoneId, distance, isWater) {
         var overlay = document.createElement('div');
         overlay.id = 'modal-confirm-move';
         overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeConfirmMove(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ПОДТВЕРЖДЕНИЕ</h3><button class="close-btn" onclick="closeConfirmMove()">✕</button></div><div id="modal-confirm-move-content"></div></div>';
+        overlay.onclick = function(e) { if (e.target === this) window.closeConfirmMove(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ПОДТВЕРЖДЕНИЕ</h3><button class="close-btn" onclick="window.closeConfirmMove()">✕</button></div><div id="modal-confirm-move-content"></div></div>';
         document.body.appendChild(overlay);
         modal = overlay;
     }
@@ -1032,10 +1033,10 @@ window.selectMoveTarget = function(targetZoneId, distance, isWater) {
     
     h += '</div><div class="modal-section"><h4>⚡ ДЕЙСТВИЕ</h4>';
     actions.forEach(function(a) {
-        h += '<button class="btn btn-game" onclick="confirmMovement(\'' + fromZoneId + '\',\'' + targetZoneId + '\',\'' + a.id + '\',' + timeMinutes + ')" style="margin:4px 0;">' + a.label + '</button><br>';
+        h += '<button class="btn btn-game" onclick="window.confirmMovement(\'' + fromZoneId + '\',\'' + targetZoneId + '\',\'' + a.id + '\',' + timeMinutes + ')" style="margin:4px 0;">' + a.label + '</button><br>';
         h += '<span style="font-size:10px;color:#6a5a48;">' + a.desc + '</span><br>';
     });
-    h += '</div><button class="btn btn-secondary" onclick="closeConfirmMove()">Отмена</button>';
+    h += '</div><button class="btn btn-secondary" onclick="window.closeConfirmMove()">Отмена</button>';
     
     content.innerHTML = h;
     modal.classList.remove('hide');
@@ -1127,9 +1128,9 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
     garrison.marching.push(marchingEntry);
     
     saveData();
-    closeConfirmMove();
-    closeMovementTargetMap();
-    closeOwnUnitsModal();
+    window.closeConfirmMove();
+    window.closeMovementTargetMap();
+    window.closeOwnUnitsModal();
     
     setMessage('✅ Отряд (' + takenUnits.length + ' юнитов) выступил. Прибудет через ' + timeMinutes + ' мин.');
     addHouseLog(houseId, '🚶 ' + currentUser + ' отправил ' + takenUnits.length + ' юнитов в ' + getZoneName(targetZoneId));
