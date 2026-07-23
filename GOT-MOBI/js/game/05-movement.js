@@ -671,16 +671,29 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         var toY = (nextZone.y - minY) * cellSize + cellSize/2 + padding;
         
         var speed = m.speedPerZone || 2;
-        var totalStepTime = speed * 60 * 1000 + 10000;
-        var timeLeft = m.nextMoveTime - Date.now();
-        var progress = 1 - (timeLeft / totalStepTime);
-        if (progress < 0) progress = 0;
-        if (progress > 1) progress = 1;
+        var moveTimeMs = speed * 60 * 1000;
+        var waitTimeMs = 10000;
         
-        var curX = fromX + (toX - fromX) * progress;
-        var curY = fromY + (toY - fromY) * progress;
+        // Позиция зависит от фазы
+        var curX = fromX;
+        var curY = fromY;
         
-        // Определяем эмодзи по самому медленному типу
+        if (m.phase === 'moving') {
+            // В движении — анимация от fromX до toX
+            var timeLeft = m.nextPhaseTime - Date.now();
+            var progress = 1 - (timeLeft / moveTimeMs);
+            if (progress < 0) progress = 0;
+            if (progress > 1) progress = 1;
+            
+            curX = fromX + (toX - fromX) * progress;
+            curY = fromY + (toY - fromY) * progress;
+        } else {
+            // Стоит на месте — позиция текущей зоны
+            curX = fromX;
+            curY = fromY;
+        }
+        
+        // Эмодзи
         var emoji = '🟢';
         var hasCavalry = false, hasSiege = false, hasInfantry = false, isScout = false;
         if (m.units) {
@@ -697,9 +710,8 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         else if (hasInfantry) emoji = '🟢';
         else if (hasCavalry) emoji = '🐴';
         
-        // Если ждёт — добавляем ⏳
         var displayText = emoji + ' ' + m.units.length;
-        if (timeLeft > 0 && timeLeft < totalStepTime) {
+        if (m.phase === 'waiting') {
             displayText = '⏳ ' + displayText;
         }
         
@@ -712,10 +724,13 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         
         layer.appendChild(marker);
         
-        setTimeout(function() {
-            marker.style.left = toX + 'px';
-            marker.style.top = toY + 'px';
-        }, 50);
+        // Если в движении — анимируем к следующей зоне
+        if (m.phase === 'moving') {
+            setTimeout(function() {
+                marker.style.left = toX + 'px';
+                marker.style.top = toY + 'px';
+            }, 50);
+        }
     });
     
     setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 10000);
