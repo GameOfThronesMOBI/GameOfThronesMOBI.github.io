@@ -75,7 +75,6 @@ function openCompass() {
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
     
-    // Кнопка МИР
     html += '<div style="text-align:center;margin-bottom:8px;">';
     html += '<button class="btn btn-game" onclick="openWorldMap(); closeCompass();" style="display:inline-block;width:auto;padding:6px 16px;">🌍 Мир</button>';
     html += '</div>';
@@ -122,7 +121,6 @@ function openCompass() {
                 
                 var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
                 
-                // Проверка на воду
                 var isWater = false;
                 if (nextLoc) {
                     isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
@@ -176,7 +174,6 @@ function moveTo(direction) {
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
     var nextName = nextLoc ? nextLoc.name : next;
     
-    // Проверка на любую воду
     if (nextLoc) {
         var isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
                        nextLoc.type === 'abyss' || nextLoc.type === 'maelstrom' || nextLoc.type === 'bay' ||
@@ -198,7 +195,7 @@ function moveTo(direction) {
 }
 
 // ============================================================
-// ГЛОБАЛЬНАЯ КАРТА МИРА
+// ГЛОБАЛЬНАЯ КАРТА МИРА (С ВОЙСКАМИ ДЛЯ ЧЛЕНОВ ДОМОВ)
 // ============================================================
 
 window.openWorldMap = function() {
@@ -299,7 +296,65 @@ window.openWorldMap = function() {
         return null;
     }
     
-    // Связные группы по владельцам
+    // Войска для членов домов
+    var houseId = g.house;
+    var troopsByZone = {};
+    if (houseId && window._castleGarrisons) {
+        // Зоны видимости
+        var ownZones = {};
+        var ownTroopZones = {};
+        for (var id in WORLD_AREAS) {
+            if (WORLD_AREAS[id].owner === houseId) ownZones[id] = true;
+        }
+        var garr = window._castleGarrisons[houseId];
+        if (garr) {
+            ['infantry','cavalry','siege'].forEach(function(cat) {
+                if (garr[cat]) {
+                    garr[cat].forEach(function(u) {
+                        if (u.location && u.location !== 'castle') ownTroopZones[u.location] = true;
+                    });
+                }
+            });
+        }
+        var visibleZones = {};
+        for (var id in ownZones) visibleZones[id] = true;
+        for (var id in ownTroopZones) {
+            visibleZones[id] = true;
+            var vz = WORLD_AREAS[id];
+            if (vz) {
+                for (var dx = -2; dx <= 2; dx++) {
+                    for (var dy = -2; dy <= 2; dy++) {
+                        if (Math.abs(dx) + Math.abs(dy) <= 2) {
+                            for (var tid in WORLD_AREAS) {
+                                if (WORLD_AREAS[tid].x === vz.x + dx && WORLD_AREAS[tid].y === vz.y + dy) {
+                                    visibleZones[tid] = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (var hid in window._castleGarrisons) {
+            var g2 = window._castleGarrisons[hid];
+            ['infantry','cavalry','siege'].forEach(function(cat) {
+                if (g2[cat]) {
+                    g2[cat].forEach(function(u) {
+                        if (u.location && u.location !== 'castle') {
+                            if (u.isScout && hid !== houseId) return;
+                            if (hid !== houseId && !visibleZones[u.location]) return;
+                            if (!troopsByZone[u.location]) troopsByZone[u.location] = {};
+                            if (!troopsByZone[u.location][hid]) troopsByZone[u.location][hid] = { count: 0, hasScout: false };
+                            troopsByZone[u.location][hid].count++;
+                            if (u.isScout) troopsByZone[u.location][hid].hasScout = true;
+                        }
+                    });
+                }
+            });
+        }
+    }
+    
+    // Группы владений
     var ownerGroups = [];
     if (_showOwners) {
         var visited = {};
@@ -343,10 +398,10 @@ window.openWorldMap = function() {
     html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
     html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
+    if (houseId) html += ' | 🟢 Свои | 🔴 Враги';
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
     
-    // Галочки
     html += '<div style="text-align:center;margin:6px 0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleCoords()"><input type="checkbox" id="chk-coords" ' + (_showCoords ? 'checked' : '') + '> 📍 Координаты</label>';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleLevels()"><input type="checkbox" id="chk-levels" ' + (_showLevels ? 'checked' : '') + '> 📈 Уровни</label>';
@@ -397,14 +452,18 @@ window.openWorldMap = function() {
             var emoji = '';
             var isCurrent = false;
             var castleInfo = zone ? getCastleInfo(zone) : null;
+            var isWater = false;
             
             if (zone) {
                 var colorKey = zone.type;
-                if (zone.type === 'coast' && zone.resourceType === 'shallows') {
-                    colorKey = 'shallows';
-                }
+                if (zone.type === 'coast' && zone.resourceType === 'shallows') colorKey = 'shallows';
                 bg = typeColors[colorKey] || '#3d3026';
                 
+                if (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' || zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' || zone.type === 'reef' || (zone.type === 'coast' && zone.resourceType === 'shallows')) {
+                    isWater = true;
+                }
+                
+                // Приоритет эмодзи
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
@@ -422,6 +481,22 @@ window.openWorldMap = function() {
                 }
                 
                 if (zone.id === currentId) isCurrent = true;
+            }
+            
+            // Войска
+            var troopEmoji = '';
+            if (zone && troopsByZone[zone.id]) {
+                var td = troopsByZone[zone.id];
+                var hasOwn = false, hasEnemy = false, hasAlly = false, hasOwnScout = false;
+                for (var hid in td) {
+                    if (hid === houseId) { hasOwn = true; if (td[hid].hasScout) hasOwnScout = true; }
+                    else if (window.HOUSES && HOUSES[hid] && HOUSES[hid].liege === houseId) hasAlly = true;
+                    else hasEnemy = true;
+                }
+                if (hasOwnScout) troopEmoji = '👁️';
+                else if (hasOwn) troopEmoji = '🟢';
+                else if (hasAlly) troopEmoji = '🔵';
+                else if (hasEnemy) troopEmoji = '🔴';
             }
             
             var subText = '';
@@ -449,7 +524,13 @@ window.openWorldMap = function() {
             var left = (x - minX) * cellSize + 1;
             var top = (y - minY) * cellSize + padding + 1;
             
-            html += '<div style="';
+            // Онклик для членов домов
+            var clickAttr = '';
+            if (houseId && zone && !isWater) {
+                clickAttr = ' onclick="handleZoneClick(\'' + zone.id + '\')" style="cursor:pointer;';
+            }
+            
+            html += '<div' + clickAttr + ' style="';
             html += 'position:absolute;';
             html += 'left:' + left + 'px;top:' + top + 'px;';
             html += 'width:' + (cellSize-2) + 'px;height:' + (cellSize-2) + 'px;';
@@ -460,13 +541,23 @@ window.openWorldMap = function() {
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
-            if (isCurrent) {
-                html += '⭐';
-            } else if (emoji) {
-                html += emoji;
+            // Эмодзи здания или войск
+            if (emoji) {
+                html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
+                if (isCurrent) html += '⭐';
+                else html += emoji;
+                html += '</span>';
+                if (troopEmoji) {
+                    html += '<span style="position:absolute;top:1px;right:1px;font-size:' + Math.max(10, cellSize*0.35) + 'px;z-index:4;line-height:1;">' + troopEmoji + '</span>';
+                }
+            } else if (troopEmoji) {
+                html += '<span style="font-size:' + (emojiSize + 4) + 'px;line-height:1;position:relative;z-index:2;">';
+                if (isCurrent) html += '⭐';
+                else html += troopEmoji;
+                html += '</span>';
+            } else if (isCurrent) {
+                html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">⭐</span>';
             }
-            html += '</span>';
             
             if (_showCoords) {
                 html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
