@@ -69,8 +69,7 @@ window.openMyHouse = function() {
             html += '<div class="tabs">';
             html += '<button class="tab-btn active" onclick="showHouseTab(\'info\')">📜 Инфо</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'members\')">👥 Участники</button>';
-            html += '<button class="tab-btn" onclick="showHouseTab(\'lands\')">🏘️ Владения</button>';
-            html += '<button class="tab-btn" onclick="showHouseTab(\'treasury\')">💰 Казна</button>';
+            html += '<button class="tab-btn" onclick="showHouseTab(\'army\')">⚔️ Армия</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'chronicle\')">📜 Летопись</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'invite\')">📨 Пригласить</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'sent\')">📤 Отправленные</button>';
@@ -106,11 +105,26 @@ window.showHouseTab = function(tab) {
         html += '<div class="modal-section">';
         html += '<div class="row"><span class="label">📍 Регион</span><span class="value">' + (house.region || '—') + '</span></div>';
         html += '<div class="row"><span class="label">🏰 Замок</span><span class="value">' + (house.castle || 'Нет') + '</span></div>';
-        html += '<div class="row"><span class="label">👑 Сюзерен</span><span class="value">' + (house.liege ? (HOUSES[house.liege] ? HOUSES[house.liege].name : house.liege) : 'Независимый') + '</span></div>';
-        html += '<div class="row"><span class="label">🌟 Репутация</span><span class="value">' + (house.reputation || 0) + '%</span></div>';
-        html += '<div class="row"><span class="label">🤝 Лояльность</span><span class="value">' + (house.loyalty || 0) + '%</span></div>';
-        html += '<div class="row"><span class="label">⚔️ Армия</span><span class="value">🗡️' + (house.army.infantry || 0) + ' 🐴' + (house.army.cavalry || 0) + ' ⛵' + (house.army.ships || 0) + '</span></div>';
-        html += '<div class="row"><span class="label">💰 Казна</span><span class="value">' + (house.treasury || 0) + ' зол.</span></div>';
+        html += '<div class="row"><span class="label">👑 Сюзерен</span><span class="value">' + (house.liege ? (HOUSES[house.liege] ? HOUSES[house.liege].sigil + ' ' + HOUSES[house.liege].name : house.liege) : 'Независимый') + '</span></div>';
+        
+        var vassals = [];
+        for (var id in HOUSES) {
+            if (HOUSES[id].liege === g.house) vassals.push(HOUSES[id]);
+        }
+        html += '<div class="row"><span class="label">⚓ Вассалы</span><span class="value">' + (vassals.length > 0 ? vassals.length + ' домов' : 'Нет') + '</span></div>';
+        if (vassals.length > 0) {
+            vassals.forEach(function(v) {
+                html += '<div class="row"><span class="label" style="font-size:11px;padding-left:12px;">' + v.sigil + ' ' + v.name + '</span><span class="value"></span></div>';
+            });
+        }
+        
+        var zoneCount = 0;
+        if (typeof WORLD_AREAS !== 'undefined') {
+            for (var zoneId in WORLD_AREAS) {
+                if (WORLD_AREAS[zoneId].owner === g.house) zoneCount++;
+            }
+        }
+        html += '<div class="row"><span class="label">📍 Контролируемых зон</span><span class="value">' + zoneCount + '</span></div>';
         html += '</div>';
     }
     
@@ -136,28 +150,64 @@ window.showHouseTab = function(tab) {
         html += '</div>';
     }
     
-    if (tab === 'lands') {
-        html += '<div class="modal-section"><h4>🏘️ ВЛАДЕНИЯ</h4>';
-        var lands = getHouseLands(g.house);
-        if (lands.length === 0) {
-            html += '<p style="color:#6a5a48;">Нет владений.</p>';
-        } else {
-            lands.forEach(function(land) {
-                html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-                html += '<span class="label">📍 ' + land.name + '</span><span class="value">' + land.type + ' | ур.' + land.level + '</span>';
-                html += '</div>';
+    if (tab === 'army') {
+        html += '<div class="modal-section"><h4>⚔️ АРМИЯ ДОМА</h4>';
+        var garrison = window._castleGarrisons && window._castleGarrisons[g.house] ? window._castleGarrisons[g.house] : { infantry: [], cavalry: [], siege: [] };
+        
+        // Пехота
+        var infantryGrouped = {};
+        if (garrison.infantry && Array.isArray(garrison.infantry)) {
+            garrison.infantry.forEach(function(u) {
+                var k = u.type;
+                if (!infantryGrouped[k]) infantryGrouped[k] = 0;
+                infantryGrouped[k]++;
             });
         }
-        html += '<p style="color:#6a5a48;font-size:11px;">Захватывайте локации чтобы увеличить доход.</p>';
-        html += '</div>';
-    }
-    
-    if (tab === 'treasury') {
-        html += '<div class="modal-section"><h4>💰 КАЗНА</h4>';
-        html += '<div class="row"><span class="label">💰 Золото</span><span class="value">' + (house.treasury || 0) + '</span></div>';
-        html += '<div class="row"><span class="label">📊 Доход в час</span><span class="value" style="color:#7ac98a;">+' + getHouseIncome(g.house) + ' зол.</span></div>';
-        html += '<div class="row"><span class="label">📉 Расход в час</span><span class="value" style="color:#c96a5a;">-' + getHouseExpense(g.house) + ' зол.</span></div>';
-        html += '<p style="color:#6a5a48;font-size:11px;">Доход зависит от владений и налогов. Расход — от армии и замка.</p>';
+        html += '<h5>🗡️ Пехота (' + (garrison.infantry ? garrison.infantry.length : 0) + ' чел.)</h5>';
+        if (Object.keys(infantryGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет пехоты.</p>';
+        else {
+            for (var k in infantryGrouped) {
+                var ut = typeof UNIT_TYPES !== 'undefined' ? UNIT_TYPES[k] : null;
+                html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + infantryGrouped[k] + '</span></div>';
+            }
+        }
+        
+        // Кавалерия
+        var cavalryGrouped = {};
+        if (garrison.cavalry && Array.isArray(garrison.cavalry)) {
+            garrison.cavalry.forEach(function(u) {
+                var k = u.type;
+                if (!cavalryGrouped[k]) cavalryGrouped[k] = 0;
+                cavalryGrouped[k]++;
+            });
+        }
+        html += '<h5 style="margin-top:10px;">🐴 Кавалерия (' + (garrison.cavalry ? garrison.cavalry.length : 0) + ' чел.)</h5>';
+        if (Object.keys(cavalryGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет кавалерии.</p>';
+        else {
+            for (var k in cavalryGrouped) {
+                var ut = typeof UNIT_TYPES !== 'undefined' ? UNIT_TYPES[k] : null;
+                html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + cavalryGrouped[k] + '</span></div>';
+            }
+        }
+        
+        // Осадные
+        var siegeGrouped = {};
+        if (garrison.siege && Array.isArray(garrison.siege)) {
+            garrison.siege.forEach(function(u) {
+                var k = u.siegeType || u.type;
+                if (!siegeGrouped[k]) siegeGrouped[k] = 0;
+                siegeGrouped[k]++;
+            });
+        }
+        html += '<h5 style="margin-top:10px;">🏗️ Осадные орудия (' + (garrison.siege ? garrison.siege.length : 0) + ' шт.)</h5>';
+        if (Object.keys(siegeGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет осадных орудий.</p>';
+        else {
+            for (var k in siegeGrouped) {
+                var sw = typeof SIEGE_WEAPONS !== 'undefined' ? SIEGE_WEAPONS[k] : null;
+                html += '<div class="row"><span class="label">' + (sw ? sw.name : k) + '</span><span class="value">×' + siegeGrouped[k] + '</span></div>';
+            }
+        }
+        
         html += '</div>';
     }
     
@@ -244,26 +294,14 @@ function canManageMember(targetName) {
 
 function getHouseLands(houseId) {
     var lands = [];
-    for (var id in KL_AREAS) {
-        if (KL_AREAS[id].owner === houseId) {
-            lands.push({ name: KL_AREAS[id].name, type: KL_AREAS[id].type, level: KL_AREAS[id].level });
+    if (typeof WORLD_AREAS !== 'undefined') {
+        for (var id in WORLD_AREAS) {
+            if (WORLD_AREAS[id].owner === houseId) {
+                lands.push({ name: WORLD_AREAS[id].name, type: WORLD_AREAS[id].type, level: WORLD_AREAS[id].level });
+            }
         }
     }
     return lands;
-}
-
-function getHouseIncome(houseId) {
-    var lands = getHouseLands(houseId);
-    var income = 0;
-    lands.forEach(function(land) { income += land.level * 2; });
-    return income;
-}
-
-function getHouseExpense(houseId) {
-    var house = HOUSES[houseId];
-    if (!house) return 0;
-    var troops = (house.army.infantry || 0) + (house.army.cavalry || 0) * 2 + (house.army.ships || 0) * 5;
-    return Math.floor(troops / 10);
 }
 
 function getHouseChronicle(houseId) {
@@ -453,4 +491,4 @@ window.confirmAssignRank = confirmAssignRank;
 window.closeRankModal = closeRankModal;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Мой дом + Роли + Летопись загружены!');
+console.log('🏰 Дипломатия + Мой дом + Роли + Армия + Летопись загружены!');
