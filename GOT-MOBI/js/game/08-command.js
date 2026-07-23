@@ -26,8 +26,6 @@ window.handleZoneClick = function(zoneId) {
     }
     
     var ownUnits = getOwnUnitsInZone(zoneId, houseId);
-    
-    // Проверяем вражеских разведчиков (видны только своим разведчикам)
     var enemyScouts = findEnemyScoutsInZone(zoneId, houseId);
     
     if (ownUnits.length === 0 && ownUnits.scouts.length === 0) {
@@ -35,7 +33,6 @@ window.handleZoneClick = function(zoneId) {
         if (enemies.length > 0) {
             showEnemyInfo(zoneId, zoneName, enemies);
         } else if (enemyScouts.length > 0) {
-            // Вражеские разведчики видны только если в зоне есть свои разведчики, так что это не должно сработать
             showZoneInfoPublic(zoneId, zoneName);
         } else {
             showZoneInfoPublic(zoneId, zoneName);
@@ -43,7 +40,6 @@ window.handleZoneClick = function(zoneId) {
         return;
     }
     
-    // Если в зоне есть свои разведчики и вражеские разведчики — можно атаковать
     if (ownUnits.scouts.length > 0 && enemyScouts.length > 0) {
         showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts);
         return;
@@ -145,6 +141,11 @@ function showEnemyInfo(zoneId, zoneName, enemies) {
     
     content.innerHTML = h;
     modal.classList.remove('hide');
+};
+
+window.closeZoneInfo = function() {
+    var m = document.getElementById('modal-zone-info');
+    if (m) m.classList.add('hide');
 };
 
 // ============================================================
@@ -265,7 +266,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
     var html = '<div class="modal-section"><h4>📍 ' + zoneName + '</h4>';
     html += '<p style="color:#6a5a48;">Выберите отряд для отправки или отделите разведчика</p></div>';
     
-    // Вражеские разведчики
     if (enemyScouts && enemyScouts.length > 0) {
         html += '<div class="modal-section"><h4>👁️ ОБНАРУЖЕНЫ ВРАЖЕСКИЕ РАЗВЕДЧИКИ</h4>';
         enemyScouts.forEach(function(es, i) {
@@ -279,7 +279,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
         html += '</div>';
     }
     
-    // Разведчики
     if (ownUnits.scouts.length > 0) {
         html += '<div class="modal-section"><h4>👁️ РАЗВЕДЧИКИ</h4>';
         ownUnits.scouts.forEach(function(item, i) {
@@ -298,7 +297,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
         html += '</div>';
     }
     
-    // Рыцари-командоры
     if (ownUnits.commanders.length > 0) {
         html += '<div class="modal-section"><h4>⭐ РЫЦАРИ-КОМАНДОРЫ</h4>';
         ownUnits.commanders.forEach(function(cmd) {
@@ -311,7 +309,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
         html += '</div>';
     }
     
-    // Капитаны
     if (ownUnits.captains.length > 0) {
         html += '<div class="modal-section"><h4>🗡️ КАПИТАНЫ</h4>';
         ownUnits.captains.forEach(function(cap) {
@@ -324,7 +321,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
         html += '</div>';
     }
     
-    // Сержанты
     if (ownUnits.sergeants.length > 0) {
         html += '<div class="modal-section"><h4>🛡️ СЕРЖАНТЫ</h4>';
         ownUnits.sergeants.forEach(function(sgt) {
@@ -348,7 +344,6 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
         html += '</div>';
     }
     
-    // Непривязанные
     if (ownUnits.unattached.length > 0) {
         html += '<div class="modal-section"><h4>📦 НЕПРИВЯЗАННЫЕ ВОЙСКА</h4>';
         var unitTypes = {};
@@ -399,7 +394,6 @@ window.attackEnemyScout = function(zoneId, enemyIndex) {
     var enemyHouse = enemy.house;
     
     if (Math.random() < 0.5) {
-        // Победа — удаляем вражеского разведчика
         var enemyGarrison = window._castleGarrisons[enemyHouse];
         if (enemyGarrison) {
             ['infantry','cavalry','siege'].forEach(function(cat) {
@@ -417,7 +411,6 @@ window.attackEnemyScout = function(zoneId, enemyIndex) {
         setMessage('⚔️ Вражеский разведчик уничтожен!');
         addHouseLog(houseId, '⚔️ Разведчик уничтожил вражеского разведчика в ' + getZoneName(zoneId));
     } else {
-        // Поражение — удаляем своего разведчика
         var ownGarrison = window._castleGarrisons[houseId];
         if (ownGarrison) {
             ['infantry','cavalry','siege'].forEach(function(cat) {
@@ -831,12 +824,9 @@ function processScoutArrival(marchingEntry, houseId, cat) {
     var unit = marchingEntry.units[0];
     if (!unit) return;
     
-    // Проверяем вражеских разведчиков в зоне
     var enemyScouts = findEnemyScoutsInZone(marchingEntry.targetZone, houseId);
     if (enemyScouts.length > 0) {
-        // Бой разведчиков: 50/50
         if (Math.random() < 0.5) {
-            // Убиваем одного вражеского разведчика
             var enemyHouse = enemyScouts[0].house;
             var enemyGarrison = window._castleGarrisons[enemyHouse];
             if (enemyGarrison) {
@@ -851,7 +841,6 @@ function processScoutArrival(marchingEntry, houseId, cat) {
                     }
                 });
             }
-            // Наш разведчик выжил
             unit.location = marchingEntry.targetZone;
             unit.isScout = true;
             if (!unit.scoutHome) unit.scoutHome = marchingEntry.fromZone;
@@ -863,7 +852,6 @@ function processScoutArrival(marchingEntry, houseId, cat) {
             setMessage('⚔️ Разведчик уничтожил вражеского разведчика в ' + getZoneName(marchingEntry.targetZone));
             addHouseLog(houseId, '⚔️ Разведчик убил вражеского разведчика в ' + getZoneName(marchingEntry.targetZone));
         } else {
-            // Наш разведчик убит
             saveData();
             setMessage('💀 Разведчик убит вражеским разведчиком в ' + getZoneName(marchingEntry.targetZone));
             addHouseLog(houseId, '💀 Разведчик убит вражеским разведчиком в ' + getZoneName(marchingEntry.targetZone));
@@ -1152,7 +1140,7 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
 };
 
 // ============================================================
-// 11. ПРИБЫТИЕ И БОЙ
+// 10. ПРИБЫТИЕ И БОЙ
 // ============================================================
 
 function processMarchArrival(marchingEntry, houseId) {
@@ -1300,7 +1288,7 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
 }
 
 // ============================================================
-// 12. ВСПОМОГАТЕЛЬНЫЕ
+// 11. ВСПОМОГАТЕЛЬНЫЕ
 // ============================================================
 
 function getZoneName(zoneId) {
@@ -1309,7 +1297,7 @@ function getZoneName(zoneId) {
 }
 
 // ============================================================
-// 13. ТАЙМЕР ПРИ ЗАГРУЗКЕ
+// 12. ТАЙМЕР ПРИ ЗАГРУЗКЕ
 // ============================================================
 
 window.restoreMarchingTimers = function() {
@@ -1341,7 +1329,7 @@ window.restoreMarchingTimers = function() {
 };
 
 // ============================================================
-// 14. РЕГИСТРАЦИЯ
+// 13. РЕГИСТРАЦИЯ
 // ============================================================
 
 window.handleZoneClick = handleZoneClick;
