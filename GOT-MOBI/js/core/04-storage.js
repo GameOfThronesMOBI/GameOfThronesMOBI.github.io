@@ -99,6 +99,16 @@ function loadData() {
     try { const raw = localStorage.getItem('got_house_logs'); if (raw) houseLogs = JSON.parse(raw); } catch(e) { houseLogs = {}; }
     try { const raw = localStorage.getItem('got_confiscated'); if (raw) confiscatedItems = JSON.parse(raw); } catch(e) { confiscatedItems = []; }
     try { const raw = localStorage.getItem('got_dice_games'); if (raw) { diceGames = JSON.parse(raw); } } catch(e) { diceGames = {}; }
+    
+    // Замковые хранилища
+    try { const raw = localStorage.getItem('got_castle_storages'); if (raw) window._castleStorages = JSON.parse(raw); } catch(e) { window._castleStorages = {}; }
+    try { const raw = localStorage.getItem('got_castle_granaries'); if (raw) window._castleGranaries = JSON.parse(raw); } catch(e) { window._castleGranaries = {}; }
+    try { const raw = localStorage.getItem('got_castle_armories'); if (raw) window._castleArmories = JSON.parse(raw); } catch(e) { window._castleArmories = {}; }
+    try { const raw = localStorage.getItem('got_castle_queues'); if (raw) window._castleQueues = JSON.parse(raw); } catch(e) { window._castleQueues = {}; }
+    try { const raw = localStorage.getItem('got_castle_stables'); if (raw) window._castleStables = JSON.parse(raw); } catch(e) { window._castleStables = {}; }
+    try { const raw = localStorage.getItem('got_castle_garrisons'); if (raw) window._castleGarrisons = JSON.parse(raw); } catch(e) { window._castleGarrisons = {}; }
+    try { const raw = localStorage.getItem('got_castle_horse_limits'); if (raw) window._castleHorseLimits = JSON.parse(raw); } catch(e) { window._castleHorseLimits = {}; }
+    
     loadHousingMarket();
     loadHorseMarket();
     loadMarketStalls();
@@ -113,6 +123,16 @@ function saveData() {
     localStorage.setItem('got_confiscated', JSON.stringify(confiscatedItems));
     localStorage.setItem('got_dice_games', JSON.stringify(diceGames));
     localStorage.setItem('got_house_logs', JSON.stringify(houseLogs));
+    
+    // Замковые хранилища
+    localStorage.setItem('got_castle_storages', JSON.stringify(window._castleStorages || {}));
+    localStorage.setItem('got_castle_granaries', JSON.stringify(window._castleGranaries || {}));
+    localStorage.setItem('got_castle_armories', JSON.stringify(window._castleArmories || {}));
+    localStorage.setItem('got_castle_queues', JSON.stringify(window._castleQueues || {}));
+    localStorage.setItem('got_castle_stables', JSON.stringify(window._castleStables || {}));
+    localStorage.setItem('got_castle_garrisons', JSON.stringify(window._castleGarrisons || {}));
+    localStorage.setItem('got_castle_horse_limits', JSON.stringify(window._castleHorseLimits || {}));
+    
     if (gameLog.length > 100) gameLog = gameLog.slice(-100);
     localStorage.setItem('got_log', JSON.stringify(gameLog));
     saveHousingMarket();
