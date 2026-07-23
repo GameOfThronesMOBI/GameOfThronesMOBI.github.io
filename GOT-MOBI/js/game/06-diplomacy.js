@@ -69,8 +69,6 @@ window.openMyHouse = function() {
             html += '<div class="tabs">';
             html += '<button class="tab-btn active" onclick="showHouseTab(\'info\')">📜 Инфо</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'members\')">👥 Участники</button>';
-            html += '<button class="tab-btn" onclick="showHouseTab(\'lands\')">🏘️ Владения</button>';
-            html += '<button class="tab-btn" onclick="showHouseTab(\'treasury\')">💰 Казна</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'army\')">⚔️ Армия</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'chronicle\')">📜 Летопись</button>';
             html += '<button class="tab-btn" onclick="showHouseTab(\'invite\')">📨 Пригласить</button>';
@@ -152,31 +150,6 @@ window.showHouseTab = function(tab) {
         html += '</div>';
     }
     
-    if (tab === 'lands') {
-        html += '<div class="modal-section"><h4>🏘️ ВЛАДЕНИЯ</h4>';
-        var lands = getHouseLands(g.house);
-        if (lands.length === 0) {
-            html += '<p style="color:#6a5a48;">Нет владений.</p>';
-        } else {
-            lands.forEach(function(land) {
-                html += '<div class="row" style="padding:4px 0; border-bottom:1px solid #1a1410;">';
-                html += '<span class="label">📍 ' + land.name + '</span><span class="value">' + land.type + ' | ур.' + land.level + '</span>';
-                html += '</div>';
-            });
-        }
-        html += '<p style="color:#6a5a48;font-size:11px;">Захватывайте локации чтобы увеличить доход.</p>';
-        html += '</div>';
-    }
-    
-    if (tab === 'treasury') {
-        html += '<div class="modal-section"><h4>💰 КАЗНА</h4>';
-        html += '<div class="row"><span class="label">💰 Золото</span><span class="value">' + (house.treasury || 0) + '</span></div>';
-        html += '<div class="row"><span class="label">📊 Доход в час</span><span class="value" style="color:#7ac98a;">+' + getHouseIncome(g.house) + ' зол.</span></div>';
-        html += '<div class="row"><span class="label">📉 Расход в час</span><span class="value" style="color:#c96a5a;">-' + getHouseExpense(g.house) + ' зол.</span></div>';
-        html += '<p style="color:#6a5a48;font-size:11px;">Доход зависит от владений и налогов. Расход — от армии и замка.</p>';
-        html += '</div>';
-    }
-    
     if (tab === 'army') {
         html += '<div class="modal-section"><h4>⚔️ АРМИЯ ДОМА</h4>';
         var garrison = window._castleGarrisons && window._castleGarrisons[g.house] ? window._castleGarrisons[g.house] : { infantry: [], cavalry: [], siege: [] };
@@ -231,10 +204,6 @@ window.showHouseTab = function(tab) {
                 html += '<div class="row"><span class="label">' + (sw ? sw.name : k) + '</span><span class="value">×' + siegeGrouped[k] + '</span></div>';
             }
         }
-        
-        html += '<div style="text-align:center;margin-top:12px;">';
-        html += '<button class="btn btn-primary" onclick="closeHouses(); openCommandMap();">🎯 Командование</button>';
-        html += '</div>';
         
         html += '</div>';
     }
@@ -318,36 +287,6 @@ function canManageMember(targetName) {
     if (!myRank || !HOUSE_RANKS[myRank]) return false;
     if (!targetRank || !HOUSE_RANKS[targetRank]) return true;
     return HOUSE_RANKS[myRank].order < HOUSE_RANKS[targetRank].order;
-}
-
-function getHouseLands(houseId) {
-    var lands = [];
-    if (typeof WORLD_AREAS !== 'undefined') {
-        for (var id in WORLD_AREAS) {
-            if (WORLD_AREAS[id].owner === houseId) {
-                lands.push({ name: WORLD_AREAS[id].name, type: WORLD_AREAS[id].type, level: WORLD_AREAS[id].level });
-            }
-        }
-    }
-    return lands;
-}
-
-function getHouseIncome(houseId) {
-    var lands = getHouseLands(houseId);
-    var income = 0;
-    lands.forEach(function(land) { income += land.level * 2; });
-    return income;
-}
-
-function getHouseExpense(houseId) {
-    var house = HOUSES[houseId];
-    if (!house) return 0;
-    var troops = 0;
-    var g = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [] };
-    troops += (g.infantry ? g.infantry.length : 0);
-    troops += (g.cavalry ? g.cavalry.length * 2 : 0);
-    troops += (g.siege ? g.siege.length * 5 : 0);
-    return Math.floor(troops / 10);
 }
 
 function getHouseChronicle(houseId) {
