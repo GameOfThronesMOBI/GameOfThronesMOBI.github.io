@@ -1,13 +1,15 @@
 // ============================================================
 // js/game/08-command.js — КОМАНДОВАНИЕ ВОЙСКАМИ + PvP + РАЗВЕДКА
-// ПОЛНАЯ ВЕРСИЯ
+// ПОЛНАЯ ВЕРСИЯ (ВЫБОР ЦЕЛИ НА ОСНОВНОЙ КАРТЕ)
 // ============================================================
 
-// Раннее определение closeZoneInfo
 window.closeZoneInfo = function() {
     var m = document.getElementById('modal-zone-info');
     if (m) m.classList.add('hide');
 };
+
+window._awaitingTarget = false;
+window._targetData = null;
 
 // ============================================================
 // 1. КЛИК ПО ЗОНЕ НА КАРТЕ МИРА (ДЛЯ ВСЕХ)
@@ -26,6 +28,83 @@ window.handleZoneClick = function(zoneId) {
     
     var houseId = user.game.house;
     
+    // Если ждём выбора цели
+    if (window._awaitingTarget && houseId) {
+        var fromZone = WORLD_AREAS[window._targetData.fromZone];
+        var fromX = fromZone ? fromZone.x : 0;
+        var fromY = fromZone ? fromZone.y : 0;
+        var toX = zone ? zone.x : 0;
+        var toY = zone ? zone.y : 0;
+        var dist = Math.abs(toX - fromX) + Math.abs(toY - fromY);
+        var isWater = zone && (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows');
+        var targetZoneId = zoneId;
+        
+        if (isWater) {
+            setMessage('⛵ Нельзя отправить войска на воду.');
+            return;
+        }
+        
+        var isOwnZone = zone && zone.owner === houseId;
+        var timeMinutes = window._targetData.isScout ? dist * 2 : dist * 5;
+        
+        var actions = [];
+        actions.push({ id: 'move', label: '🚶 Идти (' + timeMinutes + ' мин)', desc: 'Переместиться в зону' });
+        
+        if (window._targetData.isScout) {
+            var hasEnemy = false;
+            for (var hid in window._castleGarrisons) {
+                if (hid === houseId) continue;
+                var g = window._castleGarrisons[hid];
+                ['infantry','cavalry','siege'].forEach(function(cat) {
+                    if (g[cat]) {
+                        g[cat].forEach(function(u) {
+                            if (u.location === targetZoneId && !u.isScout) hasEnemy = true;
+                        });
+                    }
+                });
+            }
+            if (hasEnemy) {
+                actions.push({ id: 'scout', label: '🔍 Разведка (50% риск)', desc: 'Разведчик может погибнуть, но узнает состав врага' });
+            }
+        } else {
+            if (isOwnZone) {
+                actions.push({ id: 'defend', label: '🛡️ Защита (' + timeMinutes + ' мин)', desc: 'Занять оборону в зоне' });
+            } else {
+                actions.push({ id: 'attack', label: '⚔️ Атака (' + timeMinutes + ' мин)', desc: 'Атаковать и захватить зону' });
+            }
+        }
+        
+        var targetZoneName = zoneName;
+        var fromZoneName = fromZone ? fromZone.name : window._targetData.fromZone;
+        
+        var modal = document.getElementById('modal-confirm-move');
+        if (!modal) {
+            var overlay = document.createElement('div');
+            overlay.id = 'modal-confirm-move';
+            overlay.className = 'modal-overlay hide';
+            overlay.onclick = function(e) { if (e.target === this) window.closeConfirmMove(); };
+            overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ПОДТВЕРЖДЕНИЕ</h3><button class="close-btn" onclick="window.closeConfirmMove()">✕</button></div><div id="modal-confirm-move-content"></div></div>';
+            document.body.appendChild(overlay);
+            modal = overlay;
+        }
+        
+        var content = document.getElementById('modal-confirm-move-content');
+        var h = '<div class="modal-section"><h4>🎯 ' + fromZoneName + ' → ' + targetZoneName + '</h4>';
+        h += '<p style="color:#6a5a48;">Дистанция: ' + dist + ' зон (~' + timeMinutes + ' мин)</p>';
+        h += '<p style="color:#6a5a48;">Владелец цели: ' + (zone && zone.owner ? zone.owner : 'ничья') + '</p>';
+        h += '</div><div class="modal-section"><h4>⚡ ДЕЙСТВИЕ</h4>';
+        actions.forEach(function(a) {
+            h += '<button class="btn btn-game" onclick="window.confirmTarget(\'' + targetZoneId + '\',\'' + a.id + '\',' + timeMinutes + ')" style="margin:4px 0;">' + a.label + '</button><br>';
+            h += '<span style="font-size:10px;color:#6a5a48;">' + a.desc + '</span><br>';
+        });
+        h += '</div><button class="btn btn-secondary" onclick="window.closeConfirmMove(); window._awaitingTarget=false;">Отмена</button>';
+        
+        content.innerHTML = h;
+        modal.classList.remove('hide');
+        return;
+    }
+    
+    // Обычный режим
     if (!houseId) {
         showZoneInfoPublic(zoneId, zoneName);
         return;
@@ -38,8 +117,6 @@ window.handleZoneClick = function(zoneId) {
         var enemies = findEnemiesInZone(zoneId, houseId);
         if (enemies.length > 0) {
             showEnemyInfo(zoneId, zoneName, enemies);
-        } else if (enemyScouts.length > 0) {
-            showZoneInfoPublic(zoneId, zoneName);
         } else {
             showZoneInfoPublic(zoneId, zoneName);
         }
@@ -52,6 +129,31 @@ window.handleZoneClick = function(zoneId) {
     }
     
     showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, []);
+};
+
+// ============================================================
+// ПОДТВЕРЖДЕНИЕ ЦЕЛИ И ОТПРАВКА
+// ============================================================
+
+window.confirmTarget = function(targetZoneId, action, timeMinutes) {
+    var data = window._targetData;
+    if (!data) { setMessage('❌ Нет данных для отправки.'); return; }
+    
+    window._awaitingTarget = false;
+    window._targetData = null;
+    
+    if (data.isScout) {
+        window.moveScout(targetZoneId, action, timeMinutes);
+    } else {
+        window.confirmMovement(data.fromZone, targetZoneId, action, timeMinutes);
+    }
+    
+    window.closeConfirmMove();
+};
+
+window.closeConfirmMove = function() {
+    var m = document.getElementById('modal-confirm-move');
+    if (m) m.classList.add('hide');
 };
 
 // ============================================================
@@ -87,19 +189,6 @@ function showZoneInfoPublic(zoneId, zoneName) {
         
         if (zone.places && zone.places.length > 0) {
             h += '<div class="row"><span class="label">Места</span><span class="value">' + zone.places.join(', ') + '</span></div>';
-        }
-        
-        if (zone.actions && zone.actions.length > 0) {
-            h += '<div class="row"><span class="label">Действия</span><span class="value">';
-            zone.actions.forEach(function(a) {
-                if (a.id === 'enter_city') h += '🚶 Войти в город';
-                if (a.id === 'enter_buckler_castle') h += '🏰 Войти в замок';
-            });
-            h += '</span></div>';
-        }
-        
-        if (zone.x !== undefined && zone.y !== undefined) {
-            h += '<div class="row"><span class="label">Координаты</span><span class="value">[' + zone.x + ', ' + zone.y + ']</span></div>';
         }
     }
     
@@ -150,7 +239,7 @@ function showEnemyInfo(zoneId, zoneName, enemies) {
 };
 
 // ============================================================
-// 2. СБОР СВОИХ ВОЙСК В ЗОНЕ (ВКЛЮЧАЯ ГАРНИЗОН ЗАМКА)
+// 2. СБОР СВОИХ ВОЙСК В ЗОНЕ
 // ============================================================
 
 function getOwnUnitsInZone(zoneId, houseId) {
@@ -517,206 +606,26 @@ window.detachScout = function(zoneId) {
 
 window.selectCommanderForMove = function(zoneId, rank, name) {
     window.currentMovingCommander = { zoneId: zoneId, rank: rank, name: name, type: 'commander' };
+    window._awaitingTarget = true;
+    window._targetData = { fromZone: zoneId, isScout: false, commander: true };
     window.closeOwnUnitsModal();
-    openMovementTargetMap(zoneId);
+    setMessage('🎯 Выберите целевую зону на карте.');
 };
 
 window.selectScoutForMove = function(zoneId, scoutIndex) {
     window.currentMovingCommander = { zoneId: zoneId, type: 'scout', scoutIndex: scoutIndex };
+    window._awaitingTarget = true;
+    window._targetData = { fromZone: zoneId, isScout: true, scoutIndex: scoutIndex };
     window.closeOwnUnitsModal();
-    openScoutTargetMap(zoneId);
+    setMessage('🎯 Выберите целевую зону на карте.');
 };
 
 window.selectUnattachedForMove = function(zoneId) {
     window.currentMovingCommander = { zoneId: zoneId, type: 'unattached' };
+    window._awaitingTarget = true;
+    window._targetData = { fromZone: zoneId, isScout: false, commander: false };
     window.closeOwnUnitsModal();
-    openMovementTargetMap(zoneId);
-};
-
-// ============================================================
-// 6. КАРТА ЦЕЛЕЙ ДЛЯ РАЗВЕДЧИКА
-// ============================================================
-
-function openScoutTargetMap(fromZoneId) {
-    var modal = document.getElementById('modal-scout-target');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-scout-target';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) window.closeScoutTargetMap(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК — ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="window.closeScoutTargetMap()">✕</button></div><div id="modal-scout-target-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-scout-target-content');
-    var zone = WORLD_AREAS[fromZoneId];
-    var zoneName = zone ? zone.name : fromZoneId;
-    
-    var html = '<div class="modal-section"><h4>👁️ РАЗВЕДЧИК</h4>';
-    html += '<p style="color:#6a5a48;">Откуда: ' + zoneName + '</p>';
-    html += '<p style="color:#6a5a48;font-size:10px;">Нажмите на зону. Разведчик невидим на вражеской территории.</p>';
-    html += '<div id="scout-minimap" style="margin:10px 0;"></div>';
-    html += '</div>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-    
-    buildScoutTargetMap(fromZoneId);
-}
-
-function buildScoutTargetMap(fromZoneId) {
-    var container = document.getElementById('scout-minimap');
-    if (!container) return;
-    
-    var allZones = [];
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    
-    for (var id in WORLD_AREAS) {
-        var z = WORLD_AREAS[id];
-        allZones.push(z);
-        if (z.x < minX) minX = z.x;
-        if (z.x > maxX) maxX = z.x;
-        if (z.y < minY) minY = z.y;
-        if (z.y > maxY) maxY = z.y;
-    }
-    
-    if (allZones.length === 0) { container.innerHTML = '<p style="color:#c96a5a;">Мир пуст.</p>'; return; }
-    
-    var cols = maxX - minX + 1;
-    var rows = maxY - minY + 1;
-    var cellSize = Math.max(14, Math.min(30, Math.floor(460 / Math.max(cols, rows))));
-    var mapWidth = cols * cellSize;
-    var mapHeight = rows * cellSize;
-    
-    var lookup = {};
-    for (var i = 0; i < allZones.length; i++) {
-        lookup[allZones[i].x + ',' + allZones[i].y] = allZones[i];
-    }
-    
-    var fromZone = WORLD_AREAS[fromZoneId];
-    var fromX = fromZone ? fromZone.x : 0;
-    var fromY = fromZone ? fromZone.y : 0;
-    
-    var typeColors = {
-        'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
-        'river': '#2980b9', 'coast': '#d4b896', 'sea': '#0d3b5c', 'shallows': '#1a5276',
-        'crossroads': '#8B7355', 'castle': '#4a3728', 'castle_gate': '#4a3728',
-        'village': '#6b8a3a', 'mine': '#3d3d3d'
-    };
-    
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    
-    var html = '<div style="position:relative;width:' + mapWidth + 'px;height:' + mapHeight + 'px;background:#0a0806;border-radius:8px;margin:0 auto;">';
-    
-    for (var y = minY; y <= maxY; y++) {
-        for (var x = minX; x <= maxX; x++) {
-            var zone = lookup[x + ',' + y];
-            var bg = '#1a1410';
-            var isFrom = false;
-            var isWater = false;
-            var hasEnemy = false;
-            
-            if (zone) {
-                var colorKey = zone.type;
-                if (zone.type === 'coast' && zone.resourceType === 'shallows') colorKey = 'shallows';
-                bg = typeColors[colorKey] || '#3d3026';
-                
-                if (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows') isWater = true;
-                if (zone.id === fromZoneId) isFrom = true;
-                
-                if (!isFrom) {
-                    for (var hid in window._castleGarrisons) {
-                        if (hid === houseId) continue;
-                        var g = window._castleGarrisons[hid];
-                        ['infantry','cavalry','siege'].forEach(function(cat) {
-                            if (g[cat]) {
-                                g[cat].forEach(function(u) {
-                                    if (u.location === zone.id && !u.isScout) hasEnemy = true;
-                                });
-                            }
-                        });
-                    }
-                }
-            }
-            
-            var left = (x - minX) * cellSize + 1;
-            var top = (y - minY) * cellSize + 1;
-            var size = cellSize - 2;
-            
-            var dist = Math.abs(x - fromX) + Math.abs(y - fromY);
-            var timeEst = isWater ? '—' : (dist * 2 + 'м');
-            
-            html += '<div onclick="window.selectScoutTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ',' + hasEnemy + ')" style="';
-            html += 'position:absolute;left:' + left + 'px;top:' + top + 'px;width:' + size + 'px;height:' + size + 'px;';
-            html += 'background:' + bg + ';border:1px solid #2a201a;border-radius:2px;cursor:pointer;';
-            html += 'display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:' + Math.max(7, cellSize*0.3) + 'px;';
-            if (isFrom) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
-            if (isWater) html += 'opacity:0.6;';
-            html += '">';
-            if (hasEnemy) html += '<span style="font-size:10px;">🔴</span>';
-            html += '<span style="font-size:' + Math.max(7, cellSize*0.35) + 'px;color:#b8a890;">' + (zone ? zone.name.substring(0,3) : '') + '</span>';
-            html += '<span style="font-size:' + Math.max(6, cellSize*0.25) + 'px;color:#6a5a48;">' + dist + ' (' + timeEst + ')</span>';
-            html += '</div>';
-        }
-    }
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.selectScoutTarget = function(targetZoneId, distance, isWater, hasEnemy) {
-    if (!targetZoneId || isWater) {
-        setMessage('⛵ Нельзя отправить разведчика на воду.');
-        return;
-    }
-    
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    var timeMinutes = distance * 2;
-    
-    var modal = document.getElementById('modal-scout-action');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-scout-action';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) window.closeScoutAction(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>👁️ РАЗВЕДЧИК</h3><button class="close-btn" onclick="window.closeScoutAction()">✕</button></div><div id="modal-scout-action-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-scout-action-content');
-    var targetZone = WORLD_AREAS[targetZoneId];
-    var targetZoneName = targetZone ? targetZone.name : targetZoneId;
-    
-    var h = '<div class="modal-section"><h4>👁️ ' + targetZoneName + '</h4>';
-    h += '<p style="color:#6a5a48;">Дистанция: ' + distance + ' зон (~' + timeMinutes + ' мин)</p>';
-    h += '</div>';
-    
-    h += '<div class="modal-section"><h4>⚡ ДЕЙСТВИЕ</h4>';
-    h += '<button class="btn btn-game" onclick="window.moveScout(\'' + targetZoneId + '\',\'move\',' + timeMinutes + ')" style="margin:4px 0;">🚶 Идти</button><br>';
-    
-    if (hasEnemy) {
-        h += '<button class="btn btn-game" onclick="window.moveScout(\'' + targetZoneId + '\',\'scout\',' + timeMinutes + ')" style="margin:4px 0;background:#5a3a1a;">🔍 Разведка (50% риск)</button><br>';
-        h += '<span style="font-size:10px;color:#c96a5a;">Разведчик может погибнуть, но узнает состав врага</span><br>';
-    }
-    
-    h += '</div><button class="btn btn-secondary" onclick="window.closeScoutAction()">Отмена</button>';
-    
-    content.innerHTML = h;
-    modal.classList.remove('hide');
-};
-
-window.closeScoutAction = function() {
-    var m = document.getElementById('modal-scout-action');
-    if (m) m.classList.add('hide');
-};
-
-window.closeScoutTargetMap = function() {
-    var m = document.getElementById('modal-scout-target');
-    if (m) m.classList.add('hide');
+    setMessage('🎯 Выберите целевую зону на карте.');
 };
 
 // ============================================================
@@ -809,9 +718,6 @@ window.moveScout = function(targetZoneId, action, timeMinutes) {
             processScoutArrival(marchingEntry, houseId, scoutCat);
         }, timeMinutes * 60 * 1000);
     }
-    
-    window.closeScoutAction();
-    window.closeScoutTargetMap();
 };
 
 function processScoutArrival(marchingEntry, houseId, cat) {
@@ -871,186 +777,6 @@ function processScoutArrival(marchingEntry, houseId, cat) {
     
     updateMenu();
 }
-
-// ============================================================
-// 8. КАРТА ЦЕЛЕЙ ДЛЯ ОБЫЧНЫХ ВОЙСК
-// ============================================================
-
-function openMovementTargetMap(fromZoneId) {
-    var modal = document.getElementById('modal-move-target');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-move-target';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) window.closeMovementTargetMap(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-width:95vw;width:95vw;max-height:95vh;overflow-y:auto;"><div class="modal-header"><h3>🗺️ ВЫБОР ЦЕЛИ</h3><button class="close-btn" onclick="window.closeMovementTargetMap()">✕</button></div><div id="modal-move-target-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-move-target-content');
-    var zone = WORLD_AREAS[fromZoneId];
-    var zoneName = zone ? zone.name : fromZoneId;
-    
-    var html = '<div class="modal-section"><h4>🗺️ ВЫБЕРИТЕ ЦЕЛЬ</h4>';
-    html += '<p style="color:#6a5a48;">Откуда: ' + zoneName + '</p>';
-    html += '<p style="color:#6a5a48;font-size:10px;">Нажмите на зону чтобы выбрать действие</p>';
-    html += '<div id="move-target-minimap" style="margin:10px 0;"></div>';
-    html += '</div>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-    
-    buildMoveTargetMap(fromZoneId);
-}
-
-function buildMoveTargetMap(fromZoneId) {
-    var container = document.getElementById('move-target-minimap');
-    if (!container) return;
-    
-    var allZones = [];
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    
-    for (var id in WORLD_AREAS) {
-        var z = WORLD_AREAS[id];
-        allZones.push(z);
-        if (z.x < minX) minX = z.x;
-        if (z.x > maxX) maxX = z.x;
-        if (z.y < minY) minY = z.y;
-        if (z.y > maxY) maxY = z.y;
-    }
-    
-    if (allZones.length === 0) { container.innerHTML = '<p style="color:#c96a5a;">Мир пуст.</p>'; return; }
-    
-    var cols = maxX - minX + 1;
-    var rows = maxY - minY + 1;
-    var cellSize = Math.max(14, Math.min(30, Math.floor(460 / Math.max(cols, rows))));
-    var mapWidth = cols * cellSize;
-    var mapHeight = rows * cellSize;
-    
-    var lookup = {};
-    for (var i = 0; i < allZones.length; i++) {
-        lookup[allZones[i].x + ',' + allZones[i].y] = allZones[i];
-    }
-    
-    var fromZone = WORLD_AREAS[fromZoneId];
-    var fromX = fromZone ? fromZone.x : 0;
-    var fromY = fromZone ? fromZone.y : 0;
-    
-    var typeColors = {
-        'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
-        'river': '#2980b9', 'coast': '#d4b896', 'sea': '#0d3b5c', 'shallows': '#1a5276',
-        'crossroads': '#8B7355', 'castle': '#4a3728', 'castle_gate': '#4a3728',
-        'village': '#6b8a3a', 'mine': '#3d3d3d'
-    };
-    
-    var html = '<div style="position:relative;width:' + mapWidth + 'px;height:' + mapHeight + 'px;background:#0a0806;border-radius:8px;margin:0 auto;">';
-    
-    for (var y = minY; y <= maxY; y++) {
-        for (var x = minX; x <= maxX; x++) {
-            var zone = lookup[x + ',' + y];
-            var bg = '#1a1410';
-            var isFrom = false;
-            var isWater = false;
-            
-            if (zone) {
-                var colorKey = zone.type;
-                if (zone.type === 'coast' && zone.resourceType === 'shallows') colorKey = 'shallows';
-                bg = typeColors[colorKey] || '#3d3026';
-                
-                if (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows') isWater = true;
-                if (zone.id === fromZoneId) isFrom = true;
-            }
-            
-            var left = (x - minX) * cellSize + 1;
-            var top = (y - minY) * cellSize + 1;
-            var size = cellSize - 2;
-            
-            var dist = Math.abs(x - fromX) + Math.abs(y - fromY);
-            var timeEst = isWater ? '—' : (dist * 5 + 'м');
-            
-            html += '<div onclick="window.selectMoveTarget(\'' + (zone ? zone.id : '') + '\',' + dist + ',' + isWater + ')" style="';
-            html += 'position:absolute;left:' + left + 'px;top:' + top + 'px;width:' + size + 'px;height:' + size + 'px;';
-            html += 'background:' + bg + ';border:1px solid #2a201a;border-radius:2px;cursor:pointer;';
-            html += 'display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:' + Math.max(7, cellSize*0.3) + 'px;';
-            if (isFrom) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
-            if (isWater) html += 'opacity:0.6;';
-            html += '">';
-            html += '<span style="font-size:' + Math.max(7, cellSize*0.35) + 'px;color:#b8a890;">' + (zone ? zone.name.substring(0,3) : '') + '</span>';
-            html += '<span style="font-size:' + Math.max(6, cellSize*0.25) + 'px;color:#6a5a48;">' + dist + ' (' + timeEst + ')</span>';
-            html += '</div>';
-        }
-    }
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.selectMoveTarget = function(targetZoneId, distance, isWater) {
-    if (!targetZoneId || isWater) {
-        setMessage('⛵ Нельзя отправить войска на воду.');
-        return;
-    }
-    
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    var fromZoneId = window.currentMovingCommander.zoneId;
-    var targetZone = WORLD_AREAS[targetZoneId];
-    var isOwnZone = targetZone && targetZone.owner === houseId;
-    var timeMinutes = distance * 5;
-    
-    var actions = [];
-    actions.push({ id: 'move', label: '🚶 Идти (' + timeMinutes + ' мин)', desc: 'Переместиться в зону' });
-    if (isOwnZone) {
-        actions.push({ id: 'defend', label: '🛡️ Защита (' + timeMinutes + ' мин)', desc: 'Занять оборону в зоне' });
-    } else {
-        actions.push({ id: 'attack', label: '⚔️ Атака (' + timeMinutes + ' мин)', desc: 'Атаковать и захватить зону' });
-    }
-    
-    var modal = document.getElementById('modal-confirm-move');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-confirm-move';
-        overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) window.closeConfirmMove(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 ПОДТВЕРЖДЕНИЕ</h3><button class="close-btn" onclick="window.closeConfirmMove()">✕</button></div><div id="modal-confirm-move-content"></div></div>';
-        document.body.appendChild(overlay);
-        modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-confirm-move-content');
-    var targetZoneName = targetZone ? targetZone.name : targetZoneId;
-    var fromZone = WORLD_AREAS[fromZoneId];
-    var fromZoneName = fromZone ? fromZone.name : fromZoneId;
-    
-    var h = '<div class="modal-section"><h4>🎯 ' + fromZoneName + ' → ' + targetZoneName + '</h4>';
-    h += '<p style="color:#6a5a48;">Дистанция: ' + distance + ' зон (~' + timeMinutes + ' мин)</p>';
-    h += '<p style="color:#6a5a48;">Владелец цели: ' + (targetZone && targetZone.owner ? targetZone.owner : 'ничья') + '</p>';
-    
-    if (window.currentMovingCommander.type === 'commander') {
-        h += '<p style="color:#ffd700;">Отправляется: ' + window.currentMovingCommander.name + '</p>';
-    }
-    
-    h += '</div><div class="modal-section"><h4>⚡ ДЕЙСТВИЕ</h4>';
-    actions.forEach(function(a) {
-        h += '<button class="btn btn-game" onclick="window.confirmMovement(\'' + fromZoneId + '\',\'' + targetZoneId + '\',\'' + a.id + '\',' + timeMinutes + ')" style="margin:4px 0;">' + a.label + '</button><br>';
-        h += '<span style="font-size:10px;color:#6a5a48;">' + a.desc + '</span><br>';
-    });
-    h += '</div><button class="btn btn-secondary" onclick="window.closeConfirmMove()">Отмена</button>';
-    
-    content.innerHTML = h;
-    modal.classList.remove('hide');
-};
-
-window.closeMovementTargetMap = function() {
-    var m = document.getElementById('modal-move-target');
-    if (m) m.classList.add('hide');
-};
-
-window.closeConfirmMove = function() {
-    var m = document.getElementById('modal-confirm-move');
-    if (m) m.classList.add('hide');
-};
 
 // ============================================================
 // 9. ПОДТВЕРЖДЕНИЕ И ОТПРАВКА ВОЙСК
@@ -1128,9 +854,6 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes)
     garrison.marching.push(marchingEntry);
     
     saveData();
-    window.closeConfirmMove();
-    window.closeMovementTargetMap();
-    window.closeOwnUnitsModal();
     
     setMessage('✅ Отряд (' + takenUnits.length + ' юнитов) выступил. Прибудет через ' + timeMinutes + ' мин.');
     addHouseLog(houseId, '🚶 ' + currentUser + ' отправил ' + takenUnits.length + ' юнитов в ' + getZoneName(targetZoneId));
@@ -1341,14 +1064,10 @@ window.detachScout = detachScout;
 window.selectCommanderForMove = selectCommanderForMove;
 window.selectScoutForMove = selectScoutForMove;
 window.selectUnattachedForMove = selectUnattachedForMove;
-window.selectMoveTarget = selectMoveTarget;
-window.selectScoutTarget = selectScoutTarget;
 window.moveScout = moveScout;
 window.confirmMovement = confirmMovement;
+window.confirmTarget = confirmTarget;
 window.closeConfirmMove = closeConfirmMove;
-window.closeMovementTargetMap = closeMovementTargetMap;
-window.closeScoutTargetMap = closeScoutTargetMap;
-window.closeScoutAction = closeScoutAction;
 window.closeZoneInfo = closeZoneInfo;
 window.processMarchArrival = processMarchArrival;
 window.resolveBattle = resolveBattle;
