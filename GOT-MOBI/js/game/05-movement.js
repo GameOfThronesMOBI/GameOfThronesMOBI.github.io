@@ -522,11 +522,7 @@ window.openWorldMap = function() {
             var left = (x - minX) * cellSize + 1;
             var top = (y - minY) * cellSize + padding + 1;
             
-            html += '<div';
-            if (houseId && zone && !isWater) {
-                html += ' onclick="handleZoneClick(\'' + zone.id + '\')"';
-            }
-            html += ' style="';
+            html += '<div style="';
             html += 'position:absolute;';
             html += 'left:' + left + 'px;top:' + top + 'px;';
             html += 'width:' + (cellSize-2) + 'px;height:' + (cellSize-2) + 'px;';
@@ -534,7 +530,6 @@ window.openWorldMap = function() {
             html += 'border-radius:2px;';
             html += 'overflow:visible;';
             html += 'display:flex;align-items:center;justify-content:center;';
-            if (houseId && zone && !isWater) html += 'cursor:pointer;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
@@ -606,6 +601,37 @@ window.openWorldMap = function() {
     
     content.innerHTML = html;
     modal.classList.remove('hide');
+    
+    // Обработчик кликов по зонам (для членов домов)
+    if (houseId) {
+        setTimeout(function() {
+            var container = document.getElementById('world-map-container');
+            if (container) {
+                container.addEventListener('click', function(e) {
+                    var target = e.target;
+                    while (target && target !== container) {
+                        if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
+                            var l = parseInt(target.style.left);
+                            var t = parseInt(target.style.top);
+                            var zx = minX + Math.floor((l - 1) / cellSize);
+                            var zy = minY + Math.floor((t - 1 - padding) / cellSize);
+                            var zone = lookup[zx + ',' + zy];
+                            if (zone && zone.id) {
+                                var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
+                                    zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
+                                    zone.type === 'reef' || (zone.type === 'coast' && zone.resourceType === 'shallows'));
+                                if (!isWater && typeof handleZoneClick === 'function') {
+                                    handleZoneClick(zone.id);
+                                }
+                            }
+                            return;
+                        }
+                        target = target.parentElement;
+                    }
+                });
+            }
+        }, 100);
+    }
 };
 
 window.closeWorldMap = function() {
