@@ -501,6 +501,18 @@ const ALL_ITEMS = {
 };
 
 // ============================================================
+// ОСАДНЫЕ ОРУДИЯ
+// ============================================================
+
+const SIEGE_WEAPONS = {
+    ram:       { name: '🐏 Таран',          type: 'siege', siegeType: 'ram',       effect: { gateBreach: 20 },       weight: 80,  description: 'Пробивает ворота замка. +20% к штурму ворот.' },
+    tower:     { name: '🏗️ Осадная башня',   type: 'siege', siegeType: 'tower',     effect: { wallBreach: 30 },       weight: 120, description: 'Позволяет взобраться на стены. +30% к штурму стен.' },
+    catapult:  { name: '🔥 Катапульта',      type: 'siege', siegeType: 'catapult',  effect: { wallBreach: 25 },       weight: 100, description: 'Метает камни в стены. +25% к разрушению стен.' },
+    trebuchet: { name: '🪨 Требушет',        type: 'siege', siegeType: 'trebuchet', effect: { wallBreach: 40 },       weight: 150, description: 'Мощнейшее орудие осады. +40% к разрушению стен.' },
+    scorpion:  { name: '🎯 Скорпион',        type: 'siege', siegeType: 'scorpion',  effect: { garrisonDamage: 15 },    weight: 60,  description: 'Поражает защитников на стенах. +15% урона гарнизону.' }
+};
+
+// ============================================================
 // СОЛДАТСКОЕ СНАРЯЖЕНИЕ (только для ботов, создаётся в замковой кузнице)
 // ============================================================
 
