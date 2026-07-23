@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/stormlands/castles/buckler_castle.js
-// ЗАМОК БРОНЗОВЫЙ ЩИТ — ПОЛНАЯ ЛОГИКА
+// ЗАМОК БРОНЗОВЫЙ ЩИТ — ПОЛНАЯ ЛОГИКА + ОСАДНЫЕ ОРУДИЯ
 // ============================================================
 
 var _castlePrevUpdateStory = window.updateStory;
@@ -29,7 +29,7 @@ function getCastleGranary(castleId) {
 
 function getCastleArmory(castleId) {
     if (!window._castleArmories[castleId]) {
-        window._castleArmories[castleId] = { weapons: [], armor: [], soldierWeapons: [], soldierArmor: [] };
+        window._castleArmories[castleId] = { weapons: [], armor: [], soldierWeapons: [], soldierArmor: [], siegeWeapons: [] };
     }
     return window._castleArmories[castleId];
 }
@@ -96,6 +96,18 @@ const CASTLE_BUILDINGS = [
 ];
 
 var CASTLE_ID = 'buckler';
+
+// ============================================================
+// ОСАДНЫЕ ОРУДИЯ — РЕЦЕПТЫ
+// ============================================================
+
+var SIEGE_RECIPES = {
+    ram:       { itemKey: 'ram',       planks: 10, steel: 5,  leather: 0, time: 180 },
+    tower:     { itemKey: 'tower',     planks: 20, steel: 0,  leather: 5, time: 360 },
+    catapult:  { itemKey: 'catapult',  planks: 15, steel: 10, leather: 0, time: 240 },
+    trebuchet: { itemKey: 'trebuchet', planks: 25, steel: 15, leather: 0, time: 480 },
+    scorpion:  { itemKey: 'scorpion',  planks: 8,  steel: 5,  leather: 0, time: 120 }
+};
 
 // ============================================================
 // ТАВЕРНА
@@ -282,7 +294,7 @@ function openCastleWorkshop() {
     }
     
     var content = document.getElementById('modal-workshop-content');
-    var totalArmory = armory.weapons.length + armory.armor.length + armory.soldierWeapons.length + armory.soldierArmor.length;
+    var totalArmory = armory.weapons.length + armory.armor.length + armory.soldierWeapons.length + armory.soldierArmor.length + (armory.siegeWeapons ? armory.siegeWeapons.length : 0);
     var totalIron = getTotalQualityResource(storage, 'iron');
     var totalSteel = getTotalQualityResource(storage, 'steel');
     var totalPlanks = getTotalQualityResource(storage, 'planks');
@@ -314,6 +326,10 @@ function openCastleWorkshop() {
     
     html += '<div class="modal-section"><h4>🛡️ ЛАТНАЯ БРОНЯ</h4>';
     html += '<div class="row"><span class="label">Комплект латной брони (12 стали)</span><span class="value"><button class="btn btn-small" onclick="queueWorkshopItem(\'plate_armor\')">🔨 1ч</button></span></div>';
+    html += '</div>';
+    
+    html += '<div class="modal-section"><h4>🏗️ ОСАДНЫЕ ОРУДИЯ</h4>';
+    html += '<button class="btn" onclick="openSiegeCraft()">🏗️ Открыть производство осадных орудий</button>';
     html += '</div>';
     
     html += '<p style="color:#c96a5a;font-size:11px;">❌ Кожевня и Плотник отсутствуют.</p>';
@@ -358,7 +374,14 @@ function cancelQueueItem(index) {
     if (index >= queue.length) { setMessage('❌ Предмет не найден.'); return; }
     var item = queue.splice(index, 1)[0];
     
-    if (item.id === 'steel') { addQualityResource(storage, 'iron', 'Обычное', 2); storage.coal += 1; }
+    if (item.isSiege) {
+        var recipe = SIEGE_RECIPES[item.siegeKey || item.itemKey];
+        if (recipe) {
+            if (recipe.planks > 0) addQualityResource(storage, 'planks', 'Обычное', recipe.planks);
+            if (recipe.steel > 0) addQualityResource(storage, 'steel', 'Обычное', recipe.steel);
+            if (recipe.leather > 0) addQualityResource(storage, 'leather', 'Обычное', recipe.leather);
+        }
+    } else if (item.id === 'steel') { addQualityResource(storage, 'iron', 'Обычное', 2); storage.coal += 1; }
     else if (item.id === 'sword') { addQualityResource(storage, 'steel', 'Обычное', 3); }
     else if (item.id === 'spear') { addQualityResource(storage, 'steel', 'Обычное', 1); addQualityResource(storage, 'planks', 'Обычное', 2); }
     else if (item.id === 'shield') { addQualityResource(storage, 'steel', 'Обычное', 6); }
@@ -379,8 +402,17 @@ function processWorkshopQueue() {
             var done = queue.shift();
             var storage = getCastleStorage(CASTLE_ID);
             var armory = getCastleArmory(CASTLE_ID);
-            if (done.id === 'steel') { addQualityResource(storage, 'steel', 'Обычное', 1); setMessage('✅ Сталь готова!'); }
-            else {
+            
+            if (done.isSiege) {
+                var siegeItem = JSON.parse(JSON.stringify(SIEGE_WEAPONS[done.itemKey]));
+                siegeItem.count = 1;
+                if (!armory.siegeWeapons) armory.siegeWeapons = [];
+                armory.siegeWeapons.push(siegeItem);
+                setMessage('✅ ' + done.name + ' готов!');
+            } else if (done.id === 'steel') {
+                addQualityResource(storage, 'steel', 'Обычное', 1);
+                setMessage('✅ Сталь готова!');
+            } else {
                 var item = null, cat = '';
                 if (done.id === 'sword') { item = SOLDIER_ITEMS.weapons.sword[0]; cat = 'soldierWeapons'; }
                 else if (done.id === 'spear') { item = SOLDIER_ITEMS.weapons.spear[0]; cat = 'soldierWeapons'; }
@@ -395,6 +427,105 @@ function processWorkshopQueue() {
 }
 
 function closeCastleWorkshop() { var m = document.getElementById('modal-workshop'); if (m) m.classList.add('hide'); }
+
+// ============================================================
+// ОСАДНЫЕ ОРУДИЯ — КРАФТ
+// ============================================================
+
+function openSiegeCraft() {
+    if (!checkBucklerAccess()) return;
+    var storage = getCastleStorage(CASTLE_ID);
+    var queue = getCastleQueue(CASTLE_ID);
+    
+    var modal = document.getElementById('modal-siege');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-siege'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeSiegeCraft(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🏗️ ОСАДНЫЕ ОРУДИЯ</h3><button class="close-btn" onclick="closeSiegeCraft()">✕</button></div><div id="modal-siege-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-siege-content');
+    var totalPlanks = getTotalQualityResource(storage, 'planks');
+    var totalSteel = getTotalQualityResource(storage, 'steel');
+    var totalLeather = getTotalQualityResource(storage, 'leather');
+    
+    var html = '<div class="modal-section"><h4>🏗️ ПРОИЗВОДСТВО ОСАДНЫХ ОРУДИЙ</h4>';
+    html += '<p style="color:#6a5a48;font-size:11px;">📦 Доски: ' + totalPlanks + ' | Сталь: ' + totalSteel + ' | Кожа: ' + totalLeather + '</p>';
+    html += '<p style="color:#6a5a48;font-size:11px;">⏳ Очередь: ' + queue.length + '/10</p></div>';
+    
+    html += '<div class="modal-section"><h4>🔨 ДОСТУПНЫЕ ОРУДИЯ</h4>';
+    
+    for (var key in SIEGE_RECIPES) {
+        var recipe = SIEGE_RECIPES[key];
+        var item = SIEGE_WEAPONS[recipe.itemKey];
+        if (!item) continue;
+        
+        var canCraft = totalPlanks >= recipe.planks && totalSteel >= recipe.steel && totalLeather >= recipe.leather;
+        var timeStr = Math.floor(recipe.time / 60) + ' ч ' + (recipe.time % 60) + ' мин';
+        
+        html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:12px;margin:6px 0;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div>';
+        html += '<div style="font-size:14px;color:#c9b694;">' + item.name + '</div>';
+        html += '<div style="font-size:11px;color:#6a5a48;">' + item.description + '</div>';
+        html += '<div style="font-size:11px;color:#6a5a48;">';
+        html += '🪵 Доски: ' + recipe.planks;
+        if (recipe.steel > 0) html += ' | ⚒️ Сталь: ' + recipe.steel;
+        if (recipe.leather > 0) html += ' | 🧵 Кожа: ' + recipe.leather;
+        html += ' | ⏱️ ' + timeStr;
+        html += '</div>';
+        html += '</div>';
+        html += '<div><button class="btn btn-small" onclick="queueSiegeItem(\'' + key + '\')" ' + (canCraft ? '' : 'disabled') + '>' + (canCraft ? '🔨 Создать' : '❌') + '</button></div>';
+        html += '</div></div>';
+    }
+    
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeSiegeCraft()" style="margin-top:10px;">Закрыть</button>';
+    
+    content.innerHTML = html; modal.classList.remove('hide');
+}
+
+function queueSiegeItem(siegeKey) {
+    var storage = getCastleStorage(CASTLE_ID);
+    var queue = getCastleQueue(CASTLE_ID);
+    var recipe = SIEGE_RECIPES[siegeKey];
+    if (!recipe) { setMessage('❌ Рецепт не найден.'); return; }
+    if (queue.length >= 10) { setMessage('❌ Очередь заполнена.'); return; }
+    
+    var totalPlanks = getTotalQualityResource(storage, 'planks');
+    var totalSteel = getTotalQualityResource(storage, 'steel');
+    var totalLeather = getTotalQualityResource(storage, 'leather');
+    
+    if (totalPlanks < recipe.planks || totalSteel < recipe.steel || totalLeather < recipe.leather) {
+        setMessage('❌ Недостаточно ресурсов.');
+        return;
+    }
+    
+    if (recipe.planks > 0 && storage.planks && storage.planks['Обычное']) {
+        var take = Math.min(storage.planks['Обычное'], recipe.planks);
+        storage.planks['Обычное'] -= take;
+        if (storage.planks['Обычное'] <= 0) delete storage.planks['Обычное'];
+    }
+    if (recipe.steel > 0 && storage.steel && storage.steel['Обычное']) {
+        var take = Math.min(storage.steel['Обычное'], recipe.steel);
+        storage.steel['Обычное'] -= take;
+        if (storage.steel['Обычное'] <= 0) delete storage.steel['Обычное'];
+    }
+    if (recipe.leather > 0 && storage.leather && storage.leather['Обычное']) {
+        var take = Math.min(storage.leather['Обычное'], recipe.leather);
+        storage.leather['Обычное'] -= take;
+        if (storage.leather['Обычное'] <= 0) delete storage.leather['Обычное'];
+    }
+    
+    queue.push({ id: 'siege_' + siegeKey, name: SIEGE_WEAPONS[recipe.itemKey].name, timeLeft: recipe.time, isSiege: true, itemKey: recipe.itemKey, siegeKey: siegeKey });
+    saveData();
+    setMessage('✅ ' + SIEGE_WEAPONS[recipe.itemKey].name + ' добавлен в очередь');
+    closeSiegeCraft();
+}
+
+function closeSiegeCraft() { var m = document.getElementById('modal-siege'); if (m) m.classList.add('hide'); }
 
 // ============================================================
 // СКЛАД
@@ -653,6 +784,7 @@ function openCastleArmory() {
     html += '<button class="tab-btn" onclick="showArmoryTab(\'armor\')">🛡️ Броня ('+armory.armor.length+')</button>';
     html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierWeapons\')">⚔️ Солд. оружие ('+armory.soldierWeapons.length+')</button>';
     html += '<button class="tab-btn" onclick="showArmoryTab(\'soldierArmor\')">🛡️ Солд. броня ('+armory.soldierArmor.length+')</button>';
+    html += '<button class="tab-btn" onclick="showArmoryTab(\'siegeWeapons\')">🏗️ Осадные (' + (armory.siegeWeapons ? armory.siegeWeapons.length : 0) + ')</button>';
     html += '<button class="tab-btn" onclick="showArmoryTab(\'donate\')">📥 Положить</button>';
     html += '</div><div id="armory-tab-content"></div>';
     html += '<button class="btn btn-secondary" onclick="closeCastleArmory()" style="margin-top:10px;">Закрыть</button>';
@@ -665,7 +797,7 @@ function showArmoryTab(tab) {
     if (!container) return;
     var armory = getCastleArmory(CASTLE_ID);
     var html = '';
-    var titles = { weapons:'🗡️ Оружие', armor:'🛡️ Броня', soldierWeapons:'⚔️ Солдатское оружие', soldierArmor:'🛡️ Солдатская броня' };
+    var titles = { weapons:'🗡️ Оружие', armor:'🛡️ Броня', soldierWeapons:'⚔️ Солдатское оружие', soldierArmor:'🛡️ Солдатская броня', siegeWeapons:'🏗️ Осадные орудия' };
     
     if (tab === 'donate') {
         var user = users[currentUser];
@@ -680,6 +812,17 @@ function showArmoryTab(tab) {
             }
         });
         if (!hasItems) html += '<p style="color:#6a5a48;">Нет предметов для передачи.</p>';
+    } else if (tab === 'siegeWeapons') {
+        var items = armory.siegeWeapons || [];
+        html += '<h4>🏗️ Осадные орудия (' + items.length + ' шт.)</h4>';
+        if (items.length === 0) html += '<p style="color:#6a5a48;">Пусто.</p>';
+        else {
+            var grouped = {};
+            items.forEach(function(item) { var k = item.name; if (!grouped[k]) grouped[k] = {item:item,count:0}; grouped[k].count++; });
+            for (var k in grouped) {
+                html += '<div class="row"><span class="label">' + grouped[k].item.name + '</span><span class="value">×' + grouped[k].count + ' <button class="btn btn-small" onclick="takeSiegeFromArmory(\'' + k + '\')">📤</button></span></div>';
+            }
+        }
     } else {
         var items = armory[tab] || [];
         html += '<h4>'+titles[tab]+' ('+items.length+' шт.)</h4>';
@@ -695,6 +838,32 @@ function showArmoryTab(tab) {
     container.innerHTML = html;
 }
 
+function takeSiegeFromArmory(name) {
+    var armory = getCastleArmory(CASTLE_ID);
+    var user = users[currentUser];
+    if (!user) return;
+    var g = user.game;
+    
+    var amount = parseInt(prompt('Сколько забрать?'));
+    if (isNaN(amount) || amount <= 0) { setMessage('❌ Отменено.'); return; }
+    
+    var taken = 0;
+    for (var i = armory.siegeWeapons.length - 1; i >= 0; i--) {
+        if (armory.siegeWeapons[i].name === name && taken < amount) {
+            var item = armory.siegeWeapons.splice(i, 1)[0];
+            addToInventory(g, item);
+            taken++;
+        }
+    }
+    
+    if (taken > 0) {
+        saveData(); setMessage('✅ Забрано: ' + taken + ' ' + name); updateMenu();
+    } else {
+        setMessage('❌ Не найдено.');
+    }
+    showArmoryTab('siegeWeapons');
+}
+
 function donateToArmory(index) {
     var user = users[currentUser];
     if (!user) return;
@@ -702,12 +871,15 @@ function donateToArmory(index) {
     var armory = getCastleArmory(CASTLE_ID);
     if (index >= g.inventory.length) { setMessage('❌ Предмет не найден.'); return; }
     var item = g.inventory.splice(index, 1)[0];
-    var cat = 'weapons';
-    if (item.armorClass === 'leather' || item.armorClass === 'plate') cat = 'armor';
-    if (item.isSoldierGear) {
-        cat = (item.type === 'armor') ? 'soldierArmor' : 'soldierWeapons';
+    
+    if (item.type === 'siege') {
+        if (!armory.siegeWeapons) armory.siegeWeapons = [];
+        armory.siegeWeapons.push(item);
+    } else {
+        var cat = 'weapons';
+        if (item.armorClass === 'leather' || item.armorClass === 'plate') cat = 'armor';
+        armory[cat].push(item);
     }
-    armory[cat].push(item);
     saveData(); setMessage('✅ ' + item.name + ' перемещён в оружейную.'); updateMenu(); showArmoryTab('donate');
 }
 
@@ -822,5 +994,33 @@ window.enterBucklerCastle = function() {
     updateMenu(); updateStory(); updateActions(); saveData();
 };
 
+// ============================================================
+// РЕГИСТРАЦИЯ ГЛОБАЛЬНЫХ ФУНКЦИЙ
+// ============================================================
+
+window.openCastleMap = openCastleMap;
+window.goToCastleBuilding = goToCastleBuilding;
+window.enterBucklerCastle = enterBucklerCastle;
+window.openCastleTavern = openCastleTavern;
+window.closeCastleTavern = closeCastleTavern;
+window.openCastleStable = openCastleStable;
+window.closeCastleStable = closeCastleStable;
+window.openCastleWorkshop = openCastleWorkshop;
+window.closeCastleWorkshop = closeCastleWorkshop;
+window.openSiegeCraft = openSiegeCraft;
+window.closeSiegeCraft = closeSiegeCraft;
+window.queueSiegeItem = queueSiegeItem;
+window.openCastleStorage = openCastleStorage;
+window.closeCastleStorage = closeCastleStorage;
+window.openCastleGranary = openCastleGranary;
+window.closeCastleGranary = closeCastleGranary;
+window.openCastleArmory = openCastleArmory;
+window.closeCastleArmory = closeCastleArmory;
+window.takeSiegeFromArmory = takeSiegeFromArmory;
+window.donateToArmory = donateToArmory;
+window.donateToStorage = donateToStorage;
+window.queueWorkshopItem = queueWorkshopItem;
+window.cancelQueueItem = cancelQueueItem;
+
 processWorkshopQueue();
-console.log('🏰 Замок Бронзовый Щит загружен!');
+console.log('🏰 Замок Бронзовый Щит загружен (с осадными орудиями)!');
