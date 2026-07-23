@@ -1,5 +1,5 @@
 // ============================================================
-// js/game/06-diplomacy.js — МОЙ ДОМ, ПРИГЛАШЕНИЯ, РОЛИ (С ЛЕТОПИСЬЮ)
+// js/game/06-diplomacy.js — МОЙ ДОМ, ПРИГЛАШЕНИЯ, РОЛИ, АРМИЯ
 // ============================================================
 
 var HOUSE_RANKS = {
@@ -152,60 +152,19 @@ window.showHouseTab = function(tab) {
     
     if (tab === 'army') {
         html += '<div class="modal-section"><h4>⚔️ АРМИЯ ДОМА</h4>';
-        var garrison = window._castleGarrisons && window._castleGarrisons[g.house] ? window._castleGarrisons[g.house] : { infantry: [], cavalry: [], siege: [] };
         
-        var infantryGrouped = {};
-        if (garrison.infantry && Array.isArray(garrison.infantry)) {
-            garrison.infantry.forEach(function(u) {
-                var k = u.type;
-                if (!infantryGrouped[k]) infantryGrouped[k] = 0;
-                infantryGrouped[k]++;
-            });
-        }
-        html += '<h5>🗡️ Пехота (' + (garrison.infantry ? garrison.infantry.length : 0) + ' чел.)</h5>';
-        if (Object.keys(infantryGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет пехоты.</p>';
-        else {
-            for (var k in infantryGrouped) {
-                var ut = typeof UNIT_TYPES !== 'undefined' ? UNIT_TYPES[k] : null;
-                html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + infantryGrouped[k] + '</span></div>';
-            }
-        }
-        
-        var cavalryGrouped = {};
-        if (garrison.cavalry && Array.isArray(garrison.cavalry)) {
-            garrison.cavalry.forEach(function(u) {
-                var k = u.type;
-                if (!cavalryGrouped[k]) cavalryGrouped[k] = 0;
-                cavalryGrouped[k]++;
-            });
-        }
-        html += '<h5 style="margin-top:10px;">🐴 Кавалерия (' + (garrison.cavalry ? garrison.cavalry.length : 0) + ' чел.)</h5>';
-        if (Object.keys(cavalryGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет кавалерии.</p>';
-        else {
-            for (var k in cavalryGrouped) {
-                var ut = typeof UNIT_TYPES !== 'undefined' ? UNIT_TYPES[k] : null;
-                html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + cavalryGrouped[k] + '</span></div>';
-            }
-        }
-        
-        var siegeGrouped = {};
-        if (garrison.siege && Array.isArray(garrison.siege)) {
-            garrison.siege.forEach(function(u) {
-                var k = u.siegeType || u.type;
-                if (!siegeGrouped[k]) siegeGrouped[k] = 0;
-                siegeGrouped[k]++;
-            });
-        }
-        html += '<h5 style="margin-top:10px;">🏗️ Осадные орудия (' + (garrison.siege ? garrison.siege.length : 0) + ' шт.)</h5>';
-        if (Object.keys(siegeGrouped).length === 0) html += '<p style="color:#6a5a48;">Нет осадных орудий.</p>';
-        else {
-            for (var k in siegeGrouped) {
-                var sw = typeof SIEGE_WEAPONS !== 'undefined' ? SIEGE_WEAPONS[k] : null;
-                html += '<div class="row"><span class="label">' + (sw ? sw.name : k) + '</span><span class="value">×' + siegeGrouped[k] + '</span></div>';
-            }
-        }
-        
+        // Под-вкладки
+        html += '<div class="tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
+        html += '<button class="tab-btn active" onclick="showArmySubTab(\'castle\')">🏰 В замке</button>';
+        html += '<button class="tab-btn" onclick="showArmySubTab(\'field\')">🌍 В поле</button>';
+        html += '<button class="tab-btn" onclick="showArmySubTab(\'marching\')">🚶 В пути</button>';
         html += '</div>';
+        html += '<div id="army-sub-tab-content"></div>';
+        html += '</div>';
+        
+        container.innerHTML = html;
+        showArmySubTab('castle');
+        return;
     }
     
     if (tab === 'chronicle') {
@@ -257,6 +216,252 @@ window.showHouseTab = function(tab) {
     
     container.innerHTML = html;
 };
+
+// ============================================================
+// 2.5 ПОД-ВКЛАДКИ АРМИИ
+// ============================================================
+
+window.showArmySubTab = function(subTab) {
+    var container = document.getElementById('army-sub-tab-content');
+    if (!container) return;
+    var user = users[currentUser];
+    var g = user.game;
+    var houseId = g.house;
+    var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [], marching: [] };
+    var html = '';
+    
+    if (subTab === 'castle') {
+        // В замке
+        html += '<div class="modal-section"><h4>🏰 ГАРНИЗОН В ЗАМКЕ</h4>';
+        var castleUnits = { infantry: 0, cavalry: 0, siege: 0, scouts: 0 };
+        
+        ['infantry','cavalry','siege'].forEach(function(cat) {
+            if (garrison[cat]) {
+                garrison[cat].forEach(function(u) {
+                    if (u.location === 'castle' || !u.location) {
+                        if (u.isScout) castleUnits.scouts++;
+                        else castleUnits[cat]++;
+                    }
+                });
+            }
+        });
+        
+        var totalCastle = castleUnits.infantry + castleUnits.cavalry + castleUnits.siege + castleUnits.scouts;
+        if (totalCastle === 0) {
+            html += '<p style="color:#6a5a48;">Нет войск в замке.</p>';
+        } else {
+            html += '<p style="color:#6a5a48;">Всего: ' + totalCastle + ' юнитов</p>';
+            
+            if (castleUnits.infantry > 0 || castleUnits.cavalry > 0 || castleUnits.siege > 0) {
+                html += '<h5>⚔️ Боевые юниты</h5>';
+                var castleGrouped = {};
+                ['infantry','cavalry','siege'].forEach(function(cat) {
+                    if (garrison[cat]) {
+                        garrison[cat].forEach(function(u) {
+                            if ((u.location === 'castle' || !u.location) && !u.isScout) {
+                                var k = u.type;
+                                if (!castleGrouped[k]) castleGrouped[k] = 0;
+                                castleGrouped[k]++;
+                            }
+                        });
+                    }
+                });
+                for (var k in castleGrouped) {
+                    var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
+                    html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + castleGrouped[k] + '</span></div>';
+                }
+            }
+            
+            if (castleUnits.scouts > 0) {
+                html += '<h5>👁️ Разведчики</h5>';
+                html += '<div class="row"><span class="label">👁️ Разведчики</span><span class="value">×' + castleUnits.scouts + '</span></div>';
+            }
+        }
+        html += '</div>';
+    }
+    
+    if (subTab === 'field') {
+        // В поле
+        html += '<div class="modal-section"><h4>🌍 ВОЙСКА В ПОЛЕ</h4>';
+        var fieldByZone = {};
+        
+        ['infantry','cavalry','siege'].forEach(function(cat) {
+            if (garrison[cat]) {
+                garrison[cat].forEach(function(u) {
+                    if (u.location && u.location !== 'castle') {
+                        var zid = u.location;
+                        if (!fieldByZone[zid]) fieldByZone[zid] = { units: {}, scouts: 0, total: 0 };
+                        if (u.isScout) {
+                            fieldByZone[zid].scouts++;
+                        } else {
+                            var k = u.type;
+                            if (!fieldByZone[zid].units[k]) fieldByZone[zid].units[k] = 0;
+                            fieldByZone[zid].units[k]++;
+                        }
+                        fieldByZone[zid].total++;
+                    }
+                });
+            }
+        });
+        
+        var zoneCount = Object.keys(fieldByZone).length;
+        if (zoneCount === 0) {
+            html += '<p style="color:#6a5a48;">Нет войск в поле.</p>';
+        } else {
+            html += '<p style="color:#6a5a48;">Войска в ' + zoneCount + ' зонах</p>';
+            
+            for (var zid in fieldByZone) {
+                var zd = fieldByZone[zid];
+                var zoneName = getZoneName(zid);
+                html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:10px;margin:6px 0;">';
+                html += '<h5 style="color:#c9b694;">📍 ' + zoneName + ' (' + zd.total + ' юнитов)</h5>';
+                
+                for (var k in zd.units) {
+                    var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
+                    html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + zd.units[k] + '</span></div>';
+                }
+                
+                if (zd.scouts > 0) {
+                    html += '<div class="row"><span class="label">👁️ Разведчики</span><span class="value">×' + zd.scouts + '</span></div>';
+                }
+                
+                html += '</div>';
+            }
+        }
+        html += '</div>';
+    }
+    
+    if (subTab === 'marching') {
+        // В пути
+        html += '<div class="modal-section"><h4>🚶 АРМИИ В ПУТИ</h4>';
+        var marching = garrison.marching || [];
+        
+        if (marching.length === 0) {
+            html += '<p style="color:#6a5a48;">Нет армий в пути.</p>';
+        } else {
+            html += '<p style="color:#6a5a48;">Марширующих отрядов: ' + marching.length + '</p>';
+            
+            marching.forEach(function(m, i) {
+                var fromZoneName = '?';
+                var toZoneName = '?';
+                var currentZoneName = '?';
+                var totalUnits = m.units ? m.units.length : 0;
+                var timeLeft = 0;
+                var progress = '';
+                
+                if (m.path) {
+                    // Новый формат (пошаговый)
+                    var currentZoneId = m.path[m.currentStep] || m.path[0];
+                    var nextZoneId = m.path[m.currentStep + 1] || m.path[m.path.length - 1];
+                    var lastZoneId = m.path[m.path.length - 1];
+                    
+                    fromZoneName = getZoneName(m.path[0]);
+                    toZoneName = getZoneName(lastZoneId);
+                    currentZoneName = getZoneName(currentZoneId);
+                    
+                    timeLeft = Math.max(0, Math.ceil((m.nextMoveTime - Date.now()) / 60000));
+                    progress = 'Шаг ' + (m.currentStep + 1) + '/' + (m.path.length - 1);
+                } else {
+                    fromZoneName = getZoneName(m.fromZone);
+                    toZoneName = getZoneName(m.targetZone);
+                    currentZoneName = fromZoneName;
+                    timeLeft = Math.max(0, Math.ceil((m.arrivesAt - Date.now()) / 60000));
+                    progress = 'В пути';
+                }
+                
+                var emoji = '🟢';
+                if (m.isScout) emoji = '👁️';
+                else if (m.units) {
+                    var hasC = false, hasS = false;
+                    m.units.forEach(function(u) {
+                        if (u.siege) hasS = true;
+                        else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') hasC = true;
+                    });
+                    if (hasS) emoji = '🟤';
+                    else if (hasC) emoji = '🐴';
+                }
+                
+                html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:10px;padding:10px;margin:6px 0;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                html += '<div>';
+                html += '<span style="font-size:16px;">' + emoji + '</span> ';
+                html += '<strong style="color:#c9b694;">' + fromZoneName + ' → ' + toZoneName + '</strong>';
+                html += '<br><span style="font-size:11px;color:#6a5a48;">📍 ' + currentZoneName + ' | ⏱️ ~' + timeLeft + ' мин | ' + progress + '</span>';
+                html += '<br><span style="font-size:11px;color:#6a5a48;">👥 ' + totalUnits + ' юнитов</span>';
+                html += '</div>';
+                html += '<div>';
+                html += '<button class="btn btn-small" onclick="showMarchDetails(' + i + ')">📋 Состав</button>';
+                html += '</div>';
+                html += '</div></div>';
+            });
+        }
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+};
+
+// ============================================================
+// 2.6 ДЕТАЛИ МАРША
+// ============================================================
+
+window.showMarchDetails = function(index) {
+    var user = users[currentUser];
+    var houseId = user.game.house;
+    var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [], marching: [] };
+    var marching = garrison.marching || [];
+    
+    if (index >= marching.length) {
+        setMessage('❌ Отряд не найден.');
+        return;
+    }
+    
+    var m = marching[index];
+    var units = m.units || [];
+    
+    var modal = document.getElementById('modal-march-details');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-march-details';
+        overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeMarchDetails(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 СОСТАВ ОТРЯДА</h3><button class="close-btn" onclick="closeMarchDetails()">✕</button></div><div id="modal-march-details-content"></div></div>';
+        document.body.appendChild(overlay);
+        modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-march-details-content');
+    var html = '<div class="modal-section"><h4>📋 СОСТАВ ОТРЯДА</h4>';
+    html += '<p style="color:#6a5a48;">Всего: ' + units.length + ' юнитов</p>';
+    
+    var grouped = {};
+    units.forEach(function(u) {
+        var k = u.type;
+        if (!grouped[k]) grouped[k] = 0;
+        grouped[k]++;
+    });
+    
+    for (var k in grouped) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
+        html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + grouped[k] + '</span></div>';
+    }
+    
+    html += '</div>';
+    html += '<button class="btn btn-secondary" onclick="closeMarchDetails()">Закрыть</button>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+};
+
+window.closeMarchDetails = function() {
+    var m = document.getElementById('modal-march-details');
+    if (m) m.classList.add('hide');
+};
+
+function getZoneName(zoneId) {
+    var z = WORLD_AREAS[zoneId];
+    return z ? z.name : zoneId;
+}
 
 // ============================================================
 // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -471,6 +676,9 @@ function saveInvitations() {
 
 window.openMyHouse = window.openMyHouse;
 window.showHouseTab = window.showHouseTab;
+window.showArmySubTab = showArmySubTab;
+window.showMarchDetails = showMarchDetails;
+window.closeMarchDetails = closeMarchDetails;
 window.invitePlayer = invitePlayer;
 window.cancelInvite = cancelInvite;
 window.acceptInvite = acceptInvite;
