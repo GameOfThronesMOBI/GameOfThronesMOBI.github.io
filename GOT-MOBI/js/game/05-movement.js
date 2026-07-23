@@ -299,21 +299,23 @@ window.openWorldMap = function() {
     // Войска
     var houseId = g.house;
     var troopsByZone = {};
-    if (houseId && window._castleGarrisons) {
+    if (window._castleGarrisons) {
         var ownZones = {};
         var ownTroopZones = {};
-        for (var id in WORLD_AREAS) {
-            if (WORLD_AREAS[id].owner === houseId) ownZones[id] = true;
-        }
-        var garr = window._castleGarrisons[houseId];
-        if (garr) {
-            ['infantry','cavalry','siege'].forEach(function(cat) {
-                if (garr[cat]) {
-                    garr[cat].forEach(function(u) {
-                        if (u.location && u.location !== 'castle') ownTroopZones[u.location] = true;
-                    });
-                }
-            });
+        if (houseId) {
+            for (var id in WORLD_AREAS) {
+                if (WORLD_AREAS[id].owner === houseId) ownZones[id] = true;
+            }
+            var garr = window._castleGarrisons[houseId];
+            if (garr) {
+                ['infantry','cavalry','siege'].forEach(function(cat) {
+                    if (garr[cat]) {
+                        garr[cat].forEach(function(u) {
+                            if (u.location && u.location !== 'castle') ownTroopZones[u.location] = true;
+                        });
+                    }
+                });
+            }
         }
         var visibleZones = {};
         for (var id in ownZones) visibleZones[id] = true;
@@ -341,7 +343,9 @@ window.openWorldMap = function() {
                     g2[cat].forEach(function(u) {
                         if (u.location && u.location !== 'castle') {
                             if (u.isScout && hid !== houseId) return;
-                            if (hid !== houseId && !visibleZones[u.location]) return;
+                            // Если у зрителя нет дома — показываем все войска как нейтральные
+                            // Если есть дом — фильтруем по видимости
+                            if (houseId && hid !== houseId && !visibleZones[u.location]) return;
                             if (!troopsByZone[u.location]) troopsByZone[u.location] = {};
                             if (!troopsByZone[u.location][hid]) troopsByZone[u.location][hid] = { count: 0, hasScout: false };
                             troopsByZone[u.location][hid].count++;
@@ -397,7 +401,8 @@ window.openWorldMap = function() {
     html += '<h4>🌍 МИР ВЕСТЕРОСА</h4>';
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
     html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
-    if (houseId) html += ' | 🟢 Свои | 🔴 Враги';
+    if (houseId) html += ' | 🟢 Свои | 🔴 Враги | 🔵 Союзники';
+    else html += ' | ⚪ Войска';
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
     
@@ -485,16 +490,20 @@ window.openWorldMap = function() {
             var troopEmoji = '';
             if (zone && troopsByZone[zone.id]) {
                 var td = troopsByZone[zone.id];
-                var hasOwn = false, hasEnemy = false, hasAlly = false, hasOwnScout = false;
-                for (var hid in td) {
-                    if (hid === houseId) { hasOwn = true; if (td[hid].hasScout) hasOwnScout = true; }
-                    else if (window.HOUSES && HOUSES[hid] && HOUSES[hid].liege === houseId) hasAlly = true;
-                    else hasEnemy = true;
+                if (houseId) {
+                    var hasOwn = false, hasEnemy = false, hasAlly = false, hasOwnScout = false;
+                    for (var hid in td) {
+                        if (hid === houseId) { hasOwn = true; if (td[hid].hasScout) hasOwnScout = true; }
+                        else if (window.HOUSES && HOUSES[hid] && HOUSES[hid].liege === houseId) hasAlly = true;
+                        else hasEnemy = true;
+                    }
+                    if (hasOwnScout) troopEmoji = '👁️';
+                    else if (hasOwn) troopEmoji = '🟢';
+                    else if (hasAlly) troopEmoji = '🔵';
+                    else if (hasEnemy) troopEmoji = '🔴';
+                } else {
+                    troopEmoji = '⚪';
                 }
-                if (hasOwnScout) troopEmoji = '👁️';
-                else if (hasOwn) troopEmoji = '🟢';
-                else if (hasAlly) troopEmoji = '🔵';
-                else if (hasEnemy) troopEmoji = '🔴';
             }
             
             var subText = '';
@@ -602,36 +611,34 @@ window.openWorldMap = function() {
     content.innerHTML = html;
     modal.classList.remove('hide');
     
-    // Обработчик кликов по зонам (для членов домов)
-    if (houseId) {
-        setTimeout(function() {
-            var container = document.getElementById('world-map-container');
-            if (container) {
-                container.addEventListener('click', function(e) {
-                    var target = e.target;
-                    while (target && target !== container) {
-                        if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
-                            var l = parseInt(target.style.left);
-                            var t = parseInt(target.style.top);
-                            var zx = minX + Math.floor((l - 1) / cellSize);
-                            var zy = minY + Math.floor((t - 1 - padding) / cellSize);
-                            var zone = lookup[zx + ',' + zy];
-                            if (zone && zone.id) {
-                                var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
-                                    zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
-                                    zone.type === 'reef' || (zone.type === 'coast' && zone.resourceType === 'shallows'));
-                                if (!isWater && typeof handleZoneClick === 'function') {
-                                    handleZoneClick(zone.id);
-                                }
+    // Обработчик кликов по зонам (ДЛЯ ВСЕХ)
+    setTimeout(function() {
+        var container = document.getElementById('world-map-container');
+        if (container) {
+            container.addEventListener('click', function(e) {
+                var target = e.target;
+                while (target && target !== container) {
+                    if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
+                        var l = parseInt(target.style.left);
+                        var t = parseInt(target.style.top);
+                        var zx = minX + Math.floor((l - 1) / cellSize);
+                        var zy = minY + Math.floor((t - 1 - padding) / cellSize);
+                        var zone = lookup[zx + ',' + zy];
+                        if (zone && zone.id) {
+                            var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
+                                zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
+                                zone.type === 'reef' || (zone.type === 'coast' && zone.resourceType === 'shallows'));
+                            if (!isWater && typeof handleZoneClick === 'function') {
+                                handleZoneClick(zone.id);
                             }
-                            return;
                         }
-                        target = target.parentElement;
+                        return;
                     }
-                });
-            }
-        }, 100);
-    }
+                    target = target.parentElement;
+                }
+            });
+        }
+    }, 100);
 };
 
 window.closeWorldMap = function() {
