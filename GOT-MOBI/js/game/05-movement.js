@@ -1,5 +1,6 @@
 // ============================================================
 // movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ
+// ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -407,7 +408,7 @@ window.openWorldMap = function() {
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleLevels()"><input type="checkbox" id="chk-levels" ' + (_showLevels ? 'checked' : '') + '> 📈 Уровни</label>';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleOwnerColors()"><input type="checkbox" id="chk-owners" ' + (_showOwners ? 'checked' : '') + '> 🎨 Владения</label>';
     if (houseId) {
-        html += '<button class="btn btn-small" onclick="openMyHouse(); setTimeout(function(){ showHouseTab(\'army\'); }, 200);" style="font-size:11px;">⚔️ Армия</button>';
+        html += '<button class="btn btn-small" onclick="closeWorldMap(); setTimeout(function(){ openMyHouse(); setTimeout(function(){ showHouseTab(\'army\'); }, 200); }, 100);" style="font-size:11px;">⚔️ Армия</button>';
     }
     html += '</div>';
     html += '</div>';
@@ -419,7 +420,6 @@ window.openWorldMap = function() {
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
     html += '<div id="world-map-container" style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
     
-    // Слой анимации
     html += '<div id="marching-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;"></div>';
     
     // Рамки владений
@@ -612,7 +612,6 @@ window.openWorldMap = function() {
     content.innerHTML = html;
     modal.classList.remove('hide');
     
-    // Клики по зонам
     setTimeout(function() {
         var container = document.getElementById('world-map-container');
         if (container) {
@@ -642,7 +641,6 @@ window.openWorldMap = function() {
         }
     }, 100);
     
-    // Запуск анимации маркеров
     setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 200);
 };
 
@@ -650,7 +648,6 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
     var layer = document.getElementById('marching-layer');
     if (!layer) return;
     
-    // Очищаем старые маркеры
     layer.innerHTML = '';
     
     var houseId = users[currentUser].game.house;
@@ -674,11 +671,8 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         var toY = (nextZone.y - minY) * cellSize + cellSize/2 + padding;
         
         var speed = m.speedPerZone || 2;
-        var totalTime = speed * 60 + 10; // минуты в секундах + 10 сек
-        
-        // Определяем позицию на основе оставшегося времени
-        var timeLeft = m.nextMoveTime - Date.now();
         var totalStepTime = speed * 60 * 1000 + 10000;
+        var timeLeft = m.nextMoveTime - Date.now();
         var progress = 1 - (timeLeft / totalStepTime);
         if (progress < 0) progress = 0;
         if (progress > 1) progress = 1;
@@ -686,35 +680,44 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         var curX = fromX + (toX - fromX) * progress;
         var curY = fromY + (toY - fromY) * progress;
         
-        var marker = document.createElement('div');
-        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:16px;z-index:51;transform:translate(-50%,-50%);transition:left ' + (speed*60) + 's linear, top ' + (speed*60) + 's linear;pointer-events:none;';
-        
-        // Определяем эмодзи по типу отряда
+        // Определяем эмодзи по самому медленному типу
         var emoji = '🟢';
-        var hasCavalry = false, hasSiege = false;
-        m.units.forEach(function(u) {
-            if (u.siege) hasSiege = true;
-            else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') hasCavalry = true;
-        });
-        if (hasSiege) emoji = '🟤';
+        var hasCavalry = false, hasSiege = false, hasInfantry = false, isScout = false;
+        if (m.units) {
+            m.units.forEach(function(u) {
+                if (u.isScout) isScout = true;
+                else if (u.siege) hasSiege = true;
+                else if (u.horse || u.type === 'rider' || u.type === 'heavy_rider' || u.type === 'knight') hasCavalry = true;
+                else hasInfantry = true;
+            });
+        }
+        
+        if (isScout) emoji = '👁️';
+        else if (hasSiege) emoji = '🟤';
+        else if (hasInfantry) emoji = '🟢';
         else if (hasCavalry) emoji = '🐴';
         
-        marker.textContent = emoji + m.units.length;
-        marker.style.fontSize = '11px';
+        // Если ждёт — добавляем ⏳
+        var displayText = emoji + ' ' + m.units.length;
+        if (timeLeft > 0 && timeLeft < totalStepTime) {
+            displayText = '⏳ ' + displayText;
+        }
+        
+        var marker = document.createElement('div');
+        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:11px;z-index:51;transform:translate(-50%,-50%);transition:left ' + (speed*60) + 's linear, top ' + (speed*60) + 's linear;pointer-events:none;';
+        marker.textContent = displayText;
         marker.style.color = '#7ac98a';
         marker.style.fontWeight = 'bold';
         marker.style.textShadow = '0 0 3px #000';
         
         layer.appendChild(marker);
         
-        // Запускаем анимацию к следующей зоне
         setTimeout(function() {
             marker.style.left = toX + 'px';
             marker.style.top = toY + 'px';
         }, 50);
     });
     
-    // Обновляем каждые 10 секунд
     setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 10000);
 };
 
