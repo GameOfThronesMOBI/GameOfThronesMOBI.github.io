@@ -1,6 +1,6 @@
 // ============================================================
 // js/regions/stormlands/castles/buckler_castle.js
-// ЗАМОК БРОНЗОВЫЙ ЩИТ — ПОЛНЫЙ ФАЙЛ
+// ЗАМОК БРОНЗОВЫЙ ЩИТ — ПОЛНАЯ ЛОГИКА
 // ============================================================
 
 var _castlePrevUpdateStory = window.updateStory;
@@ -79,7 +79,7 @@ const CASTLE_BUILDINGS = [
 
 var CASTLE_ID = 'buckler';
 
-var UNIT_TYPES = {
+window.UNIT_TYPES = {
     light_swordsman:   { name: 'Мечник лёгкий',       emoji: '⚔️', weapon: ['sword'],              armor: 'leather', horse: null,      siege: false },
     heavy_swordsman:   { name: 'Мечник тяжёлый',      emoji: '🗡️', weapon: ['sword','shield'],     armor: 'plate',   horse: null,      siege: false },
     light_spearman:    { name: 'Копейщик лёгкий',     emoji: '🔱', weapon: ['spear','sword'],      armor: 'leather', horse: null,      siege: false },
@@ -910,7 +910,7 @@ function openCastleBarracks() {
         garrison.cavalry.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
         garrison.siege.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
         for (var k in grouped) {
-            var ut = UNIT_TYPES[k];
+            var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
             var name = ut ? ut.emoji + ' ' + ut.name : k;
             h += '<div class="row"><span class="label">' + name + '</span><span class="value">×' + grouped[k] + '</span></div>';
         }
@@ -960,7 +960,7 @@ function openCastleBarracks() {
     c.innerHTML = h; modal.classList.remove('hide');
 }
 function buildRecruitRow(type, peasants, stable, house) {
-    var ut = UNIT_TYPES[type];
+    var ut = window.UNIT_TYPES ? window.UNIT_TYPES[type] : null;
     var cost = UNIT_COSTS[type];
     if (!ut || !cost) return '';
     
@@ -994,7 +994,7 @@ function buildRecruitRow(type, peasants, stable, house) {
 }
 function recruitUnit(type) {
     if (!checkBucklerAccess()) return;
-    var ut = UNIT_TYPES[type];
+    var ut = window.UNIT_TYPES ? window.UNIT_TYPES[type] : null;
     var cost = UNIT_COSTS[type];
     if (!ut || !cost) { setMessage('❌ Неизвестный тип войск.'); return; }
     
