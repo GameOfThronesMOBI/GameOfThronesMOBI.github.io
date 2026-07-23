@@ -1,5 +1,6 @@
 // ============================================================
-// js/game/08-command.js — ЛОГИКА КОМАНДОВАНИЯ (БЕЗ КАРТЫ)
+// js/game/08-command.js — КОМАНДОВАНИЕ ВОЙСКАМИ + PvP + РАЗВЕДКА
+// ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 // ============================================================
@@ -16,7 +17,6 @@ window.handleZoneClick = function(zoneId) {
     var zone = WORLD_AREAS[zoneId];
     var zoneName = zone ? zone.name : zoneId;
     
-    // Проверка на воду
     if (zone && (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' || zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' || zone.type === 'reef')) return;
     
     var ownUnits = getOwnUnitsInZone(zoneId, houseId);
@@ -30,7 +30,7 @@ window.handleZoneClick = function(zoneId) {
 };
 
 // ============================================================
-// 2. СБОР СВОИХ ВОЙСК В ЗОНЕ
+// 2. СБОР СВОИХ ВОЙСК В ЗОНЕ (ВКЛЮЧАЯ ГАРНИЗОН ЗАМКА)
 // ============================================================
 
 function getOwnUnitsInZone(zoneId, houseId) {
@@ -46,10 +46,16 @@ function getOwnUnitsInZone(zoneId, houseId) {
     var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [] };
     var allUnits = [];
     
+    var zone = WORLD_AREAS[zoneId];
+    var isCastle = zone && (zone.type === 'castle' || zone.type === 'castle_gate');
+    
     ['infantry','cavalry','siege'].forEach(function(cat) {
         if (garrison[cat]) {
             garrison[cat].forEach(function(u, idx) {
-                if (u.location === zoneId) allUnits.push({ unit: u, category: cat, index: idx });
+                // Войска в зоне (location === zoneId) ИЛИ в замке (location === 'castle') если кликнули на замок
+                if (u.location === zoneId || (isCastle && u.location === 'castle')) {
+                    allUnits.push({ unit: u, category: cat, index: idx });
+                }
             });
         }
     });
@@ -121,6 +127,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
     var html = '<div class="modal-section"><h4>📍 ' + zoneName + '</h4>';
     html += '<p style="color:#6a5a48;">Выберите отряд для отправки или отделите разведчика</p></div>';
     
+    // Разведчики
     if (ownUnits.scouts.length > 0) {
         html += '<div class="modal-section"><h4>👁️ РАЗВЕДЧИКИ</h4>';
         ownUnits.scouts.forEach(function(item, i) {
@@ -128,12 +135,19 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
             var ut = window.UNIT_TYPES ? window.UNIT_TYPES[u.type] : null;
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">👁️ Разведчик (' + (ut ? ut.emoji + ' ' + ut.name : u.type) + ')</span>';
-            html += '<span class="value"><button class="btn btn-small" onclick="selectScoutForMove(\'' + zoneId + '\',' + i + ')">🚶 Двигать</button></span>';
+            html += '<span class="value">';
+            html += '<button class="btn btn-small" onclick="selectScoutForMove(\'' + zoneId + '\',' + i + ')">🚶 Двигать</button> ';
+            // Кнопка объединения с отрядом
+            if (ownUnits.unattached.length > 0 || ownUnits.sergeants.length > 0 || ownUnits.captains.length > 0 || ownUnits.commanders.length > 0) {
+                html += '<button class="btn btn-small" onclick="mergeScout(' + i + ',\'' + zoneId + '\')">🔗 В отряд</button>';
+            }
+            html += '</span>';
             html += '</div>';
         });
         html += '</div>';
     }
     
+    // Рыцари-командоры
     if (ownUnits.commanders.length > 0) {
         html += '<div class="modal-section"><h4>⭐ РЫЦАРИ-КОМАНДОРЫ</h4>';
         ownUnits.commanders.forEach(function(cmd) {
@@ -146,6 +160,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
         html += '</div>';
     }
     
+    // Капитаны
     if (ownUnits.captains.length > 0) {
         html += '<div class="modal-section"><h4>🗡️ КАПИТАНЫ</h4>';
         ownUnits.captains.forEach(function(cap) {
@@ -158,6 +173,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
         html += '</div>';
     }
     
+    // Сержанты
     if (ownUnits.sergeants.length > 0) {
         html += '<div class="modal-section"><h4>🛡️ СЕРЖАНТЫ</h4>';
         ownUnits.sergeants.forEach(function(sgt) {
@@ -181,6 +197,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
         html += '</div>';
     }
     
+    // Непривязанные
     if (ownUnits.unattached.length > 0) {
         html += '<div class="modal-section"><h4>📦 НЕПРИВЯЗАННЫЕ ВОЙСКА</h4>';
         var unitTypes = {};
@@ -211,6 +228,44 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId) {
 window.closeOwnUnitsModal = function() {
     var m = document.getElementById('modal-own-units');
     if (m) m.classList.add('hide');
+};
+
+// ============================================================
+// 3.5 ОБЪЕДИНЕНИЕ РАЗВЕДЧИКА С ОТРЯДОМ
+// ============================================================
+
+window.mergeScout = function(scoutIndex, zoneId) {
+    var user = users[currentUser];
+    var houseId = user.game.house;
+    var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [] };
+    
+    var scout = null;
+    ['infantry','cavalry','siege'].forEach(function(cat) {
+        if (!scout && garrison[cat]) {
+            var cnt = 0;
+            for (var i = garrison[cat].length - 1; i >= 0; i--) {
+                if (garrison[cat][i].location === zoneId && garrison[cat][i].isScout) {
+                    if (cnt === scoutIndex) {
+                        scout = garrison[cat][i];
+                        break;
+                    }
+                    cnt++;
+                }
+            }
+        }
+    });
+    
+    if (!scout) {
+        setMessage('❌ Разведчик не найден.');
+        return;
+    }
+    
+    scout.isScout = false;
+    scout.scoutHome = null;
+    saveData();
+    closeOwnUnitsModal();
+    setMessage('✅ Разведчик возвращён в отряд.');
+    addHouseLog(houseId, '👁️➡️⚔️ Разведчик возвращён в отряд в ' + getZoneName(zoneId));
 };
 
 // ============================================================
@@ -935,8 +990,9 @@ function processMarchArrival(marchingEntry, houseId) {
         if (action === 'attack' && targetZone) {
             targetZone.owner = houseId;
         }
+        var isCastleZone = targetZone && (targetZone.type === 'castle' || targetZone.type === 'castle_gate');
         units.forEach(function(u) {
-            u.location = marchingEntry.targetZone;
+            u.location = isCastleZone ? 'castle' : marchingEntry.targetZone;
             u.stance = action === 'defend' ? 'defending' : 'moving';
             returnUnit(u, garrison);
         });
@@ -1008,9 +1064,11 @@ function resolveBattle(attackers, defenders, zoneId, attackerHouseId, action) {
         });
         
         if (action === 'attack' && WORLD_AREAS[zoneId]) WORLD_AREAS[zoneId].owner = attackerHouseId;
+        var targetZone = WORLD_AREAS[zoneId];
+        var isCastleZone = targetZone && (targetZone.type === 'castle' || targetZone.type === 'castle_gate');
         attackers.forEach(function(u) {
             if (u.location !== undefined) {
-                u.location = zoneId;
+                u.location = isCastleZone ? 'castle' : zoneId;
                 u.stance = 'moving';
                 returnUnit(u, attackerGarrison);
             }
@@ -1103,6 +1161,7 @@ window.restoreMarchingTimers = function() {
 
 window.handleZoneClick = handleZoneClick;
 window.closeOwnUnitsModal = closeOwnUnitsModal;
+window.mergeScout = mergeScout;
 window.detachScout = detachScout;
 window.selectCommanderForMove = selectCommanderForMove;
 window.selectScoutForMove = selectScoutForMove;
@@ -1124,4 +1183,4 @@ setTimeout(function() {
     if (typeof window._castleGarrisons !== 'undefined') restoreMarchingTimers();
 }, 1000);
 
-console.log('🎯 Логика командования загружена!');
+console.log('🎯 Командование + PvP + Разведка загружены!');
