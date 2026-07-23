@@ -300,7 +300,6 @@ window.openWorldMap = function() {
     var houseId = g.house;
     var troopsByZone = {};
     if (houseId && window._castleGarrisons) {
-        // Зоны видимости
         var ownZones = {};
         var ownTroopZones = {};
         for (var id in WORLD_AREAS) {
@@ -463,7 +462,6 @@ window.openWorldMap = function() {
                     isWater = true;
                 }
                 
-                // Приоритет эмодзи
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
@@ -541,7 +539,6 @@ window.openWorldMap = function() {
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
             
-            // Эмодзи здания или войск
             if (emoji) {
                 html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
                 if (isCurrent) html += '⭐';
@@ -584,7 +581,6 @@ window.openWorldMap = function() {
     
     html += '</div></div>';
     
-    // Список областей
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;margin-top:8px;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
