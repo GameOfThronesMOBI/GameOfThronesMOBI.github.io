@@ -1,6 +1,6 @@
 // ============================================================
 // movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ (ИСПРАВЛЕН КЛИК ЧЕРЕЗ МАРКЕРЫ)
+// ПОЛНАЯ ВЕРСИЯ (МАРКЕРЫ ОБНОВЛЯЮТСЯ КАЖДЫЕ 2 СЕКУНДЫ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -422,7 +422,6 @@ window.openWorldMap = function() {
     
     html += '<div id="marching-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;"></div>';
     
-    // Рамки владений
     for (var gi = 0; gi < ownerGroups.length; gi++) {
         var group = ownerGroups[gi];
         var frameLeft = (group.minX - minX) * cellSize + 1;
@@ -450,7 +449,6 @@ window.openWorldMap = function() {
         html += '</div>';
     }
     
-    // Клетки
     for (var y = minY; y <= maxY; y++) {
         for (var x = minX; x <= maxX; x++) {
             var zone = lookup[x + ',' + y];
@@ -612,20 +610,16 @@ window.openWorldMap = function() {
     content.innerHTML = html;
     modal.classList.remove('hide');
     
-    // Обработчик кликов — ИСПРАВЛЕН
     setTimeout(function() {
         var container = document.getElementById('world-map-container');
         if (container) {
             container.addEventListener('click', function(e) {
                 var target = e.target;
                 
-                // Пропускаем маркеры (они внутри marching-layer)
                 while (target && target !== container) {
-                    // Если кликнули по маркеру или слою анимации — выходим
                     if (target.id === 'marching-layer') return;
                     if (target.parentElement && target.parentElement.id === 'marching-layer') return;
                     
-                    // Если нашли зону
                     if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
                         var l = parseInt(target.style.left);
                         var t = parseInt(target.style.top);
@@ -736,7 +730,7 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         }
     });
     
-    setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 10000);
+    setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 2000);
 };
 
 window.closeWorldMap = function() {
