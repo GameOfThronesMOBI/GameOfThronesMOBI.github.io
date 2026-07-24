@@ -1,6 +1,6 @@
 // ============================================================
 // movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ
+// ПОЛНАЯ ВЕРСИЯ (ИСПРАВЛЕН КЛИК ЧЕРЕЗ МАРКЕРЫ)
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -612,19 +612,29 @@ window.openWorldMap = function() {
     content.innerHTML = html;
     modal.classList.remove('hide');
     
+    // Обработчик кликов — ИСПРАВЛЕН
     setTimeout(function() {
         var container = document.getElementById('world-map-container');
         if (container) {
             container.addEventListener('click', function(e) {
                 var target = e.target;
+                
+                // Пропускаем маркеры (они внутри marching-layer)
                 while (target && target !== container) {
+                    // Если кликнули по маркеру или слою анимации — выходим
                     if (target.id === 'marching-layer') return;
+                    if (target.parentElement && target.parentElement.id === 'marching-layer') return;
+                    
+                    // Если нашли зону
                     if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
                         var l = parseInt(target.style.left);
                         var t = parseInt(target.style.top);
+                        if (isNaN(l) || isNaN(t)) return;
+                        
                         var zx = minX + Math.floor((l - 1) / cellSize);
                         var zy = minY + Math.floor((t - 1 - padding) / cellSize);
                         var zone = lookup[zx + ',' + zy];
+                        
                         if (zone && zone.id) {
                             var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
                                 zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
@@ -672,28 +682,19 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         
         var speed = m.speedPerZone || 2;
         var moveTimeMs = speed * 60 * 1000;
-        var waitTimeMs = 10000;
         
-        // Позиция зависит от фазы
         var curX = fromX;
         var curY = fromY;
         
         if (m.phase === 'moving') {
-            // В движении — анимация от fromX до toX
             var timeLeft = m.nextPhaseTime - Date.now();
             var progress = 1 - (timeLeft / moveTimeMs);
             if (progress < 0) progress = 0;
             if (progress > 1) progress = 1;
-            
             curX = fromX + (toX - fromX) * progress;
             curY = fromY + (toY - fromY) * progress;
-        } else {
-            // Стоит на месте — позиция текущей зоны
-            curX = fromX;
-            curY = fromY;
         }
         
-        // Эмодзи
         var emoji = '🟢';
         var hasCavalry = false, hasSiege = false, hasInfantry = false, isScout = false;
         if (m.units) {
@@ -716,7 +717,10 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         }
         
         var marker = document.createElement('div');
-        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:11px;z-index:51;transform:translate(-50%,-50%);transition:left ' + (speed*60) + 's linear, top ' + (speed*60) + 's linear;pointer-events:none;';
+        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:11px;z-index:51;transform:translate(-50%,-50%);pointer-events:none;';
+        if (m.phase === 'moving') {
+            marker.style.cssText += 'transition:left ' + (speed*60) + 's linear, top ' + (speed*60) + 's linear;';
+        }
         marker.textContent = displayText;
         marker.style.color = '#7ac98a';
         marker.style.fontWeight = 'bold';
@@ -724,7 +728,6 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         
         layer.appendChild(marker);
         
-        // Если в движении — анимируем к следующей зоне
         if (m.phase === 'moving') {
             setTimeout(function() {
                 marker.style.left = toX + 'px';
