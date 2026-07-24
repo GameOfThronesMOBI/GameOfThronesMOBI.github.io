@@ -1,6 +1,6 @@
 // ============================================================
 // js/game/08-command.js — КОМАНДОВАНИЕ + PvP + РАЗВЕДКА + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ — ИСПРАВЛЕНА ОТПРАВКА
+// ПОЛНАЯ ВЕРСИЯ — ВСЕ ФУНКЦИИ
 // ============================================================
 
 window.closeZoneInfo = function() {
@@ -10,6 +10,7 @@ window.closeZoneInfo = function() {
 
 window._awaitingTarget = false;
 window._targetData = null;
+window._selectedUnitTypes = {};
 
 // ============================================================
 // ПОИСК ПУТИ (BFS) — 8 НАПРАВЛЕНИЙ
@@ -512,8 +513,7 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             unitTypes[t]++;
         });
         
-        // Сохраняем типы и количество в глобальную переменную для confirmMovement
-        window._selectedUnitTypes = {};
+        if (!window._selectedUnitTypes) window._selectedUnitTypes = {};
         
         for (var t in unitTypes) {
             var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
@@ -694,17 +694,6 @@ window.selectScoutForMove = function(zoneId, scoutIndex) {
 };
 
 window.selectUnattachedForMove = function(zoneId) {
-    // Сохраняем выбранные количества из инпутов перед закрытием модалки
-    var inputs = document.querySelectorAll('.unattached-count');
-    window._selectedUnitTypes = {};
-    inputs.forEach(function(inp) {
-        var type = inp.getAttribute('data-type');
-        var count = parseInt(inp.value) || 0;
-        if (count > 0) {
-            window._selectedUnitTypes[type] = count;
-        }
-    });
-    
     window.currentMovingCommander = { zoneId: zoneId, type: 'unattached' };
     window._awaitingTarget = true;
     window._targetData = { fromZone: zoneId, isScout: false, commander: false };
@@ -781,7 +770,6 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
             });
         }
     } else if (commander.type === 'unattached') {
-        // Используем сохранённые данные из window._selectedUnitTypes
         var selectedTypes = window._selectedUnitTypes || {};
         for (var type in selectedTypes) {
             var count = selectedTypes[type];
@@ -901,22 +889,29 @@ function processMarchStep(marchId) {
         return;
     }
     
+    // ============================================================
+    // Фаза WAITING — отряд стоял на зоне, начинаем движение
+    // ============================================================
     if (marchData.phase === 'waiting') {
-        // Закончили ждать — начинаем движение
         marchData.phase = 'moving';
         marchData.nextPhaseTime = Date.now() + marchData.moveTimeMs;
+        
         saveData();
         updateMenu();
+        
         setTimeout(function() { processMarchStep(marchId); }, marchData.moveTimeMs);
         return;
     }
     
+    // ============================================================
+    // Фаза MOVING — отряд двигался, прибыл на следующую зону
+    // ============================================================
     if (marchData.phase === 'moving') {
-        // Закончили движение — прибыли на следующую зону
         marchData.currentStep++;
         
+        // Проверяем — не прибыли ли?
         if (marchData.currentStep >= marchData.path.length - 1) {
-            // Прибытие на конечную зону
+            // Прибытие
             var idx = garrison.marching.indexOf(marchData);
             if (idx !== -1) garrison.marching.splice(idx, 1);
             
@@ -925,6 +920,7 @@ function processMarchStep(marchId) {
             var units = marchData.units;
             
             if (marchData.isScout && action === 'scout') {
+                // Разведка
                 if (Math.random() < 0.5) {
                     var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
                     var enemyInfo = '🔍 РАЗВЕДКА УСПЕШНА!\n\nВраги в зоне:\n';
@@ -959,6 +955,7 @@ function processMarchStep(marchId) {
                     addHouseLog(marchData.houseId, '💀 Разведчик погиб в ' + getZoneName(targetZone.id));
                 }
             } else {
+                // Обычный отряд или разведчик в режиме движения
                 var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
                 if (enemies.length > 0) {
                     resolveBattle(units, enemies, targetZone.id, marchData.houseId, action);
@@ -986,8 +983,10 @@ function processMarchStep(marchId) {
         // Ещё не конец пути — начинаем ждать на промежуточной зоне
         marchData.phase = 'waiting';
         marchData.nextPhaseTime = Date.now() + marchData.waitTimeMs;
+        
         saveData();
         updateMenu();
+        
         setTimeout(function() { processMarchStep(marchId); }, marchData.waitTimeMs);
         return;
     }
@@ -1129,7 +1128,9 @@ window.restoreMarchingTimers = function() {
     for (var hid in window._castleGarrisons) {
         var g = window._castleGarrisons[hid];
         if (g.marching && g.marching.length > 0) {
+            // Удаляем старые марши без path
             g.marching = g.marching.filter(function(m) { return m.path; });
+            // Запускаем оставшиеся
             g.marching.forEach(function(m) {
                 processMarchStep(m.id);
             });
