@@ -1,6 +1,6 @@
 // ============================================================
 // js/game/08-command.js — КОМАНДОВАНИЕ + PvP + РАЗВЕДКА + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ
+// ПОЛНАЯ ВЕРСИЯ — ИСПРАВЛЕНА ОТПРАВКА
 // ============================================================
 
 window.closeZoneInfo = function() {
@@ -82,7 +82,7 @@ window.handleZoneClick = function(zoneId) {
     var houseId = user.game.house;
     
     // ============================================================
-    // РЕЖИМ ВЫБОРА ЦЕЛИ (если нажали "Отправить" и ждём клик)
+    // РЕЖИМ ВЫБОРА ЦЕЛИ
     // ============================================================
     if (window._awaitingTarget && houseId) {
         var fromZone = WORLD_AREAS[window._targetData.fromZone];
@@ -108,7 +108,6 @@ window.handleZoneClick = function(zoneId) {
         var actions = [];
         actions.push({ id: 'move', label: '🚶 Идти (~' + timeMinutes + ' мин)', desc: 'Переместиться в зону' });
         
-        // Для разведчиков
         if (window._targetData.isScout) {
             var hasEnemy = false;
             for (var hid in window._castleGarrisons) {
@@ -126,7 +125,6 @@ window.handleZoneClick = function(zoneId) {
                 actions.push({ id: 'scout', label: '🔍 Разведка (50% риск)', desc: 'Разведчик может погибнуть, но узнает состав врага' });
             }
         } else {
-            // Для обычных войск
             if (isOwnZone) {
                 actions.push({ id: 'defend', label: '🛡️ Защита', desc: 'Занять оборону в зоне' });
             } else {
@@ -137,7 +135,6 @@ window.handleZoneClick = function(zoneId) {
         var targetZoneName = zoneName;
         var fromZoneName = fromZone ? fromZone.name : window._targetData.fromZone;
         
-        // Модалка подтверждения
         var modal = document.getElementById('modal-confirm-move');
         if (!modal) {
             var overlay = document.createElement('div');
@@ -176,18 +173,15 @@ window.handleZoneClick = function(zoneId) {
     // ОБЫЧНЫЙ РЕЖИМ
     // ============================================================
     
-    // Без дома — просто инфо о зоне
     if (!houseId) {
         showZoneInfoPublic(zoneId, zoneName);
         return;
     }
     
-    // В доме — ищем свои войска
     var ownUnits = getOwnUnitsInZone(zoneId, houseId);
     var enemyScouts = findEnemyScoutsInZone(zoneId, houseId);
     
     if (ownUnits.length === 0 && ownUnits.scouts.length === 0) {
-        // Нет своих войск
         var enemies = findEnemiesInZone(zoneId, houseId);
         if (enemies.length > 0) {
             showEnemyInfo(zoneId, zoneName, enemies);
@@ -199,7 +193,6 @@ window.handleZoneClick = function(zoneId) {
         return;
     }
     
-    // Есть свои войска
     if (ownUnits.scouts.length > 0 && enemyScouts.length > 0) {
         showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts);
         return;
@@ -518,11 +511,16 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             if (!unitTypes[t]) unitTypes[t] = 0;
             unitTypes[t]++;
         });
+        
+        // Сохраняем типы и количество в глобальную переменную для confirmMovement
+        window._selectedUnitTypes = {};
+        
         for (var t in unitTypes) {
             var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+            window._selectedUnitTypes[t] = unitTypes[t];
             html += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
             html += '<span class="label">' + (ut ? ut.emoji + ' ' + ut.name : t) + '</span>';
-            html += '<span class="value">×' + unitTypes[t] + ' <input type="number" class="unattached-count" data-type="' + t + '" value="' + unitTypes[t] + '" min="1" max="' + unitTypes[t] + '" style="width:50px;padding:2px;"></span>';
+            html += '<span class="value">×' + unitTypes[t] + ' <input type="number" class="unattached-count" data-type="' + t + '" value="' + unitTypes[t] + '" min="1" max="' + unitTypes[t] + '" style="width:50px;padding:2px;" onchange="window._selectedUnitTypes[\'' + t + '\'] = parseInt(this.value) || 0;"></span>';
             html += '</div>';
         }
         html += '<button class="btn btn-small" onclick="window.selectUnattachedForMove(\'' + zoneId + '\')">🚶 Отправить выбранных</button>';
@@ -555,7 +553,6 @@ window.attackEnemyScout = function(zoneId, enemyIndex) {
     var enemyHouse = enemy.house;
     
     if (Math.random() < 0.5) {
-        // Победа — удаляем вражеского разведчика
         var enemyGarrison = window._castleGarrisons[enemyHouse];
         if (enemyGarrison) {
             ['infantry','cavalry','siege'].forEach(function(cat) {
@@ -573,7 +570,6 @@ window.attackEnemyScout = function(zoneId, enemyIndex) {
         setMessage('⚔️ Вражеский разведчик уничтожен!');
         addHouseLog(houseId, '⚔️ Разведчик уничтожил вражеского разведчика в ' + getZoneName(zoneId));
     } else {
-        // Поражение — удаляем своего разведчика
         var ownGarrison = window._castleGarrisons[houseId];
         if (ownGarrison) {
             ['infantry','cavalry','siege'].forEach(function(cat) {
@@ -643,11 +639,15 @@ window.detachScout = function(zoneId) {
     var houseId = user.game.house;
     var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [] };
     
+    var zone = WORLD_AREAS[zoneId];
+    var isCastle = zone && (zone.type === 'castle' || zone.type === 'castle_gate');
+    
     var scout = null;
     ['infantry','cavalry','siege'].forEach(function(cat) {
         if (!scout && garrison[cat]) {
             for (var i = garrison[cat].length - 1; i >= 0; i--) {
-                if (garrison[cat][i].location === zoneId && !garrison[cat][i].commander && !garrison[cat][i].isScout) {
+                var u = garrison[cat][i];
+                if ((u.location === zoneId || (isCastle && u.location === 'castle')) && !u.commander && !u.isScout) {
                     scout = garrison[cat].splice(i, 1)[0];
                     break;
                 }
@@ -661,7 +661,7 @@ window.detachScout = function(zoneId) {
     }
     
     scout.isScout = true;
-    scout.scoutHome = zoneId;
+    scout.scoutHome = isCastle ? 'castle' : zoneId;
     
     if (scout.siege) garrison.siege.push(scout);
     else if (scout.horse || scout.type === 'rider' || scout.type === 'heavy_rider' || scout.type === 'knight') garrison.cavalry.push(scout);
@@ -694,6 +694,17 @@ window.selectScoutForMove = function(zoneId, scoutIndex) {
 };
 
 window.selectUnattachedForMove = function(zoneId) {
+    // Сохраняем выбранные количества из инпутов перед закрытием модалки
+    var inputs = document.querySelectorAll('.unattached-count');
+    window._selectedUnitTypes = {};
+    inputs.forEach(function(inp) {
+        var type = inp.getAttribute('data-type');
+        var count = parseInt(inp.value) || 0;
+        if (count > 0) {
+            window._selectedUnitTypes[type] = count;
+        }
+    });
+    
     window.currentMovingCommander = { zoneId: zoneId, type: 'unattached' };
     window._awaitingTarget = true;
     window._targetData = { fromZone: zoneId, isScout: false, commander: false };
@@ -741,13 +752,16 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
     
     if (!isScout) isScout = false;
     
+    var zone = WORLD_AREAS[fromZoneId];
+    var isCastle = zone && (zone.type === 'castle' || zone.type === 'castle_gate');
+    
     // Собираем юнитов
     if (commander.type === 'commander') {
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (garrison[cat]) {
                 for (var i = garrison[cat].length - 1; i >= 0; i--) {
                     var u = garrison[cat][i];
-                    if (u.location === fromZoneId && u.commander === commander.name && !u.isScout) {
+                    if ((u.location === fromZoneId || (isCastle && u.location === 'castle')) && u.commander === commander.name && !u.isScout) {
                         takenUnits.push(garrison[cat].splice(i, 1)[0]);
                     }
                 }
@@ -759,7 +773,7 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
                 if (garrison[cat]) {
                     for (var i = garrison[cat].length - 1; i >= 0; i--) {
                         var u = garrison[cat][i];
-                        if (u.location === fromZoneId && u.commander && u.commander !== commander.name && !u.isScout && takenUnits.indexOf(u) === -1) {
+                        if ((u.location === fromZoneId || (isCastle && u.location === 'castle')) && u.commander && u.commander !== commander.name && !u.isScout && takenUnits.indexOf(u) === -1) {
                             takenUnits.push(garrison[cat].splice(i, 1)[0]);
                         }
                     }
@@ -767,29 +781,31 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
             });
         }
     } else if (commander.type === 'unattached') {
-        var inputs = document.querySelectorAll('.unattached-count');
-        inputs.forEach(function(inp) {
-            var type = inp.getAttribute('data-type');
-            var count = parseInt(inp.value) || 0;
+        // Используем сохранённые данные из window._selectedUnitTypes
+        var selectedTypes = window._selectedUnitTypes || {};
+        for (var type in selectedTypes) {
+            var count = selectedTypes[type];
             var taken = 0;
             ['infantry','cavalry','siege'].forEach(function(cat) {
                 if (garrison[cat]) {
                     for (var i = garrison[cat].length - 1; i >= 0 && taken < count; i--) {
                         var u = garrison[cat][i];
-                        if (u.location === fromZoneId && u.type === type && !u.commander && !u.isScout) {
+                        if ((u.location === fromZoneId || (isCastle && u.location === 'castle')) && u.type === type && !u.commander && !u.isScout) {
                             takenUnits.push(garrison[cat].splice(i, 1)[0]);
                             taken++;
                         }
                     }
                 }
             });
-        });
+        }
+        window._selectedUnitTypes = {};
     } else if (commander.type === 'scout') {
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (!takenUnits.length && garrison[cat]) {
                 var cnt = 0;
                 for (var i = garrison[cat].length - 1; i >= 0; i--) {
-                    if (garrison[cat][i].location === commander.zoneId && garrison[cat][i].isScout) {
+                    var u = garrison[cat][i];
+                    if ((u.location === commander.zoneId || (isCastle && u.location === 'castle')) && garrison[cat][i].isScout) {
                         if (cnt === commander.scoutIndex) {
                             takenUnits.push(garrison[cat].splice(i, 1)[0]);
                             break;
@@ -824,7 +840,7 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
     
     // Время движения одной зоны в миллисекундах
     var moveTimeMs = speedPerZone * 60 * 1000;
-    var waitTimeMs = 10000; // 10 секунд ожидания
+    var waitTimeMs = 10000;
     
     // Создаём запись марша
     var marchId = 'march_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -838,8 +854,8 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
         speedPerZone: speedPerZone,
         moveTimeMs: moveTimeMs,
         waitTimeMs: waitTimeMs,
-        phase: 'moving',       // 'moving' — в пути, 'waiting' — стоит на зоне
-        nextPhaseTime: Date.now() + moveTimeMs,  // когда закончится текущая фаза
+        phase: 'waiting',
+        nextPhaseTime: Date.now() + waitTimeMs,
         isScout: isScout
     };
     
@@ -851,7 +867,6 @@ window.confirmMovement = function(fromZoneId, targetZoneId, action, timeMinutes,
     setMessage('✅ Отряд выступил! ' + takenUnits.length + ' юнитов, ' + (path.length - 1) + ' зон.');
     addHouseLog(houseId, '🚶 ' + currentUser + ' отправил ' + takenUnits.length + ' юнитов в ' + getZoneName(targetZoneId));
     
-    // Запускаем первый шаг
     processMarchStep(marchId);
 };
 
@@ -881,35 +896,25 @@ function processMarchStep(marchId) {
     
     var now = Date.now();
     
-    // Если ещё не время для следующей фазы — ждём
     if (now < marchData.nextPhaseTime) {
         setTimeout(function() { processMarchStep(marchId); }, marchData.nextPhaseTime - now);
         return;
     }
     
-    // ============================================================
-    // Фаза MOVING — отряд двигался к следующей зоне
-    // ============================================================
-    if (marchData.phase === 'moving') {
-        // Прибыли на промежуточную зону
-        marchData.phase = 'waiting';
-        marchData.nextPhaseTime = Date.now() + marchData.waitTimeMs; // 10 секунд стоим
-        
+    if (marchData.phase === 'waiting') {
+        // Закончили ждать — начинаем движение
+        marchData.phase = 'moving';
+        marchData.nextPhaseTime = Date.now() + marchData.moveTimeMs;
         saveData();
         updateMenu();
-        
-        // Ждём 10 секунд
-        setTimeout(function() { processMarchStep(marchId); }, marchData.waitTimeMs);
+        setTimeout(function() { processMarchStep(marchId); }, marchData.moveTimeMs);
         return;
     }
     
-    // ============================================================
-    // Фаза WAITING — отряд отстоял 10 секунд, идём дальше
-    // ============================================================
-    if (marchData.phase === 'waiting') {
+    if (marchData.phase === 'moving') {
+        // Закончили движение — прибыли на следующую зону
         marchData.currentStep++;
         
-        // Проверяем — не прибыли ли на финальную зону?
         if (marchData.currentStep >= marchData.path.length - 1) {
             // Прибытие на конечную зону
             var idx = garrison.marching.indexOf(marchData);
@@ -920,7 +925,6 @@ function processMarchStep(marchId) {
             var units = marchData.units;
             
             if (marchData.isScout && action === 'scout') {
-                // Разведка
                 if (Math.random() < 0.5) {
                     var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
                     var enemyInfo = '🔍 РАЗВЕДКА УСПЕШНА!\n\nВраги в зоне:\n';
@@ -955,7 +959,6 @@ function processMarchStep(marchId) {
                     addHouseLog(marchData.houseId, '💀 Разведчик погиб в ' + getZoneName(targetZone.id));
                 }
             } else {
-                // Обычный отряд или разведчик в режиме движения
                 var enemies = findEnemiesInZone(targetZone.id, marchData.houseId);
                 if (enemies.length > 0) {
                     resolveBattle(units, enemies, targetZone.id, marchData.houseId, action);
@@ -980,15 +983,12 @@ function processMarchStep(marchId) {
             return;
         }
         
-        // Ещё не конец пути — начинаем движение к следующей зоне
-        marchData.phase = 'moving';
-        marchData.nextPhaseTime = Date.now() + marchData.moveTimeMs;
-        
+        // Ещё не конец пути — начинаем ждать на промежуточной зоне
+        marchData.phase = 'waiting';
+        marchData.nextPhaseTime = Date.now() + marchData.waitTimeMs;
         saveData();
         updateMenu();
-        
-        // Ждём время движения
-        setTimeout(function() { processMarchStep(marchId); }, marchData.moveTimeMs);
+        setTimeout(function() { processMarchStep(marchId); }, marchData.waitTimeMs);
         return;
     }
 }
@@ -1129,10 +1129,9 @@ window.restoreMarchingTimers = function() {
     for (var hid in window._castleGarrisons) {
         var g = window._castleGarrisons[hid];
         if (g.marching && g.marching.length > 0) {
+            g.marching = g.marching.filter(function(m) { return m.path; });
             g.marching.forEach(function(m) {
-                if (m.path) {
-                    processMarchStep(m.id);
-                }
+                processMarchStep(m.id);
             });
         }
     }
