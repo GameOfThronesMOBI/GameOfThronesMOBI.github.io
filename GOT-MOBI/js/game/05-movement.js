@@ -1,6 +1,6 @@
 // ============================================================
 // movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ
-// ПОЛНАЯ ВЕРСИЯ (МАРКЕРЫ ОБНОВЛЯЮТСЯ КАЖДЫЕ 2 СЕКУНДЫ)
+// ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 console.log('🧭 Система перемещений загружается...');
@@ -615,20 +615,13 @@ window.openWorldMap = function() {
         if (container) {
             container.addEventListener('click', function(e) {
                 var target = e.target;
-                
                 while (target && target !== container) {
-                    if (target.id === 'marching-layer') return;
-                    if (target.parentElement && target.parentElement.id === 'marching-layer') return;
-                    
                     if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
                         var l = parseInt(target.style.left);
                         var t = parseInt(target.style.top);
-                        if (isNaN(l) || isNaN(t)) return;
-                        
                         var zx = minX + Math.floor((l - 1) / cellSize);
                         var zy = minY + Math.floor((t - 1 - padding) / cellSize);
                         var zone = lookup[zx + ',' + zy];
-                        
                         if (zone && zone.id) {
                             var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
                                 zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
