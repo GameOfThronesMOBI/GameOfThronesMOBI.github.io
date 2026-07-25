@@ -310,7 +310,6 @@ window.openWorldMap = function() {
     // Сбор информации о войсках по зонам
     var troopsByZone = {};
     if (window._castleGarrisons && _showArmies) {
-        // Свои войска
         if (houseId) {
             var ownGarrison = window._castleGarrisons[houseId];
             if (ownGarrison) {
@@ -331,7 +330,6 @@ window.openWorldMap = function() {
             }
         }
         
-        // Вражеские войска
         for (var hid in window._castleGarrisons) {
             if (hid === houseId) continue;
             if (HOUSES[hid] && houseId && HOUSES[hid].liege === houseId) continue;
@@ -346,22 +344,6 @@ window.openWorldMap = function() {
                     });
                 }
             });
-        }
-        
-        // Войска других домов
-        if (houseId) {
-            var squads = window.getSquads(houseId);
-            for (var cmdName in squads) {
-                var squad = squads[cmdName];
-                var loc = squad.location || 'castle';
-                if (!troopsByZone[loc]) troopsByZone[loc] = {};
-                if (!troopsByZone[loc]._squads) troopsByZone[loc]._squads = {};
-                if (!troopsByZone[loc]._squads[cmdName]) troopsByZone[loc]._squads[cmdName] = { count: 0, isMine: false };
-                
-                if (mySquad && mySquad.commanderName === cmdName) {
-                    troopsByZone[loc]._squads[cmdName].isMine = true;
-                }
-            }
         }
     }
     
@@ -454,7 +436,7 @@ window.openWorldMap = function() {
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleOwnerColors()"><input type="checkbox" id="chk-owners" ' + (_showOwners ? 'checked' : '') + '> 🎨 Владения</label>';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleArmies()"><input type="checkbox" id="chk-armies" ' + (_showArmies ? 'checked' : '') + '> ⚔️ Войска</label>';
     if (houseId) {
-        html += '<button class="btn btn-small" onclick="closeWorldMap(); setTimeout(function(){ openMyHouse(); setTimeout(function(){ showHouseTab(\'command\'); }, 200); }, 100);" style="font-size:11px;">👑 Командование</button>';
+        html += '<button class="btn btn-small" onclick="closeWorldMap(); setTimeout(function(){ openMyHouse(); setTimeout(function(){ showHouseTab(\'army\'); showArmySubTab(\'command\'); }, 200); }, 100);" style="font-size:11px;">👑 Командование</button>';
     }
     html += '</div>';
     html += '</div>';
@@ -539,23 +521,17 @@ window.openWorldMap = function() {
                     troopEmoji = '🟢';
                     troopColor = '#7ac98a';
                     
-                    // Проверяем, есть ли там наш отряд
                     if (mySquad && td._own.squads) {
                         for (var sId in td._own.squads) {
                             if (sId === mySquad.commanderName) {
-                                // Наш отряд — проверяем, это мои войска или нет
                                 if (mySquad.role === 'commander' || mySquad.role === 'captain') {
-                                    var isMine = false;
-                                    if (mySquad.role === 'commander') isMine = true;
-                                    else if (mySquad.role === 'captain') isMine = true;
-                                    troopEmoji = isMine ? '🟢' : '🟡';
-                                    troopColor = isMine ? '#7ac98a' : '#ffd700';
+                                    troopEmoji = '🟢';
+                                    troopColor = '#7ac98a';
                                 } else {
                                     troopEmoji = '🟡';
                                     troopColor = '#ffd700';
                                 }
                             } else {
-                                // Другой отряд дома
                                 if (!troopEmoji || troopEmoji === '🟢') {
                                     troopEmoji = '🟠';
                                     troopColor = '#ff8c00';
@@ -740,7 +716,6 @@ function openRallyModal() {
     html += '</label>';
     html += '<hr style="border-color:#2a201a;">';
     
-    // Свои юниты
     if (mySquad.role === 'commander' && squad.units.length > 0) {
         html += '<p style="color:#c9b694;font-size:12px;">⭐ Мои юниты (' + squad.units.length + ')</p>';
         html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
@@ -758,7 +733,6 @@ function openRallyModal() {
         }
     }
     
-    // Капитаны (для командора)
     if (mySquad.role === 'commander') {
         for (var capName in squad.captains) {
             var cap = squad.captains[capName];
@@ -780,7 +754,6 @@ function openRallyModal() {
         }
     }
     
-    // Сержанты (для капитана)
     if (mySquad.role === 'captain') {
         var cap = squad.captains[mySquad.captainName];
         if (cap) {
@@ -987,102 +960,6 @@ window.toggleArmies = function() {
 };
 
 // ============================================================
-// ОБРАБОТЧИК КЛИКА ПО КАРТЕ ДЛЯ СБОРА
-// ============================================================
-
-var _originalHandleZoneClick = window.handleZoneClick;
-window.handleZoneClick = function(zoneId) {
-    if (window._awaitingTarget && window._targetData && window._targetData.isRally) {
-        var data = window._targetData;
-        window._awaitingTarget = false;
-        
-        if (data.rallyAll) {
-            window.rallySquadTo(data.commanderName, zoneId);
-            setMessage('📦 Войска командора ' + data.commanderName + ' выдвигаются в точку сбора.');
-        } else if (data.rallySelected) {
-            rallySelectedUnits(data.rallySelected, zoneId);
-        }
-        
-        window._targetData = null;
-        closeWorldMap();
-        return;
-    }
-    
-    if (_originalHandleZoneClick) {
-        _originalHandleZoneClick(zoneId);
-    }
-};
-
-function rallySelectedUnits(selected, targetZoneId) {
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    var mySquad = window.getMySquad();
-    if (!mySquad) return;
-    
-    var squad = mySquad.squad;
-    var garrison = window._castleGarrisons[houseId];
-    var allUnits = [];
-    
-    ['infantry','cavalry','siege'].forEach(function(cat) {
-        if (garrison[cat]) {
-            for (var i = garrison[cat].length - 1; i >= 0; i--) {
-                var u = garrison[cat][i];
-                if (!u.isScout && u.squadId === mySquad.commanderName) {
-                    var shouldTake = false;
-                    
-                    if (selected.indexOf('commander_units') !== -1 && u.commander === currentUser && !u.captainId) shouldTake = true;
-                    if (selected.indexOf('captain_units') !== -1 && u.captainId === currentUser && !u.sergeantId) shouldTake = true;
-                    
-                    for (var si = 0; si < selected.length; si++) {
-                        var s = selected[si];
-                        if (s.indexOf('captain_') === 0 && u.captainId === s.replace('captain_', '')) shouldTake = true;
-                        if (s.indexOf('sergeant_') === 0) {
-                            var parts = s.replace('sergeant_', '').split('_');
-                            if (u.sergeantId === parts[parts.length-1] && u.captainId === parts.slice(0, -1).join('_')) shouldTake = true;
-                        }
-                    }
-                    
-                    if (shouldTake) {
-                        allUnits.push(garrison[cat].splice(i, 1)[0]);
-                    }
-                }
-            }
-        }
-    });
-    
-    if (allUnits.length === 0) { setMessage('❌ Нет выбранных юнитов.'); return; }
-    
-    var speedPerZone = 2;
-    var hasC = false, hasS = false;
-    allUnits.forEach(function(u) { if(u.siege)hasS=true; else if(u.horse||u.type==='rider'||u.type==='heavy_rider'||u.type==='knight')hasC=true; });
-    if (hasS) speedPerZone = 5; else if (hasC) speedPerZone = 1;
-    
-    var currentLoc = squad.location === 'castle' ? 'bl_-1_0' : squad.location;
-    var path = findPath(currentLoc, targetZoneId);
-    var marchId = 'rally_select_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-    var marchData = {
-        id: marchId, units: allUnits, path: path, currentStep: 0,
-        action: 'move', houseId: houseId, speedPerZone: speedPerZone,
-        moveTimeMs: speedPerZone * 60 * 1000, waitTimeMs: 10000,
-        phase: 'waiting', nextPhaseTime: Date.now() + 10000,
-        isSquad: true, squadId: mySquad.commanderName, isRally: true
-    };
-    
-    if (!garrison.marching) garrison.marching = [];
-    garrison.marching.push(marchData);
-    
-    saveData();
-    setMessage('📦 ' + allUnits.length + ' юнитов выдвигаются в точку сбора.');
-    addHouseLog(houseId, '📦 Сбор ' + allUnits.length + ' юнитов → ' + getZoneName(targetZoneId));
-    processMarchStep(marchId);
-}
-
-function getZoneName(zoneId) {
-    var z = WORLD_AREAS[zoneId];
-    return z ? z.name : zoneId;
-}
-
-// ============================================================
 // РЕГИСТРАЦИЯ
 // ============================================================
 
@@ -1101,6 +978,5 @@ window.confirmRally = confirmRally;
 window.closeRallyModal = closeRallyModal;
 window.openHighCommandRallyModal = openHighCommandRallyModal;
 window.selectCommanderForRally = selectCommanderForRally;
-window.rallySelectedUnits = rallySelectedUnits;
 
 console.log('✅ Система перемещений + Карта мира + Отряды + Сбор загружены!');
