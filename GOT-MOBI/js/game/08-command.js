@@ -269,7 +269,6 @@ window.unassignUnitsFromCommander = function(targetName, unitTypes) {
         for (var type in unitTypes) {
             var count = unitTypes[type];
             var taken = 0;
-            // Ищем в юнитах командора
             for (var i = squad.units.length - 1; i >= 0 && taken < count; i--) {
                 if (squad.units[i].type === type) {
                     var u = squad.units.splice(i, 1)[0];
@@ -279,7 +278,6 @@ window.unassignUnitsFromCommander = function(targetName, unitTypes) {
                     taken++; totalUnassigned++;
                 }
             }
-            // Ищем у капитанов
             if (taken < count) {
                 for (var capName in squad.captains) {
                     var cap = squad.captains[capName];
@@ -294,7 +292,6 @@ window.unassignUnitsFromCommander = function(targetName, unitTypes) {
                     }
                 }
             }
-            // Ищем у сержантов
             if (taken < count) {
                 for (var capName in squad.captains) {
                     var cap = squad.captains[capName];
@@ -352,7 +349,7 @@ function unassignAllFromSquad(squad, garrison) {
 }
 
 // ============================================================
-// РАСПРЕДЕЛЕНИЕ ПО ИЕРАРХИИ (ИСПРАВЛЕНО — ЛОРД МОЖЕТ)
+// РАСПРЕДЕЛЕНИЕ ПО ИЕРАРХИИ (ЛОРД МОЖЕТ)
 // ============================================================
 
 window.commanderAssignToCaptain = function(captainName, unitTypes) {
@@ -374,11 +371,8 @@ window.commanderAssignToCaptain = function(captainName, unitTypes) {
         return false;
     }
     
-    // Если лорд — берём squad по имени командора из аргументов (будет передан явно)
     var squad;
     if (isHighCommand) {
-        // Лорд вызывает через lordAssignToCaptain с cmdName
-        // Пока оставляем стандартный путь
         if (!mySquad) { setMessage('❌ Укажите командора.'); return false; }
         squad = mySquad.squad;
     } else {
@@ -400,28 +394,30 @@ window.commanderAssignToCaptain = function(captainName, unitTypes) {
     }
     
     var totalAssigned = 0;
-    for (var type in unitTypes) {
-        var count = unitTypes[type];
-        var taken = 0;
-        for (var i = squad.units.length - 1; i >= 0 && taken < count; i--) {
-            var u = squad.units[i];
-            if (u.type === type) {
-                u.captainId = captainName;
-                captainSquad.units.push(squad.units.splice(i, 1)[0]);
-                taken++;
-                totalAssigned++;
+    if (unitTypes && Object.keys(unitTypes).length > 0) {
+        for (var type in unitTypes) {
+            var count = unitTypes[type];
+            var taken = 0;
+            for (var i = squad.units.length - 1; i >= 0 && taken < count; i--) {
+                var u = squad.units[i];
+                if (u.type === type) {
+                    u.captainId = captainName;
+                    captainSquad.units.push(squad.units.splice(i, 1)[0]);
+                    taken++;
+                    totalAssigned++;
+                }
             }
         }
     }
     
+    saveData();
     if (totalAssigned > 0) {
-        saveData();
-        setMessage('✅ ' + totalAssigned + ' юнитов передано капитану ' + captainName);
-        addHouseLog(houseId, '👥 Командор ' + currentUser + ' → капитан ' + captainName + ' (' + totalAssigned + ' юн.)');
+        setMessage('✅ ' + captainName + ' назначен капитаном с ' + totalAssigned + ' юнитами.');
     } else {
-        setMessage('❌ Не удалось передать юнитов.');
+        setMessage('✅ ' + captainName + ' назначен капитаном (без юнитов).');
     }
-    return totalAssigned > 0;
+    addHouseLog(houseId, '👥 ' + currentUser + ' → капитан ' + captainName);
+    return true;
 };
 
 window.lordAssignToCaptain = function(cmdName, captainName, unitTypes) {
@@ -457,26 +453,28 @@ window.lordAssignToCaptain = function(cmdName, captainName, unitTypes) {
         squad.captains[captainName] = captainSquad;
     }
     
-    var totalAssigned = 0;
-    for (var type in unitTypes) {
-        var count = unitTypes[type];
-        var taken = 0;
-        for (var i = squad.units.length - 1; i >= 0 && taken < count; i--) {
-            var u = squad.units[i];
-            if (u.type === type) {
-                u.captainId = captainName;
-                captainSquad.units.push(squad.units.splice(i, 1)[0]);
-                taken++; totalAssigned++;
+    if (unitTypes && Object.keys(unitTypes).length > 0) {
+        var totalAssigned = 0;
+        for (var type in unitTypes) {
+            var count = unitTypes[type];
+            var taken = 0;
+            for (var i = squad.units.length - 1; i >= 0 && taken < count; i--) {
+                var u = squad.units[i];
+                if (u.type === type) {
+                    u.captainId = captainName;
+                    captainSquad.units.push(squad.units.splice(i, 1)[0]);
+                    taken++; totalAssigned++;
+                }
             }
         }
-    }
-    
-    if (totalAssigned > 0) {
         saveData();
         setMessage('✅ ' + totalAssigned + ' юнитов → капитан ' + captainName);
-        addHouseLog(houseId, '👥 Лорд → капитан ' + captainName + ' (' + totalAssigned + ' юн.)');
+    } else {
+        saveData();
+        setMessage('✅ ' + captainName + ' назначен капитаном (без юнитов).');
     }
-    return totalAssigned > 0;
+    addHouseLog(houseId, '👥 Лорд → капитан ' + captainName);
+    return true;
 };
 
 window.lordAssignToSergeant = function(cmdName, capName, sgtName, unitTypes) {
@@ -501,25 +499,9 @@ window.lordAssignToSergeant = function(cmdName, capName, sgtName, unitTypes) {
         cap.sergeants[sgtName] = sergeantSquad;
     }
     
-    var totalAssigned = 0;
-    for (var type in unitTypes) {
-        var count = unitTypes[type];
-        var taken = 0;
-        for (var i = cap.units.length - 1; i >= 0 && taken < count; i--) {
-            var u = cap.units[i];
-            if (u.type === type) {
-                u.sergeantId = sgtName;
-                sergeantSquad.units.push(cap.units.splice(i, 1)[0]);
-                taken++; totalAssigned++;
-            }
-        }
-    }
-    
-    if (totalAssigned > 0) {
-        saveData();
-        setMessage('✅ ' + totalAssigned + ' юнитов → сержант ' + sgtName);
-    }
-    return totalAssigned > 0;
+    saveData();
+    setMessage('✅ ' + sgtName + ' назначен сержантом.');
+    return true;
 };
 
 window.captainAssignToSergeant = function(sergeantName, unitTypes) {
@@ -551,28 +533,30 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes) {
     }
     
     var totalAssigned = 0;
-    for (var type in unitTypes) {
-        var count = unitTypes[type];
-        var taken = 0;
-        for (var i = captainSquad.units.length - 1; i >= 0 && taken < count; i--) {
-            var u = captainSquad.units[i];
-            if (u.type === type) {
-                u.sergeantId = sergeantName;
-                sergeantSquad.units.push(captainSquad.units.splice(i, 1)[0]);
-                taken++;
-                totalAssigned++;
+    if (unitTypes && Object.keys(unitTypes).length > 0) {
+        for (var type in unitTypes) {
+            var count = unitTypes[type];
+            var taken = 0;
+            for (var i = captainSquad.units.length - 1; i >= 0 && taken < count; i--) {
+                var u = captainSquad.units[i];
+                if (u.type === type) {
+                    u.sergeantId = sergeantName;
+                    sergeantSquad.units.push(captainSquad.units.splice(i, 1)[0]);
+                    taken++;
+                    totalAssigned++;
+                }
             }
         }
     }
     
+    saveData();
     if (totalAssigned > 0) {
-        saveData();
-        setMessage('✅ ' + totalAssigned + ' юнитов передано сержанту ' + sergeantName);
-        addHouseLog(houseId, '👥 Капитан ' + currentUser + ' → сержант ' + sergeantName + ' (' + totalAssigned + ' юн.)');
+        setMessage('✅ ' + sergeantName + ' назначен сержантом с ' + totalAssigned + ' юнитами.');
     } else {
-        setMessage('❌ Не удалось передать юнитов.');
+        setMessage('✅ ' + sergeantName + ' назначен сержантом (без юнитов).');
     }
-    return totalAssigned > 0;
+    addHouseLog(houseId, '👥 Капитан ' + currentUser + ' → сержант ' + sergeantName);
+    return true;
 };
 
 // ============================================================
@@ -869,7 +853,7 @@ window.movePlayerUnits = function(targetZoneId) {
 };
 
 // ============================================================
-// СБОР ВСЕХ ВОЙСК КОМАНДОРА (ИСПРАВЛЕНО)
+// СБОР ВСЕХ ВОЙСК КОМАНДОРА
 // ============================================================
 
 window.rallySquadTo = function(cmdName, targetZoneId) {
@@ -881,12 +865,10 @@ window.rallySquadTo = function(cmdName, targetZoneId) {
     var garrison = window._castleGarrisons[houseId];
     var allUnits = [];
     
-    // Собираем ВСЕХ юнитов привязанных к командору, где бы они ни были
     ['infantry','cavalry','siege'].forEach(function(cat) {
         if (garrison[cat]) {
             for (var i = garrison[cat].length - 1; i >= 0; i--) {
                 var u = garrison[cat][i];
-                // Берём всех у кого squadId или commander совпадает
                 if ((u.squadId === cmdName || u.commander === cmdName) && !u.isScout) {
                     allUnits.push(garrison[cat].splice(i, 1)[0]);
                 }
@@ -901,7 +883,6 @@ window.rallySquadTo = function(cmdName, targetZoneId) {
     allUnits.forEach(function(u) { if(u.siege)hasS=true; else if(u.horse||u.type==='rider'||u.type==='heavy_rider'||u.type==='knight')hasC=true; });
     if (hasS) speedPerZone = 5; else if (hasC) speedPerZone = 1;
     
-    // Строим путь от каждого юнита? Нет — все идут из текущей локации squad
     var currentLoc = squad.location === 'castle' ? 'bl_-1_0' : squad.location;
     var path = findPath(currentLoc, targetZoneId);
     
@@ -1035,7 +1016,7 @@ window.handleZoneClick = function(zoneId) {
 };
 
 // ============================================================
-// rallySelectedUnits (для выборочного сбора)
+// rallySelectedUnits
 // ============================================================
 
 function rallySelectedUnits(selected, targetZoneId) {
@@ -1160,6 +1141,23 @@ function getOwnUnitsInZone(zoneId, houseId) {
             if (u.location===zoneId||(isCastle&&u.location==='castle')) allUnits.push({unit:u,category:cat});
         });
     });
+    
+    // Добавляем юнитов из squads которые в этой зоне
+    if (isCastle || zoneId === 'bl_-1_0') {
+        var squads = window.getSquads(houseId);
+        for (var cmdName in squads) {
+            var squad = squads[cmdName];
+            if (squad.location === 'castle' || squad.location === zoneId) {
+                squad.units.forEach(function(u) { allUnits.push({unit:u,category:'infantry',squadUnit:true}); });
+                for (var capName in squad.captains) {
+                    squad.captains[capName].units.forEach(function(u) { allUnits.push({unit:u,category:'infantry',squadUnit:true}); });
+                    for (var sgtName in squad.captains[capName].sergeants) {
+                        squad.captains[capName].sergeants[sgtName].units.forEach(function(u) { allUnits.push({unit:u,category:'infantry',squadUnit:true}); });
+                    }
+                }
+            }
+        }
+    }
     
     var cmdMap={}, capMap={}, sgtMap={}, unattached=[], scouts=[];
     
@@ -1392,7 +1390,7 @@ window.selectUnattachedForMove = function(zoneId) {
 };
 
 // ============================================================
-// ПОДТВЕРЖДЕНИЕ И ОТПРАВКА (ИСПРАВЛЕНО)
+// ПОДТВЕРЖДЕНИЕ И ОТПРАВКА
 // ============================================================
 
 window.confirmTarget = function(targetZoneId, action, timeMinutes) {
