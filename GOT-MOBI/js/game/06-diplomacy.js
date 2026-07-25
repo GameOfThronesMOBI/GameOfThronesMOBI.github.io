@@ -1,6 +1,6 @@
 // ============================================================
 // js/game/06-diplomacy.js — ПОЛИТИКА, ДОМ, РОЛИ, АРМИЯ, КОМАНДОВАНИЕ
-// ПОЛНАЯ ВЕРСИЯ — ВСЕ ФУНКЦИИ
+// ПОЛНАЯ ВЕРСИЯ — ВСЕ ФУНКЦИИ — ИСПРАВЛЕНО
 // ============================================================
 
 var HOUSE_RANKS = {
@@ -137,9 +137,8 @@ window.showHouseTab = function(tab) {
     if (tab === 'members') {
         html += '<div class="modal-section"><h4>👥 УЧАСТНИКИ</h4>';
         var members = getHouseMembers(g.house);
-        if (members.length === 0) {
-            html += '<p style="color:#6a5a48;">Нет участников.</p>';
-        } else {
+        if (members.length === 0) { html += '<p style="color:#6a5a48;">Нет участников.</p>'; }
+        else {
             var canAssign = g.houseRank && HOUSE_RANKS[g.houseRank] && HOUSE_RANKS[g.houseRank].canAssign.length > 0;
             members.forEach(function(m) {
                 var rankName = m.rank ? (HOUSE_RANKS[m.rank] ? HOUSE_RANKS[m.rank].name : m.rank) : 'Без звания';
@@ -222,7 +221,7 @@ window.showHouseTab = function(tab) {
 };
 
 // ============================================================
-// 2.1 ВКЛАДКА «КОМАНДОВАНИЕ»
+// 2.1 ВКЛАДКА «КОМАНДОВАНИЕ» — ПОЛНАЯ ИЕРАРХИЯ
 // ============================================================
 
 function showCommandTab(houseId) {
@@ -287,19 +286,20 @@ function showCommandTab(houseId) {
         
         if (isHighCommand) {
             html += '<button class="btn btn-small" onclick="assignUnitsDialog(\'' + cmdName + '\')">⚔️ Выделить</button>';
+            html += '<button class="btn btn-small" onclick="unassignUnitsDialog(\'' + cmdName + '\')">🔓 Отвязать</button>';
             html += '<button class="btn btn-small" onclick="toggleDetachCommander(\'' + cmdName + '\')">' + (isDetached ? '🔒' : '🔓') + '</button>';
         }
         
         if (currentUser === cmdName && squad) {
-            html += '<button class="btn btn-small" onclick="openRallyModal(); closeHouses();">📦 Сбор</button>';
+            html += '<button class="btn btn-small" onclick="closeHouses(); openRallyModal();">📦 Сбор</button>';
         }
         
         html += '</div>';
         html += '</div>';
         
         // Капитаны
-        if (squad && squad.captains) {
-            var capNames = Object.keys(squad.captains);
+        if (squad) {
+            var capNames = squad.captains ? Object.keys(squad.captains) : [];
             html += '<div style="margin-top:10px;padding-left:10px;border-left:2px solid #3d3026;">';
             html += '<p style="color:#6a5a48;font-size:11px;">🗡️ Капитаны (' + capNames.length + '/5):</p>';
             
@@ -367,7 +367,7 @@ function showCommandTab(houseId) {
                         if ((isHighCommand || currentUser === cmdName || currentUser === capName) && sgtNames.length < 4) {
                             var freeSgts = getFreeSergeants(houseId, squads, sgtNames);
                             if (freeSgts.length > 0) {
-                                html += '<button class="btn btn-small" style="font-size:9px;margin-top:4px;" onclick="assignSergeantToCaptainDialog(\'' + cmdName + '\',\'' + capName + '\')">➕ Назначить сержанта</button>';
+                                html += '<button class="btn btn-small" style="font-size:9px;margin-top:4px;" onclick="assignSergeantToCaptainModal(\'' + cmdName + '\',\'' + capName + '\')">➕ Назначить сержанта</button>';
                             }
                         }
                         html += '</div>';
@@ -381,7 +381,7 @@ function showCommandTab(houseId) {
             if ((isHighCommand || currentUser === cmdName) && capNames.length < 5) {
                 var freeCaps = getFreeCaptains(houseId, squads, capNames);
                 if (freeCaps.length > 0) {
-                    html += '<button class="btn btn-small" style="margin-top:6px;" onclick="assignCaptainDialog(\'' + cmdName + '\')">➕ Назначить капитана</button>';
+                    html += '<button class="btn btn-small" style="margin-top:6px;" onclick="assignCaptainModal(\'' + cmdName + '\')">➕ Назначить капитана</button>';
                 }
             }
             html += '</div>';
@@ -398,51 +398,250 @@ function showCommandTab(houseId) {
 }
 
 // ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ КОМАНДОВАНИЯ
+// МОДАЛКИ НАЗНАЧЕНИЯ (ИСПРАВЛЕНО — НОРМАЛЬНЫЙ UI)
 // ============================================================
 
-function getFreeCaptains(houseId, squads, excludeNames) {
-    var free = [];
-    for (var name in users) {
-        if (users[name].game.house === houseId && users[name].game.houseRank === 'captain_officer') {
-            var assigned = false;
-            for (var cmd in squads) { if (squads[cmd].captains && squads[cmd].captains[name]) { assigned = true; break; } }
-            if (!assigned && excludeNames.indexOf(name) === -1) free.push(name);
-        }
+function assignCaptainModal(cmdName) {
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    var capNames = squad ? Object.keys(squad.captains || {}) : [];
+    var freeCaptains = getFreeCaptains(houseId, squads, capNames);
+    
+    if (freeCaptains.length === 0) { setMessage('❌ Нет свободных капитанов.'); return; }
+    
+    var modal = document.getElementById('modal-assign-captain');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-assign-captain'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeAssignCaptainModal(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ НАЗНАЧИТЬ КАПИТАНА</h3><button class="close-btn" onclick="closeAssignCaptainModal()">✕</button></div><div id="modal-assign-captain-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
     }
-    return free;
+    
+    var content = document.getElementById('modal-assign-captain-content');
+    var html = '<div class="modal-section"><h4>👑 Командор: ' + cmdName + '</h4>';
+    html += '<p style="color:#6a5a48;">Выберите капитана из списка:</p>';
+    
+    freeCaptains.forEach(function(name) {
+        html += '<button class="btn btn-game" onclick="selectCaptainForAssign(\'' + cmdName + '\',\'' + name + '\')" style="margin:4px 0;display:block;width:100%;">🗡️ ' + name + '</button>';
+    });
+    
+    html += '<button class="btn btn-secondary" onclick="closeAssignCaptainModal()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
 }
 
-function getFreeSergeants(houseId, squads, excludeNames) {
-    var free = [];
-    for (var name in users) {
-        if (users[name].game.house === houseId && users[name].game.houseRank === 'sergeant') {
-            var assigned = false;
-            for (var cmd in squads) {
-                for (var cap in squads[cmd].captains) {
-                    if (squads[cmd].captains[cap].sergeants && squads[cmd].captains[cap].sergeants[name]) { assigned = true; break; }
-                }
-                if (assigned) break;
+function selectCaptainForAssign(cmdName, capName) {
+    closeAssignCaptainModal();
+    
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad) { window.createSquad(cmdName); squad = window.getSquads(houseId)[cmdName]; }
+    if (!squad) { setMessage('❌ Ошибка создания отряда.'); return; }
+    
+    if (squad.units.length === 0) {
+        window.commanderAssignToCaptain(capName, {});
+        setMessage('✅ ' + capName + ' назначен капитаном (без юнитов).');
+        setTimeout(function() { showHouseTab('command'); }, 300);
+        return;
+    }
+    
+    var msg = 'Сколько юнитов передать капитану ' + capName + '?\nУ командора:\n';
+    var grouped = {};
+    squad.units.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
+    for (var t in grouped) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+        msg += (ut ? ut.emoji + ' ' + ut.name : t) + ': ' + grouped[t] + '\n';
+    }
+    msg += '\nВведите: тип:количество (или 0 для назначения без юнитов)';
+    
+    var input = prompt(msg);
+    if (!input) { setMessage('❌ Отменено.'); return; }
+    
+    if (input === '0' || input === '') {
+        window.commanderAssignToCaptain(capName, {});
+    } else {
+        var unitTypes = parseUnitInput(input, grouped);
+        if (!unitTypes) { setMessage('❌ Неверный формат.'); return; }
+        window.commanderAssignToCaptain(capName, unitTypes);
+    }
+    setTimeout(function() { showHouseTab('command'); }, 300);
+}
+
+function closeAssignCaptainModal() { var m = document.getElementById('modal-assign-captain'); if (m) m.classList.add('hide'); }
+
+function assignSergeantToCaptainModal(cmdName, capName) {
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad || !squad.captains[capName]) { setMessage('❌ Капитан не найден.'); return; }
+    var cap = squad.captains[capName];
+    var sgtNames = cap.sergeants ? Object.keys(cap.sergeants) : [];
+    var freeSergeants = getFreeSergeants(houseId, squads, sgtNames);
+    
+    if (freeSergeants.length === 0) { setMessage('❌ Нет свободных сержантов.'); return; }
+    
+    var modal = document.getElementById('modal-assign-sergeant');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-assign-sergeant'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeAssignSergeantModal(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛡️ НАЗНАЧИТЬ СЕРЖАНТА</h3><button class="close-btn" onclick="closeAssignSergeantModal()">✕</button></div><div id="modal-assign-sergeant-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-assign-sergeant-content');
+    var html = '<div class="modal-section"><h4>🗡️ Капитан: ' + capName + '</h4>';
+    html += '<p style="color:#6a5a48;">Выберите сержанта:</p>';
+    
+    freeSergeants.forEach(function(name) {
+        html += '<button class="btn btn-game" onclick="selectSergeantForAssign(\'' + cmdName + '\',\'' + capName + '\',\'' + name + '\')" style="margin:4px 0;display:block;width:100%;">🛡️ ' + name + '</button>';
+    });
+    
+    html += '<button class="btn btn-secondary" onclick="closeAssignSergeantModal()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function selectSergeantForAssign(cmdName, capName, sgtName) {
+    closeAssignSergeantModal();
+    
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad || !squad.captains[capName]) { setMessage('❌ Капитан не найден.'); return; }
+    var cap = squad.captains[capName];
+    
+    if (cap.units.length === 0) {
+        window.captainAssignToSergeant(sgtName, {});
+        setMessage('✅ ' + sgtName + ' назначен сержантом (без юнитов).');
+        setTimeout(function() { showHouseTab('command'); }, 300);
+        return;
+    }
+    
+    var msg = 'Сколько юнитов передать сержанту ' + sgtName + '?\nУ капитана:\n';
+    var grouped = {};
+    cap.units.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
+    for (var t in grouped) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+        msg += (ut ? ut.emoji + ' ' + ut.name : t) + ': ' + grouped[t] + '\n';
+    }
+    msg += '\n0 = без юнитов, или тип:количество';
+    
+    var input = prompt(msg);
+    if (!input) { setMessage('❌ Отменено.'); return; }
+    
+    if (input === '0' || input === '') {
+        window.captainAssignToSergeant(sgtName, {});
+    } else {
+        var unitTypes = parseUnitInput(input, grouped);
+        if (!unitTypes) { setMessage('❌ Неверный формат.'); return; }
+        window.captainAssignToSergeant(sgtName, unitTypes);
+    }
+    setTimeout(function() { showHouseTab('command'); }, 300);
+}
+
+function closeAssignSergeantModal() { var m = document.getElementById('modal-assign-sergeant'); if (m) m.classList.add('hide'); }
+
+// ============================================================
+// МОДАЛКА ОТВЯЗКИ ВОЙСК
+// ============================================================
+
+function unassignUnitsDialog(cmdName) {
+    var user = users[currentUser];
+    var houseId = user.game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad) { setMessage('❌ Отряд не найден.'); return; }
+    
+    var allUnits = {};
+    squad.units.forEach(function(u) { if (!allUnits[u.type]) allUnits[u.type] = 0; allUnits[u.type]++; });
+    for (var capName in squad.captains) {
+        squad.captains[capName].units.forEach(function(u) { if (!allUnits[u.type]) allUnits[u.type] = 0; allUnits[u.type]++; });
+        for (var sgtName in squad.captains[capName].sergeants) {
+            squad.captains[capName].sergeants[sgtName].units.forEach(function(u) { if (!allUnits[u.type]) allUnits[u.type] = 0; allUnits[u.type]++; });
+        }
+    }
+    
+    var totalBound = 0;
+    for (var t in allUnits) totalBound += allUnits[t];
+    
+    if (totalBound === 0) { setMessage('❌ У командора нет привязанных юнитов.'); return; }
+    
+    var modal = document.getElementById('modal-unassign');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-unassign'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeUnassignModal(); };
+        overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>🔓 ОТВЯЗАТЬ ВОЙСКА</h3><button class="close-btn" onclick="closeUnassignModal()">✕</button></div><div id="modal-unassign-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
+    
+    var content = document.getElementById('modal-unassign-content');
+    var html = '<div class="modal-section"><h4>⭐ Командор: ' + cmdName + '</h4>';
+    html += '<p style="color:#6a5a48;">Всего привязано: ' + totalBound + ' юнитов. Выберите кого отвязать.</p>';
+    
+    html += '<label style="display:block;padding:6px 0;color:#b8a890;cursor:pointer;">';
+    html += '<input type="checkbox" id="unassign_all" onchange="toggleAllUnassign()" checked> <strong>ОТВЯЗАТЬ ВСЕХ</strong>';
+    html += '</label>';
+    html += '<hr style="border-color:#2a201a;">';
+    
+    for (var t in allUnits) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+        html += '<div class="row">';
+        html += '<span class="label">' + (ut ? ut.emoji + ' ' + ut.name : t) + ' — ' + allUnits[t] + ' шт.</span>';
+        html += '<span class="value"><input type="number" class="unassign-count" data-type="' + t + '" value="' + allUnits[t] + '" min="0" max="' + allUnits[t] + '" style="width:60px;"></span>';
+        html += '</div>';
+    }
+    
+    html += '<button class="btn" onclick="confirmUnassignUnits(\'' + cmdName + '\')" style="margin-top:10px;">✅ Отвязать</button>';
+    html += '<button class="btn btn-secondary" onclick="closeUnassignModal()">Закрыть</button>';
+    html += '</div>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function toggleAllUnassign() {
+    var allChecked = document.getElementById('unassign_all').checked;
+    var inputs = document.querySelectorAll('.unassign-count');
+    inputs.forEach(function(inp) {
+        inp.value = allChecked ? inp.max : 0;
+    });
+}
+
+function confirmUnassignUnits(cmdName) {
+    var allChecked = document.getElementById('unassign_all').checked;
+    
+    if (allChecked) {
+        window.unassignUnitsFromCommander(cmdName, {});
+    } else {
+        var unitTypes = {};
+        var inputs = document.querySelectorAll('.unassign-count');
+        inputs.forEach(function(inp) {
+            var count = parseInt(inp.value) || 0;
+            if (count > 0) {
+                var t = inp.getAttribute('data-type');
+                unitTypes[t] = count;
             }
-            if (!assigned && excludeNames.indexOf(name) === -1) free.push(name);
-        }
+        });
+        if (Object.keys(unitTypes).length === 0) { setMessage('❌ Выберите хотя бы 1 тип.'); return; }
+        window.unassignUnitsFromCommander(cmdName, unitTypes);
     }
-    return free;
+    closeUnassignModal();
+    setTimeout(function() { showHouseTab('command'); }, 300);
 }
 
-function getZoneName(zoneId) {
-    var z = WORLD_AREAS[zoneId];
-    return z ? z.name : zoneId;
-}
-
-function getZoneCoords(zoneId) {
-    if (zoneId === 'castle') return '';
-    var z = WORLD_AREAS[zoneId];
-    return z ? '[' + z.x + ',' + z.y + ']' : '';
-}
+function closeUnassignModal() { var m = document.getElementById('modal-unassign'); if (m) m.classList.add('hide'); }
 
 // ============================================================
-// ДИАЛОГИ КОМАНДОВАНИЯ
+// МОДАЛКА ВЫДЕЛЕНИЯ ВОЙСК
 // ============================================================
 
 function assignUnitsDialog(cmdName) {
@@ -476,6 +675,21 @@ function assignUnitsDialog(cmdName) {
     
     if (totalCastle + totalMap === 0) { setMessage('❌ Нет свободных войск.'); return; }
     
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    var alreadyAssigned = 0;
+    if (squad) {
+        alreadyAssigned += squad.units.length;
+        for (var capName in squad.captains) {
+            alreadyAssigned += squad.captains[capName].units.length;
+            for (var sgtName in squad.captains[capName].sergeants) {
+                alreadyAssigned += squad.captains[capName].sergeants[sgtName].units.length;
+            }
+        }
+    }
+    var maxCanAssign = 1000 - alreadyAssigned;
+    if (maxCanAssign <= 0) { setMessage('❌ У командора уже максимум (1000) юнитов.'); return; }
+    
     var modal = document.getElementById('modal-assign');
     if (!modal) {
         var overlay = document.createElement('div');
@@ -487,14 +701,15 @@ function assignUnitsDialog(cmdName) {
     
     var content = document.getElementById('modal-assign-content');
     var html = '<div class="modal-section"><h4>⭐ Командор: ' + cmdName + '</h4>';
-    html += '<p style="color:#6a5a48;">Выберите войска (макс. 1000). Войска останутся на местах.</p>';
+    html += '<p style="color:#6a5a48;">Свободных: ' + (totalCastle + totalMap) + ' | Можно добавить: <strong>' + maxCanAssign + '</strong> | Уже: ' + alreadyAssigned + '/1000</p>';
     
     if (totalCastle > 0) {
         html += '<h5>🏰 Замок (' + totalCastle + ')</h5>';
         for (var t in freeUnitsCastle) {
             var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+            var safeId = 'assign_castle_' + t.replace(/[^a-zA-Z0-9]/g, '_');
             html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : t) + ' — ' + freeUnitsCastle[t] + '</span>';
-            html += '<span class="value"><input type="number" id="assign_castle_' + t.replace(/[^a-z0-9]/gi,'_') + '" value="0" min="0" max="' + freeUnitsCastle[t] + '" style="width:60px;"></span></div>';
+            html += '<span class="value"><input type="number" id="' + safeId + '" value="0" min="0" max="' + Math.min(freeUnitsCastle[t], maxCanAssign) + '" style="width:60px;" data-type="' + t + '" data-max="' + freeUnitsCastle[t] + '"></span></div>';
         }
     }
     
@@ -504,21 +719,41 @@ function assignUnitsDialog(cmdName) {
             html += '<p style="color:#6a5a48;font-size:11px;">📍 ' + loc + '</p>';
             for (var t in freeUnitsMap[loc]) {
                 var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+                var safeId = 'assign_map_' + loc.replace(/[^a-zA-Z0-9]/g, '_') + '_' + t.replace(/[^a-zA-Z0-9]/g, '_');
                 html += '<div class="row"><span class="label" style="padding-left:10px;">' + (ut ? ut.emoji + ' ' + ut.name : t) + ' — ' + freeUnitsMap[loc][t] + '</span>';
-                html += '<span class="value"><input type="number" id="assign_map_' + loc.replace(/[^a-z0-9]/gi,'_') + '_' + t.replace(/[^a-z0-9]/gi,'_') + '" value="0" min="0" max="' + freeUnitsMap[loc][t] + '" style="width:60px;"></span></div>';
+                html += '<span class="value"><input type="number" id="' + safeId + '" value="0" min="0" max="' + Math.min(freeUnitsMap[loc][t], maxCanAssign) + '" style="width:60px;" data-type="' + t + '" data-max="' + freeUnitsMap[loc][t] + '"></span></div>';
             }
         }
     }
     
-    html += '<button class="btn" onclick="confirmAssignUnits(\'' + cmdName + '\')" style="margin-top:10px;">✅ Выделить</button>';
+    html += '<p style="color:#c96a5a;font-size:10px;margin-top:8px;" id="assign-error"></p>';
+    html += '<button class="btn" onclick="confirmAssignUnits(\'' + cmdName + '\',' + maxCanAssign + ')" style="margin-top:10px;">✅ Выделить</button>';
     html += '<button class="btn btn-secondary" onclick="closeAssignModal()">Закрыть</button>';
     html += '</div>';
     
     content.innerHTML = html;
     modal.classList.remove('hide');
+    
+    // Валидация при вводе
+    var allInputs = document.querySelectorAll('#modal-assign-content input[type="number"]');
+    allInputs.forEach(function(inp) {
+        inp.addEventListener('input', function() {
+            var total = 0;
+            var allInps = document.querySelectorAll('#modal-assign-content input[type="number"]');
+            allInps.forEach(function(i) {
+                total += parseInt(i.value) || 0;
+            });
+            var errEl = document.getElementById('assign-error');
+            if (total > maxCanAssign) {
+                errEl.textContent = '⚠️ Превышение! Максимум: ' + maxCanAssign + '. Сейчас: ' + total;
+            } else {
+                errEl.textContent = '';
+            }
+        });
+    });
 }
 
-function confirmAssignUnits(cmdName) {
+function confirmAssignUnits(cmdName, maxCanAssign) {
     var unitTypes = {};
     var totalRequested = 0;
     
@@ -526,107 +761,25 @@ function confirmAssignUnits(cmdName) {
     inputs.forEach(function(inp) {
         var count = parseInt(inp.value) || 0;
         if (count > 0) {
-            var id = inp.id.replace('assign_castle_', '').replace('assign_map_', '');
-            // Извлекаем тип (последняя часть после _)
-            var parts = id.split('_');
-            var t = parts[parts.length-1];
-            // Обратно конвертируем _ в пробелы если нужно
-            if (window.UNIT_TYPES) {
-                for (var ut in window.UNIT_TYPES) {
-                    if (ut.replace(/[^a-z0-9]/gi,'_') === t) { t = ut; break; }
-                }
-            }
+            var t = inp.getAttribute('data-type');
             unitTypes[t] = (unitTypes[t] || 0) + count;
             totalRequested += count;
         }
     });
     
     if (totalRequested === 0) { setMessage('❌ Выберите хотя бы 1 юнита.'); return; }
-    if (totalRequested > 1000) { setMessage('❌ Максимум 1000 юнитов.'); return; }
+    if (totalRequested > maxCanAssign) { setMessage('❌ Превышение лимита! Максимум: ' + maxCanAssign); return; }
     
-    var success = window.assignUnitsToCommander(cmdName, unitTypes);
-    if (success) {
-        closeAssignModal();
-        setTimeout(function() { showHouseTab('command'); }, 300);
-    }
+    window.assignUnitsToCommander(cmdName, unitTypes);
+    closeAssignModal();
+    setTimeout(function() { showHouseTab('command'); }, 300);
 }
 
 function closeAssignModal() { var m = document.getElementById('modal-assign'); if (m) m.classList.add('hide'); }
 
-function assignCaptainDialog(cmdName) {
-    var houseId = users[currentUser].game.house;
-    var squads = window.getSquads(houseId);
-    var squad = squads[cmdName];
-    var capNames = squad ? Object.keys(squad.captains || {}) : [];
-    var freeCaptains = getFreeCaptains(houseId, squads, capNames);
-    
-    if (freeCaptains.length === 0) { setMessage('❌ Нет свободных капитанов.'); return; }
-    
-    var msg = 'Назначить капитана командору ' + cmdName + ':\n';
-    freeCaptains.forEach(function(name, i) { msg += (i+1) + '. ' + name + '\n'; });
-    msg += '0. Отмена';
-    
-    var choice = prompt(msg);
-    if (!choice || choice === '0') return;
-    var index = parseInt(choice) - 1;
-    if (isNaN(index) || index < 0 || index >= freeCaptains.length) { setMessage('❌ Отменено.'); return; }
-    
-    var capName = freeCaptains[index];
-    if (!squad) { window.createSquad(cmdName); squad = window.getSquads(houseId)[cmdName]; }
-    if (!squad) { setMessage('❌ Ошибка.'); return; }
-    
-    var countStr = prompt('Сколько юнитов передать капитану ' + capName + '?\nУ командора: ' + squad.units.length);
-    var count = parseInt(countStr);
-    if (isNaN(count) || count <= 0 || count > squad.units.length) { setMessage('❌ Неверное количество.'); return; }
-    
-    var unitTypes = {};
-    var taken = 0;
-    for (var i = 0; i < squad.units.length && taken < count; i++) {
-        var t = squad.units[i].type;
-        if (!unitTypes[t]) unitTypes[t] = 0;
-        unitTypes[t]++; taken++;
-    }
-    
-    window.commanderAssignToCaptain(capName, unitTypes);
-    setTimeout(function() { showHouseTab('command'); }, 300);
-}
-
-function assignSergeantToCaptainDialog(cmdName, capName) {
-    var houseId = users[currentUser].game.house;
-    var squads = window.getSquads(houseId);
-    var squad = squads[cmdName];
-    if (!squad || !squad.captains[capName]) { setMessage('❌ Капитан не найден.'); return; }
-    var cap = squad.captains[capName];
-    var sgtNames = cap.sergeants ? Object.keys(cap.sergeants) : [];
-    var freeSergeants = getFreeSergeants(houseId, squads, sgtNames);
-    
-    if (freeSergeants.length === 0) { setMessage('❌ Нет свободных сержантов.'); return; }
-    
-    var msg = 'Назначить сержанта капитану ' + capName + ':\n';
-    freeSergeants.forEach(function(name, i) { msg += (i+1) + '. ' + name + '\n'; });
-    msg += '0. Отмена';
-    
-    var choice = prompt(msg);
-    if (!choice || choice === '0') return;
-    var index = parseInt(choice) - 1;
-    if (isNaN(index) || index < 0 || index >= freeSergeants.length) { setMessage('❌ Отменено.'); return; }
-    
-    var sgtName = freeSergeants[index];
-    var countStr = prompt('Сколько юнитов передать сержанту ' + sgtName + '?\nУ капитана: ' + cap.units.length);
-    var count = parseInt(countStr);
-    if (isNaN(count) || count <= 0 || count > cap.units.length) { setMessage('❌ Неверное количество.'); return; }
-    
-    var unitTypes = {};
-    var taken = 0;
-    for (var i = 0; i < cap.units.length && taken < count; i++) {
-        var t = cap.units[i].type;
-        if (!unitTypes[t]) unitTypes[t] = 0;
-        unitTypes[t]++; taken++;
-    }
-    
-    window.captainAssignToSergeant(sgtName, unitTypes);
-    setTimeout(function() { showHouseTab('command'); }, 300);
-}
+// ============================================================
+// ДИАЛОГИ ВЫДЕЛЕНИЯ/ОТЗЫВА (ДЛЯ КАПИТАНОВ И СЕРЖАНТОВ)
+// ============================================================
 
 function assignUnitsToCaptainDialog(cmdName, capName) {
     var houseId = users[currentUser].game.house;
@@ -669,7 +822,7 @@ function assignUnitsToSergeantDialog(cmdName, capName, sgtName) {
         var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
         msg += (ut ? ut.emoji + ' ' + ut.name : t) + ': ' + grouped[t] + '\n';
     }
-    msg += '\nВведите: тип:количество, тип:количество';
+    msg += '\nВведите: тип:количество';
     
     var input = prompt(msg);
     if (!input) return;
@@ -701,11 +854,11 @@ function recallFromCaptainDialog(cmdName, capName) {
     if (!input) return;
     
     if (input === '0' || input === '') {
-        window.recallUnitsFromCaptain(capName, {});
+        window.recallUnitsFromCaptain(cmdName, capName, {});
     } else {
         var unitTypes = parseUnitInput(input, grouped);
         if (!unitTypes) { setMessage('❌ Неверный формат.'); return; }
-        window.recallUnitsFromCaptain(capName, unitTypes);
+        window.recallUnitsFromCaptain(cmdName, capName, unitTypes);
     }
     setTimeout(function() { showHouseTab('command'); }, 300);
 }
@@ -733,14 +886,18 @@ function recallFromSergeantDialog(cmdName, capName, sgtName) {
     if (!input) return;
     
     if (input === '0' || input === '') {
-        window.captainRecallFromSergeant(sgtName, {});
+        window.captainRecallFromSergeant(cmdName, capName, sgtName, {});
     } else {
         var unitTypes = parseUnitInput(input, grouped);
         if (!unitTypes) { setMessage('❌ Неверный формат.'); return; }
-        window.captainRecallFromSergeant(sgtName, unitTypes);
+        window.captainRecallFromSergeant(cmdName, capName, sgtName, unitTypes);
     }
     setTimeout(function() { showHouseTab('command'); }, 300);
 }
+
+// ============================================================
+// ОТСОЕДИНЕНИЕ/ПРИСОЕДИНЕНИЕ
+// ============================================================
 
 function toggleDetachCaptain(cmdName, capName) {
     var squads = window.getSquads(users[currentUser].game.house);
@@ -784,21 +941,38 @@ function rallyHighCommandDialog() {
     var cmdNames = Object.keys(squads);
     if (cmdNames.length === 0) { setMessage('❌ Нет командоров.'); return; }
     
-    var msg = 'Выберите командора для сбора:\n';
-    cmdNames.forEach(function(name, i) { msg += (i+1) + '. ' + name + '\n'; });
-    msg += '0. Отмена';
+    var modal = document.getElementById('modal-rally-hc');
+    if (!modal) {
+        var overlay = document.createElement('div');
+        overlay.id = 'modal-rally-hc'; overlay.className = 'modal-overlay hide';
+        overlay.onclick = function(e) { if (e.target === this) closeRallyHCModal(); };
+        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СБОР ВОЙСК</h3><button class="close-btn" onclick="closeRallyHCModal()">✕</button></div><div id="modal-rally-hc-content"></div></div>';
+        document.body.appendChild(overlay); modal = overlay;
+    }
     
-    var choice = prompt(msg);
-    if (!choice || choice === '0') return;
-    var index = parseInt(choice) - 1;
-    if (isNaN(index) || index < 0 || index >= cmdNames.length) { setMessage('❌ Отменено.'); return; }
+    var content = document.getElementById('modal-rally-hc-content');
+    var html = '<div class="modal-section"><h4>📦 ВЫБЕРИТЕ КОМАНДОРА</h4>';
     
-    var cmdName = cmdNames[index];
+    cmdNames.forEach(function(name) {
+        html += '<button class="btn btn-game" onclick="selectHCCommanderForRally(\'' + name + '\')" style="margin:4px 0;display:block;width:100%;">⭐ ' + name + '</button>';
+    });
+    
+    html += '<button class="btn btn-secondary" onclick="closeRallyHCModal()" style="margin-top:10px;">Закрыть</button>';
+    html += '</div>';
+    
+    content.innerHTML = html;
+    modal.classList.remove('hide');
+}
+
+function selectHCCommanderForRally(cmdName) {
+    closeRallyHCModal();
     closeHouses();
     window._awaitingTarget = true;
     window._targetData = { fromZone: 'rally', isRally: true, commanderName: cmdName, rallyAll: true };
     setMessage('🗺️ Выберите точку сбора на карте мира.');
 }
+
+function closeRallyHCModal() { var m = document.getElementById('modal-rally-hc'); if (m) m.classList.add('hide'); }
 
 function showSquadOnMap(cmdName) {
     var houseId = users[currentUser].game.house;
@@ -872,14 +1046,21 @@ function startChaseSquad(data) {
         if (typeof findPath === 'function') {
             var path = findPath(playerLoc2, squadLoc);
             if (path.length > 1) {
-                g.location.place = path[1];
-                g.location.locationId = path[1];
-                g.location.parentZone = null;
-                g.outside = true;
-                updateMenu();
-                updateStory();
-                updateActions();
-                saveData();
+                var nextLoc = path[1];
+                var nextZone = WORLD_AREAS[nextLoc];
+                if (nextZone) {
+                    var isWater = (nextZone.type === 'river' || nextZone.type === 'sea' || nextZone.type === 'shallows');
+                    if (!isWater) {
+                        g.location.place = nextLoc;
+                        g.location.locationId = nextLoc;
+                        g.location.parentZone = null;
+                        g.outside = true;
+                        updateMenu();
+                        updateStory();
+                        updateActions();
+                        saveData();
+                    }
+                }
             }
         }
     }, 10000);
@@ -966,6 +1147,8 @@ function showMySquadTab(houseId) {
 
 function showGarrisonTab(houseId) {
     var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : { infantry: [], cavalry: [], siege: [], marching: [] };
+    var house = HOUSES[houseId];
+    var castleName = house ? house.castle : 'Замок';
     
     var html = '<div class="modal-section"><h4>📍 ГАРНИЗОН</h4>';
     html += '<p style="color:#6a5a48;font-size:11px;">Все войска дома по локациям.</p>';
@@ -978,7 +1161,7 @@ function showGarrisonTab(houseId) {
             garrison[cat].forEach(function(u) {
                 totalAll++;
                 var loc = u.location || 'castle';
-                var locName = loc === 'castle' ? '🏰 Замок' : getZoneName(loc) + ' ' + getZoneCoords(loc);
+                var locName = loc === 'castle' ? '🏰 ' + castleName : getZoneName(loc) + ' ' + getZoneCoords(loc);
                 if (!byLocation[locName]) byLocation[locName] = { infantry: 0, cavalry: 0, siege: 0, scouts: 0, squads: {} };
                 
                 if (u.isScout) byLocation[locName].scouts++;
@@ -1037,6 +1220,48 @@ function showGarrisonTab(houseId) {
 // ============================================================
 // ВСПОМОГАТЕЛЬНЫЕ
 // ============================================================
+
+function getFreeCaptains(houseId, squads, excludeNames) {
+    var free = [];
+    for (var name in users) {
+        if (users[name].game.house === houseId && users[name].game.houseRank === 'captain_officer') {
+            if (users[name].game._leftSquad) continue;
+            var assigned = false;
+            for (var cmd in squads) { if (squads[cmd].captains && squads[cmd].captains[name]) { assigned = true; break; } }
+            if (!assigned && excludeNames.indexOf(name) === -1) free.push(name);
+        }
+    }
+    return free;
+}
+
+function getFreeSergeants(houseId, squads, excludeNames) {
+    var free = [];
+    for (var name in users) {
+        if (users[name].game.house === houseId && users[name].game.houseRank === 'sergeant') {
+            if (users[name].game._leftSquad) continue;
+            var assigned = false;
+            for (var cmd in squads) {
+                for (var cap in squads[cmd].captains) {
+                    if (squads[cmd].captains[cap].sergeants && squads[cmd].captains[cap].sergeants[name]) { assigned = true; break; }
+                }
+                if (assigned) break;
+            }
+            if (!assigned && excludeNames.indexOf(name) === -1) free.push(name);
+        }
+    }
+    return free;
+}
+
+function getZoneName(zoneId) {
+    var z = WORLD_AREAS[zoneId];
+    return z ? z.name : zoneId;
+}
+
+function getZoneCoords(zoneId) {
+    if (zoneId === 'castle') return '';
+    var z = WORLD_AREAS[zoneId];
+    return z ? '[' + z.x + ',' + z.y + ']' : '';
+}
 
 function showUnitGroup(units) {
     var grouped = {};
@@ -1120,10 +1345,12 @@ window.showArmySubTab = function(subTab) {
     if (subTab === 'garrison') {
         html += '<h4>📍 ГАРНИЗОНЫ</h4>';
         var byZone = {}; var totalG = 0;
+        var house = HOUSES[houseId];
+        var castleName = house ? house.castle : 'Замок';
         ['infantry','cavalry','siege'].forEach(function(cat) {
             if (garrison[cat]) garrison[cat].forEach(function(u) {
                 var zid = u.location || 'castle';
-                var zname = zid === 'castle' ? '🏰 Замок' : getZoneName(zid) + ' ' + getZoneCoords(zid);
+                var zname = zid === 'castle' ? '🏰 ' + castleName : getZoneName(zid) + ' ' + getZoneCoords(zid);
                 if (!byZone[zname]) byZone[zname] = { units: {}, scouts: 0, total: 0 };
                 totalG++;
                 if (u.isScout) byZone[zname].scouts++;
@@ -1329,7 +1556,7 @@ function loadInvitations() { try { var r = localStorage.getItem('got_invitations
 function saveInvitations() { localStorage.setItem('got_invitations', JSON.stringify(invitations)); }
 
 // ============================================================
-// РЕГИСТРАЦИЯ
+// РЕГИСТРАЦИЯ ВСЕХ ФУНКЦИЙ
 // ============================================================
 
 window.openMyHouse = openMyHouse;
@@ -1350,8 +1577,16 @@ window.closeRankModal = closeRankModal;
 window.assignUnitsDialog = assignUnitsDialog;
 window.confirmAssignUnits = confirmAssignUnits;
 window.closeAssignModal = closeAssignModal;
-window.assignCaptainDialog = assignCaptainDialog;
-window.assignSergeantToCaptainDialog = assignSergeantToCaptainDialog;
+window.unassignUnitsDialog = unassignUnitsDialog;
+window.toggleAllUnassign = toggleAllUnassign;
+window.confirmUnassignUnits = confirmUnassignUnits;
+window.closeUnassignModal = closeUnassignModal;
+window.assignCaptainModal = assignCaptainModal;
+window.selectCaptainForAssign = selectCaptainForAssign;
+window.closeAssignCaptainModal = closeAssignCaptainModal;
+window.assignSergeantToCaptainModal = assignSergeantToCaptainModal;
+window.selectSergeantForAssign = selectSergeantForAssign;
+window.closeAssignSergeantModal = closeAssignSergeantModal;
 window.assignUnitsToCaptainDialog = assignUnitsToCaptainDialog;
 window.assignUnitsToSergeantDialog = assignUnitsToSergeantDialog;
 window.recallFromCaptainDialog = recallFromCaptainDialog;
@@ -1360,9 +1595,11 @@ window.toggleDetachCaptain = toggleDetachCaptain;
 window.toggleDetachSergeant = toggleDetachSergeant;
 window.toggleDetachCommander = toggleDetachCommander;
 window.rallyHighCommandDialog = rallyHighCommandDialog;
+window.selectHCCommanderForRally = selectHCCommanderForRally;
+window.closeRallyHCModal = closeRallyHCModal;
 window.showSquadOnMap = showSquadOnMap;
 window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Командование загружены!');
+console.log('🏰 Дипломатия + Командование v2.0 загружены!');
