@@ -310,7 +310,6 @@ window.openWorldMap = function() {
     // Сбор информации о войсках по зонам
     var troopsByZone = {};
     if (window._castleGarrisons && _showArmies) {
-        // Свои войска
         if (houseId) {
             var ownGarrison = window._castleGarrisons[houseId];
             if (ownGarrison) {
@@ -331,7 +330,6 @@ window.openWorldMap = function() {
             }
         }
         
-        // Вражеские войска
         for (var hid in window._castleGarrisons) {
             if (hid === houseId) continue;
             if (HOUSES[hid] && houseId && HOUSES[hid].liege === houseId) continue;
@@ -346,22 +344,6 @@ window.openWorldMap = function() {
                     });
                 }
             });
-        }
-        
-        // Войска других домов
-        if (houseId) {
-            var squads = window.getSquads(houseId);
-            for (var cmdName in squads) {
-                var squad = squads[cmdName];
-                var loc = squad.location || 'castle';
-                if (!troopsByZone[loc]) troopsByZone[loc] = {};
-                if (!troopsByZone[loc]._squads) troopsByZone[loc]._squads = {};
-                if (!troopsByZone[loc]._squads[cmdName]) troopsByZone[loc]._squads[cmdName] = { count: 0, isMine: false };
-                
-                if (mySquad && mySquad.commanderName === cmdName) {
-                    troopsByZone[loc]._squads[cmdName].isMine = true;
-                }
-            }
         }
     }
     
@@ -539,11 +521,9 @@ window.openWorldMap = function() {
                     troopEmoji = '🟢';
                     troopColor = '#7ac98a';
                     
-                    // Проверяем, есть ли там наш отряд
                     if (mySquad && td._own.squads) {
                         for (var sId in td._own.squads) {
                             if (sId === mySquad.commanderName) {
-                                // Наш отряд — проверяем, это мои войска или нет
                                 if (mySquad.role === 'commander' || mySquad.role === 'captain') {
                                     var isMine = false;
                                     if (mySquad.role === 'commander') isMine = true;
@@ -555,7 +535,6 @@ window.openWorldMap = function() {
                                     troopColor = '#ffd700';
                                 }
                             } else {
-                                // Другой отряд дома
                                 if (!troopEmoji || troopEmoji === '🟢') {
                                     troopEmoji = '🟠';
                                     troopColor = '#ff8c00';
@@ -740,7 +719,6 @@ function openRallyModal() {
     html += '</label>';
     html += '<hr style="border-color:#2a201a;">';
     
-    // Свои юниты
     if (mySquad.role === 'commander' && squad.units.length > 0) {
         html += '<p style="color:#c9b694;font-size:12px;">⭐ Мои юниты (' + squad.units.length + ')</p>';
         html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
@@ -758,7 +736,6 @@ function openRallyModal() {
         }
     }
     
-    // Капитаны (для командора)
     if (mySquad.role === 'commander') {
         for (var capName in squad.captains) {
             var cap = squad.captains[capName];
@@ -780,7 +757,6 @@ function openRallyModal() {
         }
     }
     
-    // Сержанты (для капитана)
     if (mySquad.role === 'captain') {
         var cap = squad.captains[mySquad.captainName];
         if (cap) {
@@ -997,11 +973,9 @@ window.handleZoneClick = function(zoneId) {
         window._awaitingTarget = false;
         
         if (data.rallyAll) {
-            // Сбор всего отряда командора
             window.rallySquadTo(data.commanderName, zoneId);
             setMessage('📦 Войска командора ' + data.commanderName + ' выдвигаются в точку сбора.');
         } else if (data.rallySelected) {
-            // Сбор выбранных юнитов
             rallySelectedUnits(data.rallySelected, zoneId);
         }
         
@@ -1103,5 +1077,6 @@ window.confirmRally = confirmRally;
 window.closeRallyModal = closeRallyModal;
 window.openHighCommandRallyModal = openHighCommandRallyModal;
 window.selectCommanderForRally = selectCommanderForRally;
+window.rallySelectedUnits = rallySelectedUnits;
 
 console.log('✅ Система перемещений + Карта мира + Отряды + Сбор загружены!');
