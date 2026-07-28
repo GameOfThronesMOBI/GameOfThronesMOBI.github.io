@@ -1,5 +1,5 @@
 // ============================================================
-// movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ + ОТРЯДЫ + СБОР
+// movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ + ОТРЯДЫ
 // ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
@@ -243,8 +243,6 @@ window.openWorldMap = function() {
     
     var houseId = g.house;
     var mySquad = window.getMySquad ? window.getMySquad() : null;
-    var myRank = g.houseRank;
-    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
     
     var typeColors = {
         'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
@@ -307,9 +305,10 @@ window.openWorldMap = function() {
         return null;
     }
     
-    // Сбор информации о войсках по зонам
+    // Сбор информации о войсках по зонам (включая squads)
     var troopsByZone = {};
     if (window._castleGarrisons && _showArmies) {
+        // Свои войска из garrison
         if (houseId) {
             var ownGarrison = window._castleGarrisons[houseId];
             if (ownGarrison) {
@@ -328,8 +327,32 @@ window.openWorldMap = function() {
                     }
                 });
             }
+            
+            // Свои войска из squads
+            var squads = window.getSquads(houseId);
+            for (var cmdName in squads) {
+                var squad = squads[cmdName];
+                var loc = squad.location || 'castle';
+                if (!troopsByZone[loc]) troopsByZone[loc] = {};
+                if (!troopsByZone[loc]._own) troopsByZone[loc]._own = { count: 0, squads: {} };
+                if (!troopsByZone[loc]._own.squads[cmdName]) troopsByZone[loc]._own.squads[cmdName] = 0;
+                
+                var countSquad = function(u) {
+                    troopsByZone[loc]._own.count++;
+                    troopsByZone[loc]._own.squads[cmdName]++;
+                };
+                
+                squad.units.forEach(countSquad);
+                for (var capName in squad.captains) {
+                    squad.captains[capName].units.forEach(countSquad);
+                    for (var sgtName in squad.captains[capName].sergeants) {
+                        squad.captains[capName].sergeants[sgtName].units.forEach(countSquad);
+                    }
+                }
+            }
         }
         
+        // Вражеские войска
         for (var hid in window._castleGarrisons) {
             if (hid === houseId) continue;
             if (HOUSES[hid] && houseId && HOUSES[hid].liege === houseId) continue;
@@ -408,21 +431,6 @@ window.openWorldMap = function() {
     html += '<span>🔴 Враги</span>';
     html += '</div>';
     html += '</div>';
-    
-    // Кнопка сбора
-    if (houseId) {
-        html += '<div style="text-align:center;margin:6px 0;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
-        
-        if (mySquad && (mySquad.role === 'commander' || mySquad.role === 'captain')) {
-            html += '<button class="btn btn-small" onclick="openRallyModal()" style="background:#3d2e20;border-color:#8a7a5a;">📦 Сбор моего отряда</button>';
-        }
-        
-        if (isHighCommand) {
-            html += '<button class="btn btn-small" onclick="openHighCommandRallyModal()" style="background:#3d2e20;border-color:#8a7a5a;">📦 Сбор отряда</button>';
-        }
-        
-        html += '</div>';
-    }
     
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
     html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
@@ -686,165 +694,6 @@ window.openWorldMap = function() {
 };
 
 // ============================================================
-// МОДАЛКИ СБОРА
-// ============================================================
-
-function openRallyModal() {
-    var user = users[currentUser];
-    var houseId = user.game.house;
-    var mySquad = window.getMySquad();
-    if (!mySquad) { setMessage('❌ Вы не в отряде.'); return; }
-    
-    var squad = mySquad.squad;
-    
-    var modal = document.getElementById('modal-rally');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-rally'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeRallyModal(); };
-        overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>📦 СБОР ОТРЯДА</h3><button class="close-btn" onclick="closeRallyModal()">✕</button></div><div id="modal-rally-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-rally-content');
-    var html = '<div class="modal-section"><h4>📦 СБОР ОТРЯДА</h4>';
-    html += '<p style="color:#6a5a48;">Выберите кого собирать:</p>';
-    
-    html += '<div style="margin:10px 0;">';
-    html += '<label style="display:block;padding:6px 0;color:#b8a890;cursor:pointer;">';
-    html += '<input type="checkbox" id="rally_select_all" onchange="toggleAllRally()" checked> <strong>ВСЕ</strong>';
-    html += '</label>';
-    html += '<hr style="border-color:#2a201a;">';
-    
-    if (mySquad.role === 'commander' && squad.units.length > 0) {
-        html += '<p style="color:#c9b694;font-size:12px;">⭐ Мои юниты (' + squad.units.length + ')</p>';
-        html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
-        html += '<input type="checkbox" class="rally-check" data-target="commander_units" checked> Все мои юниты';
-        html += '</label>';
-    }
-    
-    if (mySquad.role === 'captain') {
-        var cap = squad.captains[mySquad.captainName];
-        if (cap && cap.units.length > 0) {
-            html += '<p style="color:#c9b694;font-size:12px;">🗡️ Мои юниты (' + cap.units.length + ')</p>';
-            html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
-            html += '<input type="checkbox" class="rally-check" data-target="captain_units" checked> Все мои юниты';
-            html += '</label>';
-        }
-    }
-    
-    if (mySquad.role === 'commander') {
-        for (var capName in squad.captains) {
-            var cap = squad.captains[capName];
-            var capTotal = cap.units.length;
-            for (var sgtName in cap.sergeants) {
-                capTotal += cap.sergeants[sgtName].units.length;
-            }
-            html += '<p style="color:#c9b694;font-size:12px;margin-top:6px;">🗡️ Капитан ' + capName + ' (' + capTotal + ')</p>';
-            html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
-            html += '<input type="checkbox" class="rally-check" data-target="captain_' + capName + '" checked> Все юниты капитана';
-            html += '</label>';
-            
-            for (var sgtName in cap.sergeants) {
-                var sgt = cap.sergeants[sgtName];
-                html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:20px;">';
-                html += '<input type="checkbox" class="rally-check" data-target="sergeant_' + capName + '_' + sgtName + '" checked> 🛡️ ' + sgtName + ' (' + sgt.units.length + ')';
-                html += '</label>';
-            }
-        }
-    }
-    
-    if (mySquad.role === 'captain') {
-        var cap = squad.captains[mySquad.captainName];
-        if (cap) {
-            for (var sgtName in cap.sergeants) {
-                var sgt = cap.sergeants[sgtName];
-                html += '<p style="color:#c9b694;font-size:12px;margin-top:6px;">🛡️ Сержант ' + sgtName + ' (' + sgt.units.length + ')</p>';
-                html += '<label style="display:block;padding:4px 0;color:#b8a890;cursor:pointer;padding-left:10px;">';
-                html += '<input type="checkbox" class="rally-check" data-target="sergeant_' + mySquad.captainName + '_' + sgtName + '" checked> Все юниты сержанта';
-                html += '</label>';
-            }
-        }
-    }
-    
-    html += '</div>';
-    
-    html += '<button class="btn" onclick="confirmRally()" style="margin-top:10px;">✅ Собрать выбранных</button>';
-    html += '<button class="btn btn-secondary" onclick="closeRallyModal()">Закрыть</button>';
-    html += '</div>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function toggleAllRally() {
-    var allChecked = document.getElementById('rally_select_all').checked;
-    var checks = document.querySelectorAll('.rally-check');
-    checks.forEach(function(c) { c.checked = allChecked; });
-}
-
-function confirmRally() {
-    var selected = [];
-    var checks = document.querySelectorAll('.rally-check:checked');
-    checks.forEach(function(c) { selected.push(c.getAttribute('data-target')); });
-    
-    if (selected.length === 0) { setMessage('❌ Ничего не выбрано.'); return; }
-    
-    closeRallyModal();
-    closeWorldMap();
-    
-    window._awaitingTarget = true;
-    window._targetData = { fromZone: 'rally', isRally: true, rallySelected: selected };
-    setMessage('🗺️ Выберите точку сбора на карте.');
-    setTimeout(function() { openWorldMap(); }, 300);
-}
-
-function openHighCommandRallyModal() {
-    var houseId = users[currentUser].game.house;
-    var squads = window.getSquads(houseId);
-    var cmdNames = Object.keys(squads);
-    
-    if (cmdNames.length === 0) { setMessage('❌ Нет командоров.'); return; }
-    
-    var modal = document.getElementById('modal-rally');
-    if (!modal) {
-        var overlay = document.createElement('div');
-        overlay.id = 'modal-rally'; overlay.className = 'modal-overlay hide';
-        overlay.onclick = function(e) { if (e.target === this) closeRallyModal(); };
-        overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📦 СБОР ОТРЯДА</h3><button class="close-btn" onclick="closeRallyModal()">✕</button></div><div id="modal-rally-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
-    }
-    
-    var content = document.getElementById('modal-rally-content');
-    var html = '<div class="modal-section"><h4>📦 ВЫБЕРИТЕ КОМАНДОРА</h4>';
-    
-    cmdNames.forEach(function(name) {
-        html += '<button class="btn btn-game" onclick="selectCommanderForRally(\'' + name + '\')" style="margin:4px 0;">⭐ ' + name + '</button>';
-    });
-    
-    html += '<button class="btn btn-secondary" onclick="closeRallyModal()" style="margin-top:10px;">Закрыть</button>';
-    html += '</div>';
-    
-    content.innerHTML = html;
-    modal.classList.remove('hide');
-}
-
-function selectCommanderForRally(cmdName) {
-    closeRallyModal();
-    closeWorldMap();
-    
-    window._awaitingTarget = true;
-    window._targetData = { fromZone: 'rally', isRally: true, commanderName: cmdName, rallyAll: true };
-    setMessage('🗺️ Выберите точку сбора для командора ' + cmdName + '.');
-    setTimeout(function() { openWorldMap(); }, 300);
-}
-
-function closeRallyModal() {
-    var m = document.getElementById('modal-rally');
-    if (m) m.classList.add('hide');
-}
-
-// ============================================================
 // МАРШ-МАРКЕРЫ
 // ============================================================
 
@@ -890,7 +739,7 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
         }
         
         var emoji = '🟢';
-        if (m.isSquad || m.isRally) emoji = '👑';
+        if (m.isSquad) emoji = '👑';
         else if (m.isScout) emoji = '👁️';
         else if (m.units) {
             var hasC = false, hasS = false;
@@ -972,11 +821,5 @@ window.toggleOwnerColors = toggleOwnerColors;
 window.toggleCoords = toggleCoords;
 window.toggleLevels = toggleLevels;
 window.toggleArmies = toggleArmies;
-window.openRallyModal = openRallyModal;
-window.toggleAllRally = toggleAllRally;
-window.confirmRally = confirmRally;
-window.closeRallyModal = closeRallyModal;
-window.openHighCommandRallyModal = openHighCommandRallyModal;
-window.selectCommanderForRally = selectCommanderForRally;
 
-console.log('✅ Система перемещений + Карта мира + Отряды + Сбор загружены!');
+console.log('✅ Система перемещений + Карта мира + Отряды загружены!');
