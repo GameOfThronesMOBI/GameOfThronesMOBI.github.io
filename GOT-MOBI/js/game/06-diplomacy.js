@@ -11,7 +11,7 @@ var HOUSE_RANKS = {
     steward: { name: '🍞 Стюард', order: 5, description: 'Хозяйство и припасы.', canAssign: [] },
     treasurer: { name: '💰 Казначей', order: 6, description: 'Доходы и налоги.', canAssign: [] },
     maester: { name: '📜 Мейстер', order: 7, description: 'Советник и врач.', canAssign: [] },
-    whisperer: { name: '🕵️ Мастер над шептунами', order: 8, description: 'Разведка.', canAssign: [] },
+    whisperer: { name: '🕵️ Мастер над шпионажем', order: 8, description: 'Разведка.', canAssign: [] },
     knight_commander: { name: '⭐ Рыцарь-командор', order: 9, description: 'Командует армией.', canAssign: ['captain_officer','sergeant','knight'] },
     captain_officer: { name: '🗡️ Капитан', order: 10, description: 'Командует ротой.', canAssign: ['sergeant','knight'] },
     sergeant: { name: '🛡️ Сержант', order: 11, description: 'Командует отрядом.', canAssign: [] },
@@ -375,7 +375,6 @@ function showCommandTab(houseId) {
         
         var locationName = squad ? (squad.location === 'castle' ? '🏰 Замок' : getZoneName(squad.location) + ' ' + getZoneCoords(squad.location)) : '—';
         
-        // Проверка доступа
         var canManage = false;
         if (isLord) {
             canManage = true;
@@ -414,7 +413,6 @@ function showCommandTab(houseId) {
         html += '</div>';
         html += '</div>';
         
-        // Капитаны
         if (squad && canManage) {
             var capNames = squad.captains ? Object.keys(squad.captains) : [];
             html += '<div style="margin-top:10px;padding-left:10px;border-left:2px solid #3d3026;">';
@@ -444,10 +442,10 @@ function showCommandTab(houseId) {
                     html += '<button class="btn btn-small" style="font-size:9px;" onclick="assignUnitsToCaptainModal(\'' + cmdName + '\',\'' + capName + '\')">⚔️ Выдать</button>';
                     html += '<button class="btn btn-small" style="font-size:9px;" onclick="recallFromCaptainDialog(\'' + cmdName + '\',\'' + capName + '\')">📥 Отозвать</button>';
                     html += '<button class="btn btn-small" style="font-size:9px;" onclick="toggleDetachCaptain(\'' + cmdName + '\',\'' + capName + '\')">' + (capDetached ? '🔒' : '🔓') + '</button>';
+                    
                     html += '</div>';
                     html += '</div>';
                     
-                    // Сержанты
                     if (cap.sergeants) {
                         var sgtNames = Object.keys(cap.sergeants);
                         html += '<div style="margin-top:4px;padding-left:10px;border-left:1px solid #2a201a;">';
@@ -524,10 +522,12 @@ function assignCaptainModal(cmdName) {
     var modal = document.getElementById('modal-assign-captain');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-assign-captain'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-assign-captain';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeAssignCaptainModal(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🗡️ НАЗНАЧИТЬ КАПИТАНА</h3><button class="close-btn" onclick="closeAssignCaptainModal()">✕</button></div><div id="modal-assign-captain-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-assign-captain-content');
@@ -561,7 +561,10 @@ function confirmCaptainAssign(cmdName, capName) {
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
-function closeAssignCaptainModal() { var m = document.getElementById('modal-assign-captain'); if (m) m.classList.add('hide'); }
+function closeAssignCaptainModal() {
+    var m = document.getElementById('modal-assign-captain');
+    if (m) m.classList.add('hide');
+}
 
 function assignSergeantToCaptainModal(cmdName, capName) {
     var houseId = users[currentUser].game.house;
@@ -577,10 +580,12 @@ function assignSergeantToCaptainModal(cmdName, capName) {
     var modal = document.getElementById('modal-assign-sergeant');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-assign-sergeant'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-assign-sergeant';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeAssignSergeantModal(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🛡️ НАЗНАЧИТЬ СЕРЖАНТА</h3><button class="close-btn" onclick="closeAssignSergeantModal()">✕</button></div><div id="modal-assign-sergeant-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-assign-sergeant-content');
@@ -614,10 +619,13 @@ function confirmSergeantAssign(cmdName, capName, sgtName) {
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
-function closeAssignSergeantModal() { var m = document.getElementById('modal-assign-sergeant'); if (m) m.classList.add('hide'); }
+function closeAssignSergeantModal() {
+    var m = document.getElementById('modal-assign-sergeant');
+    if (m) m.classList.add('hide');
+}
 
 // ============================================================
-// МОДАЛКИ ВЫДАЧИ ВОЙСК (НОВЫЕ — БЕЗ PROMPT)
+// МОДАЛКИ ВЫДАЧИ ВОЙСК
 // ============================================================
 
 function assignUnitsToCaptainModal(cmdName, capName) {
@@ -634,10 +642,12 @@ function assignUnitsToCaptainModal(cmdName, capName) {
     var modal = document.getElementById('modal-assign-units');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-assign-units'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-assign-units';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeAssignUnitsModal(); };
         overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>⚔️ ВЫДАТЬ ВОЙСКА КАПИТАНУ</h3><button class="close-btn" onclick="closeAssignUnitsModal()">✕</button></div><div id="modal-assign-units-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-assign-units-content');
@@ -675,13 +685,21 @@ function confirmAssignToCaptain(cmdName, capName) {
     
     closeAssignUnitsModal();
     
+    var user = users[currentUser];
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+    
     if (totalRequested === 0) {
         setMessage('✅ Юниты не выданы.');
         setTimeout(function() { showArmySubTab('command'); }, 300);
         return;
     }
     
-    window.commanderAssignToCaptain(capName, unitTypes);
+    if (isHighCommand) {
+        window.lordAssignToCaptain(cmdName, capName, unitTypes);
+    } else {
+        window.commanderAssignToCaptain(capName, unitTypes);
+    }
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
@@ -699,10 +717,12 @@ function assignUnitsToSergeantModal(cmdName, capName, sgtName) {
     var modal = document.getElementById('modal-assign-units');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-assign-units'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-assign-units';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeAssignUnitsModal(); };
         overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>⚔️ ВЫДАТЬ ВОЙСКА СЕРЖАНТУ</h3><button class="close-btn" onclick="closeAssignUnitsModal()">✕</button></div><div id="modal-assign-units-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-assign-units-content');
@@ -745,17 +765,28 @@ function confirmAssignToSergeant(cmdName, capName, sgtName) {
     
     closeAssignUnitsModal();
     
+    var user = users[currentUser];
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+    
     if (totalRequested === 0) {
         setMessage('✅ Юниты не выданы.');
         setTimeout(function() { showArmySubTab('command'); }, 300);
         return;
     }
     
-    window.captainAssignToSergeant(sgtName, unitTypes);
+    if (isHighCommand) {
+        window.lordAssignToSergeant(cmdName, capName, sgtName, unitTypes);
+    } else {
+        window.captainAssignToSergeant(sgtName, unitTypes);
+    }
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
-function closeAssignUnitsModal() { var m = document.getElementById('modal-assign-units'); if (m) m.classList.add('hide'); }
+function closeAssignUnitsModal() {
+    var m = document.getElementById('modal-assign-units');
+    if (m) m.classList.add('hide');
+}
 
 // ============================================================
 // МОДАЛКИ ВЫДЕЛЕНИЯ/ОТВЯЗКИ
@@ -810,10 +841,12 @@ function assignUnitsDialog(cmdName) {
     var modal = document.getElementById('modal-assign');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-assign'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-assign';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeAssignModal(); };
         overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>⚔️ ВЫДЕЛИТЬ ВОЙСКА</h3><button class="close-btn" onclick="closeAssignModal()">✕</button></div><div id="modal-assign-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-assign-content');
@@ -889,7 +922,10 @@ function confirmAssignUnits(cmdName, maxCanAssign) {
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
-function closeAssignModal() { var m = document.getElementById('modal-assign'); if (m) m.classList.add('hide'); }
+function closeAssignModal() {
+    var m = document.getElementById('modal-assign');
+    if (m) m.classList.add('hide');
+}
 
 function unassignUnitsDialog(cmdName) {
     var user = users[currentUser];
@@ -915,10 +951,12 @@ function unassignUnitsDialog(cmdName) {
     var modal = document.getElementById('modal-unassign');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-unassign'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-unassign';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeUnassignModal(); };
         overlay.innerHTML = '<div class="modal-box" style="max-height:90vh;overflow-y:auto;"><div class="modal-header"><h3>🔓 ОТВЯЗАТЬ ВОЙСКА</h3><button class="close-btn" onclick="closeUnassignModal()">✕</button></div><div id="modal-unassign-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-unassign-content');
@@ -974,7 +1012,10 @@ function confirmUnassignUnits(cmdName) {
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
-function closeUnassignModal() { var m = document.getElementById('modal-unassign'); if (m) m.classList.add('hide'); }
+function closeUnassignModal() {
+    var m = document.getElementById('modal-unassign');
+    if (m) m.classList.add('hide');
+}
 
 // ============================================================
 // ДИАЛОГИ ОТЗЫВА
@@ -1086,10 +1127,12 @@ function bindCommanderDialog(cmdName) {
     var modal = document.getElementById('modal-bind');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-bind'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-bind';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeBindModal(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>🔗 ПРИВЯЗАТЬ КОМАНДОРА</h3><button class="close-btn" onclick="closeBindModal()">✕</button></div><div id="modal-bind-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     
     var content = document.getElementById('modal-bind-content');
@@ -1113,7 +1156,10 @@ function bindCommanderDialog(cmdName) {
     modal.classList.remove('hide');
 }
 
-function closeBindModal() { var m = document.getElementById('modal-bind'); if (m) m.classList.add('hide'); }
+function closeBindModal() {
+    var m = document.getElementById('modal-bind');
+    if (m) m.classList.add('hide');
+}
 
 // ============================================================
 // КАРТА
@@ -1536,22 +1582,30 @@ window.showMarchDetails = function(index) {
     var modal = document.getElementById('modal-march-details');
     if (!modal) {
         var overlay = document.createElement('div');
-        overlay.id = 'modal-march-details'; overlay.className = 'modal-overlay hide';
+        overlay.id = 'modal-march-details';
+        overlay.className = 'modal-overlay hide';
         overlay.onclick = function(e) { if (e.target === this) closeMarchDetails(); };
         overlay.innerHTML = '<div class="modal-box"><div class="modal-header"><h3>📋 СОСТАВ</h3><button class="close-btn" onclick="closeMarchDetails()">✕</button></div><div id="modal-march-details-content"></div></div>';
-        document.body.appendChild(overlay); modal = overlay;
+        document.body.appendChild(overlay);
+        modal = overlay;
     }
     var content = document.getElementById('modal-march-details-content');
     var html = '<div class="modal-section"><h4>📋 СОСТАВ</h4><p style="color:#6a5a48;">' + m.units.length + ' юнитов</p>';
     var grouped = {};
     m.units.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
-    for (var k in grouped) { var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
-        html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + grouped[k] + '</span></div>'; }
+    for (var k in grouped) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[k] : null;
+        html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : k) + '</span><span class="value">×' + grouped[k] + '</span></div>';
+    }
     html += '</div><button class="btn btn-secondary" onclick="closeMarchDetails()">Закрыть</button>';
-    content.innerHTML = html; modal.classList.remove('hide');
+    content.innerHTML = html;
+    modal.classList.remove('hide');
 };
 
-window.closeMarchDetails = function() { var m = document.getElementById('modal-march-details'); if (m) m.classList.add('hide'); };
+window.closeMarchDetails = function() {
+    var m = document.getElementById('modal-march-details');
+    if (m) m.classList.add('hide');
+};
 
 // ============================================================
 // ПРИГЛАШЕНИЯ И РОЛИ
