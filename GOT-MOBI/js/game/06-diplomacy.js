@@ -1960,4 +1960,4 @@ window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Командование v3.0 загруже
+console.log('🏰 Дипломатия + Командование v3.0 загружены!');
