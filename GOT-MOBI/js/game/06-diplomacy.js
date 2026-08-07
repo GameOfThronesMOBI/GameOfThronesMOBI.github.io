@@ -465,8 +465,8 @@ function showCommandTab(houseId) {
                                 html += '<div style="padding:2px 0;font-size:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">';
                                 html += '<span><span style="color:#b8a890;">🛡️ ' + sgtName + '</span> ' + sgtStatus + ' ' + sgtControlIcon + ' <span style="color:#6a5a48;">👥 ' + sgt.units.length + ' / 50</span></span>';
                                 html += '<span>';
-                                html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="assignUnitsToSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">⚔️</button>';
-                                html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="recallFromSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">📥</button>';
+                                html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="assignUnitsToSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">⚔️ Выдать</button>';
+                                html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="recallFromSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">📥 Отозвать</button>';
                                 html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="removeSergeant(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">❌</button>';
                                 html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="toggleSergeantControl(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">' + (sgtLocked ? '🔒' : '🔓') + '</button>';
                                 html += '</span>';
