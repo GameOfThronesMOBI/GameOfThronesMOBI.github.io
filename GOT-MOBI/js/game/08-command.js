@@ -565,8 +565,26 @@ window.lordAssignToSergeant = function(cmdName, capName, sgtName, unitTypes) {
         cap.sergeants[sgtName] = sergeantSquad;
     }
     
-    saveData();
-    setMessage('✅ ' + sgtName + ' назначен сержантом.');
+    if (unitTypes && Object.keys(unitTypes).length > 0) {
+        var totalAssigned = 0;
+        for (var type in unitTypes) {
+            var count = unitTypes[type];
+            var taken = 0;
+            for (var i = cap.units.length - 1; i >= 0 && taken < count; i--) {
+                if (cap.units[i].type === type) {
+                    cap.units[i].sergeantId = sgtName;
+                    sergeantSquad.units.push(cap.units.splice(i, 1)[0]);
+                    taken++;
+                    totalAssigned++;
+                }
+            }
+        }
+        saveData();
+        setMessage('✅ Сержант ' + sgtName + ' получил ' + totalAssigned + ' юнитов.');
+    } else {
+        saveData();
+        setMessage('✅ ' + sgtName + ' назначен сержантом.');
+    }
     return true;
 };
 
@@ -589,7 +607,21 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes) {
         return false;
     }
     
-    var captainSquad = mySquad.squad.captains[mySquad.captainName];
+    var captainSquad;
+    if (isHighCommand && mySquad) {
+        if (mySquad.role === 'captain') {
+            captainSquad = mySquad.squad.captains[mySquad.captainName];
+        } else if (mySquad.role === 'commander') {
+            captainSquad = mySquad.squad.captains[sergeantName];
+            if (!captainSquad) {
+                captainSquad = { commander: sergeantName, units: [], sergeants: {}, detached: false };
+                mySquad.squad.captains[sergeantName] = captainSquad;
+            }
+        }
+    } else if (mySquad && mySquad.role === 'captain') {
+        captainSquad = mySquad.squad.captains[mySquad.captainName];
+    }
+    
     if (!captainSquad) { setMessage('❌ Ошибка: отряд капитана не найден.'); return false; }
     
     var sergeantSquad = captainSquad.sergeants[sergeantName];
