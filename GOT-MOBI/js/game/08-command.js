@@ -588,7 +588,15 @@ window.lordAssignToSergeant = function(cmdName, capName, sgtName, unitTypes) {
     return true;
 };
 
-window.captainAssignToSergeant = function(sergeantName, unitTypes) {
+// ============================================================
+// ВЫДАЧА ЮНИТОВ СЕРЖАНТУ
+// Вызывается:
+//   1) Капитаном — из своего подразделения (capName не передаётся, берётся из mySquad)
+//   2) Командором — из любого своего капитана (cmdName/capName передаются)
+//   3) Высшим командованием — из любого отряда и капитана (cmdName/capName передаются)
+// ============================================================
+
+window.captainAssignToSergeant = function(sergeantName, unitTypes, cmdName, capName) {
     var user = users[currentUser];
     if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return false; }
     var houseId = user.game.house;
@@ -596,9 +604,12 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes) {
     var myRank = user.game.houseRank;
     var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
     var mySquad = window.getMySquad();
+    var isCommander = mySquad && mySquad.role === 'commander';
+    var isCaptain = mySquad && mySquad.role === 'captain';
     
-    if (!isHighCommand && (!mySquad || mySquad.role !== 'captain')) {
-        setMessage('❌ Только капитан или высшее командование могут назначать сержантов.');
+    // Права: высшее командование, командор или капитан
+    if (!isHighCommand && !isCommander && !isCaptain) {
+        setMessage('❌ Только капитан, командор или высшее командование могут выдавать сержантам.');
         return false;
     }
     
@@ -607,22 +618,23 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes) {
         return false;
     }
     
-    var captainSquad;
-    if (isHighCommand && mySquad) {
-        if (mySquad.role === 'captain') {
-            captainSquad = mySquad.squad.captains[mySquad.captainName];
-        } else if (mySquad.role === 'commander') {
-            captainSquad = mySquad.squad.captains[sergeantName];
-            if (!captainSquad) {
-                captainSquad = { commander: sergeantName, units: [], sergeants: {}, detached: false };
-                mySquad.squad.captains[sergeantName] = captainSquad;
-            }
-        }
-    } else if (mySquad && mySquad.role === 'captain') {
+    var squads = window.getSquads(houseId);
+    var captainSquad = null;
+    
+    // Приоритет 1: явно переданные cmdName и capName (высшее командование, командор)
+    if (cmdName && capName && squads[cmdName] && squads[cmdName].captains && squads[cmdName].captains[capName]) {
+        captainSquad = squads[cmdName].captains[capName];
+    }
+    // Приоритет 2: капитан выдаёт сам себе
+    else if (isCaptain) {
         captainSquad = mySquad.squad.captains[mySquad.captainName];
     }
+    // Приоритет 3: командор со своим капитаном (если capName передан)
+    else if (isCommander && capName) {
+        captainSquad = mySquad.squad.captains[capName];
+    }
     
-    if (!captainSquad) { setMessage('❌ Ошибка: отряд капитана не найден.'); return false; }
+    if (!captainSquad) { setMessage('❌ Отряд капитана не найден.'); return false; }
     
     var sergeantSquad = captainSquad.sergeants[sergeantName];
     if (!sergeantSquad) {
@@ -653,7 +665,7 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes) {
     } else {
         setMessage('✅ ' + sergeantName + ' назначен сержантом (без юнитов).');
     }
-    addHouseLog(houseId, '👥 Капитан ' + currentUser + ' → сержант ' + sergeantName);
+    addHouseLog(houseId, '👥 ' + currentUser + ' → сержант ' + sergeantName);
     return true;
 };
 
