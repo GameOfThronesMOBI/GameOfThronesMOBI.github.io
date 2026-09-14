@@ -849,7 +849,8 @@ function confirmAssignToSergeant(cmdName, capName, sgtName, maxSgtCanGet) {
     }
     
     // Для передачи юнитов сержанту всегда используем captainAssignToSergeant
-    window.captainAssignToSergeant(sgtName, unitTypes);
+    // и передаём cmdName, capName — чтобы высшее командование и командор могли найти капитана
+    window.captainAssignToSergeant(sgtName, unitTypes, cmdName, capName);
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
@@ -1977,4 +1978,4 @@ window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Командование v3.2 загружены!');
+console.log('🏰 Дипломатия + Командование v3.3 загружены!');
