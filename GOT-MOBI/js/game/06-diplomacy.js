@@ -439,19 +439,21 @@ function showCommandTab(houseId) {
                     var capLocked = cap.detached === true;
                     var capControlIcon = capLocked ? '🔒' : '🔓';
                     
-                    // Занято под капитаном: он сам + все его сержанты
-                    var capOccupied = cap.units.length;
+                    // У капитана: свободно = cap.units (личные), занято = все сержанты
+                    var capOccupied = 0;
                     for (var sgtName in cap.sergeants) {
                         capOccupied += cap.sergeants[sgtName].units.length;
                     }
-                    var capFree = 200 - capOccupied;
-                    if (capFree < 0) capFree = 0;
+                    var capFree = cap.units.length;
+                    var capTotal = capFree + capOccupied;
+                    var capMaxFree = 200 - capOccupied;
+                    if (capMaxFree < 0) capMaxFree = 0;
                     
                     html += '<div style="background:#1a1410;border:1px solid #2a201a;border-radius:8px;padding:8px;margin:4px 0;">';
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">';
                     html += '<div>';
                     html += '<span style="color:#c9b694;">🗡️ ' + capName + '</span> ' + capStatus + ' ' + capControlIcon;
-                    html += '<br><span style="font-size:10px;color:#6a5a48;">👥 занято ' + capOccupied + '/200 | свободно <span style="color:' + (capFree > 0 ? '#7ac98a' : '#c96a5a') + ';">' + capFree + '</span></span>';
+                    html += '<br><span style="font-size:10px;color:#6a5a48;">👥 свободно <strong style="color:#7ac98a;">' + capFree + '</strong>/' + capMaxFree + ' | занято ' + capOccupied + ' | всего ' + capTotal + '/200</span>';
                     html += '</div>';
                     html += '<div style="display:flex;gap:2px;flex-wrap:wrap;">';
                     
@@ -653,13 +655,14 @@ function assignUnitsToCaptainModal(cmdName, capName) {
     if (!squad || !squad.captains[capName]) { setMessage('❌ Капитан не найден.'); return; }
     var cap = squad.captains[capName];
     
-    // Лимит капитана = его юниты + юниты всех его сержантов
-    var currentCapUnits = cap.units.length;
+    // У капитана: свободно = cap.units (его личные), занято = все сержанты
+    var capFree = cap.units.length;
+    var capOccupied = 0;
     for (var sgtName in cap.sergeants) {
-        currentCapUnits += cap.sergeants[sgtName].units.length;
+        capOccupied += cap.sergeants[sgtName].units.length;
     }
-    
-    var maxCapCanGet = 200 - currentCapUnits;
+    var capTotal = capFree + capOccupied;
+    var maxCapCanGet = 200 - capTotal;
     if (maxCapCanGet <= 0) { setMessage('❌ У капитана уже максимум (200) юнитов с учётом сержантов.'); return; }
     if (squad.units.length === 0) { setMessage('❌ У командора нет свободных юнитов.'); return; }
     
@@ -678,8 +681,9 @@ function assignUnitsToCaptainModal(cmdName, capName) {
     }
     
     var content = document.getElementById('modal-assign-units-content');
-    var html = '<div class="modal-section"><h4>🗡️ Капитан: ' + capName + ' (занято ' + currentCapUnits + '/200)</h4>';
-    html += '<p style="color:#6a5a48;">У командора: ' + squad.units.length + ' юнитов. Можно добавить: <strong>' + maxCapCanGet + '</strong></p>';
+    var html = '<div class="modal-section"><h4>🗡️ Капитан: ' + capName + '</h4>';
+    html += '<p style="color:#6a5a48;">👥 свободно ' + capFree + '/200 | занято ' + capOccupied + ' | всего ' + capTotal + '/200</p>';
+    html += '<p style="color:#6a5a48;">У командора: ' + squad.units.length + ' юнитов. Можно добавить: <strong style="color:#7ac98a;">' + maxCapCanGet + '</strong></p>';
     
     for (var t in grouped) {
         var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
@@ -763,9 +767,14 @@ function assignUnitsToSergeantModal(cmdName, capName, sgtName) {
     var maxSgtCanGet = 50 - currentSgtUnits;
     if (maxSgtCanGet <= 0) { setMessage('❌ У сержанта уже максимум (50) юнитов.'); return; }
     
+    // Источник — свободные юниты капитана (cap.units)
     var grouped = {};
     cap.units.forEach(function(u) { if (!grouped[u.type]) grouped[u.type] = 0; grouped[u.type]++; });
     var capFreeUnits = cap.units.length;
+    
+    if (capFreeUnits === 0) { setMessage('❌ У капитана нет свободных юнитов.'); return; }
+    
+    var realMaxCanGive = Math.min(maxSgtCanGet, capFreeUnits);
     
     var modal = document.getElementById('modal-assign-units');
     if (!modal) {
@@ -780,23 +789,17 @@ function assignUnitsToSergeantModal(cmdName, capName, sgtName) {
     
     var content = document.getElementById('modal-assign-units-content');
     var html = '<div class="modal-section"><h4>🛡️ Сержант: ' + sgtName + ' (' + currentSgtUnits + '/50)</h4>';
+    html += '<p style="color:#6a5a48;">У капитана: ' + capFreeUnits + ' свободных. Можно добавить: <strong style="color:#7ac98a;">' + realMaxCanGive + '</strong></p>';
     
-    if (capFreeUnits === 0) {
-        html += '<p style="color:#6a5a48;">У капитана нет свободных юнитов.</p>';
-    } else {
-        html += '<p style="color:#6a5a48;">У капитана: ' + capFreeUnits + ' юнитов. Можно добавить: <strong>' + maxSgtCanGet + '</strong></p>';
-        
-        for (var t in grouped) {
-            var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
-            var safeId = 'assign_to_sgt_' + t.replace(/[^a-zA-Z0-9]/g, '_');
-            html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : t) + ' — ' + grouped[t] + '</span>';
-            html += '<span class="value"><input type="number" id="' + safeId + '" value="0" min="0" max="' + Math.min(grouped[t], maxSgtCanGet) + '" style="width:60px;" data-type="' + t + '"></span></div>';
-        }
-        
-        html += '<p style="color:#c96a5a;font-size:10px;margin-top:8px;" id="assign-sgt-error"></p>';
-        html += '<button class="btn" onclick="confirmAssignToSergeant(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\',' + maxSgtCanGet + ')" style="margin-top:10px;">✅ Выдать</button>';
+    for (var t in grouped) {
+        var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
+        var safeId = 'assign_to_sgt_' + t.replace(/[^a-zA-Z0-9]/g, '_');
+        html += '<div class="row"><span class="label">' + (ut ? ut.emoji + ' ' + ut.name : t) + ' — ' + grouped[t] + '</span>';
+        html += '<span class="value"><input type="number" id="' + safeId + '" value="0" min="0" max="' + Math.min(grouped[t], realMaxCanGive) + '" style="width:60px;" data-type="' + t + '"></span></div>';
     }
     
+    html += '<p style="color:#c96a5a;font-size:10px;margin-top:8px;" id="assign-sgt-error"></p>';
+    html += '<button class="btn" onclick="confirmAssignToSergeant(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\',' + realMaxCanGive + ')" style="margin-top:10px;">✅ Выдать</button>';
     html += '<button class="btn btn-secondary" onclick="closeAssignUnitsModal()">Закрыть</button>';
     html += '</div>';
     
@@ -810,8 +813,8 @@ function assignUnitsToSergeantModal(cmdName, capName, sgtName) {
             var allInps = document.querySelectorAll('#modal-assign-units-content input[type="number"]');
             allInps.forEach(function(i) { total += parseInt(i.value) || 0; });
             var errEl = document.getElementById('assign-sgt-error');
-            if (total > maxSgtCanGet) {
-                errEl.textContent = '⚠️ Превышение! Максимум: ' + maxSgtCanGet + '. Сейчас: ' + total;
+            if (total > realMaxCanGive) {
+                errEl.textContent = '⚠️ Превышение! Максимум: ' + realMaxCanGive + '. Сейчас: ' + total;
             } else {
                 errEl.textContent = '';
             }
@@ -1974,4 +1977,4 @@ window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Командование v3.1 загружены!');
+console.log('🏰 Дипломатия + Командование v3.2 загружены!');
