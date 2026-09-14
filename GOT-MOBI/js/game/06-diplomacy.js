@@ -370,8 +370,19 @@ function showCommandTab(houseId) {
         var boundTo = squad ? squad.boundTo : null;
         var boundText = boundTo ? ' 🔗 ' + (HOUSE_RANKS[boundTo] ? HOUSE_RANKS[boundTo].name : boundTo) : '';
         
-        var cmdUnits = squad ? squad.units.length : 0;
-        var totalUnits = cmdUnits;
+        // Занято под командором: он сам + все капитаны + все сержанты
+        var cmdOccupied = 0;
+        if (squad) {
+            cmdOccupied += squad.units.length;
+            for (var capName in squad.captains) {
+                cmdOccupied += squad.captains[capName].units.length;
+                for (var sgtName in squad.captains[capName].sergeants) {
+                    cmdOccupied += squad.captains[capName].sergeants[sgtName].units.length;
+                }
+            }
+        }
+        var cmdFree = 1000 - cmdOccupied;
+        if (cmdFree < 0) cmdFree = 0;
         
         var locationName = squad ? (squad.location === 'castle' ? '🏰 Замок' : getZoneName(squad.location) + ' ' + getZoneCoords(squad.location)) : '—';
         
@@ -389,7 +400,7 @@ function showCommandTab(houseId) {
         html += '<div>';
         html += '<strong style="color:#ffd700;font-size:16px;">⭐ ' + cmdName + '</strong> ' + cmdStatus + ' ' + controlIcon + boundText;
         html += '<br><span style="color:#6a5a48;font-size:11px;">📍 ' + locationName + '</span>';
-        html += '<br><span style="color:#b8a890;font-size:12px;">👥 <strong>' + cmdUnits + '</strong> юнитов</span>';
+        html += '<br><span style="color:#b8a890;font-size:12px;">👥 занято <strong>' + cmdOccupied + '</strong>/1000 | свободно <strong style="color:' + (cmdFree > 0 ? '#7ac98a' : '#c96a5a') + ';">' + cmdFree + '</strong></span>';
         html += '</div>';
         html += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
         
@@ -427,15 +438,20 @@ function showCommandTab(houseId) {
                     var capStatus = capLeft ? '🟡' : '🟢';
                     var capLocked = cap.detached === true;
                     var capControlIcon = capLocked ? '🔒' : '🔓';
-                    var capUnits = cap.units.length;
-                    totalUnits += capUnits;
-                    for (var sgtName in cap.sergeants) { totalUnits += cap.sergeants[sgtName].units.length; }
+                    
+                    // Занято под капитаном: он сам + все его сержанты
+                    var capOccupied = cap.units.length;
+                    for (var sgtName in cap.sergeants) {
+                        capOccupied += cap.sergeants[sgtName].units.length;
+                    }
+                    var capFree = 200 - capOccupied;
+                    if (capFree < 0) capFree = 0;
                     
                     html += '<div style="background:#1a1410;border:1px solid #2a201a;border-radius:8px;padding:8px;margin:4px 0;">';
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">';
                     html += '<div>';
                     html += '<span style="color:#c9b694;">🗡️ ' + capName + '</span> ' + capStatus + ' ' + capControlIcon;
-                    html += '<br><span style="font-size:10px;color:#6a5a48;">👥 ' + capUnits + ' / 200 юнитов</span>';
+                    html += '<br><span style="font-size:10px;color:#6a5a48;">👥 занято ' + capOccupied + '/200 | свободно <span style="color:' + (capFree > 0 ? '#7ac98a' : '#c96a5a') + ';">' + capFree + '</span></span>';
                     html += '</div>';
                     html += '<div style="display:flex;gap:2px;flex-wrap:wrap;">';
                     
@@ -463,7 +479,7 @@ function showCommandTab(houseId) {
                                 var sgtControlIcon = sgtLocked ? '🔒' : '🔓';
                                 
                                 html += '<div style="padding:2px 0;font-size:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">';
-                                html += '<span><span style="color:#b8a890;">🛡️ ' + sgtName + '</span> ' + sgtStatus + ' ' + sgtControlIcon + ' <span style="color:#6a5a48;">👥 ' + sgt.units.length + ' / 50</span></span>';
+                                html += '<span><span style="color:#b8a890;">🛡️ ' + sgtName + '</span> ' + sgtStatus + ' ' + sgtControlIcon + ' <span style="color:#6a5a48;">👥 ' + sgt.units.length + '/50</span></span>';
                                 html += '<span>';
                                 html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="assignUnitsToSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">⚔️ Выдать</button>';
                                 html += '<button class="btn btn-small" style="font-size:8px;padding:1px 4px;" onclick="recallFromSergeantModal(\'' + cmdName + '\',\'' + capName + '\',\'' + sgtName + '\')">📥 Отозвать</button>';
@@ -500,7 +516,7 @@ function showCommandTab(houseId) {
         }
         
         html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid #2a201a;text-align:right;">';
-        html += '<span style="color:#6a5a48;font-size:11px;">Всего: <strong>' + totalUnits + '</strong> юнитов</span>';
+        html += '<span style="color:#6a5a48;font-size:11px;">Всего под командором: <strong>' + cmdOccupied + '</strong>/1000 | свободно <strong>' + cmdFree + '</strong></span>';
         html += '</div>';
         html += '</div>';
     });
@@ -637,9 +653,14 @@ function assignUnitsToCaptainModal(cmdName, capName) {
     if (!squad || !squad.captains[capName]) { setMessage('❌ Капитан не найден.'); return; }
     var cap = squad.captains[capName];
     
+    // Лимит капитана = его юниты + юниты всех его сержантов
     var currentCapUnits = cap.units.length;
+    for (var sgtName in cap.sergeants) {
+        currentCapUnits += cap.sergeants[sgtName].units.length;
+    }
+    
     var maxCapCanGet = 200 - currentCapUnits;
-    if (maxCapCanGet <= 0) { setMessage('❌ У капитана уже максимум (200) юнитов.'); return; }
+    if (maxCapCanGet <= 0) { setMessage('❌ У капитана уже максимум (200) юнитов с учётом сержантов.'); return; }
     if (squad.units.length === 0) { setMessage('❌ У командора нет свободных юнитов.'); return; }
     
     var grouped = {};
@@ -657,7 +678,7 @@ function assignUnitsToCaptainModal(cmdName, capName) {
     }
     
     var content = document.getElementById('modal-assign-units-content');
-    var html = '<div class="modal-section"><h4>🗡️ Капитан: ' + capName + ' (' + currentCapUnits + '/200)</h4>';
+    var html = '<div class="modal-section"><h4>🗡️ Капитан: ' + capName + ' (занято ' + currentCapUnits + '/200)</h4>';
     html += '<p style="color:#6a5a48;">У командора: ' + squad.units.length + ' юнитов. Можно добавить: <strong>' + maxCapCanGet + '</strong></p>';
     
     for (var t in grouped) {
@@ -814,10 +835,6 @@ function confirmAssignToSergeant(cmdName, capName, sgtName, maxSgtCanGet) {
     
     closeAssignUnitsModal();
     
-    var user = users[currentUser];
-    var myRank = user.game.houseRank;
-    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
-    
     if (totalRequested === 0) {
         setMessage('✅ Юниты не выданы.');
         setTimeout(function() { showArmySubTab('command'); }, 300);
@@ -828,11 +845,8 @@ function confirmAssignToSergeant(cmdName, capName, sgtName, maxSgtCanGet) {
         return;
     }
     
-    if (isHighCommand) {
-        window.lordAssignToSergeant(cmdName, capName, sgtName, unitTypes);
-    } else {
-        window.captainAssignToSergeant(sgtName, unitTypes);
-    }
+    // Для передачи юнитов сержанту всегда используем captainAssignToSergeant
+    window.captainAssignToSergeant(sgtName, unitTypes);
     setTimeout(function() { showArmySubTab('command'); }, 300);
 }
 
@@ -1128,7 +1142,7 @@ function assignUnitsDialog(cmdName) {
     var content = document.getElementById('modal-assign-content');
     var locName = squadLoc === 'castle' ? '🏰 Замок' : getZoneName(squadLoc);
     var html = '<div class="modal-section"><h4>⭐ Командор: ' + cmdName + ' 📍 ' + locName + '</h4>';
-    html += '<p style="color:#6a5a48;">Свободных на клетке: ' + totalHere + ' | Можно добавить: <strong>' + maxCanAssign + '</strong> | Уже: ' + alreadyAssigned + '/1000</p>';
+    html += '<p style="color:#6a5a48;">Свободных на клетке: ' + totalHere + ' | Уже занято: <strong>' + alreadyAssigned + '/1000</strong> | Можно добавить: <strong style="color:#7ac98a;">' + maxCanAssign + '</strong></p>';
     
     for (var t in freeUnitsHere) {
         var ut = window.UNIT_TYPES ? window.UNIT_TYPES[t] : null;
@@ -1960,4 +1974,4 @@ window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
 loadInvitations();
-console.log('🏰 Дипломатия + Командование v3.0 загружены!');
+console.log('🏰 Дипломатия + Командование v3.1 загружены!');
