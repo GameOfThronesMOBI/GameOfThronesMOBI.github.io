@@ -424,6 +424,20 @@ function showCommandTab(houseId) {
         html += '</div>';
         html += '</div>';
         
+        // НОВОЕ: Галочки разрешений для командора
+        if (isHighCommand && squad) {
+            html += '<div style="margin-top:8px; background:#1a1410; padding:6px; border-radius:6px; display:flex; flex-wrap:wrap; gap:12px;">';
+            var canDetachSub = squad.allow_detach_subordinates === true;
+            var canDetachSelf = squad.allow_detach_self === true;
+            html += '<label style="font-size:11px; color:#b8a890; cursor:pointer; display:flex; align-items:center; gap:4px;">';
+            html += '<input type="checkbox" ' + (canDetachSub ? 'checked' : '') + ' onchange="toggleCommanderPerm(\'' + cmdName + '\',\'allow_detach_subordinates\',this.checked)"> Разрешить отделять подчинённых';
+            html += '</label>';
+            html += '<label style="font-size:11px; color:#b8a890; cursor:pointer; display:flex; align-items:center; gap:4px;">';
+            html += '<input type="checkbox" ' + (canDetachSelf ? 'checked' : '') + ' onchange="toggleCommanderPerm(\'' + cmdName + '\',\'allow_detach_self\',this.checked)"> Разрешить свободное отсоединение';
+            html += '</label>';
+            html += '</div>';
+        }
+        
         if (squad && canManage) {
             var capNames = squad.captains ? Object.keys(squad.captains) : [];
             html += '<div style="margin-top:10px;padding-left:10px;border-left:2px solid #3d3026;">';
@@ -464,6 +478,20 @@ function showCommandTab(houseId) {
                     
                     html += '</div>';
                     html += '</div>';
+                    
+                    // НОВОЕ: Галочки разрешений для капитана
+                    if (isHighCommand) {
+                        html += '<div style="margin-top:6px; background:#120e0b; padding:4px; border-radius:4px; display:flex; flex-wrap:wrap; gap:10px;">';
+                        var capCanDetachSub = cap.allow_detach_subordinates === true;
+                        var capCanDetachSelf = cap.allow_detach_self === true;
+                        html += '<label style="font-size:10px; color:#a08d78; cursor:pointer; display:flex; align-items:center; gap:4px;">';
+                        html += '<input type="checkbox" ' + (capCanDetachSub ? 'checked' : '') + ' onchange="toggleCaptainPerm(\'' + cmdName + '\',\'' + capName + '\',\'allow_detach_subordinates\',this.checked)"> Отделять сержантов';
+                        html += '</label>';
+                        html += '<label style="font-size:10px; color:#a08d78; cursor:pointer; display:flex; align-items:center; gap:4px;">';
+                        html += '<input type="checkbox" ' + (capCanDetachSelf ? 'checked' : '') + ' onchange="toggleCaptainPerm(\'' + cmdName + '\',\'' + capName + '\',\'allow_detach_self\',this.checked)"> Свободное отсоединение';
+                        html += '</label>';
+                        html += '</div>';
+                    }
                     
                     if (cap.sergeants) {
                         var sgtNames = Object.keys(cap.sergeants);
@@ -525,6 +553,35 @@ function showCommandTab(houseId) {
     
     return html;
 }
+
+// ============================================================
+// НОВЫЕ ФУНКЦИИ ДЛЯ ГАЛОЧЕК РАЗРЕШЕНИЙ
+// ============================================================
+
+window.toggleCommanderPerm = function(cmdName, permName, isChecked) {
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad) return;
+    
+    squad[permName] = isChecked;
+    saveData();
+    setMessage('✅ Разрешение обновлено.');
+    setTimeout(function() { showArmySubTab('command'); }, 300);
+};
+
+window.toggleCaptainPerm = function(cmdName, capName, permName, isChecked) {
+    var houseId = users[currentUser].game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad || !squad.captains[capName]) return;
+    
+    squad.captains[capName][permName] = isChecked;
+    saveData();
+    setMessage('✅ Разрешение обновлено.');
+    setTimeout(function() { showArmySubTab('command'); }, 300);
+};
+
 
 // ============================================================
 // МОДАЛКИ НАЗНАЧЕНИЯ
@@ -633,7 +690,7 @@ function confirmSergeantAssign(cmdName, capName, sgtName) {
     if (isHighCommand) {
         window.lordAssignToSergeant(cmdName, capName, sgtName, {});
     } else {
-        window.captainAssignToSergeant(sgtName, {});
+        window.captainAssignToSergeant(sgtName, {}, cmdName, capName);
     }
     setMessage('✅ ' + sgtName + ' назначен сержантом.');
     setTimeout(function() { showArmySubTab('command'); }, 300);
@@ -1977,5 +2034,9 @@ window.showSquadOnMap = showSquadOnMap;
 window.rejoinSquadAuto = rejoinSquadAuto;
 window.parseUnitInput = parseUnitInput;
 
+// Новые галочки
+window.toggleCommanderPerm = toggleCommanderPerm;
+window.toggleCaptainPerm = toggleCaptainPerm;
+
 loadInvitations();
-console.log('🏰 Дипломатия + Командование v3.3 загружены!');
+console.log('🏰 Дипломатия + Командование v3.4 (с разрешениями) загружены!');
