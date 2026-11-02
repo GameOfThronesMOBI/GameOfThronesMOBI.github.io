@@ -1,6 +1,6 @@
 // ============================================================
 // js/game/08-command.js — КОМАНДОВАНИЕ + PvP + РАЗВЕДКА + АНИМАЦИЯ + ОТРЯДЫ
-// ПОЛНАЯ ВЕРСИЯ — СТАРЫЙ РАБОЧИЙ КОД + НОВЫЕ ОТДЕЛЕНИЕ/ОБЪЕДИНЕНИЕ
+// ПОЛНАЯ ВЕРСИЯ — СТАРЫЙ КОД + НОВОЕ (РАЗДЕЛЕНИЕ/ОБЪЕДИНЕНИЕ)
 // ============================================================
 
 window.closeZoneInfo = function() {
@@ -66,7 +66,7 @@ function getNeighborZones(zone) {
 }
 
 // ============================================================
-// СИСТЕМА ОТРЯДОВ (SQUADS) — СТАРЫЙ КОД
+// СИСТЕМА ОТРЯДОВ (SQUADS) — ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 window.getSquads = function(houseId) {
@@ -244,7 +244,7 @@ window.unbindCommander = function(cmdName) {
 };
 
 // ============================================================
-// ВЫДЕЛЕНИЕ ВОЙСК КОМАНДОРУ
+// ВЫДЕЛЕНИЕ ВОЙСК КОМАНДОРУ (ТОЛЬКО НА КЛЕТКЕ КОМАНДОРА)
 // ============================================================
 
 window.assignUnitsToCommander = function(targetName, unitTypes) {
@@ -309,7 +309,7 @@ window.assignUnitsToCommander = function(targetName, unitTypes) {
 };
 
 // ============================================================
-// ОТВЯЗКА ВОЙСК ОТ КОМАНДОРА
+// ОТВЯЗКА ВОЙСК ОТ КОМАНДОРА (ОСТАЮТСЯ НА КЛЕТКЕ)
 // ============================================================
 
 window.unassignUnitsFromCommander = function(targetName, unitTypes) {
@@ -457,7 +457,7 @@ window.commanderAssignToCaptain = function(captainName, unitTypes) {
     
     var captainSquad = squad.captains[captainName];
     if (!captainSquad) {
-        captainSquad = { commander: captainName, units: [], sergeants: {}, detached: false, location: squad.location, allow_detach_subordinates: false, allow_detach_self: false };
+        captainSquad = { commander: captainName, units: [], sergeants: {}, detached: false, location: squad.location };
         squad.captains[captainName] = captainSquad;
     }
     
@@ -517,7 +517,7 @@ window.lordAssignToCaptain = function(cmdName, captainName, unitTypes) {
     
     var captainSquad = squad.captains[captainName];
     if (!captainSquad) {
-        captainSquad = { commander: captainName, units: [], sergeants: {}, detached: false, location: squad.location, allow_detach_subordinates: false, allow_detach_self: false };
+        captainSquad = { commander: captainName, units: [], sergeants: {}, detached: false, location: squad.location };
         squad.captains[captainName] = captainSquad;
     }
     
@@ -590,6 +590,14 @@ window.lordAssignToSergeant = function(cmdName, capName, sgtName, unitTypes) {
     return true;
 };
 
+// ============================================================
+// ВЫДАЧА ЮНИТОВ СЕРЖАНТУ
+// Вызывается:
+//   1) Капитаном — из своего подразделения (capName не передаётся, берётся из mySquad)
+//   2) Командором — из любого своего капитана (cmdName/capName передаются)
+//   3) Высшим командованием — из любого отряда и капитана (cmdName/capName передаются)
+// ============================================================
+
 window.captainAssignToSergeant = function(sergeantName, unitTypes, cmdName, capName) {
     var user = users[currentUser];
     if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return false; }
@@ -601,6 +609,7 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes, cmdName, capN
     var isCommander = mySquad && mySquad.role === 'commander';
     var isCaptain = mySquad && mySquad.role === 'captain';
     
+    // Права: высшее командование, командор или капитан
     if (!isHighCommand && !isCommander && !isCaptain) {
         setMessage('❌ Только капитан, командор или высшее командование могут выдавать сержантам.');
         return false;
@@ -614,11 +623,16 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes, cmdName, capN
     var squads = window.getSquads(houseId);
     var captainSquad = null;
     
+    // Приоритет 1: явно переданные cmdName и capName (высшее командование, командор)
     if (cmdName && capName && squads[cmdName] && squads[cmdName].captains && squads[cmdName].captains[capName]) {
         captainSquad = squads[cmdName].captains[capName];
-    } else if (isCaptain) {
+    }
+    // Приоритет 2: капитан выдаёт сам себе
+    else if (isCaptain) {
         captainSquad = mySquad.squad.captains[mySquad.captainName];
-    } else if (isCommander && capName) {
+    }
+    // Приоритет 3: командор со своим капитаном (если capName передан)
+    else if (isCommander && capName) {
         captainSquad = mySquad.squad.captains[capName];
     }
     
@@ -653,7 +667,7 @@ window.captainAssignToSergeant = function(sergeantName, unitTypes, cmdName, capN
     } else {
         setMessage('✅ ' + sergeantName + ' назначен сержантом (без юнитов).');
     }
-    addHouseLog(houseId, '👥 Капитан ' + currentUser + ' → сержант ' + sergeantName);
+    addHouseLog(houseId, '👥 ' + currentUser + ' → сержант ' + sergeantName);
     return true;
 };
 
@@ -767,113 +781,252 @@ window.captainRecallFromSergeant = function(cmdName, capName, sergeantName, unit
 };
 
 // ============================================================
-// НОВОЕ: ОТДЕЛЕНИЕ КАПИТАНОВ И СЕРЖАНТОВ (С КАРТЫ)
+// ПОКИНУТЬ/ВЕРНУТЬСЯ В ОТРЯД
 // ============================================================
 
-window.detachUnitFromSquad = function(cmdName, capName, sgtName) {
+window.leaveSquad = function() {
     var user = users[currentUser];
-    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return; }
-    var houseId = user.game.house;
-    var squads = window.getSquads(houseId);
-    var squad = squads[cmdName];
+    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return false; }
     
-    if (!squad) { setMessage('❌ Отряд не найден.'); return; }
+    var mySquad = window.getMySquad();
+    if (!mySquad) { setMessage('❌ Вы не состоите в отряде.'); return false; }
     
-    var myRank = user.game.houseRank;
-    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
-    
-    if (!isHighCommand) {
-        if (!sgtName) {
-            if (!squad.allow_detach_subordinates) { setMessage('❌ Вам запрещено отделять капитанов.'); return; }
-        } else {
-            if (!squad.captains[capName]) return;
-            if (!squad.captains[capName].allow_detach_subordinates) { setMessage('❌ Вам запрещено отделять сержантов.'); return; }
-        }
-    }
-
-    var currentLoc = squad.location;
-    var detachedSomething = false;
-
-    if (!sgtName) {
-        // Отделяем капитана со всеми его сержантами
-        if (squad.captains[capName] && !squad.captains[capName].detached) {
-            squad.captains[capName].detached = true;
-            squad.captains[capName].location = currentLoc;
-            for (var s in squad.captains[capName].sergeants) {
-                squad.captains[capName].sergeants[s].location = currentLoc;
+    var garrison = window._castleGarrisons[user.game.house];
+    if (garrison && garrison.marching) {
+        for (var i = 0; i < garrison.marching.length; i++) {
+            if (garrison.marching[i].squadId === mySquad.commanderName) {
+                setMessage('❌ Нельзя покинуть отряд во время марша.');
+                return false;
             }
-            detachedSomething = true;
-        }
-    } else {
-        // Отделяем сержанта
-        if (squad.captains[capName] && squad.captains[capName].sergeants[sgtName] && !squad.captains[capName].sergeants[sgtName].detached) {
-            squad.captains[capName].sergeants[sgtName].detached = true;
-            squad.captains[capName].sergeants[sgtName].location = currentLoc;
-            detachedSomething = true;
         }
     }
-
-    if (detachedSomething) {
-        saveData();
-        setMessage('✂️ Отряд разделён. Часть войск осталась на клетке.');
-        if (typeof closeOwnUnitsModal === 'function') closeOwnUnitsModal();
-        setTimeout(function() { if (typeof handleZoneClick === 'function') handleZoneClick(currentLoc); }, 300);
-    } else {
-        setMessage('❌ Не удалось отделить.');
-    }
+    
+    user.game._leftSquad = {
+        commanderName: mySquad.commanderName,
+        captainName: mySquad.captainName || null,
+        sergeantName: mySquad.sergeantName || null,
+        role: mySquad.role,
+        houseId: user.game.house
+    };
+    
+    saveData();
+    setMessage('🚶 Вы покинули отряд. Войска остались в отряде.');
+    addHouseLog(user.game.house, '🚶 ' + currentUser + ' покинул отряд ' + mySquad.commanderName);
+    return true;
 };
 
-window.mergeUnitToSquad = function(cmdName, capName, sgtName) {
+window.rejoinSquad = function() {
     var user = users[currentUser];
-    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return; }
-    var houseId = user.game.house;
-    var squads = window.getSquads(houseId);
-    var squad = squads[cmdName];
-    if (!squad) { setMessage('❌ Отряд не найден.'); return; }
-
-    var myRank = user.game.houseRank;
-    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
-
-    if (!isHighCommand) {
-        // Проверка прав на соединение (если это не высшее командование)
-        if (!sgtName) {
-            if (!squad.captains[capName] || !squad.captains[capName].allow_detach_self) { setMessage('❌ Вам запрещено присоединяться.'); return; }
-        }
+    if (!user || !user.game._leftSquad) { setMessage('❌ Вы не покидали отряд.'); return false; }
+    
+    var data = user.game._leftSquad;
+    var squads = window.getSquads(data.houseId);
+    var squad = squads[data.commanderName];
+    if (!squad) { setMessage('❌ Отряд больше не существует.'); user.game._leftSquad = null; saveData(); return false; }
+    
+    var g = user.game;
+    var squadLocation = squad.location === 'castle' ? 'bl_-1_0' : squad.location;
+    var playerLocation = g.location.parentZone || g.location.place;
+    if (playerLocation === 'Таверна' || playerLocation === 'Дом') playerLocation = 'kl_0_0';
+    
+    if (playerLocation !== squadLocation && squadLocation !== 'castle') {
+        setMessage('❌ Вы не на той же клетке что и отряд.');
+        return false;
     }
-
-    var currentLoc = squad.location;
-    var merged = false;
-
-    if (!sgtName) {
-        if (squad.captains[capName] && squad.captains[capName].detached) {
-            squad.captains[capName].detached = false;
-            squad.captains[capName].location = currentLoc;
-            for (var s in squad.captains[capName].sergeants) {
-                squad.captains[capName].sergeants[s].detached = false;
-                squad.captains[capName].sergeants[s].location = currentLoc;
-            }
-            merged = true;
-        }
-    } else {
-        if (squad.captains[capName] && squad.captains[capName].sergeants[sgtName] && squad.captains[capName].sergeants[sgtName].detached) {
-            squad.captains[capName].sergeants[sgtName].detached = false;
-            squad.captains[capName].sergeants[sgtName].location = currentLoc;
-            merged = true;
-        }
-    }
-
-    if (merged) {
-        saveData();
-        setMessage('🔗 Войска соединены обратно в отряд.');
-        if (typeof closeOwnUnitsModal === 'function') closeOwnUnitsModal();
-        setTimeout(function() { if (typeof handleZoneClick === 'function') handleZoneClick(currentLoc); }, 300);
-    } else {
-        setMessage('❌ Не удалось соединить.');
-    }
+    
+    user.game._leftSquad = null;
+    if (user.game._chaseInterval) { clearInterval(user.game._chaseInterval); user.game._chaseInterval = null; }
+    
+    saveData();
+    setMessage('✅ Вы вернулись в отряд ' + data.commanderName);
+    addHouseLog(data.houseId, '✅ ' + currentUser + ' вернулся в отряд ' + data.commanderName);
+    return true;
 };
 
 // ============================================================
-// КЛИК ПО ЗОНЕ НА КАРТЕ МИРА (СТАРЫЙ КОД)
+// ДВИЖЕНИЕ ОТРЯДА
+// ============================================================
+
+window.moveSquad = function(targetZoneId, action) {
+    var user = users[currentUser];
+    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return false; }
+    var houseId = user.game.house;
+    
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+    var mySquad = window.getMySquad();
+    
+    if (!mySquad) { setMessage('❌ Вы не в отряде.'); return false; }
+    
+    var squad = mySquad.squad;
+    var currentZoneId = squad.location === 'castle' ? 'bl_-1_0' : squad.location;
+    
+    var allUnits = [];
+    
+    if (mySquad.role === 'commander') {
+        if (!squad.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        allUnits = allUnits.concat(squad.units);
+        for (var capName in squad.captains) {
+            // Если капитан отделён в другой зоне, он не идёт с отрядом
+            if (squad.captains[capName].detached && squad.captains[capName].location !== currentZoneId) continue;
+            allUnits = allUnits.concat(squad.captains[capName].units);
+            for (var sgtName in squad.captains[capName].sergeants) {
+                if (squad.captains[capName].sergeants[sgtName].detached && squad.captains[capName].sergeants[sgtName].location !== currentZoneId) continue;
+                allUnits = allUnits.concat(squad.captains[capName].sergeants[sgtName].units);
+            }
+        }
+    } else if (mySquad.role === 'captain') {
+        var cap = squad.captains[mySquad.captainName];
+        if (!cap) { setMessage('❌ Капитан не найден.'); return false; }
+        if (!cap.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        allUnits = allUnits.concat(cap.units);
+        for (var sgtName in cap.sergeants) {
+            if (cap.sergeants[sgtName].detached && cap.sergeants[sgtName].location !== currentZoneId) continue;
+            allUnits = allUnits.concat(cap.sergeants[sgtName].units);
+        }
+    } else if (mySquad.role === 'sergeant') {
+        var cap = squad.captains[mySquad.captainName];
+        if (!cap || !cap.sergeants[mySquad.sergeantName]) { setMessage('❌ Сержант не найден.'); return false; }
+        var sgt = cap.sergeants[mySquad.sergeantName];
+        if (!sgt.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        allUnits = allUnits.concat(sgt.units);
+    }
+    
+    if (allUnits.length === 0) { setMessage('❌ Нет юнитов для движения.'); return false; }
+    
+    var speedPerZone = 2;
+    var hasC = false, hasS = false;
+    allUnits.forEach(function(u) { if(u.siege)hasS=true; else if(u.horse||u.type==='rider'||u.type==='heavy_rider'||u.type==='knight')hasC=true; });
+    if (hasS) speedPerZone = 5; else if (hasC) speedPerZone = 1;
+    
+    var path = findPath(currentZoneId, targetZoneId);
+    var moveTimeMs = speedPerZone * 60 * 1000;
+    var waitTimeMs = 10000;
+    
+    var marchId = 'squad_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    var marchData = {
+        id: marchId, units: allUnits, path: path, currentStep: 0,
+        action: action, houseId: houseId, speedPerZone: speedPerZone,
+        moveTimeMs: moveTimeMs, waitTimeMs: waitTimeMs,
+        phase: 'waiting', nextPhaseTime: Date.now() + waitTimeMs,
+        isSquad: true, squadId: mySquad.commanderName, commanderName: mySquad.commanderName
+    };
+    
+    var garrison = window._castleGarrisons[houseId];
+    if (!garrison.marching) garrison.marching = [];
+    garrison.marching.push(marchData);
+    
+    if (mySquad.role === 'commander') {
+        squad.units = [];
+        for (var capName in squad.captains) {
+            if (squad.captains[capName].detached && squad.captains[capName].location !== currentZoneId) continue;
+            squad.captains[capName].units = [];
+            for (var sgtName in squad.captains[capName].sergeants) {
+                if (squad.captains[capName].sergeants[sgtName].detached && squad.captains[capName].sergeants[sgtName].location !== currentZoneId) continue;
+                squad.captains[capName].sergeants[sgtName].units = [];
+            }
+        }
+    } else if (mySquad.role === 'captain') {
+        squad.captains[mySquad.captainName].units = [];
+        for (var sgtName in squad.captains[mySquad.captainName].sergeants) {
+            if (squad.captains[mySquad.captainName].sergeants[sgtName].detached && squad.captains[mySquad.captainName].sergeants[sgtName].location !== currentZoneId) continue;
+            squad.captains[mySquad.captainName].sergeants[sgtName].units = [];
+        }
+    } else if (mySquad.role === 'sergeant') {
+        squad.captains[mySquad.captainName].sergeants[mySquad.sergeantName].units = [];
+    }
+    
+    saveData();
+    setMessage('✅ Отряд выступил! ' + allUnits.length + ' юнитов.');
+    addHouseLog(houseId, '🚶 Отряд ' + mySquad.commanderName + ' → ' + getZoneName(targetZoneId));
+    processMarchStep(marchId);
+    return true;
+};
+
+window.movePlayerUnits = function(targetZoneId) {
+    var user = users[currentUser];
+    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return false; }
+    var houseId = user.game.house;
+    
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+    var mySquad = window.getMySquad();
+    if (!mySquad) { setMessage('❌ Вы не в отряде.'); return false; }
+    
+    var squad = mySquad.squad;
+    var myUnits = [];
+    var currentZoneId = squad.location === 'castle' ? 'bl_-1_0' : squad.location;
+    
+    if (mySquad.role === 'commander') {
+        if (!squad.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        myUnits = myUnits.concat(squad.units);
+    } else if (mySquad.role === 'captain') {
+        var cap = squad.captains[mySquad.captainName];
+        if (!cap) { setMessage('❌ Капитан не найден.'); return false; }
+        if (!cap.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        myUnits = myUnits.concat(cap.units);
+    } else if (mySquad.role === 'sergeant') {
+        var cap = squad.captains[mySquad.captainName];
+        if (!cap || !cap.sergeants[mySquad.sergeantName]) { setMessage('❌ Сержант не найден.'); return false; }
+        var sgt = cap.sergeants[mySquad.sergeantName];
+        if (!sgt.detached && !isHighCommand) {
+            setMessage('❌ Отряд не отсоединён. Сначала отсоедините его.');
+            return false;
+        }
+        myUnits = myUnits.concat(sgt.units);
+    }
+    
+    if (myUnits.length === 0) { setMessage('❌ У вас нет привязанных юнитов.'); return false; }
+    
+    var speedPerZone = 2;
+    var hasC = false, hasS = false;
+    myUnits.forEach(function(u) { if(u.siege)hasS=true; else if(u.horse||u.type==='rider'||u.type==='heavy_rider'||u.type==='knight')hasC=true; });
+    if (hasS) speedPerZone = 5; else if (hasC) speedPerZone = 1;
+    
+    var path = findPath(currentZoneId, targetZoneId);
+    var marchId = 'player_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    var marchData = {
+        id: marchId, units: myUnits.slice(), path: path, currentStep: 0,
+        action: 'move', houseId: houseId, speedPerZone: speedPerZone,
+        moveTimeMs: speedPerZone * 60 * 1000, waitTimeMs: 10000,
+        phase: 'waiting', nextPhaseTime: Date.now() + 10000,
+        isPlayerMove: true, playerName: currentUser,
+        squadId: mySquad.commanderName,
+        captainId: mySquad.captainName || null,
+        sergeantId: mySquad.sergeantName || null
+    };
+    
+    var garrison = window._castleGarrisons[houseId];
+    if (!garrison.marching) garrison.marching = [];
+    garrison.marching.push(marchData);
+    
+    if (mySquad.role === 'commander') { squad.units = []; }
+    else if (mySquad.role === 'captain') { squad.captains[mySquad.captainName].units = []; }
+    else if (mySquad.role === 'sergeant') { squad.captains[mySquad.captainName].sergeants[mySquad.sergeantName].units = []; }
+    
+    saveData();
+    setMessage('✅ Ваши войска выдвинулись!');
+    processMarchStep(marchId);
+    return true;
+};
+
+// ============================================================
+// КЛИК ПО ЗОНЕ НА КАРТЕ МИРА
 // ============================================================
 
 window.handleZoneClick = function(zoneId) {
@@ -1004,7 +1157,7 @@ function showEnemyInfo(zoneId, zoneName, enemies) {
 }
 
 // ============================================================
-// СБОР ВОЙСК В ЗОНЕ (СТАРЫЙ РАБОЧИЙ КОД)
+// СБОР ВОЙСК В ЗОНЕ (ВСЕ ЗОНЫ + SQUADS)
 // ============================================================
 
 function getOwnUnitsInZone(zoneId, houseId) {
@@ -1091,7 +1244,7 @@ function findEnemyScoutsInZone(zoneId, myHouseId) {
 }
 
 // ============================================================
-// МОДАЛКА ВОЙСК (СТАРЫЙ РАБОЧИЙ КОД + НОВЫЕ КНОПКИ)
+// МОДАЛКА ВОЙСК (С НОВЫМИ КНОПКАМИ РАЗДЕЛЕНИЯ/ОБЪЕДИНЕНИЯ)
 // ============================================================
 
 window.currentMovingCommander = null;
@@ -1144,20 +1297,21 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
             var totalUnits = cmd.units.length;
             var isSquad = cmd.isSquad;
             var icon = isSquad ? '👑' : '⭐';
-            h += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410; flex-wrap:wrap;">';
-            h += '<span class="label" style="flex:1; min-width:100px;">' + icon + ' ' + cmd.name + ' — ' + totalUnits + ' юнитов</span>';
-            h += '<span class="value" style="display:flex; gap:4px; flex-wrap:wrap;">';
+            h += '<div class="row" style="padding:8px 0; border-bottom:1px solid #1a1410;">';
+            h += '<span class="label">' + icon + ' ' + cmd.name + ' — ' + totalUnits + ' юнитов</span>';
+            h += '<span class="value">';
             if (isSquad) {
                 var squads = window.getSquads(houseId);
                 var squad = squads[cmd.name];
                 var canMove = (cmd.name === currentUser) || isHighCommand;
                 if (squad && squad.detached) canMove = true;
-                
                 if (canMove) {
-                    h += '<button class="btn btn-small" onclick="window.moveSquadFromModal(\'' + zoneId + '\',\'' + cmd.name + '\')">🚶</button>';
+                    h += '<button class="btn btn-small" onclick="window.moveSquadFromModal(\'' + zoneId + '\',\'' + cmd.name + '\')">🚶 Отправить</button>';
+                } else {
+                    h += '<span style="color:#6a5a48;font-size:10px;">🔒 Привязан</span>';
                 }
                 
-                // НОВЫЕ КНОПКИ ДЛЯ КОМАНДОРА
+                // Новые кнопки
                 if (squad) {
                     var hasDetachedCaps = false;
                     for (var cName in squad.captains) {
@@ -1167,18 +1321,18 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
                         }
                     }
                     if (hasDetachedCaps) {
-                        h += '<button class="btn btn-small" style="background:#3d5a2a;" onclick="window.mergeAllDetachedToCommander(\'' + cmd.name + '\')">🔗 Собрать</button>';
+                        h += ' <button class="btn btn-small" style="background:#3d5a2a;" onclick="window.mergeAllDetachedToCommander(\'' + cmd.name + '\')">🔗 Собрать</button>';
                     }
                 }
             } else {
-                h += '<button class="btn btn-small" onclick="window.selectCommanderForMove(\'' + zoneId + '\',\'knight_commander\',\'' + cmd.name + '\')">🚶</button>';
+                h += '<button class="btn btn-small" onclick="window.selectCommanderForMove(\'' + zoneId + '\',\'knight_commander\',\'' + cmd.name + '\')">🚶 Отправить</button>';
             }
             h += '</span></div>';
         });
         h += '</div>';
     }
 
-    // НОВЫЙ БЛОК: ОТДЕЛЁННЫЕ КАПИТАНЫ И СЕРЖАНТЫ
+    // НОВЫЙ БЛОК: ОТДЕЛЁННЫЕ
     var squads = window.getSquads(houseId);
     var detachedList = [];
     for (var cmdName in squads) {
@@ -1238,6 +1392,109 @@ function showOwnUnitsModal(zoneId, zoneName, ownUnits, houseId, enemyScouts) {
     c.innerHTML = h; modal.classList.remove('hide');
 }
 
+// ============================================================
+// НОВЫЕ ФУНКЦИИ: ОТДЕЛЕНИЕ, ОБЪЕДИНЕНИЕ, ДВИЖЕНИЕ
+// ============================================================
+
+window.detachUnitFromSquad = function(cmdName, capName, sgtName) {
+    var user = users[currentUser];
+    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return; }
+    var houseId = user.game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    
+    if (!squad) { setMessage('❌ Отряд не найден.'); return; }
+    
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+    
+    if (!isHighCommand) {
+        if (!sgtName) {
+            if (!squad.allow_detach_subordinates) { setMessage('❌ Вам запрещено отделять капитанов.'); return; }
+        } else {
+            if (!squad.captains[capName]) return;
+            if (!squad.captains[capName].allow_detach_subordinates) { setMessage('❌ Вам запрещено отделять сержантов.'); return; }
+        }
+    }
+
+    var currentLoc = squad.location;
+    var detachedSomething = false;
+
+    if (!sgtName) {
+        if (squad.captains[capName] && !squad.captains[capName].detached) {
+            squad.captains[capName].detached = true;
+            squad.captains[capName].location = currentLoc;
+            for (var s in squad.captains[capName].sergeants) {
+                squad.captains[capName].sergeants[s].location = currentLoc;
+            }
+            detachedSomething = true;
+        }
+    } else {
+        if (squad.captains[capName] && squad.captains[capName].sergeants[sgtName] && !squad.captains[capName].sergeants[sgtName].detached) {
+            squad.captains[capName].sergeants[sgtName].detached = true;
+            squad.captains[capName].sergeants[sgtName].location = currentLoc;
+            detachedSomething = true;
+        }
+    }
+
+    if (detachedSomething) {
+        saveData();
+        setMessage('✂️ Отряд разделён. Часть войск осталась на клетке.');
+        if (typeof closeOwnUnitsModal === 'function') closeOwnUnitsModal();
+        setTimeout(function() { if (typeof handleZoneClick === 'function') handleZoneClick(currentLoc); }, 300);
+    } else {
+        setMessage('❌ Не удалось отделить.');
+    }
+};
+
+window.mergeUnitToSquad = function(cmdName, capName, sgtName) {
+    var user = users[currentUser];
+    if (!user || !user.game.house) { setMessage('❌ Вы не в доме.'); return; }
+    var houseId = user.game.house;
+    var squads = window.getSquads(houseId);
+    var squad = squads[cmdName];
+    if (!squad) { setMessage('❌ Отряд не найден.'); return; }
+
+    var myRank = user.game.houseRank;
+    var isHighCommand = myRank && ['lord','heir','war_master'].indexOf(myRank) !== -1;
+
+    if (!isHighCommand) {
+        if (!sgtName) {
+            if (!squad.captains[capName] || !squad.captains[capName].allow_detach_self) { setMessage('❌ Вам запрещено присоединяться.'); return; }
+        }
+    }
+
+    var currentLoc = squad.location;
+    var merged = false;
+
+    if (!sgtName) {
+        if (squad.captains[capName] && squad.captains[capName].detached) {
+            squad.captains[capName].detached = false;
+            squad.captains[capName].location = currentLoc;
+            for (var s in squad.captains[capName].sergeants) {
+                squad.captains[capName].sergeants[s].detached = false;
+                squad.captains[capName].sergeants[s].location = currentLoc;
+            }
+            merged = true;
+        }
+    } else {
+        if (squad.captains[capName] && squad.captains[capName].sergeants[sgtName] && squad.captains[capName].sergeants[sgtName].detached) {
+            squad.captains[capName].sergeants[sgtName].detached = false;
+            squad.captains[capName].sergeants[sgtName].location = currentLoc;
+            merged = true;
+        }
+    }
+
+    if (merged) {
+        saveData();
+        setMessage('🔗 Войска соединены обратно в отряд.');
+        if (typeof closeOwnUnitsModal === 'function') closeOwnUnitsModal();
+        setTimeout(function() { if (typeof handleZoneClick === 'function') handleZoneClick(currentLoc); }, 300);
+    } else {
+        setMessage('❌ Не удалось соединить.');
+    }
+};
+
 window.mergeAllDetachedToCommander = function(cmdName) {
     var user = users[currentUser];
     var houseId = user.game.house;
@@ -1284,22 +1541,6 @@ window.moveDetachedSergeant = function(cmdName, capName, sName, zoneId) {
     window.currentMovingCommander = { cmdName: cmdName, capName: capName, sName: sName, type: 'detached_sgt' };
     window.closeOwnUnitsModal();
     setMessage('🎯 Выберите целевую зону для отделённого сержанта.');
-};
-
-window.moveSquadFromModal = function(zoneId, cmdName) {
-    if (!cmdName) {
-        window.currentMovingCommander = { zoneId: zoneId, type: 'squad' };
-        window._awaitingTarget = true;
-        window._targetData = { fromZone: zoneId, isScout: false, isSquad: true };
-        window.closeOwnUnitsModal();
-        setMessage('🎯 Выберите целевую зону для отряда.');
-        return;
-    }
-    
-    window._awaitingTarget = true;
-    window._targetData = { fromZone: zoneId, isScout: false, isSquad: true, commanderName: cmdName };
-    window.closeOwnUnitsModal();
-    setMessage('🎯 Выберите целевую зону для отряда ' + cmdName + '.');
 };
 
 // ============================================================
@@ -1371,7 +1612,7 @@ window.selectUnattachedForMove = function(zoneId) {
 };
 
 // ============================================================
-// ПОДТВЕРЖДЕНИЕ И ОТПРАВКА
+// ПОДТВЕРЖДЕНИЕ И ОТПРАВКА (ОБНОВЛЕНО)
 // ============================================================
 
 window.confirmTarget = function(targetZoneId, action, timeMinutes) {
@@ -1587,6 +1828,7 @@ function processMarchStep(marchId) {
             var action=marchData.action;var units=marchData.units;
             var newLoc = (targetZone && (targetZone.type==='castle'||targetZone.type==='castle_gate')) ? 'castle' : (targetZone ? targetZone.id : marchData.path[0]);
             
+            // Обработка отделённых
             if (marchData.isDetachedCap) {
                 var squads = window.getSquads(marchData.houseId);
                 var sq = squads[marchData.cmdName];
@@ -1888,4 +2130,4 @@ setTimeout(function() {
     if (typeof window._castleGarrisons !== 'undefined') restoreMarchingTimers();
 }, 1000);
 
-console.log('🎯 Командование + Разделение + Отряды (Старый код + Фикс) загружены!');
+console.log('🎯 Командование + PvP + Разведка + Марш + Отряды + Привязка (ПОЛНЫЙ ФИКС) загружены!');
