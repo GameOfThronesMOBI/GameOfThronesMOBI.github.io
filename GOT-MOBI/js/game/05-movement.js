@@ -1,21 +1,19 @@
 // ============================================================
 // movement.js — КОМПАС + КАРТА МИРА + АРМИЯ + АНИМАЦИЯ + ОТРЯДЫ
-// ВЕРСИЯ 2.1 — карта и клик по клетке считают войска одинаково
+// ВЕРСИЯ 3.0 — ЕДИНЫЙ РЕЗОЛВЕР ПОЗИЦИЙ + ФИКС МОДАЛКИ + КЛИКАБЕЛЬНЫЕ МАРКЕРЫ
 // ============================================================
 
-console.log('🧭 Система перемещений загружается...');
+console.log('🧭 Система перемещений v3.0 загружается...');
 
 var _showOwners = false;
 var _showCoords = false;
 var _showLevels = false;
 var _showArmies = true;
 
-// Единый ключ клетки: 'castle' и зона замка дома — одна клетка
+// Единая функция нормализации клетки ('castle' → реальная зона замка)
 function zoneKey(loc, houseId) {
     if (!loc) return '';
-    if (loc === 'castle') {
-        return (typeof window.getCastleZoneId === 'function') ? window.getCastleZoneId(houseId) : 'bl_-1_0';
-    }
+    if (loc === 'castle') return (typeof window.getCastleZoneId === 'function') ? window.getCastleZoneId(houseId) : 'bl_-1_0';
     return loc;
 }
 
@@ -47,31 +45,27 @@ function openCompass() {
     var user = users[currentUser];
     if (!user) { setMessage('❌ Игрок не найден.'); return; }
     var g = user.game;
-
+    
     var current = g.location.locationId || g.location.place;
     var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
-
+    
     var loc = window.WORLD_AREAS ? WORLD_AREAS[current] : null;
-
+    
     var ownerName = '';
     if (loc && loc.owner) {
         if (loc.owner === 'crown') {
             ownerName = '👑 Корона';
-        } else if (loc.owner === 'none') {
-            ownerName = '';
-        } else if (window.HOUSES && HOUSES[loc.owner]) {
+        } else if (loc.owner !== 'none' && window.HOUSES && HOUSES[loc.owner]) {
             ownerName = HOUSES[loc.owner].sigil + ' ' + HOUSES[loc.owner].name;
         } else if (window.users && users[loc.owner]) {
             ownerName = '👤 ' + users[loc.owner].name;
-        } else {
-            ownerName = loc.owner;
         }
     }
-
+    
     var modal = document.getElementById('modal-compass');
     if (!modal) {
         var overlay = document.createElement('div');
@@ -82,67 +76,64 @@ function openCompass() {
         document.body.appendChild(overlay);
         modal = overlay;
     }
-
+    
     var content = document.getElementById('modal-compass-content');
-
+    
     var html = '<div class="modal-section"><h4>🧭 КОМПАС</h4>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">📍 ' + (loc ? loc.name : current);
     if (ownerName) html += ' | ' + ownerName;
     html += '</p>';
-
+    
     html += '<div style="text-align:center;margin-bottom:8px;">';
     html += '<button class="btn btn-game" onclick="openWorldMap(); closeCompass();" style="display:inline-block;width:auto;padding:6px 16px;">🌍 Мир</button>';
     html += '</div>';
-
+    
     html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:4px;max-width:300px;margin:10px auto;">';
-
+    
     var dirLabels = {
         'nw': '↖️', 'n': '⬆️', 'ne': '↗️',
         'w': '⬅️', 'e': '➡️',
         'sw': '↙️', 's': '⬇️', 'se': '↘️'
     };
-
+    
     var grid = [
         ['nw', 'n', 'ne'],
         ['w', null, 'e'],
         ['sw', 's', 'se']
     ];
-
+    
     for (var row = 0; row < 3; row++) {
         for (var col = 0; col < 3; col++) {
             var dir = grid[row][col];
-
+            
             if (dir === null) {
                 var centerEmoji = getLocationEmoji(loc, current);
                 if (centerEmoji === '') centerEmoji = '📍';
                 html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1410;border:1px solid #3d3026;border-radius:12px;aspect-ratio:1;font-size:20px;padding:2px;">' + centerEmoji + '<br><span style="font-size:7px;color:#6a5a48;">' + (loc ? loc.x + ',' + loc.y : '') + '</span></div>';
                 continue;
             }
-
+            
             var next = transitions[dir];
-
+            
             if (next) {
                 var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
                 var emoji = nextLoc ? getLocationEmoji(nextLoc, next) : '📍';
                 var nextName = nextLoc ? nextLoc.name : next;
-
+                
                 var houseInfo = '';
-                if (nextLoc && nextLoc.owner && nextLoc.owner !== 'crown' && nextLoc.owner !== 'none') {
-                    var house = (typeof HOUSES !== 'undefined' && HOUSES[nextLoc.owner]) ? HOUSES[nextLoc.owner] : null;
-                    if (house) {
-                        houseInfo = '<br><span style="font-size:7px;color:#ffd700;">' + house.sigil + ' ' + house.name + '</span>';
-                    }
+                if (nextLoc && nextLoc.owner && nextLoc.owner !== 'crown' && nextLoc.owner !== 'none' && window.HOUSES && HOUSES[nextLoc.owner]) {
+                    houseInfo = '<br><span style="font-size:7px;color:#ffd700;">' + HOUSES[nextLoc.owner].sigil + ' ' + HOUSES[nextLoc.owner].name + '</span>';
                 }
-
+                
                 var coords = nextLoc ? nextLoc.x + ',' + nextLoc.y : '';
-
+                
                 var isWater = false;
                 if (nextLoc) {
                     isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
                                nextLoc.type === 'abyss' || nextLoc.type === 'maelstrom' || nextLoc.type === 'bay' ||
                                nextLoc.type === 'reef' || (nextLoc.type === 'coast' && nextLoc.resourceType === 'shallows'));
                 }
-
+                
                 html += '<button class="btn btn-game" onclick="moveTo(\'' + dir + '\'); closeCompass();" style="padding:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;line-height:1.1;' + (isWater ? 'opacity:0.5;' : '') + '">';
                 html += '<span style="font-size:14px;">' + dirLabels[dir] + '</span>';
                 if (emoji) html += '<span style="font-size:14px;">' + emoji + '</span>';
@@ -156,10 +147,10 @@ function openCompass() {
             }
         }
     }
-
+    
     html += '</div></div>';
     html += '<button class="btn btn-secondary" onclick="closeCompass()" style="margin-top:10px;">Закрыть</button>';
-
+    
     content.innerHTML = html;
     modal.classList.remove('hide');
 }
@@ -172,23 +163,23 @@ function closeCompass() {
 function moveTo(direction) {
     var g = users[currentUser].game;
     if (!g) return;
-
+    
     var current = g.location.locationId || g.location.place;
     var transitions = window.WORLD_TRANSITIONS ? WORLD_TRANSITIONS[current] : null;
     if (!transitions) {
         setMessage('❌ Из этой локации нельзя никуда пойти.');
         return;
     }
-
+    
     var next = transitions[direction];
     if (!next) {
         setMessage('❌ В этом направлении нет пути.');
         return;
     }
-
+    
     var nextLoc = WORLD_AREAS ? WORLD_AREAS[next] : null;
     var nextName = nextLoc ? nextLoc.name : next;
-
+    
     if (nextLoc) {
         var isWater = (nextLoc.type === 'river' || nextLoc.type === 'sea' || nextLoc.type === 'shallows' ||
                        nextLoc.type === 'abyss' || nextLoc.type === 'maelstrom' || nextLoc.type === 'bay' ||
@@ -198,7 +189,7 @@ function moveTo(direction) {
             return;
         }
     }
-
+    
     g.location.place = next;
     g.location.locationId = next;
     g.location.parentZone = null;
@@ -218,10 +209,10 @@ window.openWorldMap = function() {
     var currentId = g.location.parentZone || g.location.locationId || g.location.place;
     var currentLoc = WORLD_AREAS[currentId];
     if (!currentLoc) { setMessage('📍 Вы не на внешней локации.'); return; }
-
+    
     var allZones = [];
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-
+    
     for (var id in WORLD_AREAS) {
         var z = WORLD_AREAS[id];
         allZones.push(z);
@@ -230,13 +221,13 @@ window.openWorldMap = function() {
         if (z.y < minY) minY = z.y;
         if (z.y > maxY) maxY = z.y;
     }
-
+    
     if (allZones.length === 0) { setMessage('❌ Мир пуст.'); return; }
-
+    
     var cols = maxX - minX + 1;
     var rows = maxY - minY + 1;
     var cellSize = Math.max(14, Math.min(30, Math.floor(460 / Math.max(cols, rows))));
-
+    
     var modal = document.getElementById('modal-world-map');
     if (!modal) {
         var overlay = document.createElement('div');
@@ -247,12 +238,12 @@ window.openWorldMap = function() {
         document.body.appendChild(overlay);
         modal = overlay;
     }
-
+    
     var content = document.getElementById('modal-world-map-content');
-
+    
     var houseId = g.house;
     var mySquad = window.getMySquad ? window.getMySquad() : null;
-
+    
     var typeColors = {
         'road': '#8B7355', 'forest': '#2d5016', 'plain': '#7a9a3a', 'mountain': '#6b6b6b',
         'river': '#2980b9', 'coast': '#d4b896', 'sea': '#0d3b5c', 'shallows': '#1a5276',
@@ -270,13 +261,13 @@ window.openWorldMap = function() {
         'cape': '#6b6b6b', 'bay': '#1a6b8a', 'hunting': '#4a6b2a', 'logging_camp': '#5a4a2a',
         'farm': '#8a9a3a', 'border': '#4a3728'
     };
-
+    
     var lookup = {};
     for (var i = 0; i < allZones.length; i++) {
         var z = allZones[i];
         lookup[z.x + ',' + z.y] = z;
     }
-
+    
     var areas = {};
     for (var i = 0; i < allZones.length; i++) {
         var z = allZones[i];
@@ -286,7 +277,7 @@ window.openWorldMap = function() {
         if (z.y < areas[z.area].minY) areas[z.area].minY = z.y;
         if (z.y > areas[z.area].maxY) areas[z.area].maxY = z.y;
     }
-
+    
     function getCastleInfo(zone) {
         if (!zone) return null;
         if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
@@ -313,101 +304,72 @@ window.openWorldMap = function() {
         }
         return null;
     }
-
-    // ========================================================
-    // Сбор войск по зонам — ТА ЖЕ логика, что у клика по клетке
-    // ========================================================
+    
+    // Сбор информации о войсках по зонам (включая squads)
     var troopsByZone = {};
-
-    function addOwn(rawLoc, squadName) {
-        var key = zoneKey(rawLoc, houseId);
-        if (!key) return;
-        if (!troopsByZone[key]) troopsByZone[key] = {};
-        if (!troopsByZone[key]._own) troopsByZone[key]._own = { count: 0, squads: {} };
-        troopsByZone[key]._own.count++;
-        if (squadName) {
-            if (!troopsByZone[key]._own.squads[squadName]) troopsByZone[key]._own.squads[squadName] = 0;
-            troopsByZone[key]._own.squads[squadName]++;
-        }
-    }
-
-    function addEnemy(rawLoc) {
-        var key = zoneKey(rawLoc, hid);
-        if (!key) return;
-        if (!troopsByZone[key]) troopsByZone[key] = {};
-        if (!troopsByZone[key]._enemy) troopsByZone[key]._enemy = 0;
-        troopsByZone[key]._enemy++;
-    }
-
     if (window._castleGarrisons && _showArmies) {
-        // Свои войска из гарнизона
+        // Свои войска из garrison
         if (houseId) {
             var ownGarrison = window._castleGarrisons[houseId];
             if (ownGarrison) {
                 ['infantry','cavalry','siege'].forEach(function(cat) {
                     if (ownGarrison[cat]) {
                         ownGarrison[cat].forEach(function(u) {
-                            addOwn(u.location || 'castle', u.squadId || null);
+                            var loc = u.location || 'castle';
+                            if (!troopsByZone[loc]) troopsByZone[loc] = {};
+                            if (!troopsByZone[loc]._own) troopsByZone[loc]._own = { count: 0, squads: {} };
+                            troopsByZone[loc]._own.count++;
+                            if (u.squadId) {
+                                if (!troopsByZone[loc]._own.squads[u.squadId]) troopsByZone[loc]._own.squads[u.squadId] = 0;
+                                troopsByZone[loc]._own.squads[u.squadId]++;
+                            }
                         });
                     }
                 });
             }
-
-            // Свои войска из отрядов — по РЕАЛЬНЫМ клеткам контейнеров
+            
+            // Свои войска из squads
             var squads = window.getSquads(houseId);
             for (var cmdName in squads) {
                 var squad = squads[cmdName];
-                var sLoc = squad.location || 'castle';
-
-                squad.units.forEach(function(u) { addOwn(sLoc, cmdName); });
-
+                var loc = squad.location || 'castle';
+                if (!troopsByZone[loc]) troopsByZone[loc] = {};
+                if (!troopsByZone[loc]._own) troopsByZone[loc]._own = { count: 0, squads: {} };
+                if (!troopsByZone[loc]._own.squads[cmdName]) troopsByZone[loc]._own.squads[cmdName] = 0;
+                
+                var countSquad = function(u) {
+                    troopsByZone[loc]._own.count++;
+                    troopsByZone[loc]._own.squads[cmdName]++;
+                };
+                
+                squad.units.forEach(countSquad);
                 for (var capName in squad.captains) {
-                    var cap = squad.captains[capName];
-                    var cLoc = cap.location || sLoc;
-                    cap.units.forEach(function(u) { addOwn(cLoc, cmdName); });
-
-                    for (var sgtName in cap.sergeants) {
-                        var sgt = cap.sergeants[sgtName];
-                        var gLoc = sgt.location || cLoc;
-                        sgt.units.forEach(function(u) { addOwn(gLoc, cmdName); });
+                    squad.captains[capName].units.forEach(countSquad);
+                    for (var sgtName in squad.captains[capName].sergeants) {
+                        squad.captains[capName].sergeants[sgtName].units.forEach(countSquad);
                     }
                 }
             }
         }
-
-        // Вражеские войска (гарнизон + отряды)
+        
+        // Вражеские войска
         for (var hid in window._castleGarrisons) {
             if (hid === houseId) continue;
             if (HOUSES[hid] && houseId && HOUSES[hid].liege === houseId) continue;
             var garr = window._castleGarrisons[hid];
-            if (!garr) continue;
-
             ['infantry','cavalry','siege'].forEach(function(cat) {
                 if (garr[cat]) {
-                    garr[cat].forEach(function(u) { addEnemy(u.location || 'castle'); });
+                    garr[cat].forEach(function(u) {
+                        var loc = u.location || 'castle';
+                        if (!troopsByZone[loc]) troopsByZone[loc] = {};
+                        if (!troopsByZone[loc]._enemy) troopsByZone[loc]._enemy = 0;
+                        troopsByZone[loc]._enemy++;
+                    });
                 }
             });
-
-            if (garr.squads) {
-                for (var eCmd in garr.squads) {
-                    var eSquad = garr.squads[eCmd];
-                    var eSLoc = eSquad.location || 'castle';
-                    eSquad.units.forEach(function(u) { addEnemy(eSLoc); });
-                    for (var eCap in eSquad.captains) {
-                        var eCapObj = eSquad.captains[eCap];
-                        var eCLoc = eCapObj.location || eSLoc;
-                        eCapObj.units.forEach(function(u) { addEnemy(eCLoc); });
-                        for (var eSgt in eCapObj.sergeants) {
-                            var eSgtObj = eCapObj.sergeants[eSgt];
-                            var eGLoc = eSgtObj.location || eCLoc;
-                            eSgtObj.units.forEach(function(u) { addEnemy(eGLoc); });
-                        }
-                    }
-                }
-            }
         }
     }
-
+    
     var ownerGroups = [];
     if (_showOwners) {
         var visited = {};
@@ -416,11 +378,11 @@ window.openWorldMap = function() {
             var key = z.x + ',' + z.y;
             if (visited[key]) continue;
             if (!z.owner || z.owner === 'none') continue;
-
+            
             var group = { owner: z.owner, zones: [], minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
             var queue = [z];
             visited[key] = true;
-
+            
             while (queue.length > 0) {
                 var cz = queue.shift();
                 group.zones.push(cz);
@@ -428,11 +390,10 @@ window.openWorldMap = function() {
                 if (cz.x > group.maxX) group.maxX = cz.x;
                 if (cz.y < group.minY) group.minY = cz.y;
                 if (cz.y > group.maxY) group.maxY = cz.y;
-
-                var dirs4 = { n: [0,-1], s: [0,1], w: [-1,0], e: [1,0] };
-                for (var d in dirs4) {
-                    var nx = cz.x + dirs4[d][0];
-                    var ny = cz.y + dirs4[d][1];
+                
+                for (var d in {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}) {
+                    var nx = cz.x + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][0];
+                    var ny = cz.y + {n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[d][1];
                     var nkey = nx + ',' + ny;
                     var nz = lookup[nkey];
                     if (nz && !visited[nkey] && nz.owner === group.owner) {
@@ -441,15 +402,15 @@ window.openWorldMap = function() {
                     }
                 }
             }
-
+            
             if (group.zones.length >= 2) {
                 ownerGroups.push(group);
             }
         }
     }
-
+    
     var html = '<div class="modal-section"><h4>🌍 МИР ВЕСТЕРОСА</h4>';
-
+    
     // Легенда
     html += '<div style="background:#120e0b;border:1px solid #2a201a;border-radius:8px;padding:8px;margin-bottom:8px;">';
     html += '<p style="color:#c9b694;font-size:11px;margin-bottom:4px;">📋 ОБОЗНАЧЕНИЯ:</p>';
@@ -461,7 +422,7 @@ window.openWorldMap = function() {
     html += '<span>⛏️ Шахта</span>';
     html += '<span>🪓 Лесосека</span>';
     html += '</div>';
-
+    
     html += '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:10px;color:#b8a890;margin-top:4px;">';
     html += '<span>🟢 Мои войска</span>';
     html += '<span>🟡 Мой отряд</span>';
@@ -471,13 +432,13 @@ window.openWorldMap = function() {
     html += '<span>⏳ В марше (нажми на маркер)</span>';
     html += '</div>';
     html += '</div>';
-
+    
     html += '<p style="color:#6a5a48;font-size:12px;text-align:center;">';
     html += '⭐ Вы | 👑 Столица | 🏰 Замок | 🏘️ Деревня | ⛏️ Шахта | 🪓 Лесосека | 🏚️ Руины';
     if (houseId) html += ' | 🟢 Свои | 🟡 Отряд | 🟠 Дом | 🔴 Враги';
     html += '</p>';
     html += '<p style="color:#6a5a48;font-size:11px;text-align:center;">Всего зон: ' + allZones.length + ' | Областей: ' + Object.keys(areas).length + '</p>';
-
+    
     html += '<div style="text-align:center;margin:6px 0;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleCoords()"><input type="checkbox" id="chk-coords" ' + (_showCoords ? 'checked' : '') + '> 📍 Координаты</label>';
     html += '<label style="font-size:11px;color:#b8a890;cursor:pointer;" onclick="toggleLevels()"><input type="checkbox" id="chk-levels" ' + (_showLevels ? 'checked' : '') + '> 📈 Уровни</label>';
@@ -488,16 +449,16 @@ window.openWorldMap = function() {
     }
     html += '</div>';
     html += '</div>';
-
+    
     var mapWidth = cols * cellSize;
     var mapHeight = rows * cellSize;
     var padding = Math.floor(cellSize * 2);
-
+    
     html += '<div style="overflow:auto;max-width:100%;max-height:60vh;margin-top:8px;">';
     html += '<div id="world-map-container" style="position:relative;width:' + mapWidth + 'px;height:' + (mapHeight + padding*2) + 'px;min-width:' + mapWidth + 'px;background:#0a0806;border-radius:8px;">';
-
+    
     html += '<div id="marching-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;"></div>';
-
+    
     // Рамки владений
     for (var gi = 0; gi < ownerGroups.length; gi++) {
         var group = ownerGroups[gi];
@@ -505,7 +466,7 @@ window.openWorldMap = function() {
         var frameTop = (group.minY - minY) * cellSize + padding + 1;
         var frameW = (group.maxX - group.minX + 1) * cellSize - 2;
         var frameH = (group.maxY - group.minY + 1) * cellSize - 2;
-
+        
         var houseColor = '#ffd700';
         var houseLabel = '';
         if (group.owner === 'crown') {
@@ -515,9 +476,9 @@ window.openWorldMap = function() {
             houseColor = HOUSES[group.owner].color || '#ffd700';
             houseLabel = HOUSES[group.owner].sigil + ' ' + HOUSES[group.owner].name;
         }
-
+        
         html += '<div style="position:absolute;left:' + frameLeft + 'px;top:' + frameTop + 'px;width:' + frameW + 'px;height:' + frameH + 'px;border:3px solid ' + houseColor + ';border-radius:4px;pointer-events:none;z-index:5;box-shadow:0 0 6px ' + houseColor + ';"></div>';
-
+        
         var labelX = frameLeft + frameW/2;
         var labelY = frameTop + frameH/2;
         var labelFontSize = Math.max(12, Math.floor(Math.min(frameW, frameH) * 0.15));
@@ -525,7 +486,7 @@ window.openWorldMap = function() {
         html += '<span style="font-size:' + labelFontSize + 'px;font-weight:bold;color:#fff;background:rgba(0,0,0,0.7);padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0.9;text-shadow:0 0 4px #000;">' + houseLabel + '</span>';
         html += '</div>';
     }
-
+    
     // Отрисовка зон
     for (var y = minY; y <= maxY; y++) {
         for (var x = minX; x <= maxX; x++) {
@@ -534,12 +495,12 @@ window.openWorldMap = function() {
             var emoji = '';
             var isCurrent = false;
             var castleInfo = zone ? getCastleInfo(zone) : null;
-
+            
             if (zone) {
                 var colorKey = zone.type;
                 if (zone.type === 'coast' && zone.resourceType === 'shallows') colorKey = 'shallows';
                 bg = typeColors[colorKey] || '#3d3026';
-
+                
                 if (zone.type === 'crossroads' && zone.actions && zone.actions.some(function(a) { return a.id === 'enter_city'; })) {
                     emoji = '👑';
                 } else if (zone.type === 'castle' || zone.type === 'castle_gate') {
@@ -555,20 +516,20 @@ window.openWorldMap = function() {
                 } else if (zone.type === 'ruins') {
                     emoji = '🏚️';
                 }
-
+                
                 if (zone.id === currentId) isCurrent = true;
             }
-
+            
             // Маркер войск
             var troopEmoji = '';
             var troopColor = '';
             if (zone && _showArmies && troopsByZone[zone.id]) {
                 var td = troopsByZone[zone.id];
-
+                
                 if (td._own && td._own.count > 0) {
                     troopEmoji = '🟢';
                     troopColor = '#7ac98a';
-
+                    
                     if (mySquad && td._own.squads) {
                         for (var sId in td._own.squads) {
                             if (sId === mySquad.commanderName) {
@@ -588,7 +549,7 @@ window.openWorldMap = function() {
                         }
                     }
                 }
-
+                
                 if (td._enemy && td._enemy > 0) {
                     if (!troopEmoji || troopEmoji === '🟢') {
                         troopEmoji = '🔴';
@@ -596,7 +557,7 @@ window.openWorldMap = function() {
                     }
                 }
             }
-
+            
             var subText = '';
             var subText2 = '';
             if (zone) {
@@ -613,15 +574,15 @@ window.openWorldMap = function() {
                     }
                 }
             }
-
+            
             var fontSize = Math.max(11, Math.floor(cellSize * 0.5));
             var fontSizeSmall = Math.max(10, Math.floor(cellSize * 0.4));
             var emojiSize = Math.max(14, Math.floor(cellSize * 0.6));
             var coordSize = Math.max(8, Math.floor(cellSize * 0.3));
-
+            
             var left = (x - minX) * cellSize + 1;
             var top = (y - minY) * cellSize + padding + 1;
-
+            
             html += '<div style="';
             html += 'position:absolute;';
             html += 'left:' + left + 'px;top:' + top + 'px;';
@@ -632,7 +593,7 @@ window.openWorldMap = function() {
             html += 'display:flex;align-items:center;justify-content:center;';
             if (isCurrent) html += 'box-shadow:inset 0 0 0 2px #ffd700;';
             html += '">';
-
+            
             if (emoji) {
                 html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">';
                 if (isCurrent) html += '⭐'; else html += emoji;
@@ -647,16 +608,16 @@ window.openWorldMap = function() {
             } else if (isCurrent) {
                 html += '<span style="font-size:' + emojiSize + 'px;line-height:1;position:relative;z-index:2;">⭐</span>';
             }
-
+            
             if (_showCoords) {
                 html += '<span style="position:absolute;top:1px;left:2px;font-size:' + coordSize + 'px;color:#fff;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">' + x + ',' + y + '</span>';
             }
             if (_showLevels && zone && zone.level) {
                 html += '<span style="position:absolute;bottom:1px;right:2px;font-size:' + coordSize + 'px;color:#ffd700;opacity:0.9;z-index:3;line-height:1;pointer-events:none;text-shadow:0 0 2px #000;">ур.' + zone.level + '</span>';
             }
-
+            
             html += '</div>';
-
+            
             if (subText || subText2) {
                 var labelTop = top + cellSize + 2;
                 html += '<div style="position:absolute;left:' + (left + cellSize/2) + 'px;top:' + labelTop + 'px;transform:translateX(-50%);text-align:center;z-index:100;pointer-events:none;">';
@@ -670,9 +631,9 @@ window.openWorldMap = function() {
             }
         }
     }
-
+    
     html += '</div></div>';
-
+    
     html += '<div class="modal-section" style="max-height:120px;overflow-y:auto;margin-top:8px;">';
     html += '<p style="color:#6a5a48;font-size:11px;">📋 ОБЛАСТИ:</p>';
     for (var a in areas) {
@@ -692,31 +653,28 @@ window.openWorldMap = function() {
         html += '<span style="display:inline-block;margin:2px 6px;font-size:11px;color:#b8a890;">📍 ' + a + ' (' + (aa.maxX-aa.minX+1) + '×' + (aa.maxY-aa.minY+1) + ')' + areaOwner + '</span>';
     }
     html += '</div>';
-
+    
     html += '<div class="modal-section" style="margin-top:8px;">';
     html += '<p style="color:#6a5a48;font-size:12px;">📍 Вы: ' + currentLoc.name + ' [' + currentLoc.x + ',' + currentLoc.y + ']</p>';
     html += '</div>';
-
+    
     html += '<button class="btn btn-secondary" onclick="closeWorldMap()" style="margin-top:8px;">Закрыть</button>';
-
+    
     content.innerHTML = html;
     modal.classList.remove('hide');
-
-    // Один обработчик клика (не накапливается при перерисовке)
-    if (!window._mapClickBound) {
-        var containerEl = document.getElementById('world-map-container');
-        if (containerEl) {
-            containerEl.addEventListener('click', function(e) {
-                var geo = window._mapGeo;
-                if (!geo) return;
+    
+    setTimeout(function() {
+        var container = document.getElementById('world-map-container');
+        if (container) {
+            container.addEventListener('click', function(e) {
                 var target = e.target;
-                while (target && target !== containerEl) {
+                while (target && target !== container) {
                     if (target.style && target.style.position === 'absolute' && target.style.background && target.style.background !== '') {
                         var l = parseInt(target.style.left);
                         var t = parseInt(target.style.top);
-                        var zx = geo.minX + Math.floor((l - 1) / geo.cellSize);
-                        var zy = geo.minY + Math.floor((t - 1 - geo.padding) / geo.cellSize);
-                        var zone = geo.lookup[zx + ',' + zy];
+                        var zx = minX + Math.floor((l - 1) / cellSize);
+                        var zy = minY + Math.floor((t - 1 - padding) / cellSize);
+                        var zone = lookup[zx + ',' + zy];
                         if (zone && zone.id) {
                             var isWater = (zone.type === 'river' || zone.type === 'sea' || zone.type === 'shallows' ||
                                 zone.type === 'abyss' || zone.type === 'maelstrom' || zone.type === 'bay' ||
@@ -730,74 +688,59 @@ window.openWorldMap = function() {
                     target = target.parentElement;
                 }
             });
-            window._mapClickBound = true;
         }
-    }
-
-    window._mapGeo = { minX: minX, minY: minY, cellSize: cellSize, padding: padding, lookup: lookup };
-
-    if (window._marchMarkerTimer) { clearTimeout(window._marchMarkerTimer); window._marchMarkerTimer = null; }
-    window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup);
+    }, 100);
+    
+    setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 200);
 };
 
 // ============================================================
-// МАРШ-МАРКЕРЫ (кликабельные, один таймер, плавное движение)
+// МАРШ-МАРКЕРЫ
 // ============================================================
 
 window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) {
-    if (window._marchMarkerTimer) { clearTimeout(window._marchMarkerTimer); window._marchMarkerTimer = null; }
-
     var layer = document.getElementById('marching-layer');
     if (!layer) return;
-
-    var modal = document.getElementById('modal-world-map');
-    if (modal && modal.classList.contains('hide')) return;
-
+    
     layer.innerHTML = '';
-
+    
     var houseId = users[currentUser] && users[currentUser].game ? users[currentUser].game.house : null;
     if (!houseId) return;
-
+    
     var garrison = window._castleGarrisons && window._castleGarrisons[houseId] ? window._castleGarrisons[houseId] : null;
     if (!garrison || !garrison.marching) return;
-
+    
     garrison.marching.forEach(function(m) {
-        if (!m.path || m.path.length === 0) return;
-
-        var step = m.currentStep;
-        if (step >= m.path.length - 1) step = m.path.length - 2;
-        if (step < 0) step = 0;
-
-        var currentZoneId = m.path[step];
-        var nextZoneId = m.path[step + 1] || currentZoneId;
-        var currentZone = WORLD_AREAS[zoneKey(currentZoneId, houseId)];
-        var nextZone = WORLD_AREAS[zoneKey(nextZoneId, houseId)];
-        if (!currentZone) return;
-        if (!nextZone) nextZone = currentZone;
-
+        if (!m.path || m.currentStep >= m.path.length - 1) return;
+        
+        var currentZoneId = m.path[m.currentStep];
+        var nextZoneId = m.path[m.currentStep + 1];
+        var currentZone = WORLD_AREAS[currentZoneId];
+        var nextZone = WORLD_AREAS[nextZoneId];
+        if (!currentZone || !nextZone) return;
+        
         var fromX = (currentZone.x - minX) * cellSize + cellSize/2;
         var fromY = (currentZone.y - minY) * cellSize + cellSize/2 + padding;
         var toX = (nextZone.x - minX) * cellSize + cellSize/2;
         var toY = (nextZone.y - minY) * cellSize + cellSize/2 + padding;
-
-        var moveTimeMs = m.moveTimeMs || ((m.speedPerZone || 2) * 60 * 1000);
-        var remainMs = Math.max(0, m.nextPhaseTime - Date.now());
-
+        
+        var speed = m.speedPerZone || 2;
+        var moveTimeMs = speed * 60 * 1000;
+        
         var curX = fromX;
         var curY = fromY;
-
+        
         if (m.phase === 'moving') {
-            var progress = 1 - (remainMs / moveTimeMs);
+            var timeLeft = m.nextPhaseTime - Date.now();
+            var progress = 1 - (timeLeft / moveTimeMs);
             if (progress < 0) progress = 0;
             if (progress > 1) progress = 1;
             curX = fromX + (toX - fromX) * progress;
             curY = fromY + (toY - fromY) * progress;
         }
-
+        
         var emoji = '🟢';
         if (m.isSquad) emoji = '👑';
-        else if (m.isDetachedCap) emoji = '🗡️';
-        else if (m.isDetachedSgt) emoji = '🛡️';
         else if (m.isScout) emoji = '👁️';
         else if (m.units) {
             var hasC = false, hasS = false;
@@ -808,44 +751,38 @@ window.refreshMarchingMarkers = function(minX, minY, cellSize, padding, lookup) 
             if (hasS) emoji = '🟤';
             else if (hasC) emoji = '🐴';
         }
-
+        
         var displayText = emoji + ' ' + m.units.length;
-        if (m.phase === 'waiting') displayText = '⏳ ' + displayText;
-
+        if (m.phase === 'waiting') {
+            displayText = '⏳ ' + displayText;
+        }
+        
         var marker = document.createElement('div');
-        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:11px;z-index:51;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;white-space:nowrap;padding:1px 3px;background:rgba(0,0,0,0.55);border-radius:4px;';
+        marker.style.cssText = 'position:absolute;left:' + curX + 'px;top:' + curY + 'px;font-size:11px;z-index:51;transform:translate(-50%,-50%);pointer-events:none;';
+        if (m.phase === 'moving') {
+            marker.style.cssText += 'transition:left ' + (speed*60) + 's linear, top ' + (speed*60) + 's linear;';
+        }
         marker.textContent = displayText;
         marker.style.color = '#7ac98a';
         marker.style.fontWeight = 'bold';
         marker.style.textShadow = '0 0 3px #000';
-
-        marker.onclick = function(ev) {
-            ev.stopPropagation();
-            var cellId = (m.phase === 'moving') ? nextZoneId : currentZoneId;
-            cellId = zoneKey(cellId, houseId);
-            if (typeof window.handleZoneClick === 'function') window.handleZoneClick(cellId);
-        };
-
+        
         layer.appendChild(marker);
-
-        if (m.phase === 'moving' && remainMs > 0) {
-            marker.style.transition = 'left ' + (remainMs/1000) + 's linear, top ' + (remainMs/1000) + 's linear';
+        
+        if (m.phase === 'moving') {
             setTimeout(function() {
                 marker.style.left = toX + 'px';
                 marker.style.top = toY + 'px';
             }, 50);
         }
     });
-
-    window._marchMarkerTimer = setTimeout(function() {
-        window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup);
-    }, 2000);
+    
+    setTimeout(function() { window.refreshMarchingMarkers(minX, minY, cellSize, padding, lookup); }, 2000);
 };
 
 window.closeWorldMap = function() {
     var modal = document.getElementById('modal-world-map');
     if (modal) modal.classList.add('hide');
-    if (window._marchMarkerTimer) { clearTimeout(window._marchMarkerTimer); window._marchMarkerTimer = null; }
 };
 
 window.toggleOwnerColors = function() {
@@ -876,7 +813,6 @@ window.toggleArmies = function() {
 // РЕГИСТРАЦИЯ
 // ============================================================
 
-window.zoneKey = zoneKey;
 window.openCompass = openCompass;
 window.closeCompass = closeCompass;
 window.moveTo = moveTo;
@@ -887,4 +823,4 @@ window.toggleCoords = toggleCoords;
 window.toggleLevels = toggleLevels;
 window.toggleArmies = toggleArmies;
 
-console.log('✅ Карта v2.1: маркеры и клик по клетке совпадают, марш-маркеры кликабельны.');
+console.log('✅ Система перемещений + Карта мира + Отряды загружены!');
